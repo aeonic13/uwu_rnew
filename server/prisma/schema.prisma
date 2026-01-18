@@ -1,0 +1,269 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User types
+enum UserType {
+  student
+  owner
+}
+
+// Application status
+enum ApplicationStatus {
+  pending
+  approved
+  rejected
+  cancelled
+}
+
+// Transaction status
+enum TransactionStatus {
+  pending
+  processing
+  completed
+  failed
+  refunded
+}
+
+// Property types
+enum PropertyType {
+  Apartment
+  House
+  Studio
+  SingleRoom
+  Condo
+}
+
+// User model
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  userType      UserType
+  firstName     String
+  lastName      String
+  phone         String?
+  university    String?
+  major         String?
+  bio           String?
+  avatarUrl     String?
+  verified      Boolean   @default(false)
+  verifyToken   String?
+  resetToken    String?
+  resetTokenExp DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  listings            Listing[]
+  sentApplications    Application[]       @relation("ApplicantApplications")
+  receivedApplications Application[]      @relation("OwnerApplications")
+  sentMessages        Message[]           @relation("SentMessages")
+  conversationUsers   ConversationUser[]
+  transactions        Transaction[]
+  favorites           Favorite[]
+  reviews             Review[]            @relation("ReviewAuthor")
+  receivedReviews     Review[]            @relation("ReviewSubject")
+
+  @@index([email])
+  @@index([userType])
+}
+
+// Listing model
+model Listing {
+  id           String       @id @default(cuid())
+  title        String
+  description  String
+  price        Int
+  location     String
+  university   String?
+  moveInDate   DateTime?
+  moveOutDate  DateTime?
+  propertyType PropertyType
+  bedrooms     Int          @default(0)
+  bathrooms    Float        @default(1)
+  amenities    String[]
+  images       String[]
+  active       Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  // Relations
+  ownerId       String
+  owner         User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  applications  Application[]
+  conversations Conversation[]
+  favorites     Favorite[]
+  reviews       Review[]
+
+  @@index([ownerId])
+  @@index([university])
+  @@index([price])
+  @@index([active])
+}
+
+// Favorite (saved properties)
+model Favorite {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listingId String
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, listingId])
+  @@index([userId])
+}
+
+// Application model
+model Application {
+  id             String            @id @default(cuid())
+  status         ApplicationStatus @default(pending)
+  message        String?
+  startDate      DateTime
+  endDate        DateTime
+  emergencyContact String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  // Relations
+  listingId    String
+  listing      Listing       @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  applicantId  String
+  applicant    User          @relation("ApplicantApplications", fields: [applicantId], references: [id], onDelete: Cascade)
+  ownerId      String
+  owner        User          @relation("OwnerApplications", fields: [ownerId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  agreement    Agreement?
+
+  @@index([listingId])
+  @@index([applicantId])
+  @@index([ownerId])
+  @@index([status])
+}
+
+// Agreement/Contract model
+model Agreement {
+  id               String   @id @default(cuid())
+  monthlyRent      Int
+  securityDeposit  Int
+  startDate        DateTime
+  endDate          DateTime
+  terms            Json     // Additional terms stored as JSON
+  tenantSigned     Boolean  @default(false)
+  tenantSignedAt   DateTime?
+  landlordSigned   Boolean  @default(false)
+  landlordSignedAt DateTime?
+  documentUrl      String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  applicationId String      @unique
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+}
+
+// Conversation model
+model Conversation {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  listingId String?
+  listing   Listing?           @relation(fields: [listingId], references: [id], onDelete: SetNull)
+  users     ConversationUser[]
+  messages  Message[]
+
+  @@index([listingId])
+}
+
+// Many-to-many relation for conversation participants
+model ConversationUser {
+  id           String   @id @default(cuid())
+  unreadCount  Int      @default(0)
+  lastReadAt   DateTime?
+  joinedAt     DateTime @default(now())
+
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, conversationId])
+  @@index([userId])
+  @@index([conversationId])
+}
+
+// Message model
+model Message {
+  id        String   @id @default(cuid())
+  content   String
+  type      String   @default("text") // text, image, tour-request, tour-response
+  metadata  Json?    // Additional data for special message types
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  // Relations
+  senderId       String
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([createdAt])
+}
+
+// Transaction model
+model Transaction {
+  id            String            @id @default(cuid())
+  amount        Int
+  serviceFee    Int
+  total         Int
+  status        TransactionStatus @default(pending)
+  paymentMethod String?
+  stripeId      String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  // Relations
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([applicationId])
+  @@index([status])
+}
+
+// Review model
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int      // 1-5
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  authorId  String
+  author    User    @relation("ReviewAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  subjectId String
+  subject   User    @relation("ReviewSubject", fields: [subjectId], references: [id], onDelete: Cascade)
+  listingId String?
+  listing   Listing? @relation(fields: [listingId], references: [id], onDelete: SetNull)
+
+  @@index([authorId])
+  @@index([subjectId])
+  @@index([listingId])
+}

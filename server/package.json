@@ -1,0 +1,45 @@
+{
+  "name": "rentra-server",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Backend API server for Rentra",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage"
+  },
+  "keywords": [
+    "express",
+    "api",
+    "rentalting"
+  ],
+  "author": "Rentra Team",
+  "license": "MIT",
+  "dependencies": {
+    "@prisma/client": "5.22.0",
+    "axios": "^1.13.2",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.1.0",
+    "helmet": "^8.1.0",
+    "https": "^1.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.1",
+    "prisma": "5.22.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.18.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "eslint": "^9.18.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "nodemon": "^3.1.10",
+    "prettier": "^3.4.2",
+    "supertest": "^7.0.0",
+    "vitest": "^3.2.4"
+  }
+}
