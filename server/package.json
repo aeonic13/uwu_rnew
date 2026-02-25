@@ -5,10 +5,15 @@
   "description": "Backend API server for Rentra",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js",
-    "test": "vitest",
-    "test:coverage": "vitest --coverage"
+    "start": "dotenvx run -- node index.js",
+    "dev": "dotenvx run -- nodemon index.js",
+    "test": "dotenvx run -- vitest",
+    "test:coverage": "dotenvx run -- vitest --coverage",
+    "db:seed": "dotenvx run -- node prisma/seed.js",
+    "db:reset": "dotenvx run -- prisma migrate reset --force"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
   },
   "keywords": [
     "express",
@@ -18,9 +23,12 @@
   "author": "Rentra Team",
   "license": "MIT",
   "dependencies": {
-    "@prisma/client": "5.22.0",
+    "@moovio/node": "^1.2.2",
+    "@prisma/client": "^6.19.2",
+    "@sendgrid/mail": "^8.1.6",
     "axios": "^1.13.2",
     "bcryptjs": "^2.4.3",
+    "cloudinary": "^2.9.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
@@ -29,7 +37,8 @@
     "https": "^1.0.0",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.1",
-    "prisma": "5.22.0"
+    "multer": "^2.0.2",
+    "plaid": "^41.3.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.18.0",
@@ -39,6 +48,7 @@
     "eslint-plugin-prettier": "^5.2.1",
     "nodemon": "^3.1.10",
     "prettier": "^3.4.2",
+    "prisma": "^6.19.2",
     "supertest": "^7.0.0",
     "vitest": "^3.2.4"
   }
