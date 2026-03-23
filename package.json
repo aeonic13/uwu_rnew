@@ -18,7 +18,7 @@
     "format:check": "prettier --check \"src/**/*.{js,jsx,css}\"",
     "server": "cd server && npm run dev",
     "dev:all": "concurrently \"npm run dev\" \"npm run server\"",
-    "prepare": "husky"
+    "prepare": "husky || true"
   },
   "lint-staged": {
     "src/**/*.{js,jsx}": [
