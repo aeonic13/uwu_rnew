@@ -45,6 +45,7 @@ app.use(
       process.env.CLIENT_URL || 'http://localhost:3000',
       'https://myrentra.com',
       'https://www.myrentra.com',
+      'https://rentra-poko65k4v-aeonic13s-projects.vercel.app',
       'http://localhost:3001',
     ],
     credentials: true,
