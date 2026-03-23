@@ -25,6 +25,8 @@ router.get('/profile', async (req, res) => {
         major: true,
         bio: true,
         avatarUrl: true,
+        instagramUrl: true,
+        linkedinUrl: true,
         verified: true,
         createdAt: true,
         updatedAt: true,
@@ -47,7 +49,16 @@ router.get('/profile', async (req, res) => {
 // PUT /api/users/profile
 router.put('/profile', async (req, res) => {
   try {
-    const { firstName, lastName, phone, university, major, bio } = req.body
+    const {
+      firstName,
+      lastName,
+      phone,
+      university,
+      major,
+      bio,
+      instagramUrl,
+      linkedinUrl,
+    } = req.body
 
     // Build update object with only provided fields
     const updateData = {}
@@ -57,6 +68,8 @@ router.put('/profile', async (req, res) => {
     if (university !== undefined) updateData.university = university
     if (major !== undefined) updateData.major = major
     if (bio !== undefined) updateData.bio = bio
+    if (instagramUrl !== undefined) updateData.instagramUrl = instagramUrl
+    if (linkedinUrl !== undefined) updateData.linkedinUrl = linkedinUrl
 
     // Update user
     const user = await prisma.user.update({
@@ -73,6 +86,8 @@ router.put('/profile', async (req, res) => {
         major: true,
         bio: true,
         avatarUrl: true,
+        instagramUrl: true,
+        linkedinUrl: true,
         verified: true,
         updatedAt: true,
       },
@@ -104,6 +119,8 @@ router.get('/:id', async (req, res) => {
         university: true,
         bio: true,
         avatarUrl: true,
+        instagramUrl: true,
+        linkedinUrl: true,
         verified: true,
         createdAt: true,
         // Include aggregated stats

@@ -7,6 +7,7 @@ import {
   generateSecureToken,
   validatePasswordStrength,
 } from '../utils/auth.js'
+import { sendVerificationEmail } from '../utils/email.js'
 
 const router = express.Router()
 
@@ -94,11 +95,17 @@ router.post('/register', async (req, res) => {
     // Generate tokens
     const tokens = generateTokens(user)
 
-    // TODO: Send verification email with verifyToken
-    console.log(`Verification token for ${email}: ${verifyToken}`)
+    // Send verification email
+    try {
+      await sendVerificationEmail(user, verifyToken)
+      console.log(`✅ Verification email sent to ${email}`)
+    } catch (emailError) {
+      console.error('Failed to send verification email:', emailError)
+      // Continue registration even if email fails
+    }
 
     res.status(201).json({
-      message: 'Registration successful. Please verify your email.',
+      message: 'Registration successful. Please check your email to verify your account.',
       token: tokens.accessToken,
       refreshToken: tokens.refreshToken,
       user,

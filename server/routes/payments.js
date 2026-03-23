@@ -1,119 +1,212 @@
 import express from 'express'
+import prisma from '../utils/prisma.js'
+import { authenticate } from '../middleware/authenticate.js'
+import {
+  createMoovAccount,
+  linkBankAccount,
+  createTransfer,
+  getTransfer,
+  getMoovAccount,
+  getPaymentMethods,
+} from '../utils/moov.js'
+import * as plaidUtils from '../utils/plaid.js'
 
 const router = express.Router()
 
 // PLAID: Create link token for bank account connection
-router.post('/plaid/create-link-token', async (req, res) => {
+router.post('/plaid/create-link-token', authenticate, async (req, res) => {
   try {
-    const { userId } = req.body
+    const { products = ['auth', 'identity', 'income_verification'] } = req.body
 
-    // PLAID: Create a link token for Plaid Link initialization
-    // const linkTokenResponse = await plaidClient.linkTokenCreate({
-    //   user: { client_user_id: userId },
-    //   client_name: 'Rentra',
-    //   products: ['auth', 'transactions', 'identity'],
-    //   country_codes: ['US'],
-    //   language: 'en',
-    //   webhook: `${process.env.API_URL}/api/webhooks/plaid`,
-    //   redirect_uri: process.env.PLAID_REDIRECT_URI,
-    //   account_filters: {
-    //     depository: {
-    //       account_subtypes: ['checking', 'savings']
-    //     }
-    //   }
-    // })
+    const linkTokenData = await plaidUtils.createLinkToken({
+      userId: req.user.id,
+      userName: `${req.user.firstName} ${req.user.lastName}`,
+      products,
+      webhookUrl: process.env.PLAID_WEBHOOK_URL,
+    })
 
     res.json({
-      linkToken: 'mock-link-token-123',
-      expiration: new Date(Date.now() + 3600000).toISOString(), // 1 hour
+      linkToken: linkTokenData.link_token,
+      expiration: linkTokenData.expiration,
     })
   } catch (error) {
-    res.status(400).json({ error: { message: error.message } })
+    console.error('Create link token error:', error)
+    res.status(400).json({ error: { message: 'Failed to create link token' } })
   }
 })
 
 // PLAID: Exchange public token for access token
-router.post('/plaid/exchange-token', async (req, res) => {
+router.post('/plaid/exchange-token', authenticate, async (req, res) => {
   try {
-    const { publicToken } = req.body
+    const { publicToken, accountId } = req.body
 
-    // PLAID: Exchange public token for access token
-    // const tokenResponse = await plaidClient.itemPublicTokenExchange({
-    //   public_token: publicToken
-    // })
-    // const accessToken = tokenResponse.access_token
-    // const itemId = tokenResponse.item_id
+    if (!publicToken) {
+      return res.status(400).json({
+        error: { message: 'Public token is required' },
+      })
+    }
 
-    // TODO: Store access token securely (encrypted in database)
-    // TODO: Associate with user's payment profile
+    // Exchange public token for access token
+    const { accessToken, itemId } = await plaidUtils.exchangePublicToken(
+      publicToken
+    )
+
+    // Get account details
+    const accounts = await plaidUtils.getAccounts(accessToken)
+
+    // Create processor token for Moov if accountId provided
+    let processorToken = null
+    if (accountId) {
+      processorToken = await plaidUtils.createProcessorToken(
+        accessToken,
+        accountId
+      )
+    }
+
+    // TODO: Store accessToken securely (encrypted) in database
+    // For now, returning to frontend (NOT SECURE - fix in production)
+    console.warn('⚠️  Plaid access token should be encrypted before storing!')
 
     res.json({
       success: true,
       message: 'Bank account connected successfully',
-      accountId: 'mock-account-id',
+      accounts,
+      processorToken,
+      itemId,
+      // TEMPORARY: Remove this in production
+      accessToken, // Frontend will store temporarily
     })
   } catch (error) {
-    res.status(400).json({ error: { message: error.message } })
+    console.error('Exchange token error:', error)
+    res.status(400).json({ error: { message: 'Failed to connect bank account' } })
   }
 })
 
 // PLAID: Get connected bank accounts
-router.get('/plaid/accounts', async (req, res) => {
+router.get('/plaid/accounts', authenticate, async (req, res) => {
   try {
-    // TODO: Authenticate user
-    // TODO: Retrieve user's stored Plaid access token
+    const { accessToken } = req.query
 
-    // PLAID: Get account information
-    // const accountsResponse = await plaidClient.accountsGet({
-    //   access_token: userAccessToken
-    // })
+    if (!accessToken) {
+      return res.status(400).json({
+        error: { message: 'Access token is required' },
+      })
+    }
 
-    res.json({
-      accounts: [
-        // Mock account structure
-        // {
-        //   id: 'acc-1',
-        //   name: 'Chase Checking',
-        //   mask: '1234',
-        //   type: 'depository',
-        //   subtype: 'checking',
-        //   balances: {
-        //     available: 5000.00,
-        //     current: 5200.00
-        //   }
-        // }
-      ],
-    })
+    // Get account information
+    const accounts = await plaidUtils.getAccounts(accessToken)
+
+    res.json({ accounts })
   } catch (error) {
-    res.status(500).json({ error: { message: error.message } })
+    console.error('Get accounts error:', error)
+    res.status(500).json({ error: { message: 'Failed to get accounts' } })
   }
 })
 
 // PLAID: Verify account ownership and balance
-router.post('/plaid/verify-account', async (req, res) => {
+router.post('/plaid/verify-account', authenticate, async (req, res) => {
   try {
-    const { accountId } = req.body
+    const { accessToken, accountId, requiredBalance } = req.body
 
-    // PLAID: Verify account using Auth or Identity endpoints
-    // const authResponse = await plaidClient.authGet({
-    //   access_token: userAccessToken
-    // })
+    if (!accessToken) {
+      return res.status(400).json({
+        error: { message: 'Access token is required' },
+      })
+    }
 
-    // PLAID: Check balance for rent payment verification
-    // const balanceResponse = await plaidClient.accountsBalanceGet({
-    //   access_token: userAccessToken
-    // })
+    // Get account balances
+    const accounts = await plaidUtils.getBalance(accessToken)
+    const account = accounts.find((acc) => acc.account_id === accountId)
+
+    if (!account) {
+      return res.status(404).json({
+        error: { message: 'Account not found' },
+      })
+    }
+
+    // Check if sufficient funds
+    const hasSufficientFunds = requiredBalance
+      ? account.balances.available >= requiredBalance
+      : true
 
     res.json({
       verified: true,
       account: {
-        id: accountId,
-        verified: true,
-        sufficientFunds: true,
+        id: account.account_id,
+        name: account.name,
+        mask: account.mask,
+        type: account.type,
+        subtype: account.subtype,
+        balance: account.balances.available,
+        sufficientFunds: hasSufficientFunds,
       },
     })
   } catch (error) {
-    res.status(400).json({ error: { message: error.message } })
+    console.error('Verify account error:', error)
+    res.status(400).json({ error: { message: 'Failed to verify account' } })
+  }
+})
+
+// PLAID: Verify income
+router.post('/plaid/verify-income', authenticate, async (req, res) => {
+  try {
+    const { accessToken } = req.body
+
+    if (!accessToken) {
+      return res.status(400).json({
+        error: { message: 'Access token is required' },
+      })
+    }
+
+    // Get income data
+    const incomeData = await plaidUtils.getIncome(accessToken)
+
+    // Summarize income
+    const summary = plaidUtils.summarizeIncome(incomeData)
+
+    res.json({
+      verified: true,
+      income: summary,
+      rawData: incomeData, // For detailed analysis
+    })
+  } catch (error) {
+    console.error('Verify income error:', error)
+    res.status(400).json({ error: { message: 'Failed to verify income' } })
+  }
+})
+
+// PLAID: Verify identity
+router.post('/plaid/verify-identity', authenticate, async (req, res) => {
+  try {
+    const { accessToken } = req.body
+
+    if (!accessToken) {
+      return res.status(400).json({
+        error: { message: 'Access token is required' },
+      })
+    }
+
+    // Get identity data
+    const identityData = await plaidUtils.getIdentity(accessToken)
+
+    // Extract identity information
+    const identity = {
+      verified: true,
+      accounts: identityData.accounts.map((acc) => ({
+        name: acc.name,
+        owners: acc.owners.map((owner) => ({
+          names: owner.names,
+          phoneNumbers: owner.phone_numbers,
+          emails: owner.emails,
+          addresses: owner.addresses,
+        })),
+      })),
+    }
+
+    res.json(identity)
+  } catch (error) {
+    console.error('Verify identity error:', error)
+    res.status(400).json({ error: { message: 'Failed to verify identity' } })
   }
 })
 
@@ -327,6 +420,210 @@ router.delete('/plaid/disconnect', async (req, res) => {
     })
   } catch (error) {
     res.status(400).json({ error: { message: error.message } })
+  }
+})
+
+// ============== MOOV INTEGRATION ==============
+
+// POST /api/payments/moov/create-account
+// Create a Moov account for the user
+router.post('/moov/create-account', authenticate, async (req, res) => {
+  try {
+    const user = req.user
+
+    // Check if user already has a Moov account
+    const existingUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { moovAccountId: true },
+    })
+
+    if (existingUser && existingUser.moovAccountId) {
+      return res.json({
+        message: 'Moov account already exists',
+        accountId: existingUser.moovAccountId,
+      })
+    }
+
+    // Create Moov account
+    const moovAccount = await createMoovAccount(user)
+
+    // TODO: Store moovAccountId in database
+    // Need to add moovAccountId field to User model first
+    // await prisma.user.update({
+    //   where: { id: user.id },
+    //   data: { moovAccountId: moovAccount.accountID }
+    // })
+
+    res.status(201).json({
+      message: 'Moov account created successfully',
+      accountId: moovAccount.accountID,
+    })
+  } catch (error) {
+    console.error('Create Moov account error:', error)
+    res.status(500).json({
+      error: { message: 'Failed to create Moov account' },
+    })
+  }
+})
+
+// POST /api/payments/moov/link-bank
+// Link bank account via Plaid to Moov
+router.post('/moov/link-bank', authenticate, async (req, res) => {
+  try {
+    const { plaidProcessorToken, moovAccountId } = req.body
+
+    if (!plaidProcessorToken || !moovAccountId) {
+      return res.status(400).json({
+        error: { message: 'Plaid processor token and Moov account ID required' },
+      })
+    }
+
+    // Link bank account
+    const paymentMethod = await linkBankAccount(
+      moovAccountId,
+      plaidProcessorToken
+    )
+
+    res.json({
+      message: 'Bank account linked successfully',
+      paymentMethod,
+    })
+  } catch (error) {
+    console.error('Link bank account error:', error)
+    res.status(500).json({
+      error: { message: 'Failed to link bank account' },
+    })
+  }
+})
+
+// POST /api/payments/moov/transfer
+// Create a payment transfer via Moov
+router.post('/moov/transfer', authenticate, async (req, res) => {
+  try {
+    const {
+      sourceAccountId,
+      destinationAccountId,
+      amount,
+      description,
+      applicationId,
+      listingId,
+      sourcePaymentMethodId,
+      destinationPaymentMethodId,
+    } = req.body
+
+    if (
+      !sourceAccountId ||
+      !destinationAccountId ||
+      !amount ||
+      !sourcePaymentMethodId ||
+      !destinationPaymentMethodId
+    ) {
+      return res.status(400).json({
+        error: { message: 'Missing required transfer parameters' },
+      })
+    }
+
+    // Create the transfer
+    const transfer = await createTransfer({
+      sourceAccountId,
+      destinationAccountId,
+      amount,
+      description: description || 'Rent payment',
+      metadata: {
+        applicationId,
+        listingId,
+        userId: req.user.id,
+        sourcePaymentMethodId,
+        destinationPaymentMethodId,
+      },
+    })
+
+    // Create transaction record in database
+    await prisma.transaction.create({
+      data: {
+        amount: Math.round(amount * 100), // Store in cents
+        serviceFee: 0,
+        total: Math.round(amount * 100),
+        status: 'pending',
+        paymentMethod: 'ach',
+        stripeId: transfer.transferID, // Using this field for moovTransferId
+        userId: req.user.id,
+        applicationId,
+      },
+    })
+
+    res.status(201).json({
+      message: 'Transfer initiated successfully',
+      transfer,
+    })
+  } catch (error) {
+    console.error('Create transfer error:', error)
+    res.status(500).json({
+      error: { message: 'Failed to initiate transfer' },
+    })
+  }
+})
+
+// GET /api/payments/moov/transfer/:transferId
+// Get transfer status
+router.get('/moov/transfer/:transferId', authenticate, async (req, res) => {
+  try {
+    const { transferId } = req.params
+
+    const transfer = await getTransfer(transferId)
+
+    res.json({ transfer })
+  } catch (error) {
+    console.error('Get transfer error:', error)
+    res.status(500).json({
+      error: { message: 'Failed to get transfer status' },
+    })
+  }
+})
+
+// GET /api/payments/moov/account
+// Get user's Moov account details
+router.get('/moov/account', authenticate, async (req, res) => {
+  try {
+    const { moovAccountId } = req.query
+
+    if (!moovAccountId) {
+      return res.status(400).json({
+        error: { message: 'Moov account ID required' },
+      })
+    }
+
+    const account = await getMoovAccount(moovAccountId)
+
+    res.json({ account })
+  } catch (error) {
+    console.error('Get Moov account error:', error)
+    res.status(500).json({
+      error: { message: 'Failed to get account details' },
+    })
+  }
+})
+
+// GET /api/payments/moov/payment-methods
+// Get user's payment methods
+router.get('/moov/payment-methods', authenticate, async (req, res) => {
+  try {
+    const { moovAccountId } = req.query
+
+    if (!moovAccountId) {
+      return res.status(400).json({
+        error: { message: 'Moov account ID required' },
+      })
+    }
+
+    const paymentMethods = await getPaymentMethods(moovAccountId)
+
+    res.json({ paymentMethods })
+  } catch (error) {
+    console.error('Get payment methods error:', error)
+    res.status(500).json({
+      error: { message: 'Failed to get payment methods' },
+    })
   }
 })
 

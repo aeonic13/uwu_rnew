@@ -14,6 +14,14 @@ datasource db {
 enum UserType {
   student
   owner
+  cosigner
+}
+
+// Cosigner status
+enum CosignerStatus {
+  pending
+  accepted
+  declined
 }
 
 // Application status
@@ -55,6 +63,8 @@ model User {
   major         String?
   bio           String?
   avatarUrl     String?
+  instagramUrl  String?
+  linkedinUrl   String?
   verified      Boolean   @default(false)
   verifyToken   String?
   resetToken    String?
@@ -72,6 +82,8 @@ model User {
   favorites           Favorite[]
   reviews             Review[]            @relation("ReviewAuthor")
   receivedReviews     Review[]            @relation("ReviewSubject")
+  cosignedApplications Cosigner[]         @relation("CosignerUser")
+  cosignersForTenant  Cosigner[]          @relation("TenantUser")
 
   @@index([email])
   @@index([userType])
@@ -144,6 +156,7 @@ model Application {
   owner        User          @relation("OwnerApplications", fields: [ownerId], references: [id], onDelete: Cascade)
   transactions Transaction[]
   agreement    Agreement?
+  cosigners    Cosigner[]
 
   @@index([listingId])
   @@index([applicantId])
@@ -266,4 +279,34 @@ model Review {
   @@index([authorId])
   @@index([subjectId])
   @@index([listingId])
+}
+
+// Cosigner model - links cosigners to tenant applications
+model Cosigner {
+  id               String         @id @default(cuid())
+  status           CosignerStatus @default(pending)
+  invitedAt        DateTime       @default(now())
+  respondedAt      DateTime?
+  relationshipType String?        // parent, guardian, relative, friend, etc.
+  
+  // Invitation details
+  inviteEmail      String
+  inviteToken      String         @unique
+  tokenExpires     DateTime
+  
+  // Relations
+  applicationId    String
+  application      Application    @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  
+  tenantId         String
+  tenant           User           @relation("TenantUser", fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  cosignerId       String?
+  cosigner         User?          @relation("CosignerUser", fields: [cosignerId], references: [id], onDelete: SetNull)
+  
+  @@index([applicationId])
+  @@index([tenantId])
+  @@index([cosignerId])
+  @@index([inviteToken])
+  @@index([status])
 }

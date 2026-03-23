@@ -1,10 +1,13 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import SubletApp from './SubletApp.jsx'
+import { AppProviders } from './contexts'
+import AppRouter from './routes'
 import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <SubletApp />
-  </React.StrictMode>,
+    <AppProviders>
+      <AppRouter />
+    </AppProviders>
+  </React.StrictMode>
 )

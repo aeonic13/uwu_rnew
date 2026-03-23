@@ -1,245 +1,864 @@
 import express from 'express'
+import prisma from '../utils/prisma.js'
+import { authenticate } from '../middleware/authenticate.js'
 
 const router = express.Router()
 
-// GET /api/messages/conversations
-router.get('/conversations', async (req, res) => {
+/**
+ * GET /api/messages/conversations
+ * Get all conversations for the authenticated user
+ */
+router.get('/conversations', authenticate, async (req, res) => {
   try {
     const { page = 1, limit = 20 } = req.query
+    const userId = req.user.id
+    const skip = (parseInt(page) - 1) * parseInt(limit)
 
-    // TODO: Implement get conversations
-    // - Authenticate user (req.user from JWT middleware)
-    // - Query conversations where user is participant
-    // - Include last message preview and timestamp
-    // - Include unread count per conversation
-    // - Include other participant's info (name, avatar)
-    // - Include associated listing info if relevant
-    // - Sort by most recent message first
-    // - Implement pagination
+    // Get conversations where user is a participant
+    const conversationUsers = await prisma.conversationUser.findMany({
+      where: { userId },
+      include: {
+        conversation: {
+          include: {
+            listing: {
+              select: {
+                id: true,
+                title: true,
+                images: true,
+                price: true,
+              },
+            },
+            users: {
+              where: {
+                userId: { not: userId },
+              },
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                    avatarUrl: true,
+                    verified: true,
+                  },
+                },
+              },
+            },
+            messages: {
+              orderBy: { createdAt: 'desc' },
+              take: 1,
+              select: {
+                id: true,
+                content: true,
+                type: true,
+                createdAt: true,
+                senderId: true,
+                read: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        conversation: {
+          updatedAt: 'desc',
+        },
+      },
+      skip,
+      take: parseInt(limit),
+    })
+
+    // Get total count
+    const total = await prisma.conversationUser.count({
+      where: { userId },
+    })
+
+    // Format the response
+    const conversations = conversationUsers.map((cu) => {
+      const otherUsers = cu.conversation.users.map((u) => u.user)
+      const lastMessage = cu.conversation.messages[0] || null
+
+      return {
+        id: cu.conversation.id,
+        otherUsers,
+        listing: cu.conversation.listing,
+        lastMessage: lastMessage
+          ? {
+              id: lastMessage.id,
+              content: lastMessage.content,
+              type: lastMessage.type,
+              timestamp: lastMessage.createdAt,
+              senderId: lastMessage.senderId,
+              isOwn: lastMessage.senderId === userId,
+            }
+          : null,
+        unreadCount: cu.unreadCount,
+        updatedAt: cu.conversation.updatedAt,
+      }
+    })
 
     res.json({
-      conversations: [
-        // Mock conversation structure
-        // {
-        //   id: 'conv-1',
-        //   otherUser: { id: 'user-2', name: 'John Doe', avatar: 'url' },
-        //   listing: { id: 'listing-1', title: '2BR Apartment', image: 'url' },
-        //   lastMessage: {
-        //     content: 'Is this still available?',
-        //     timestamp: '2026-01-18T10:00:00Z',
-        //     senderId: 'user-2'
-        //   },
-        //   unreadCount: 2
-        // }
-      ],
+      conversations,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
-        total: 0,
-        hasMore: false,
+        total,
+        hasMore: skip + conversations.length < total,
       },
     })
   } catch (error) {
-    res.status(500).json({ error: { message: error.message } })
+    console.error('Get conversations error:', error)
+    res.status(500).json({ error: { message: 'Failed to get conversations' } })
   }
 })
 
-// GET /api/messages/conversation/:userId
-router.get('/conversation/:userId', async (req, res) => {
+/**
+ * GET /api/messages/conversation/:conversationId
+ * Get messages in a specific conversation
+ */
+router.get('/conversation/:conversationId', authenticate, async (req, res) => {
   try {
-    const { userId } = req.params
-    const { listingId, page = 1, limit = 50 } = req.query
+    const { conversationId } = req.params
+    const { page = 1, limit = 50 } = req.query
+    const userId = req.user.id
+    const skip = (parseInt(page) - 1) * parseInt(limit)
 
-    // TODO: Implement get conversation messages
-    // - Authenticate user (req.user)
-    // - Query messages between current user and userId
-    // - Filter by listingId if provided (property-specific conversation)
-    // - Order by timestamp (oldest first for chat display)
-    // - Implement pagination (load more older messages)
-    // - Mark unread messages as read (update read_at timestamp)
-    // - Return participant info
+    // Verify user is part of this conversation
+    const conversationUser = await prisma.conversationUser.findUnique({
+      where: {
+        userId_conversationId: {
+          userId,
+          conversationId,
+        },
+      },
+    })
+
+    if (!conversationUser) {
+      return res.status(403).json({
+        error: { message: 'You are not a participant in this conversation' },
+      })
+    }
+
+    // Get conversation with participants and listing
+    const conversation = await prisma.conversation.findUnique({
+      where: { id: conversationId },
+      include: {
+        listing: {
+          select: {
+            id: true,
+            title: true,
+            images: true,
+            price: true,
+            location: true,
+          },
+        },
+        users: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                avatarUrl: true,
+                verified: true,
+                userType: true,
+              },
+            },
+          },
+        },
+      },
+    })
+
+    // Get messages with pagination (newest first for infinite scroll)
+    const messages = await prisma.message.findMany({
+      where: { conversationId },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: parseInt(limit),
+    })
+
+    // Get total message count
+    const total = await prisma.message.count({
+      where: { conversationId },
+    })
+
+    // Mark unread messages as read
+    await prisma.message.updateMany({
+      where: {
+        conversationId,
+        senderId: { not: userId },
+        read: false,
+      },
+      data: { read: true },
+    })
+
+    // Reset unread count for this user
+    await prisma.conversationUser.update({
+      where: {
+        userId_conversationId: {
+          userId,
+          conversationId,
+        },
+      },
+      data: {
+        unreadCount: 0,
+        lastReadAt: new Date(),
+      },
+    })
+
+    // Format participants
+    const participants = conversation.users.map((u) => ({
+      ...u.user,
+      isCurrentUser: u.user.id === userId,
+    }))
 
     res.json({
-      messages: [
-        // Mock message structure
-        // {
-        //   id: 'msg-1',
-        //   senderId: 'user-1',
-        //   recipientId: 'user-2',
-        //   content: 'Hello, is this property available?',
-        //   timestamp: '2026-01-18T09:00:00Z',
-        //   readAt: null,
-        //   listingId: 'listing-1'
-        // }
-      ],
-      participants: {
-        // currentUser: { id: 'user-1', name: 'Jane Smith' },
-        // otherUser: { id: 'user-2', name: 'John Doe', avatar: 'url' }
+      conversation: {
+        id: conversation.id,
+        listing: conversation.listing,
+        participants,
       },
+      messages: messages.reverse(), // Return oldest first for display
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
-        total: 0,
-        hasMore: false,
+        total,
+        hasMore: skip + messages.length < total,
       },
     })
   } catch (error) {
-    res.status(500).json({ error: { message: error.message } })
+    console.error('Get conversation error:', error)
+    res.status(500).json({ error: { message: 'Failed to get conversation' } })
   }
 })
 
-// POST /api/messages
-router.post('/', async (req, res) => {
+/**
+ * POST /api/messages
+ * Send a message in an existing conversation
+ */
+router.post('/', authenticate, async (req, res) => {
   try {
-    const { recipientId, content, listingId, attachments } = req.body
+    const { conversationId, content, type = 'text', metadata } = req.body
+    const userId = req.user.id
 
-    // TODO: Implement send message
-    // - Authenticate user (req.user)
-    // - Validate message content (not empty, max length 2000 chars)
-    // - Sanitize content for XSS prevention
-    // - Apply rate limiting (max 50 messages per hour per user)
-    // - Verify recipient exists
-    // - Save message to database
-    // - Create or update conversation record
-    // - Send real-time notification via WebSocket/Socket.io
-    // - Send push notification if recipient is offline
-    // - Handle attachments (images, tour requests, etc.)
+    // Validate content
+    if (!content || content.trim().length === 0) {
+      return res.status(400).json({
+        error: { message: 'Message content is required' },
+      })
+    }
 
-    // WebSocket: Emit event to recipient
-    // io.to(recipientId).emit('new_message', messageData)
+    if (content.length > 2000) {
+      return res.status(400).json({
+        error: { message: 'Message content must be less than 2000 characters' },
+      })
+    }
 
-    const mockMessage = {
-      id: `msg-${Date.now()}`,
-      senderId: 'mock-current-user-id',
-      recipientId,
-      content,
-      listingId,
-      timestamp: new Date().toISOString(),
-      readAt: null,
-      attachments: attachments || [],
+    // Verify user is part of this conversation
+    const conversationUser = await prisma.conversationUser.findUnique({
+      where: {
+        userId_conversationId: {
+          userId,
+          conversationId,
+        },
+      },
+    })
+
+    if (!conversationUser) {
+      return res.status(403).json({
+        error: { message: 'You are not a participant in this conversation' },
+      })
+    }
+
+    // Create the message
+    const message = await prisma.message.create({
+      data: {
+        content: content.trim(),
+        type,
+        metadata,
+        senderId: userId,
+        conversationId,
+      },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+          },
+        },
+      },
+    })
+
+    // Update conversation timestamp
+    await prisma.conversation.update({
+      where: { id: conversationId },
+      data: { updatedAt: new Date() },
+    })
+
+    // Increment unread count for other participants
+    await prisma.conversationUser.updateMany({
+      where: {
+        conversationId,
+        userId: { not: userId },
+      },
+      data: {
+        unreadCount: { increment: 1 },
+      },
+    })
+
+    res.status(201).json({
+      message: {
+        id: message.id,
+        content: message.content,
+        type: message.type,
+        metadata: message.metadata,
+        timestamp: message.createdAt,
+        sender: message.sender,
+        read: message.read,
+      },
+    })
+  } catch (error) {
+    console.error('Send message error:', error)
+    res.status(500).json({ error: { message: 'Failed to send message' } })
+  }
+})
+
+/**
+ * POST /api/messages/start-conversation
+ * Start a new conversation with a user (optionally about a listing)
+ */
+router.post('/start-conversation', authenticate, async (req, res) => {
+  try {
+    const { recipientId, listingId, initialMessage } = req.body
+    const userId = req.user.id
+
+    // Validate recipient
+    if (!recipientId) {
+      return res.status(400).json({
+        error: { message: 'Recipient ID is required' },
+      })
+    }
+
+    if (recipientId === userId) {
+      return res.status(400).json({
+        error: { message: 'Cannot start a conversation with yourself' },
+      })
+    }
+
+    // Check if recipient exists
+    const recipient = await prisma.user.findUnique({
+      where: { id: recipientId },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        avatarUrl: true,
+      },
+    })
+
+    if (!recipient) {
+      return res.status(404).json({
+        error: { message: 'Recipient not found' },
+      })
+    }
+
+    // Check if listing exists (if provided)
+    let listing = null
+    if (listingId) {
+      listing = await prisma.listing.findUnique({
+        where: { id: listingId },
+        select: {
+          id: true,
+          title: true,
+          images: true,
+          price: true,
+        },
+      })
+
+      if (!listing) {
+        return res.status(404).json({
+          error: { message: 'Listing not found' },
+        })
+      }
+    }
+
+    // Check if conversation already exists between these users about this listing
+    const existingConversation = await prisma.conversation.findFirst({
+      where: {
+        listingId: listingId || null,
+        AND: [
+          { users: { some: { userId } } },
+          { users: { some: { userId: recipientId } } },
+        ],
+      },
+      include: {
+        users: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                avatarUrl: true,
+              },
+            },
+          },
+        },
+      },
+    })
+
+    if (existingConversation) {
+      // Return existing conversation
+      return res.json({
+        conversation: {
+          id: existingConversation.id,
+          isNew: false,
+          listing,
+          participants: existingConversation.users.map((u) => u.user),
+        },
+      })
+    }
+
+    // Create new conversation with participants
+    const conversation = await prisma.conversation.create({
+      data: {
+        listingId: listingId || null,
+        users: {
+          create: [{ userId }, { userId: recipientId }],
+        },
+      },
+      include: {
+        users: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                avatarUrl: true,
+              },
+            },
+          },
+        },
+      },
+    })
+
+    // Send initial message if provided
+    let message = null
+    if (initialMessage && initialMessage.trim()) {
+      message = await prisma.message.create({
+        data: {
+          content: initialMessage.trim(),
+          type: 'text',
+          senderId: userId,
+          conversationId: conversation.id,
+        },
+        include: {
+          sender: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              avatarUrl: true,
+            },
+          },
+        },
+      })
+
+      // Increment unread count for recipient
+      await prisma.conversationUser.update({
+        where: {
+          userId_conversationId: {
+            userId: recipientId,
+            conversationId: conversation.id,
+          },
+        },
+        data: { unreadCount: 1 },
+      })
     }
 
     res.status(201).json({
-      message: mockMessage,
+      conversation: {
+        id: conversation.id,
+        isNew: true,
+        listing,
+        participants: conversation.users.map((u) => u.user),
+      },
+      message: message
+        ? {
+            id: message.id,
+            content: message.content,
+            timestamp: message.createdAt,
+            sender: message.sender,
+          }
+        : null,
     })
   } catch (error) {
-    res.status(400).json({ error: { message: error.message } })
+    console.error('Start conversation error:', error)
+    res.status(500).json({ error: { message: 'Failed to start conversation' } })
   }
 })
 
-// PUT /api/messages/mark-read
-router.put('/mark-read', async (req, res) => {
+/**
+ * PUT /api/messages/mark-read
+ * Mark messages as read in a conversation
+ */
+router.put('/mark-read', authenticate, async (req, res) => {
   try {
-    const { conversationId, messageIds } = req.body
+    const { conversationId } = req.body
+    const userId = req.user.id
 
-    // TODO: Implement mark as read
-    // - Authenticate user (req.user)
-    // - Verify user is recipient of messages
-    // - Update read_at timestamp for specified messages
-    // - If conversationId provided, mark all unread messages in that conversation
-    // - Send real-time update to sender via WebSocket
-    // - Return updated unread count
+    if (!conversationId) {
+      return res.status(400).json({
+        error: { message: 'Conversation ID is required' },
+      })
+    }
 
-    // WebSocket: Notify sender that messages were read
-    // io.to(senderId).emit('messages_read', { conversationId, messageIds })
+    // Verify user is part of this conversation
+    const conversationUser = await prisma.conversationUser.findUnique({
+      where: {
+        userId_conversationId: {
+          userId,
+          conversationId,
+        },
+      },
+    })
+
+    if (!conversationUser) {
+      return res.status(403).json({
+        error: { message: 'You are not a participant in this conversation' },
+      })
+    }
+
+    // Mark all messages as read
+    const result = await prisma.message.updateMany({
+      where: {
+        conversationId,
+        senderId: { not: userId },
+        read: false,
+      },
+      data: { read: true },
+    })
+
+    // Reset unread count
+    await prisma.conversationUser.update({
+      where: {
+        userId_conversationId: {
+          userId,
+          conversationId,
+        },
+      },
+      data: {
+        unreadCount: 0,
+        lastReadAt: new Date(),
+      },
+    })
 
     res.json({
       message: 'Messages marked as read',
-      markedCount: messageIds?.length || 0,
+      markedCount: result.count,
     })
   } catch (error) {
-    res.status(400).json({ error: { message: error.message } })
+    console.error('Mark read error:', error)
+    res.status(500).json({ error: { message: 'Failed to mark messages as read' } })
   }
 })
 
-// POST /api/messages/schedule-tour
-router.post('/schedule-tour', async (req, res) => {
+/**
+ * GET /api/messages/unread-count
+ * Get total unread message count for the user
+ */
+router.get('/unread-count', authenticate, async (req, res) => {
   try {
-    const { recipientId, listingId, proposedTimes, message } = req.body
+    const userId = req.user.id
 
-    // TODO: Implement tour scheduling
-    // - Authenticate user (req.user)
-    // - Validate proposed times (must be future dates)
-    // - Create tour request record
-    // - Send message to property owner with tour request
-    // - Send calendar invite
-    // - Set reminder notifications
+    // Get unread counts from all conversations
+    const conversationUsers = await prisma.conversationUser.findMany({
+      where: { userId },
+      select: {
+        conversationId: true,
+        unreadCount: true,
+      },
+    })
+
+    const total = conversationUsers.reduce((sum, cu) => sum + cu.unreadCount, 0)
+    const byConversation = conversationUsers.reduce((acc, cu) => {
+      if (cu.unreadCount > 0) {
+        acc[cu.conversationId] = cu.unreadCount
+      }
+      return acc
+    }, {})
+
+    res.json({
+      total,
+      byConversation,
+    })
+  } catch (error) {
+    console.error('Get unread count error:', error)
+    res.status(500).json({ error: { message: 'Failed to get unread count' } })
+  }
+})
+
+/**
+ * DELETE /api/messages/:messageId
+ * Delete a message (sender only)
+ */
+router.delete('/:messageId', authenticate, async (req, res) => {
+  try {
+    const { messageId } = req.params
+    const userId = req.user.id
+
+    // Find the message
+    const message = await prisma.message.findUnique({
+      where: { id: messageId },
+    })
+
+    if (!message) {
+      return res.status(404).json({
+        error: { message: 'Message not found' },
+      })
+    }
+
+    // Only sender can delete their own messages
+    if (message.senderId !== userId) {
+      return res.status(403).json({
+        error: { message: 'You can only delete your own messages' },
+      })
+    }
+
+    // Delete the message
+    await prisma.message.delete({
+      where: { id: messageId },
+    })
+
+    res.json({
+      message: 'Message deleted successfully',
+    })
+  } catch (error) {
+    console.error('Delete message error:', error)
+    res.status(500).json({ error: { message: 'Failed to delete message' } })
+  }
+})
+
+/**
+ * POST /api/messages/tour-request
+ * Send a tour request message
+ */
+router.post('/tour-request', authenticate, async (req, res) => {
+  try {
+    const { conversationId, listingId, proposedTimes, message: tourMessage } = req.body
+    const userId = req.user.id
+
+    if (!conversationId || !proposedTimes || proposedTimes.length === 0) {
+      return res.status(400).json({
+        error: { message: 'Conversation ID and proposed times are required' },
+      })
+    }
+
+    // Verify user is part of this conversation
+    const conversationUser = await prisma.conversationUser.findUnique({
+      where: {
+        userId_conversationId: {
+          userId,
+          conversationId,
+        },
+      },
+    })
+
+    if (!conversationUser) {
+      return res.status(403).json({
+        error: { message: 'You are not a participant in this conversation' },
+      })
+    }
+
+    // Create tour request message
+    const message = await prisma.message.create({
+      data: {
+        content: tourMessage || 'I would like to schedule a tour',
+        type: 'tour-request',
+        metadata: {
+          listingId,
+          proposedTimes,
+          status: 'pending',
+        },
+        senderId: userId,
+        conversationId,
+      },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+          },
+        },
+      },
+    })
+
+    // Update conversation and unread counts
+    await prisma.conversation.update({
+      where: { id: conversationId },
+      data: { updatedAt: new Date() },
+    })
+
+    await prisma.conversationUser.updateMany({
+      where: {
+        conversationId,
+        userId: { not: userId },
+      },
+      data: { unreadCount: { increment: 1 } },
+    })
 
     res.status(201).json({
-      message: 'Tour request sent',
-      tourRequest: {
-        id: 'tour-req-1',
-        listingId,
-        proposedTimes,
-        status: 'pending',
+      message: {
+        id: message.id,
+        content: message.content,
+        type: message.type,
+        metadata: message.metadata,
+        timestamp: message.createdAt,
+        sender: message.sender,
       },
     })
   } catch (error) {
-    res.status(400).json({ error: { message: error.message } })
+    console.error('Tour request error:', error)
+    res.status(500).json({ error: { message: 'Failed to send tour request' } })
   }
 })
 
-// PUT /api/messages/tour/:tourId/respond
-router.put('/tour/:tourId/respond', async (req, res) => {
+/**
+ * PUT /api/messages/:messageId/tour-response
+ * Respond to a tour request
+ */
+router.put('/:messageId/tour-response', authenticate, async (req, res) => {
   try {
-    const { tourId } = req.params
-    const { status, confirmedTime, alternativeTimes } = req.body
+    const { messageId } = req.params
+    const { status, confirmedTime, alternativeMessage } = req.body
+    const userId = req.user.id
 
-    // TODO: Implement tour response
-    // - Authenticate user (property owner only)
-    // - Validate status (confirmed, declined, alternative_suggested)
-    // - Update tour request status
-    // - Send notification to requester
-    // - If confirmed, send calendar invite to both parties
-    // - If declined/alternative, allow owner to suggest new times
+    if (!['confirmed', 'declined', 'alternative'].includes(status)) {
+      return res.status(400).json({
+        error: { message: 'Invalid status. Must be confirmed, declined, or alternative' },
+      })
+    }
+
+    // Find the tour request message
+    const tourRequest = await prisma.message.findUnique({
+      where: { id: messageId },
+      include: {
+        conversation: {
+          include: {
+            users: true,
+          },
+        },
+      },
+    })
+
+    if (!tourRequest || tourRequest.type !== 'tour-request') {
+      return res.status(404).json({
+        error: { message: 'Tour request not found' },
+      })
+    }
+
+    // Verify user is the recipient (not the sender)
+    if (tourRequest.senderId === userId) {
+      return res.status(403).json({
+        error: { message: 'You cannot respond to your own tour request' },
+      })
+    }
+
+    // Update tour request metadata
+    const updatedMetadata = {
+      ...tourRequest.metadata,
+      status,
+      confirmedTime: status === 'confirmed' ? confirmedTime : null,
+      respondedAt: new Date().toISOString(),
+      respondedBy: userId,
+    }
+
+    await prisma.message.update({
+      where: { id: messageId },
+      data: { metadata: updatedMetadata },
+    })
+
+    // Create response message
+    let responseContent = ''
+    if (status === 'confirmed') {
+      responseContent = `Tour confirmed for ${confirmedTime}`
+    } else if (status === 'declined') {
+      responseContent = alternativeMessage || 'Sorry, I cannot accommodate a tour at this time'
+    } else {
+      responseContent = alternativeMessage || 'Could we schedule for a different time?'
+    }
+
+    const responseMessage = await prisma.message.create({
+      data: {
+        content: responseContent,
+        type: 'tour-response',
+        metadata: {
+          tourRequestId: messageId,
+          status,
+          confirmedTime,
+        },
+        senderId: userId,
+        conversationId: tourRequest.conversationId,
+      },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+          },
+        },
+      },
+    })
+
+    // Update conversation and unread counts
+    await prisma.conversation.update({
+      where: { id: tourRequest.conversationId },
+      data: { updatedAt: new Date() },
+    })
+
+    await prisma.conversationUser.updateMany({
+      where: {
+        conversationId: tourRequest.conversationId,
+        userId: { not: userId },
+      },
+      data: { unreadCount: { increment: 1 } },
+    })
 
     res.json({
-      message: 'Tour response sent',
+      message: {
+        id: responseMessage.id,
+        content: responseMessage.content,
+        type: responseMessage.type,
+        metadata: responseMessage.metadata,
+        timestamp: responseMessage.createdAt,
+        sender: responseMessage.sender,
+      },
       tourRequest: {
-        id: tourId,
+        id: tourRequest.id,
         status,
         confirmedTime,
       },
     })
   } catch (error) {
-    res.status(400).json({ error: { message: error.message } })
-  }
-})
-
-// GET /api/messages/unread-count
-router.get('/unread-count', async (req, res) => {
-  try {
-    // TODO: Implement unread count
-    // - Authenticate user
-    // - Count all unread messages where user is recipient
-    // - Group by conversation for detailed breakdown
-
-    res.json({
-      total: 0,
-      byConversation: {},
-    })
-  } catch (error) {
-    res.status(500).json({ error: { message: error.message } })
-  }
-})
-
-// DELETE /api/messages/:messageId
-router.delete('/:messageId', async (req, res) => {
-  try {
-    const { messageId } = req.params
-
-    // TODO: Implement message deletion
-    // - Authenticate user (sender only can delete)
-    // - Verify message exists and belongs to user
-    // - Soft delete (mark as deleted, don't remove from DB)
-    // - Or hard delete if both parties deleted
-    // - Notify recipient via WebSocket
-
-    res.json({
-      message: 'Message deleted',
-    })
-  } catch (error) {
-    res.status(400).json({ error: { message: error.message } })
+    console.error('Tour response error:', error)
+    res.status(500).json({ error: { message: 'Failed to respond to tour request' } })
   }
 })
 

@@ -1,207 +1,622 @@
 import express from 'express'
+import prisma from '../utils/prisma.js'
+import { authenticate, requireUserType } from '../middleware/authenticate.js'
 
 const router = express.Router()
 
-// POST /api/applications
-router.post('/', async (req, res) => {
+/**
+ * POST /api/applications
+ * Submit a new application for a listing (student only)
+ */
+router.post('/', authenticate, async (req, res) => {
   try {
-    const applicationData = req.body
+    const { listingId, startDate, endDate, message, emergencyContact } = req.body
+    const userId = req.user.id
 
-    // TODO: Implement application submission
-    // - Authenticate user (req.user from JWT middleware)
-    // - Validate application data (income, credit score, references)
-    // - Process documents (ID, pay stubs, etc.)
-    // - Store in database
-    // - Notify property owner via email/push notification
-
-    // PLAID: Verify income using Plaid Income verification
-    // const plaidIncomeVerification = await plaidClient.incomeVerification.create({
-    //   access_token: applicationData.plaidAccessToken,
-    //   webhook: process.env.PLAID_WEBHOOK_URL
-    // })
-
-    const mockApplication = {
-      id: `app-${Date.now()}`,
-      ...applicationData,
-      status: 'pending',
-      submittedAt: new Date().toISOString(),
-      verifications: {
-        income: 'pending', // Will be 'verified' after Plaid check
-        identity: 'pending',
-        background: 'pending',
-      },
+    // Validate required fields
+    if (!listingId || !startDate || !endDate) {
+      return res.status(400).json({
+        error: { message: 'Listing ID, start date, and end date are required' },
+      })
     }
+
+    // Check if listing exists and is active
+    const listing = await prisma.listing.findUnique({
+      where: { id: listingId },
+      include: {
+        owner: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+      },
+    })
+
+    if (!listing) {
+      return res.status(404).json({
+        error: { message: 'Listing not found' },
+      })
+    }
+
+    if (!listing.active) {
+      return res.status(400).json({
+        error: { message: 'This listing is no longer available' },
+      })
+    }
+
+    // Check if user already has a pending application for this listing
+    const existingApplication = await prisma.application.findFirst({
+      where: {
+        listingId,
+        applicantId: userId,
+        status: { in: ['pending', 'approved'] },
+      },
+    })
+
+    if (existingApplication) {
+      return res.status(400).json({
+        error: { message: 'You already have an active application for this listing' },
+      })
+    }
+
+    // Cannot apply to own listing
+    if (listing.ownerId === userId) {
+      return res.status(400).json({
+        error: { message: 'You cannot apply to your own listing' },
+      })
+    }
+
+    // Create the application
+    const application = await prisma.application.create({
+      data: {
+        listingId,
+        applicantId: userId,
+        ownerId: listing.ownerId,
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+        message,
+        emergencyContact,
+        status: 'pending',
+      },
+      include: {
+        listing: {
+          select: {
+            id: true,
+            title: true,
+            price: true,
+            location: true,
+            images: true,
+          },
+        },
+        applicant: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            university: true,
+            verified: true,
+          },
+        },
+        owner: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+    })
 
     res.status(201).json({
       message: 'Application submitted successfully',
-      application: mockApplication,
+      application,
     })
   } catch (error) {
-    res.status(400).json({ error: { message: error.message } })
+    console.error('Create application error:', error)
+    res.status(500).json({ error: { message: 'Failed to submit application' } })
   }
 })
 
-// GET /api/applications (list user's applications)
-router.get('/', async (req, res) => {
+/**
+ * GET /api/applications
+ * Get applications - students see their own, owners see applications for their listings
+ */
+router.get('/', authenticate, async (req, res) => {
   try {
-    const { status, listingId } = req.query
+    const { status, listingId, page = 1, limit = 20 } = req.query
+    const userId = req.user.id
+    const userType = req.user.userType
+    const skip = (parseInt(page) - 1) * parseInt(limit)
 
-    // TODO: Implement get applications list
-    // - Authenticate user
-    // - Query applications by user (student view) or by listing (owner view)
-    // - Filter by status if provided
-    // - Include listing details and applicant info
+    // Build where clause based on user type
+    const where = {}
 
-    res.json({
-      applications: [],
-      total: 0,
-    })
-  } catch (error) {
-    res.status(500).json({ error: { message: error.message } })
-  }
-})
+    if (userType === 'student') {
+      // Students see their own applications
+      where.applicantId = userId
+    } else {
+      // Owners see applications for their listings
+      where.ownerId = userId
+    }
 
-// GET /api/applications/:id
-router.get('/:id', async (req, res) => {
-  try {
-    const { id } = req.params
+    // Filter by status if provided
+    if (status) {
+      where.status = status
+    }
 
-    // TODO: Implement get application details
-    // - Authenticate user (owner or applicant only)
-    // - Fetch application with all details
-    // - Include verification statuses
-    // - Include Plaid income report if available
+    // Filter by listing if provided
+    if (listingId) {
+      where.listingId = listingId
+    }
 
-    res.json({
-      application: {
-        id,
-        status: 'pending',
-        listingId: 'mock-listing-id',
-        applicantId: 'mock-user-id',
-        submittedAt: new Date().toISOString(),
-        verifications: {
-          income: 'verified',
-          identity: 'verified',
-          background: 'pending',
+    // Get applications
+    const [applications, total] = await Promise.all([
+      prisma.application.findMany({
+        where,
+        include: {
+          listing: {
+            select: {
+              id: true,
+              title: true,
+              price: true,
+              location: true,
+              images: true,
+            },
+          },
+          applicant: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              phone: true,
+              university: true,
+              major: true,
+              avatarUrl: true,
+              verified: true,
+            },
+          },
+          owner: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
+          agreement: {
+            select: {
+              id: true,
+              tenantSigned: true,
+              landlordSigned: true,
+            },
+          },
         },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: parseInt(limit),
+      }),
+      prisma.application.count({ where }),
+    ])
+
+    res.json({
+      applications,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        hasMore: skip + applications.length < total,
       },
     })
   } catch (error) {
-    res.status(404).json({ error: { message: 'Application not found' } })
+    console.error('Get applications error:', error)
+    res.status(500).json({ error: { message: 'Failed to get applications' } })
   }
 })
 
-// PUT /api/applications/:id/status
-router.put('/:id/status', async (req, res) => {
+/**
+ * GET /api/applications/:id
+ * Get a single application (applicant or listing owner only)
+ */
+router.get('/:id', authenticate, async (req, res) => {
   try {
     const { id } = req.params
-    const { status, message, rejectionReason } = req.body
+    const userId = req.user.id
 
-    // TODO: Implement status update
-    // - Authenticate owner (verify they own the listing)
-    // - Validate status transition (pending -> approved/rejected)
-    // - Update application status in database
-    // - If approved, initiate lease agreement generation
-    // - Send notification to applicant (email + push)
-    // - Log status change for audit trail
+    const application = await prisma.application.findUnique({
+      where: { id },
+      include: {
+        listing: {
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            price: true,
+            location: true,
+            images: true,
+            amenities: true,
+            bedrooms: true,
+            bathrooms: true,
+          },
+        },
+        applicant: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phone: true,
+            university: true,
+            major: true,
+            bio: true,
+            avatarUrl: true,
+            verified: true,
+            createdAt: true,
+          },
+        },
+        owner: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phone: true,
+          },
+        },
+        agreement: true,
+        transactions: {
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    })
 
-    const validStatuses = ['pending', 'approved', 'rejected', 'withdrawn']
+    if (!application) {
+      return res.status(404).json({
+        error: { message: 'Application not found' },
+      })
+    }
+
+    // Only applicant or owner can view
+    if (application.applicantId !== userId && application.ownerId !== userId) {
+      return res.status(403).json({
+        error: { message: 'You do not have permission to view this application' },
+      })
+    }
+
+    res.json({ application })
+  } catch (error) {
+    console.error('Get application error:', error)
+    res.status(500).json({ error: { message: 'Failed to get application' } })
+  }
+})
+
+/**
+ * PUT /api/applications/:id/status
+ * Update application status (owner only for approve/reject, applicant for withdraw)
+ */
+router.put('/:id/status', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params
+    const { status, message: statusMessage } = req.body
+    const userId = req.user.id
+
+    const validStatuses = ['pending', 'approved', 'rejected', 'cancelled']
     if (!validStatuses.includes(status)) {
-      return res.status(400).json({ error: { message: 'Invalid status' } })
+      return res.status(400).json({
+        error: { message: `Invalid status. Must be one of: ${validStatuses.join(', ')}` },
+      })
+    }
+
+    // Get the application
+    const application = await prisma.application.findUnique({
+      where: { id },
+      include: {
+        listing: {
+          select: {
+            id: true,
+            title: true,
+          },
+        },
+      },
+    })
+
+    if (!application) {
+      return res.status(404).json({
+        error: { message: 'Application not found' },
+      })
+    }
+
+    // Permission check
+    const isOwner = application.ownerId === userId
+    const isApplicant = application.applicantId === userId
+
+    if (!isOwner && !isApplicant) {
+      return res.status(403).json({
+        error: { message: 'You do not have permission to update this application' },
+      })
+    }
+
+    // Status transition rules
+    if (status === 'approved' || status === 'rejected') {
+      if (!isOwner) {
+        return res.status(403).json({
+          error: { message: 'Only the property owner can approve or reject applications' },
+        })
+      }
+      if (application.status !== 'pending') {
+        return res.status(400).json({
+          error: { message: 'Can only approve or reject pending applications' },
+        })
+      }
+    }
+
+    if (status === 'cancelled') {
+      if (!isApplicant) {
+        return res.status(403).json({
+          error: { message: 'Only the applicant can cancel their application' },
+        })
+      }
+      if (application.status === 'approved') {
+        return res.status(400).json({
+          error: { message: 'Cannot cancel an approved application. Please contact the owner.' },
+        })
+      }
+    }
+
+    // Update the application
+    const updatedApplication = await prisma.application.update({
+      where: { id },
+      data: {
+        status,
+        message: statusMessage || application.message,
+      },
+      include: {
+        listing: {
+          select: {
+            id: true,
+            title: true,
+            price: true,
+          },
+        },
+        applicant: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+        owner: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+    })
+
+    // If approved, create an agreement
+    if (status === 'approved') {
+      await prisma.agreement.create({
+        data: {
+          applicationId: id,
+          monthlyRent: updatedApplication.listing.price,
+          securityDeposit: updatedApplication.listing.price, // Default to 1 month
+          startDate: application.startDate,
+          endDate: application.endDate,
+          terms: {
+            petPolicy: 'No pets allowed',
+            utilities: 'Tenant responsible for utilities',
+            lateFee: '5% after 5 days',
+          },
+        },
+      })
     }
 
     res.json({
-      message: 'Application status updated',
-      application: {
-        id,
-        status,
-        updatedAt: new Date().toISOString(),
-        statusMessage: message,
-      },
+      message: `Application ${status}`,
+      application: updatedApplication,
     })
   } catch (error) {
-    res.status(400).json({ error: { message: error.message } })
+    console.error('Update application status error:', error)
+    res.status(500).json({ error: { message: 'Failed to update application status' } })
   }
 })
 
-// POST /api/applications/:id/verify-income
-router.post('/:id/verify-income', async (req, res) => {
+/**
+ * GET /api/applications/listing/:listingId
+ * Get all applications for a specific listing (owner only)
+ */
+router.get('/listing/:listingId', authenticate, async (req, res) => {
   try {
-    const { id } = req.params
-    const { publicToken } = req.body
+    const { listingId } = req.params
+    const { status } = req.query
+    const userId = req.user.id
 
-    // PLAID: Exchange public token for access token
-    // const tokenResponse = await plaidClient.itemPublicTokenExchange({
-    //   public_token: publicToken
-    // })
-    // const accessToken = tokenResponse.access_token
+    // Verify user owns this listing
+    const listing = await prisma.listing.findUnique({
+      where: { id: listingId },
+    })
 
-    // PLAID: Request income verification
-    // const incomeVerification = await plaidClient.incomeVerificationCreate({
-    //   access_token: accessToken,
-    //   webhook: `${process.env.API_URL}/api/webhooks/plaid/income`
-    // })
+    if (!listing) {
+      return res.status(404).json({
+        error: { message: 'Listing not found' },
+      })
+    }
 
-    // TODO: Store access token securely (encrypted)
-    // TODO: Update application with verification request ID
-    // TODO: Handle webhook callback when verification completes
+    if (listing.ownerId !== userId) {
+      return res.status(403).json({
+        error: { message: 'You do not have permission to view applications for this listing' },
+      })
+    }
+
+    // Build where clause
+    const where = { listingId }
+    if (status) {
+      where.status = status
+    }
+
+    const applications = await prisma.application.findMany({
+      where,
+      include: {
+        applicant: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phone: true,
+            university: true,
+            major: true,
+            avatarUrl: true,
+            verified: true,
+            createdAt: true,
+          },
+        },
+        agreement: {
+          select: {
+            id: true,
+            tenantSigned: true,
+            landlordSigned: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    // Get counts by status
+    const statusCounts = await prisma.application.groupBy({
+      by: ['status'],
+      where: { listingId },
+      _count: { status: true },
+    })
+
+    const counts = statusCounts.reduce(
+      (acc, item) => {
+        acc[item.status] = item._count.status
+        return acc
+      },
+      { pending: 0, approved: 0, rejected: 0, cancelled: 0 }
+    )
 
     res.json({
-      message: 'Income verification initiated',
-      verificationId: 'mock-verification-id',
-      status: 'pending',
+      applications,
+      counts,
+      total: applications.length,
     })
   } catch (error) {
-    res.status(400).json({ error: { message: error.message } })
+    console.error('Get listing applications error:', error)
+    res.status(500).json({ error: { message: 'Failed to get applications' } })
   }
 })
 
-// POST /api/applications/:id/documents
-router.post('/:id/documents', async (req, res) => {
+/**
+ * DELETE /api/applications/:id
+ * Withdraw/cancel an application (applicant only, if not approved)
+ */
+router.delete('/:id', authenticate, async (req, res) => {
   try {
     const { id } = req.params
-    // Assuming file upload middleware (multer) processes req.files
+    const userId = req.user.id
 
-    // TODO: Implement document upload
-    // - Authenticate user (applicant only)
-    // - Validate file types (PDF, JPG, PNG)
-    // - Scan for malware
-    // - Upload to S3/Cloudinary
-    // - Store document references in database
-    // - Update application documents list
-
-    res.status(201).json({
-      message: 'Documents uploaded successfully',
-      documents: [
-        {
-          id: 'doc-1',
-          type: 'id_verification',
-          uploadedAt: new Date().toISOString(),
-        },
-      ],
+    const application = await prisma.application.findUnique({
+      where: { id },
     })
-  } catch (error) {
-    res.status(400).json({ error: { message: error.message } })
-  }
-})
 
-// DELETE /api/applications/:id (withdraw application)
-router.delete('/:id', async (req, res) => {
-  try {
-    const { id } = req.params
+    if (!application) {
+      return res.status(404).json({
+        error: { message: 'Application not found' },
+      })
+    }
 
-    // TODO: Implement application withdrawal
-    // - Authenticate user (applicant only)
-    // - Verify application is not already approved
-    // - Update status to 'withdrawn'
-    // - Notify property owner
-    // - Refund application fee if applicable
+    // Only applicant can withdraw
+    if (application.applicantId !== userId) {
+      return res.status(403).json({
+        error: { message: 'You can only withdraw your own applications' },
+      })
+    }
+
+    // Cannot withdraw approved application
+    if (application.status === 'approved') {
+      return res.status(400).json({
+        error: { message: 'Cannot withdraw an approved application. Please contact the property owner.' },
+      })
+    }
+
+    // Update status to cancelled instead of deleting
+    await prisma.application.update({
+      where: { id },
+      data: { status: 'cancelled' },
+    })
 
     res.json({
       message: 'Application withdrawn successfully',
     })
   } catch (error) {
-    res.status(400).json({ error: { message: error.message } })
+    console.error('Withdraw application error:', error)
+    res.status(500).json({ error: { message: 'Failed to withdraw application' } })
+  }
+})
+
+/**
+ * GET /api/applications/stats
+ * Get application statistics for the current user
+ */
+router.get('/user/stats', authenticate, async (req, res) => {
+  try {
+    const userId = req.user.id
+    const userType = req.user.userType
+
+    let stats = {}
+
+    if (userType === 'student') {
+      // Student stats - their applications
+      const statusCounts = await prisma.application.groupBy({
+        by: ['status'],
+        where: { applicantId: userId },
+        _count: { status: true },
+      })
+
+      stats = {
+        total: statusCounts.reduce((sum, item) => sum + item._count.status, 0),
+        byStatus: statusCounts.reduce((acc, item) => {
+          acc[item.status] = item._count.status
+          return acc
+        }, {}),
+      }
+    } else {
+      // Owner stats - applications for their listings
+      const statusCounts = await prisma.application.groupBy({
+        by: ['status'],
+        where: { ownerId: userId },
+        _count: { status: true },
+      })
+
+      // Count by listing
+      const byListing = await prisma.application.groupBy({
+        by: ['listingId'],
+        where: { ownerId: userId, status: 'pending' },
+        _count: { listingId: true },
+      })
+
+      stats = {
+        total: statusCounts.reduce((sum, item) => sum + item._count.status, 0),
+        byStatus: statusCounts.reduce((acc, item) => {
+          acc[item.status] = item._count.status
+          return acc
+        }, {}),
+        pendingByListing: byListing.length,
+      }
+    }
+
+    res.json({ stats })
+  } catch (error) {
+    console.error('Get application stats error:', error)
+    res.status(500).json({ error: { message: 'Failed to get statistics' } })
   }
 })
 
