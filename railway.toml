@@ -1,6 +1,6 @@
 [build]
 builder = "nixpacks"
-buildCommand = "cd server && npm install --include=dev"
+buildCommand = "cd server && npm install --include=dev && npx prisma generate"
 
 [deploy]
 startCommand = "cd server && node index.js"
