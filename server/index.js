@@ -37,8 +37,9 @@ app.use(
   cors({
     origin: [
       process.env.CLIENT_URL || 'http://localhost:3000',
+      'https://myrentra.com',
+      'https://www.myrentra.com',
       'http://localhost:3001',
-      'http://172.18.35.231:3001'
     ],
     credentials: true,
   })

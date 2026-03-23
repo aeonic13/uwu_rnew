@@ -156,7 +156,7 @@ export function ApplicationsProvider({ children }) {
   // Update application status (owner only)
   const updateApplicationStatus = useCallback(async (applicationId, status) => {
     try {
-      const data = await applicationsService.updateApplicationStatus(applicationId, status)
+      const data = await applicationsService.updateStatus(applicationId, status)
       const application = data.application
 
       dispatch({ type: APPLICATIONS_ACTIONS.UPDATE_APPLICATION, payload: application })
@@ -173,11 +173,11 @@ export function ApplicationsProvider({ children }) {
   // Withdraw application (applicant only)
   const withdrawApplication = useCallback(async (applicationId) => {
     try {
-      const data = await applicationsService.withdrawApplication(applicationId)
+      await applicationsService.withdraw(applicationId)
 
       dispatch({
         type: APPLICATIONS_ACTIONS.UPDATE_APPLICATION,
-        payload: { ...data.application, status: 'withdrawn' },
+        payload: { id: applicationId, status: 'cancelled' },
       })
       dispatch({ type: APPLICATIONS_ACTIONS.SET_ERROR, payload: null })
 
