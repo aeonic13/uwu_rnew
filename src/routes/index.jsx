@@ -38,6 +38,14 @@ const LandlordInbox = lazy(() => import('../features/owner/LandlordInbox'))
 const LandlordListingForm = lazy(
   () => import('../features/owner/LandlordListingForm')
 )
+const BankingBookkeeping = lazy(() => import('../BankingBookkeeping'))
+const RentCollectionSystem = lazy(() => import('../RentCollectionSystem'))
+const TaxCenter = lazy(() => import('../TaxCenter'))
+const SecurityDepositManager = lazy(() => import('../SecurityDepositManager'))
+const OwnerApprovalSystem = lazy(() => import('../OwnerApprovalSystem'))
+const OwnerDocumentManager = lazy(() => import('../OwnerDocumentManager'))
+const DisputeResolutionCenter = lazy(() => import('../DisputeResolutionCenter'))
+const PropertyInspectionTools = lazy(() => import('../PropertyInspectionTools'))
 
 // Roommate features (student only)
 const RoommateQuestionnaire = lazy(
@@ -377,6 +385,86 @@ const routeConfig = [
           <RoleRoute allowedRoles={['owner']}>
             <Suspense fallback={<SuspenseFallback />}>
               <LandlordListingForm />
+            </Suspense>
+          </RoleRoute>
+        ),
+      },
+      {
+        path: '/dashboard/banking',
+        element: (
+          <RoleRoute allowedRoles={['owner']}>
+            <Suspense fallback={<SuspenseFallback />}>
+              <BankingBookkeeping />
+            </Suspense>
+          </RoleRoute>
+        ),
+      },
+      {
+        path: '/dashboard/rent-collection',
+        element: (
+          <RoleRoute allowedRoles={['owner']}>
+            <Suspense fallback={<SuspenseFallback />}>
+              <RentCollectionSystem />
+            </Suspense>
+          </RoleRoute>
+        ),
+      },
+      {
+        path: '/dashboard/tax',
+        element: (
+          <RoleRoute allowedRoles={['owner']}>
+            <Suspense fallback={<SuspenseFallback />}>
+              <TaxCenter />
+            </Suspense>
+          </RoleRoute>
+        ),
+      },
+      {
+        path: '/dashboard/security-deposits',
+        element: (
+          <RoleRoute allowedRoles={['owner']}>
+            <Suspense fallback={<SuspenseFallback />}>
+              <SecurityDepositManager />
+            </Suspense>
+          </RoleRoute>
+        ),
+      },
+      {
+        path: '/dashboard/approvals',
+        element: (
+          <RoleRoute allowedRoles={['owner']}>
+            <Suspense fallback={<SuspenseFallback />}>
+              <OwnerApprovalSystem />
+            </Suspense>
+          </RoleRoute>
+        ),
+      },
+      {
+        path: '/dashboard/documents',
+        element: (
+          <RoleRoute allowedRoles={['owner']}>
+            <Suspense fallback={<SuspenseFallback />}>
+              <OwnerDocumentManager />
+            </Suspense>
+          </RoleRoute>
+        ),
+      },
+      {
+        path: '/dashboard/disputes',
+        element: (
+          <RoleRoute allowedRoles={['owner']}>
+            <Suspense fallback={<SuspenseFallback />}>
+              <DisputeResolutionCenter />
+            </Suspense>
+          </RoleRoute>
+        ),
+      },
+      {
+        path: '/dashboard/inspections',
+        element: (
+          <RoleRoute allowedRoles={['owner']}>
+            <Suspense fallback={<SuspenseFallback />}>
+              <PropertyInspectionTools />
             </Suspense>
           </RoleRoute>
         ),
