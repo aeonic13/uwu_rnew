@@ -5,7 +5,6 @@ import {
   Menu,
   X,
   Home,
-  Search,
   MessageSquare,
   User,
   PlusCircle,
@@ -33,7 +32,6 @@ export default function Header() {
   // Student navigation items
   const studentNavItems = [
     { path: '/', label: 'Browse', icon: Home },
-    { path: '/university-search', label: 'Search', icon: Search },
     { path: '/groups', label: 'Groups', icon: Users },
     { path: '/messages', label: 'Messages', icon: MessageSquare },
     { path: '/profile', label: 'Profile', icon: User },
