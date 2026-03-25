@@ -42,8 +42,8 @@ export default function Header() {
   // Owner navigation items
   const ownerNavItems = [
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { path: '/landlord-listing', label: 'Post Listing', icon: PlusCircle },
-    { path: '/landlord-inbox', label: 'Inbox', icon: Inbox },
+    { path: '/dashboard/listings/new', label: 'Post Listing', icon: PlusCircle },
+    { path: '/dashboard/inbox', label: 'Inbox', icon: Inbox },
     { path: '/payments', label: 'Payments', icon: DollarSign },
     { path: '/profile', label: 'Profile', icon: User },
   ]
