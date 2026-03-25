@@ -263,12 +263,7 @@ function RegisterPage() {
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
                     >
                       <option value="">Select your university</option>
-                      <option value="USC">USC</option>
-                      <option value="UCLA">UCLA</option>
-                      <option value="NYU">NYU</option>
-                      <option value="Stanford">Stanford</option>
-                      <option value="Harvard">Harvard</option>
-                      <option value="MIT">MIT</option>
+                      <option value="University of San Diego">University of San Diego</option>
                       <option value="Other">Other</option>
                     </select>
                   </div>
