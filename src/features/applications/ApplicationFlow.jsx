@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft,
@@ -8,14 +8,25 @@ import {
   CreditCard,
   FileText,
   AlertCircle,
+  ShieldCheck,
+  Building2,
+  TrendingUp,
+  Fingerprint,
+  Loader2,
+  CircleCheck,
+  DollarSign,
+  Info,
 } from 'lucide-react'
+import { usePlaidLink } from 'react-plaid-link'
 import { useListings } from '../../contexts/ListingsContext'
 import { useAuth } from '../../contexts/AuthContext'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
+import api from '../../services/api'
 
 const STEPS = [
   { id: 'info', label: 'Your Info', icon: User },
   { id: 'dates', label: 'Dates', icon: Calendar },
+  { id: 'verify', label: 'Verify', icon: ShieldCheck },
   { id: 'payment', label: 'Payment', icon: CreditCard },
   { id: 'review', label: 'Review', icon: FileText },
 ]
@@ -258,7 +269,335 @@ function DatesStep({ formData, onChange, onNext, onBack, listing }) {
 }
 
 /**
- * Step 3: Payment
+ * Step 3: Plaid Verification + $50 Application Fee
+ */
+function VerifyStep({ listingId, onNext, onBack, onVerificationComplete }) {
+  const [linkToken, setLinkToken] = useState(null)
+  const [plaidStatus, setPlaidStatus] = useState('idle') // idle | loading | connected | error
+  const [verifications, setVerifications] = useState({
+    bank: null,
+    income: null,
+    identity: null,
+  })
+  const [feeStatus, setFeeStatus] = useState('unpaid') // unpaid | charging | paid | error
+  const [accessToken, setAccessToken] = useState(null)
+  const [error, setError] = useState(null)
+
+  // Fetch Plaid link token on mount
+  useEffect(() => {
+    async function fetchLinkToken() {
+      try {
+        setPlaidStatus('loading')
+        const data = await api.post('/payments/plaid/create-link-token', {
+          products: ['auth', 'identity', 'income_verification'],
+        })
+        setLinkToken(data.linkToken)
+        setPlaidStatus('idle')
+      } catch (err) {
+        console.error('Failed to get link token:', err)
+        setPlaidStatus('error')
+        setError('Could not initialize bank verification. Please try again.')
+      }
+    }
+    fetchLinkToken()
+  }, [])
+
+  const onPlaidSuccess = useCallback(
+    async (publicToken, metadata) => {
+      setPlaidStatus('loading')
+      setError(null)
+      try {
+        // Exchange public token
+        const exchangeData = await api.post('/payments/plaid/exchange-token', {
+          publicToken,
+          accountId: metadata?.accounts?.[0]?.id,
+        })
+        const token = exchangeData.accessToken
+        setAccessToken(token)
+        setVerifications((prev) => ({
+          ...prev,
+          bank: {
+            verified: true,
+            accountName: exchangeData.accounts?.[0]?.name || 'Bank Account',
+            mask: exchangeData.accounts?.[0]?.mask,
+          },
+        }))
+
+        // Run income + identity in parallel
+        const [incomeRes, identityRes] = await Promise.allSettled([
+          api.post('/payments/plaid/verify-income', { accessToken: token }),
+          api.post('/payments/plaid/verify-identity', { accessToken: token }),
+        ])
+
+        setVerifications((prev) => ({
+          ...prev,
+          income:
+            incomeRes.status === 'fulfilled'
+              ? {
+                  verified: true,
+                  monthlyIncome:
+                    incomeRes.value?.income?.totalMonthlyIncome || null,
+                }
+              : { verified: false },
+          identity:
+            identityRes.status === 'fulfilled'
+              ? { verified: true }
+              : { verified: false },
+        }))
+
+        setPlaidStatus('connected')
+        onVerificationComplete?.(token)
+      } catch (err) {
+        console.error('Plaid verification error:', err)
+        setPlaidStatus('error')
+        setError('Verification failed. Please try again.')
+      }
+    },
+    [onVerificationComplete]
+  )
+
+  const { open: openPlaid, ready: plaidReady } = usePlaidLink({
+    token: linkToken,
+    onSuccess: onPlaidSuccess,
+    onExit: () => {
+      if (plaidStatus === 'loading') setPlaidStatus('idle')
+    },
+  })
+
+  const handleChargeFee = async () => {
+    setFeeStatus('charging')
+    setError(null)
+    try {
+      await api.post('/payments/application-fee', {
+        listingId,
+        plaidAccessToken: accessToken,
+      })
+      setFeeStatus('paid')
+    } catch (err) {
+      setFeeStatus('error')
+      setError('Failed to process application fee. Please try again.')
+    }
+  }
+
+  const bankDone = verifications.bank?.verified
+  const incomeDone = verifications.income?.verified
+  const identityDone = verifications.identity?.verified
+  const allVerified = bankDone && (incomeDone || identityDone)
+  const canProceed = allVerified && feeStatus === 'paid'
+
+  return (
+    <div className="p-4 space-y-5">
+      <div>
+        <h2 className="text-xl font-bold mb-1">Verify Your Application</h2>
+        <p className="text-sm text-gray-500">
+          Connect your bank to verify income and identity. A non-refundable
+          $50 application fee is required.
+        </p>
+      </div>
+
+      {/* $50 Fee Banner */}
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
+        <DollarSign size={20} className="text-blue-600 flex-shrink-0 mt-0.5" />
+        <div>
+          <p className="font-semibold text-blue-900">$50 Application Fee</p>
+          <p className="text-sm text-blue-700 mt-0.5">
+            Non-refundable. Covers bank connection, income verification, and
+            identity check. Charged after successful bank connection.
+          </p>
+        </div>
+      </div>
+
+      {/* Step 1: Bank Connection */}
+      <div className="bg-white border border-gray-200 rounded-xl p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <div
+              className={`w-9 h-9 rounded-full flex items-center justify-center ${
+                bankDone ? 'bg-green-100' : 'bg-gray-100'
+              }`}
+            >
+              {bankDone ? (
+                <CircleCheck size={20} className="text-green-600" />
+              ) : (
+                <Building2 size={18} className="text-gray-500" />
+              )}
+            </div>
+            <div>
+              <p className="font-medium text-gray-900">Bank Account</p>
+              {bankDone ? (
+                <p className="text-xs text-green-600">
+                  Connected — {verifications.bank.accountName}
+                  {verifications.bank.mask ? ` (...${verifications.bank.mask})` : ''}
+                </p>
+              ) : (
+                <p className="text-xs text-gray-400">Connect via Plaid</p>
+              )}
+            </div>
+          </div>
+          {!bankDone && (
+            <button
+              onClick={() => openPlaid()}
+              disabled={!plaidReady || plaidStatus === 'loading'}
+              className="px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-1.5"
+            >
+              {plaidStatus === 'loading' ? (
+                <><Loader2 size={14} className="animate-spin" /> Connecting…</>
+              ) : (
+                'Connect'
+              )}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Step 2: Income Verification */}
+      <div className={`bg-white border rounded-xl p-4 ${
+        !bankDone ? 'opacity-40 pointer-events-none' : 'border-gray-200'
+      }`}>
+        <div className="flex items-center gap-3">
+          <div
+            className={`w-9 h-9 rounded-full flex items-center justify-center ${
+              incomeDone ? 'bg-green-100' : bankDone ? 'bg-blue-50' : 'bg-gray-100'
+            }`}
+          >
+            {incomeDone ? (
+              <CircleCheck size={20} className="text-green-600" />
+            ) : bankDone && plaidStatus === 'loading' ? (
+              <Loader2 size={18} className="text-blue-500 animate-spin" />
+            ) : (
+              <TrendingUp size={18} className="text-gray-500" />
+            )}
+          </div>
+          <div>
+            <p className="font-medium text-gray-900">Income Verification</p>
+            {incomeDone ? (
+              <p className="text-xs text-green-600">
+                Verified
+                {verifications.income.monthlyIncome
+                  ? ` — $${verifications.income.monthlyIncome.toLocaleString()}/mo`
+                  : ''}
+              </p>
+            ) : verifications.income?.verified === false ? (
+              <p className="text-xs text-yellow-600">Unable to verify — you may still proceed</p>
+            ) : (
+              <p className="text-xs text-gray-400">Auto-run after bank connection</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Step 3: Identity Check */}
+      <div className={`bg-white border rounded-xl p-4 ${
+        !bankDone ? 'opacity-40 pointer-events-none' : 'border-gray-200'
+      }`}>
+        <div className="flex items-center gap-3">
+          <div
+            className={`w-9 h-9 rounded-full flex items-center justify-center ${
+              identityDone ? 'bg-green-100' : bankDone ? 'bg-blue-50' : 'bg-gray-100'
+            }`}
+          >
+            {identityDone ? (
+              <CircleCheck size={20} className="text-green-600" />
+            ) : bankDone && plaidStatus === 'loading' ? (
+              <Loader2 size={18} className="text-blue-500 animate-spin" />
+            ) : (
+              <Fingerprint size={18} className="text-gray-500" />
+            )}
+          </div>
+          <div>
+            <p className="font-medium text-gray-900">Identity Check</p>
+            {identityDone ? (
+              <p className="text-xs text-green-600">Identity verified</p>
+            ) : verifications.identity?.verified === false ? (
+              <p className="text-xs text-yellow-600">Unable to verify — you may still proceed</p>
+            ) : (
+              <p className="text-xs text-gray-400">Auto-run after bank connection</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Step 4: Charge Fee */}
+      {allVerified && (
+        <div className={`bg-white border rounded-xl p-4 ${
+          feeStatus === 'paid' ? 'border-green-200 bg-green-50' : 'border-gray-200'
+        }`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div
+                className={`w-9 h-9 rounded-full flex items-center justify-center ${
+                  feeStatus === 'paid' ? 'bg-green-100' : 'bg-gray-100'
+                }`}
+              >
+                {feeStatus === 'paid' ? (
+                  <CircleCheck size={20} className="text-green-600" />
+                ) : (
+                  <DollarSign size={18} className="text-gray-500" />
+                )}
+              </div>
+              <div>
+                <p className="font-medium text-gray-900">Application Fee</p>
+                {feeStatus === 'paid' ? (
+                  <p className="text-xs text-green-600">$50 charged successfully</p>
+                ) : (
+                  <p className="text-xs text-gray-400">$50 non-refundable fee</p>
+                )}
+              </div>
+            </div>
+            {feeStatus !== 'paid' && (
+              <button
+                onClick={handleChargeFee}
+                disabled={feeStatus === 'charging'}
+                className="px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-1.5"
+              >
+                {feeStatus === 'charging' ? (
+                  <><Loader2 size={14} className="animate-spin" /> Charging…</>
+                ) : (
+                  'Pay $50'
+                )}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Error */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-2">
+          <AlertCircle size={16} className="text-red-500 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-red-700">{error}</p>
+        </div>
+      )}
+
+      {/* Info note */}
+      <div className="flex items-start gap-2 text-xs text-gray-400">
+        <Info size={13} className="flex-shrink-0 mt-0.5" />
+        <p>Your banking data is securely handled by Plaid and never stored on Rentra servers.</p>
+      </div>
+
+      <div className="flex gap-3">
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex-1 border border-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+        >
+          Back
+        </button>
+        <button
+          type="button"
+          onClick={onNext}
+          disabled={!canProceed}
+          className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50"
+        >
+          Continue
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Step 4: Payment
  */
 function PaymentStep({ formData, onChange, onNext, onBack, listing }) {
   const serviceFee = Math.round((listing?.price || 0) * 0.03)
@@ -476,6 +815,7 @@ function ApplicationFlow() {
     paymentMethod: '',
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [plaidAccessToken, setPlaidAccessToken] = useState(null)
 
   useEffect(() => {
     if (listingId) {
@@ -550,6 +890,14 @@ function ApplicationFlow() {
           onNext={handleNext}
           onBack={handleBack}
           listing={selectedListing}
+        />
+      )}
+      {currentStep === 'verify' && (
+        <VerifyStep
+          listingId={listingId}
+          onNext={handleNext}
+          onBack={handleBack}
+          onVerificationComplete={(token) => setPlaidAccessToken(token)}
         />
       )}
       {currentStep === 'payment' && (
