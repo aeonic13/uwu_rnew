@@ -20,7 +20,7 @@ import { ListingShape } from '../../types/propTypes'
 import AdvancedFiltersModal from '../../components/AdvancedFiltersModal'
 
 const universities = [
-  'All Universities', 'USC', 'UCLA', 'NYU', 'Stanford', 'Harvard', 'MIT',
+  'All Universities', 'University of San Diego',
 ]
 
 const PROPERTY_TYPES = ['Any Type', 'Apartment', 'House', 'Studio', 'Single Room', 'Condo']
