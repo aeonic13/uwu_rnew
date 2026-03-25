@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Zap, Droplets, Wifi, Flame, Phone, Car, Plus, Check, AlertCircle, CreditCard, Calendar, DollarSign, Clock, Building2 } from 'lucide-react';
+import { ArrowLeft, Zap, Droplets, Wifi, Flame, Phone, Car, Plus, Check, AlertCircle, CreditCard, Calendar, DollarSign, Clock, Building2, SplitSquareHorizontal } from 'lucide-react';
+import UtilityBillSplit from './features/utilities/UtilityBillSplit';
 
 const UtilitiesManagementView = ({ user, lease, onBack, onPayUtility }) => {
   const [activeTab, setActiveTab] = useState('overview');
+  const tabs = ['overview', 'setup', 'split'];
   const [showSetupForm, setShowSetupForm] = useState(false);
   const [selectedUtility, setSelectedUtility] = useState(null);
   const [setupData, setSetupData] = useState({
@@ -344,6 +346,41 @@ const UtilitiesManagementView = ({ user, lease, onBack, onPayUtility }) => {
         <h2 className="text-xl font-bold">Utilities Management</h2>
       </div>
 
+      {/* Tab Navigation */}
+      <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
+        <button
+          onClick={() => setActiveTab('overview')}
+          className={`flex-1 py-2 px-3 text-sm font-medium rounded-md transition-colors ${
+            activeTab === 'overview' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-800'
+          }`}
+        >
+          Overview
+        </button>
+        <button
+          onClick={() => setActiveTab('setup')}
+          className={`flex-1 py-2 px-3 text-sm font-medium rounded-md transition-colors ${
+            activeTab === 'setup' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-800'
+          }`}
+        >
+          Setup
+        </button>
+        <button
+          onClick={() => setActiveTab('split')}
+          className={`flex-1 py-2 px-3 text-sm font-medium rounded-md transition-colors flex items-center justify-center gap-1 ${
+            activeTab === 'split' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-800'
+          }`}
+        >
+          <SplitSquareHorizontal size={14} />
+          Split Bill
+        </button>
+      </div>
+
+      {/* Split Bill Tab */}
+      {activeTab === 'split' && <UtilityBillSplit />}
+
+      {/* Overview + Setup tabs */}
+      {activeTab !== 'split' && <>
+
       {/* Overview Cards */}
       <div className="grid grid-cols-2 gap-4 mb-6">
         <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
@@ -480,6 +517,7 @@ const UtilitiesManagementView = ({ user, lease, onBack, onPayUtility }) => {
           </p>
         </div>
       )}
+      </> }
     </div>
   );
 };
