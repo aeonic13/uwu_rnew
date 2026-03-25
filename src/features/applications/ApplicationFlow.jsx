@@ -346,7 +346,10 @@ function VerifyStep({ listingId, onNext, onBack, onVerificationComplete }) {
         }))
 
         setPlaidStatus('connected')
-        onVerificationComplete?.(token)
+        onVerificationComplete?.(token, {
+          income: incomeRes.status === 'fulfilled' ? incomeRes.value?.income : null,
+          identity: identityRes.status === 'fulfilled' ? identityRes.value : null,
+        })
       } catch (err) {
         console.error('Plaid verification error:', err)
         setPlaidStatus('error')
@@ -815,7 +818,7 @@ function ApplicationFlow() {
     paymentMethod: '',
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [plaidAccessToken, setPlaidAccessToken] = useState(null)
+  const [plaidVerification, setPlaidVerification] = useState(null)
 
   useEffect(() => {
     if (listingId) {
@@ -843,10 +846,21 @@ function ApplicationFlow() {
 
   const handleSubmit = async () => {
     setIsSubmitting(true)
-    // TODO: Submit application via API
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-    setIsSubmitting(false)
-    navigate('/profile/applications')
+    try {
+      await api.post('/applications', {
+        listingId,
+        startDate: formData.moveInDate,
+        endDate: formData.moveOutDate,
+        message: formData.message,
+        emergencyContact: formData.emergencyContact,
+        ...(plaidVerification && { verificationData: plaidVerification }),
+      })
+      navigate('/')
+    } catch (err) {
+      console.error('Application submit error:', err)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   if (isLoading) {
@@ -897,7 +911,16 @@ function ApplicationFlow() {
           listingId={listingId}
           onNext={handleNext}
           onBack={handleBack}
-          onVerificationComplete={(token) => setPlaidAccessToken(token)}
+          onVerificationComplete={(token, results) =>
+            setPlaidVerification({
+              bankConnected: true,
+              incomeVerified: results?.income?.verified ?? false,
+              monthlyIncome: results?.income?.monthlyIncome ?? null,
+              identityVerified: results?.identity?.verified ?? false,
+              applicationFeePaid: true,
+              verifiedAt: new Date().toISOString(),
+            })
+          }
         />
       )}
       {currentStep === 'payment' && (

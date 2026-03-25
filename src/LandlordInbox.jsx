@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MessageCircle, User, Star, Shield, Calendar, DollarSign, FileText, Check, X, Clock, ChevronRight, CreditCard, TrendingUp, AlertCircle, Users, CheckCircle } from 'lucide-react';
+import { MessageCircle, User, Star, Shield, Calendar, DollarSign, FileText, Check, X, Clock, ChevronRight, CreditCard, TrendingUp, AlertCircle, Users, CheckCircle, Building2, Fingerprint, CircleDollarSign } from 'lucide-react';
 
 // ─── Pipeline stages ─────────────────────────────────────────────────────────
 const PIPELINE_STAGES = [
@@ -236,6 +236,35 @@ const GroupApplicationsTab = ({
                   {m.applicationStatus === 'complete' ? '✅ Complete' : '⏳ Pending'}
                 </span>
               </div>
+              {/* Plaid verification chips */}
+              {m.verificationData && (
+                <div className="flex flex-wrap gap-1.5 mt-2 mb-2">
+                  {m.verificationData.bankConnected && (
+                    <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium">
+                      <Building2 size={11} /> Bank Connected
+                    </span>
+                  )}
+                  {m.verificationData.incomeVerified && (
+                    <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700 font-medium">
+                      <TrendingUp size={11} />
+                      Income Verified
+                      {m.verificationData.monthlyIncome
+                        ? ` · $${m.verificationData.monthlyIncome.toLocaleString()}/mo`
+                        : ''}
+                    </span>
+                  )}
+                  {m.verificationData.identityVerified && (
+                    <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 font-medium">
+                      <Fingerprint size={11} /> Identity Verified
+                    </span>
+                  )}
+                  {m.verificationData.applicationFeePaid && (
+                    <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-yellow-50 text-yellow-700 font-medium">
+                      <CircleDollarSign size={11} /> $50 Fee Paid
+                    </span>
+                  )}
+                </div>
+              )}
               <div className="flex items-center justify-between text-sm mt-2">
                 <span className="text-gray-600">${m.monthlyIncome.toLocaleString()}/mo</span>
                 {m.guarantor ? (
