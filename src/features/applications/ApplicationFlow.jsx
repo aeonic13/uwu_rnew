@@ -13,7 +13,7 @@ import {
   TrendingUp,
   Fingerprint,
   Loader2,
-  CircleCheck,
+  CheckCircle2,
   DollarSign,
   Info,
 } from 'lucide-react'
@@ -35,7 +35,7 @@ const STEPS = [
  * Progress indicator
  */
 function ProgressSteps({ currentStep, steps }) {
-  const currentIndex = steps.findIndex((s) => s.id === currentStep)
+  const currentIndex = steps.findIndex(s => s.id === currentStep)
 
   return (
     <div className="flex items-center justify-between px-4 py-4">
@@ -83,12 +83,13 @@ function InfoStep({ formData, onChange, onNext, user }) {
     if (!formData.lastName?.trim()) newErrors.lastName = 'Required'
     if (!formData.email?.trim()) newErrors.email = 'Required'
     if (!formData.phone?.trim()) newErrors.phone = 'Required'
-    if (!formData.emergencyContact?.trim()) newErrors.emergencyContact = 'Required'
+    if (!formData.emergencyContact?.trim())
+      newErrors.emergencyContact = 'Required'
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = e => {
     e.preventDefault()
     if (validate()) onNext()
   }
@@ -105,7 +106,7 @@ function InfoStep({ formData, onChange, onNext, user }) {
           <input
             type="text"
             value={formData.firstName || ''}
-            onChange={(e) => onChange({ firstName: e.target.value })}
+            onChange={e => onChange({ firstName: e.target.value })}
             className={`w-full p-3 border rounded-lg ${errors.firstName ? 'border-red-500' : 'border-gray-300'}`}
           />
           {errors.firstName && (
@@ -119,7 +120,7 @@ function InfoStep({ formData, onChange, onNext, user }) {
           <input
             type="text"
             value={formData.lastName || ''}
-            onChange={(e) => onChange({ lastName: e.target.value })}
+            onChange={e => onChange({ lastName: e.target.value })}
             className={`w-full p-3 border rounded-lg ${errors.lastName ? 'border-red-500' : 'border-gray-300'}`}
           />
         </div>
@@ -132,7 +133,7 @@ function InfoStep({ formData, onChange, onNext, user }) {
         <input
           type="email"
           value={formData.email || ''}
-          onChange={(e) => onChange({ email: e.target.value })}
+          onChange={e => onChange({ email: e.target.value })}
           className={`w-full p-3 border rounded-lg ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
         />
       </div>
@@ -144,7 +145,7 @@ function InfoStep({ formData, onChange, onNext, user }) {
         <input
           type="tel"
           value={formData.phone || ''}
-          onChange={(e) => onChange({ phone: e.target.value })}
+          onChange={e => onChange({ phone: e.target.value })}
           className={`w-full p-3 border rounded-lg ${errors.phone ? 'border-red-500' : 'border-gray-300'}`}
         />
       </div>
@@ -156,7 +157,7 @@ function InfoStep({ formData, onChange, onNext, user }) {
         <input
           type="text"
           value={formData.emergencyContact || ''}
-          onChange={(e) => onChange({ emergencyContact: e.target.value })}
+          onChange={e => onChange({ emergencyContact: e.target.value })}
           placeholder="Name and phone number"
           className={`w-full p-3 border rounded-lg ${errors.emergencyContact ? 'border-red-500' : 'border-gray-300'}`}
         />
@@ -168,7 +169,7 @@ function InfoStep({ formData, onChange, onNext, user }) {
         </label>
         <textarea
           value={formData.message || ''}
-          onChange={(e) => onChange({ message: e.target.value })}
+          onChange={e => onChange({ message: e.target.value })}
           rows={3}
           placeholder="Introduce yourself..."
           className="w-full p-3 border border-gray-300 rounded-lg resize-none"
@@ -204,7 +205,7 @@ function DatesStep({ formData, onChange, onNext, onBack, listing }) {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = e => {
     e.preventDefault()
     if (validate()) onNext()
   }
@@ -226,7 +227,7 @@ function DatesStep({ formData, onChange, onNext, onBack, listing }) {
         <input
           type="date"
           value={formData.moveInDate || ''}
-          onChange={(e) => onChange({ moveInDate: e.target.value })}
+          onChange={e => onChange({ moveInDate: e.target.value })}
           className={`w-full p-3 border rounded-lg ${errors.moveInDate ? 'border-red-500' : 'border-gray-300'}`}
         />
         {errors.moveInDate && (
@@ -241,7 +242,7 @@ function DatesStep({ formData, onChange, onNext, onBack, listing }) {
         <input
           type="date"
           value={formData.moveOutDate || ''}
-          onChange={(e) => onChange({ moveOutDate: e.target.value })}
+          onChange={e => onChange({ moveOutDate: e.target.value })}
           className={`w-full p-3 border rounded-lg ${errors.moveOutDate ? 'border-red-500' : 'border-gray-300'}`}
         />
         {errors.moveOutDate && (
@@ -314,7 +315,7 @@ function VerifyStep({ listingId, onNext, onBack, onVerificationComplete }) {
         })
         const token = exchangeData.accessToken
         setAccessToken(token)
-        setVerifications((prev) => ({
+        setVerifications(prev => ({
           ...prev,
           bank: {
             verified: true,
@@ -329,7 +330,7 @@ function VerifyStep({ listingId, onNext, onBack, onVerificationComplete }) {
           api.post('/payments/plaid/verify-identity', { accessToken: token }),
         ])
 
-        setVerifications((prev) => ({
+        setVerifications(prev => ({
           ...prev,
           income:
             incomeRes.status === 'fulfilled'
@@ -347,8 +348,10 @@ function VerifyStep({ listingId, onNext, onBack, onVerificationComplete }) {
 
         setPlaidStatus('connected')
         onVerificationComplete?.(token, {
-          income: incomeRes.status === 'fulfilled' ? incomeRes.value?.income : null,
-          identity: identityRes.status === 'fulfilled' ? identityRes.value : null,
+          income:
+            incomeRes.status === 'fulfilled' ? incomeRes.value?.income : null,
+          identity:
+            identityRes.status === 'fulfilled' ? identityRes.value : null,
         })
       } catch (err) {
         console.error('Plaid verification error:', err)
@@ -393,8 +396,8 @@ function VerifyStep({ listingId, onNext, onBack, onVerificationComplete }) {
       <div>
         <h2 className="text-xl font-bold mb-1">Verify Your Application</h2>
         <p className="text-sm text-gray-500">
-          Connect your bank to verify income and identity. A non-refundable
-          $50 application fee is required.
+          Connect your bank to verify income and identity. A non-refundable $50
+          application fee is required.
         </p>
       </div>
 
@@ -420,7 +423,7 @@ function VerifyStep({ listingId, onNext, onBack, onVerificationComplete }) {
               }`}
             >
               {bankDone ? (
-                <CircleCheck size={20} className="text-green-600" />
+                <CheckCircle2 size={20} className="text-green-600" />
               ) : (
                 <Building2 size={18} className="text-gray-500" />
               )}
@@ -430,7 +433,9 @@ function VerifyStep({ listingId, onNext, onBack, onVerificationComplete }) {
               {bankDone ? (
                 <p className="text-xs text-green-600">
                   Connected — {verifications.bank.accountName}
-                  {verifications.bank.mask ? ` (...${verifications.bank.mask})` : ''}
+                  {verifications.bank.mask
+                    ? ` (...${verifications.bank.mask})`
+                    : ''}
                 </p>
               ) : (
                 <p className="text-xs text-gray-400">Connect via Plaid</p>
@@ -444,7 +449,9 @@ function VerifyStep({ listingId, onNext, onBack, onVerificationComplete }) {
               className="px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-1.5"
             >
               {plaidStatus === 'loading' ? (
-                <><Loader2 size={14} className="animate-spin" /> Connecting…</>
+                <>
+                  <Loader2 size={14} className="animate-spin" /> Connecting…
+                </>
               ) : (
                 'Connect'
               )}
@@ -454,17 +461,23 @@ function VerifyStep({ listingId, onNext, onBack, onVerificationComplete }) {
       </div>
 
       {/* Step 2: Income Verification */}
-      <div className={`bg-white border rounded-xl p-4 ${
-        !bankDone ? 'opacity-40 pointer-events-none' : 'border-gray-200'
-      }`}>
+      <div
+        className={`bg-white border rounded-xl p-4 ${
+          !bankDone ? 'opacity-40 pointer-events-none' : 'border-gray-200'
+        }`}
+      >
         <div className="flex items-center gap-3">
           <div
             className={`w-9 h-9 rounded-full flex items-center justify-center ${
-              incomeDone ? 'bg-green-100' : bankDone ? 'bg-blue-50' : 'bg-gray-100'
+              incomeDone
+                ? 'bg-green-100'
+                : bankDone
+                  ? 'bg-blue-50'
+                  : 'bg-gray-100'
             }`}
           >
             {incomeDone ? (
-              <CircleCheck size={20} className="text-green-600" />
+              <CheckCircle2 size={20} className="text-green-600" />
             ) : bankDone && plaidStatus === 'loading' ? (
               <Loader2 size={18} className="text-blue-500 animate-spin" />
             ) : (
@@ -481,26 +494,36 @@ function VerifyStep({ listingId, onNext, onBack, onVerificationComplete }) {
                   : ''}
               </p>
             ) : verifications.income?.verified === false ? (
-              <p className="text-xs text-yellow-600">Unable to verify — you may still proceed</p>
+              <p className="text-xs text-yellow-600">
+                Unable to verify — you may still proceed
+              </p>
             ) : (
-              <p className="text-xs text-gray-400">Auto-run after bank connection</p>
+              <p className="text-xs text-gray-400">
+                Auto-run after bank connection
+              </p>
             )}
           </div>
         </div>
       </div>
 
       {/* Step 3: Identity Check */}
-      <div className={`bg-white border rounded-xl p-4 ${
-        !bankDone ? 'opacity-40 pointer-events-none' : 'border-gray-200'
-      }`}>
+      <div
+        className={`bg-white border rounded-xl p-4 ${
+          !bankDone ? 'opacity-40 pointer-events-none' : 'border-gray-200'
+        }`}
+      >
         <div className="flex items-center gap-3">
           <div
             className={`w-9 h-9 rounded-full flex items-center justify-center ${
-              identityDone ? 'bg-green-100' : bankDone ? 'bg-blue-50' : 'bg-gray-100'
+              identityDone
+                ? 'bg-green-100'
+                : bankDone
+                  ? 'bg-blue-50'
+                  : 'bg-gray-100'
             }`}
           >
             {identityDone ? (
-              <CircleCheck size={20} className="text-green-600" />
+              <CheckCircle2 size={20} className="text-green-600" />
             ) : bankDone && plaidStatus === 'loading' ? (
               <Loader2 size={18} className="text-blue-500 animate-spin" />
             ) : (
@@ -512,9 +535,13 @@ function VerifyStep({ listingId, onNext, onBack, onVerificationComplete }) {
             {identityDone ? (
               <p className="text-xs text-green-600">Identity verified</p>
             ) : verifications.identity?.verified === false ? (
-              <p className="text-xs text-yellow-600">Unable to verify — you may still proceed</p>
+              <p className="text-xs text-yellow-600">
+                Unable to verify — you may still proceed
+              </p>
             ) : (
-              <p className="text-xs text-gray-400">Auto-run after bank connection</p>
+              <p className="text-xs text-gray-400">
+                Auto-run after bank connection
+              </p>
             )}
           </div>
         </div>
@@ -522,9 +549,13 @@ function VerifyStep({ listingId, onNext, onBack, onVerificationComplete }) {
 
       {/* Step 4: Charge Fee */}
       {allVerified && (
-        <div className={`bg-white border rounded-xl p-4 ${
-          feeStatus === 'paid' ? 'border-green-200 bg-green-50' : 'border-gray-200'
-        }`}>
+        <div
+          className={`bg-white border rounded-xl p-4 ${
+            feeStatus === 'paid'
+              ? 'border-green-200 bg-green-50'
+              : 'border-gray-200'
+          }`}
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div
@@ -533,7 +564,7 @@ function VerifyStep({ listingId, onNext, onBack, onVerificationComplete }) {
                 }`}
               >
                 {feeStatus === 'paid' ? (
-                  <CircleCheck size={20} className="text-green-600" />
+                  <CheckCircle2 size={20} className="text-green-600" />
                 ) : (
                   <DollarSign size={18} className="text-gray-500" />
                 )}
@@ -541,9 +572,13 @@ function VerifyStep({ listingId, onNext, onBack, onVerificationComplete }) {
               <div>
                 <p className="font-medium text-gray-900">Application Fee</p>
                 {feeStatus === 'paid' ? (
-                  <p className="text-xs text-green-600">$50 charged successfully</p>
+                  <p className="text-xs text-green-600">
+                    $50 charged successfully
+                  </p>
                 ) : (
-                  <p className="text-xs text-gray-400">$50 non-refundable fee</p>
+                  <p className="text-xs text-gray-400">
+                    $50 non-refundable fee
+                  </p>
                 )}
               </div>
             </div>
@@ -554,7 +589,9 @@ function VerifyStep({ listingId, onNext, onBack, onVerificationComplete }) {
                 className="px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-1.5"
               >
                 {feeStatus === 'charging' ? (
-                  <><Loader2 size={14} className="animate-spin" /> Charging…</>
+                  <>
+                    <Loader2 size={14} className="animate-spin" /> Charging…
+                  </>
                 ) : (
                   'Pay $50'
                 )}
@@ -567,7 +604,10 @@ function VerifyStep({ listingId, onNext, onBack, onVerificationComplete }) {
       {/* Error */}
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-2">
-          <AlertCircle size={16} className="text-red-500 flex-shrink-0 mt-0.5" />
+          <AlertCircle
+            size={16}
+            className="text-red-500 flex-shrink-0 mt-0.5"
+          />
           <p className="text-sm text-red-700">{error}</p>
         </div>
       )}
@@ -575,7 +615,10 @@ function VerifyStep({ listingId, onNext, onBack, onVerificationComplete }) {
       {/* Info note */}
       <div className="flex items-start gap-2 text-xs text-gray-400">
         <Info size={13} className="flex-shrink-0 mt-0.5" />
-        <p>Your banking data is securely handled by Plaid and never stored on Rentra servers.</p>
+        <p>
+          Your banking data is securely handled by Plaid and never stored on
+          Rentra servers.
+        </p>
       </div>
 
       <div className="flex gap-3">
@@ -627,9 +670,13 @@ function PaymentStep({ formData, onChange, onNext, onBack, listing }) {
 
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
         <div className="flex items-start">
-          <AlertCircle className="text-yellow-600 mr-2 flex-shrink-0 mt-0.5\" size={18} />
+          <AlertCircle
+            className="text-yellow-600 mr-2 flex-shrink-0 mt-0.5\"
+            size={18}
+          />
           <p className="text-sm text-yellow-700">
-            Security deposit of ${(listing?.price || 0) * 2} will be due before move-in.
+            Security deposit of ${(listing?.price || 0) * 2} will be due before
+            move-in.
           </p>
         </div>
       </div>
@@ -640,7 +687,7 @@ function PaymentStep({ formData, onChange, onNext, onBack, listing }) {
         </label>
         <select
           value={formData.paymentMethod || ''}
-          onChange={(e) => onChange({ paymentMethod: e.target.value })}
+          onChange={e => onChange({ paymentMethod: e.target.value })}
           className="w-full p-3 border border-gray-300 rounded-lg"
         >
           <option value="">Select payment method</option>
@@ -738,7 +785,9 @@ function ReviewStep({ formData, onBack, onSubmit, listing, isSubmitting }) {
       {/* Applicant Info */}
       <div className="bg-gray-50 rounded-lg p-4">
         <h3 className="font-semibold mb-2">Your Information</h3>
-        <p>{formData.firstName} {formData.lastName}</p>
+        <p>
+          {formData.firstName} {formData.lastName}
+        </p>
         <p className="text-sm text-gray-500">{formData.email}</p>
         <p className="text-sm text-gray-500">{formData.phone}</p>
       </div>
@@ -826,19 +875,19 @@ function ApplicationFlow() {
     }
   }, [listingId, getListingById])
 
-  const handleChange = (updates) => {
-    setFormData((prev) => ({ ...prev, ...updates }))
+  const handleChange = updates => {
+    setFormData(prev => ({ ...prev, ...updates }))
   }
 
   const handleNext = () => {
-    const stepIndex = STEPS.findIndex((s) => s.id === currentStep)
+    const stepIndex = STEPS.findIndex(s => s.id === currentStep)
     if (stepIndex < STEPS.length - 1) {
       setCurrentStep(STEPS[stepIndex + 1].id)
     }
   }
 
   const handleBack = () => {
-    const stepIndex = STEPS.findIndex((s) => s.id === currentStep)
+    const stepIndex = STEPS.findIndex(s => s.id === currentStep)
     if (stepIndex > 0) {
       setCurrentStep(STEPS[stepIndex - 1].id)
     }
