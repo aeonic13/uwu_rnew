@@ -1,2 +1,13 @@
-// Re-export the existing LandlordListingForm component from src root
-export { default } from '../../LandlordListingForm'
+import { useNavigate, useParams } from 'react-router-dom'
+import LegacyLandlordListingForm from '../../LandlordListingForm'
+
+export default function LandlordListingForm() {
+  const navigate = useNavigate()
+
+  return (
+    <LegacyLandlordListingForm
+      onBack={() => navigate('/dashboard')}
+      onSubmit={() => navigate('/dashboard')}
+    />
+  )
+}

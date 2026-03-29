@@ -1,19 +1,34 @@
-import React, { useState } from 'react';
-import { Camera, Upload, FileText, DollarSign, MapPin, Calendar, Home, Plus, X, Check, Scan, Eye, EyeOff, Loader2 } from 'lucide-react';
-import { useListings } from './contexts/ListingsContext';
-import { useAuth } from './contexts/AuthContext';
-import { uploadService } from './services/uploadService';
+import React, { useState } from 'react'
+import {
+  Camera,
+  Upload,
+  FileText,
+  DollarSign,
+  MapPin,
+  Calendar,
+  Home,
+  Plus,
+  X,
+  Check,
+  Scan,
+  Eye,
+  EyeOff,
+  Loader2,
+} from 'lucide-react'
+import { useListings } from './contexts/ListingsContext'
+import { useAuth } from './contexts/AuthContext'
+import { uploadService } from './services/uploadService'
 
 const LandlordListingForm = ({ onSubmit, onBack }) => {
-  const { createListing } = useListings();
-  const { user } = useAuth();
-  
-  const [currentStep, setCurrentStep] = useState(1);
-  const [isUploading, setIsUploading] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [uploadError, setUploadError] = useState(null);
-  const [submitError, setSubmitError] = useState(null);
-  
+  const { createListing } = useListings()
+  const { user } = useAuth()
+
+  const [currentStep, setCurrentStep] = useState(1)
+  const [isUploading, setIsUploading] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [uploadError, setUploadError] = useState(null)
+  const [submitError, setSubmitError] = useState(null)
+
   const [listingData, setListingData] = useState({
     title: '',
     description: '',
@@ -32,196 +47,234 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
     smokingPolicy: 'no-smoking',
     requirements: {
       guarantorPolicy: 'students-only', // 'always' | 'students-only' | 'never'
-      incomeMultiple: 3,               // number (e.g. 2.5, 3, 4)
+      incomeMultiple: 3, // number (e.g. 2.5, 3, 4)
       customIncomeMultiple: '',
       backgroundCheck: true,
       idVerification: true,
     },
-  });
+  })
 
-  const [propertyPhotos, setPropertyPhotos] = useState([]);
-  const [utilityBills, setUtilityBills] = useState([]);
-  const [documents, setDocuments] = useState([]);
+  const [propertyPhotos, setPropertyPhotos] = useState([])
+  const [utilityBills, setUtilityBills] = useState([])
+  const [documents, setDocuments] = useState([])
 
   const availableAmenities = [
-    'WiFi', 'Laundry', 'Parking', 'Furnished', 'Kitchen', 'Garden', 
-    'Pet-friendly', 'Gym', 'AC', 'Dishwasher', 'Pool', 'Balcony',
-    'In-unit Laundry', 'Study Space', 'Security', 'Storage', 'Elevator'
-  ];
+    'WiFi',
+    'Laundry',
+    'Parking',
+    'Furnished',
+    'Kitchen',
+    'Garden',
+    'Pet-friendly',
+    'Gym',
+    'AC',
+    'Dishwasher',
+    'Pool',
+    'Balcony',
+    'In-unit Laundry',
+    'Study Space',
+    'Security',
+    'Storage',
+    'Elevator',
+  ]
 
   const universities = [
-    'USC', 'UCLA', 'NYU', 'Stanford', 'Harvard', 'MIT', 
-    'UC Berkeley', 'Columbia', 'Yale', 'Princeton'
-  ];
+    'USC',
+    'UCLA',
+    'NYU',
+    'Stanford',
+    'Harvard',
+    'MIT',
+    'UC Berkeley',
+    'Columbia',
+    'Yale',
+    'Princeton',
+  ]
 
   const utilityTypes = [
     { id: 'electricity', name: 'Electricity', color: 'yellow' },
     { id: 'gas', name: 'Gas', color: 'red' },
     { id: 'water', name: 'Water/Sewer', color: 'blue' },
     { id: 'internet', name: 'Internet', color: 'green' },
-    { id: 'trash', name: 'Trash/Recycling', color: 'gray' }
-  ];
+    { id: 'trash', name: 'Trash/Recycling', color: 'gray' },
+  ]
 
-  const handlePhotoUpload = async (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length === 0) return;
-    
-    setIsUploading(true);
-    setUploadError(null);
-    
+  const handlePhotoUpload = async e => {
+    const files = Array.from(e.target.files)
+    if (files.length === 0) return
+
+    setIsUploading(true)
+    setUploadError(null)
+
     try {
       // Upload files to server
-      const response = await uploadService.uploadImages(files);
-      
+      const response = await uploadService.uploadImages(files)
+
       // Add uploaded images to state with their server URLs
       const newPhotos = response.images.map((img, index) => ({
         id: Date.now() + Math.random() + index,
         file: files[index],
-        preview: img.url,  // Use server URL
-        url: img.url,      // Store URL for submission
+        preview: img.url, // Use server URL
+        url: img.url, // Store URL for submission
         filename: img.filename,
-        caption: ''
-      }));
-      
-      setPropertyPhotos(prev => [...prev, ...newPhotos]);
+        caption: '',
+      }))
+
+      setPropertyPhotos(prev => [...prev, ...newPhotos])
     } catch (error) {
-      console.error('Photo upload error:', error);
-      setUploadError(error.message || 'Failed to upload photos. Please try again.');
-      
+      console.error('Photo upload error:', error)
+      setUploadError(
+        error.message || 'Failed to upload photos. Please try again.'
+      )
+
       // Fallback to local preview if upload fails (for offline dev)
       files.forEach(file => {
-        const reader = new FileReader();
+        const reader = new FileReader()
         reader.onloadend = () => {
-          setPropertyPhotos(prev => [...prev, {
+          setPropertyPhotos(prev => [
+            ...prev,
+            {
+              id: Date.now() + Math.random(),
+              file,
+              preview: reader.result,
+              url: null, // Mark as not uploaded
+              caption: '',
+            },
+          ])
+        }
+        reader.readAsDataURL(file)
+      })
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  const handleUtilityBillUpload = (e, utilityType) => {
+    const files = Array.from(e.target.files)
+    files.forEach(file => {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setUtilityBills(prev => [
+          ...prev,
+          {
             id: Date.now() + Math.random(),
             file,
             preview: reader.result,
-            url: null, // Mark as not uploaded
-            caption: ''
-          }]);
-        };
-        reader.readAsDataURL(file);
-      });
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const handleUtilityBillUpload = (e, utilityType) => {
-    const files = Array.from(e.target.files);
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setUtilityBills(prev => [...prev, {
-          id: Date.now() + Math.random(),
-          file,
-          preview: reader.result,
-          type: utilityType,
-          amount: '',
-          month: new Date().toISOString().slice(0, 7), // YYYY-MM
-          isProcessed: false,
-          redactedInfo: []
-        }]);
-      };
-      reader.readAsDataURL(file);
-    });
-  };
+            type: utilityType,
+            amount: '',
+            month: new Date().toISOString().slice(0, 7), // YYYY-MM
+            isProcessed: false,
+            redactedInfo: [],
+          },
+        ])
+      }
+      reader.readAsDataURL(file)
+    })
+  }
 
   const handleDocumentUpload = (e, docType) => {
-    const files = Array.from(e.target.files);
+    const files = Array.from(e.target.files)
     files.forEach(file => {
-      const reader = new FileReader();
+      const reader = new FileReader()
       reader.onloadend = () => {
-        setDocuments(prev => [...prev, {
-          id: Date.now() + Math.random(),
-          file,
-          preview: reader.result,
-          type: docType,
-          isScanned: false,
-          extractedData: null
-        }]);
-      };
-      reader.readAsDataURL(file);
-    });
-  };
+        setDocuments(prev => [
+          ...prev,
+          {
+            id: Date.now() + Math.random(),
+            file,
+            preview: reader.result,
+            type: docType,
+            isScanned: false,
+            extractedData: null,
+          },
+        ])
+      }
+      reader.readAsDataURL(file)
+    })
+  }
 
-  const removeUtilityBill = (billId) => {
-    setUtilityBills(prev => prev.filter(bill => bill.id !== billId));
-  };
+  const removeUtilityBill = billId => {
+    setUtilityBills(prev => prev.filter(bill => bill.id !== billId))
+  }
 
-  const removeDocument = (docId) => {
-    setDocuments(prev => prev.filter(doc => doc.id !== docId));
-  };
+  const removeDocument = docId => {
+    setDocuments(prev => prev.filter(doc => doc.id !== docId))
+  }
 
-  const simulateDocumentScan = (docId) => {
-    setDocuments(prev => prev.map(doc => 
-      doc.id === docId 
-        ? {
-            ...doc, 
-            isScanned: true,
-            extractedData: {
-              propertyAddress: listingData.address || "123 Main St, Los Angeles, CA",
-              monthlyRent: listingData.rent || "1200",
-              leaseStart: listingData.availableFrom || "2024-01-01",
-              leaseEnd: listingData.availableTo || "2024-12-31"
+  const simulateDocumentScan = docId => {
+    setDocuments(prev =>
+      prev.map(doc =>
+        doc.id === docId
+          ? {
+              ...doc,
+              isScanned: true,
+              extractedData: {
+                propertyAddress:
+                  listingData.address || '123 Main St, Los Angeles, CA',
+                monthlyRent: listingData.rent || '1200',
+                leaseStart: listingData.availableFrom || '2024-01-01',
+                leaseEnd: listingData.availableTo || '2024-12-31',
+              },
             }
-          }
-        : doc
-    ));
-  };
+          : doc
+      )
+    )
+  }
 
-  const simulateBillProcessing = (billId) => {
-    setUtilityBills(prev => prev.map(bill => 
-      bill.id === billId 
-        ? {
-            ...bill,
-            isProcessed: true,
-            redactedInfo: ['Account Number: ****1234', 'SSN: ***-**-****'],
-            amount: Math.floor(Math.random() * 200 + 50).toString() // Random bill amount
-          }
-        : bill
-    ));
-  };
+  const simulateBillProcessing = billId => {
+    setUtilityBills(prev =>
+      prev.map(bill =>
+        bill.id === billId
+          ? {
+              ...bill,
+              isProcessed: true,
+              redactedInfo: ['Account Number: ****1234', 'SSN: ***-**-****'],
+              amount: Math.floor(Math.random() * 200 + 50).toString(), // Random bill amount
+            }
+          : bill
+      )
+    )
+  }
 
-  const toggleAmenity = (amenity) => {
+  const toggleAmenity = amenity => {
     setListingData(prev => ({
       ...prev,
       amenities: prev.amenities.includes(amenity)
         ? prev.amenities.filter(a => a !== amenity)
-        : [...prev.amenities, amenity]
-    }));
-  };
+        : [...prev.amenities, amenity],
+    }))
+  }
 
-  const removePhoto = async (photoId) => {
-    const photo = propertyPhotos.find(p => p.id === photoId);
-    
+  const removePhoto = async photoId => {
+    const photo = propertyPhotos.find(p => p.id === photoId)
+
     // Try to delete from server if it was uploaded
     if (photo?.filename) {
       try {
-        await uploadService.deleteImage(photo.filename);
+        await uploadService.deleteImage(photo.filename)
       } catch (error) {
-        console.error('Failed to delete image from server:', error);
+        console.error('Failed to delete image from server:', error)
         // Continue with local removal anyway
       }
     }
-    
-    setPropertyPhotos(prev => prev.filter(photo => photo.id !== photoId));
-  };
+
+    setPropertyPhotos(prev => prev.filter(photo => photo.id !== photoId))
+  }
 
   const handleSubmit = async () => {
-    setIsSubmitting(true);
-    setSubmitError(null);
-    
+    setIsSubmitting(true)
+    setSubmitError(null)
+
     try {
       // Map property type to API enum format
       const propertyTypeMap = {
-        'apartment': 'Apartment',
-        'house': 'House',
-        'room': 'SingleRoom',
-        'studio': 'Studio',
-        'condo': 'Condo'
-      };
-      
+        apartment: 'Apartment',
+        house: 'House',
+        room: 'SingleRoom',
+        studio: 'Studio',
+        condo: 'Condo',
+      }
+
       // Prepare listing data for API
       const apiListingData = {
         title: listingData.title,
@@ -238,56 +291,68 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
         images: propertyPhotos
           .filter(photo => photo.url) // Only include uploaded photos
           .map(photo => photo.url),
-      };
-      
+      }
+
       // Call API to create listing
-      const result = await createListing(apiListingData);
-      
+      const result = await createListing(apiListingData)
+
       if (result.success) {
         // Call the onSubmit callback for navigation/UI updates
         onSubmit({
           ...apiListingData,
           id: result.listing?.id,
           owner: {
-            name: user?.firstName ? `${user.firstName} ${user.lastName}` : 'Owner',
-            verified: user?.verified || false
-          }
-        });
+            name: user?.firstName
+              ? `${user.firstName} ${user.lastName}`
+              : 'Owner',
+            verified: user?.verified || false,
+          },
+        })
       } else {
-        throw new Error(result.error || 'Failed to create listing');
+        throw new Error(result.error || 'Failed to create listing')
       }
     } catch (error) {
-      console.error('Submit error:', error);
-      setSubmitError(error.message || 'Failed to publish listing. Please try again.');
+      console.error('Submit error:', error)
+      setSubmitError(
+        error.message || 'Failed to publish listing. Please try again.'
+      )
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
+  }
 
   // Step 1: Basic Property Info
   if (currentStep === 1) {
     return (
       <div className="p-6 pb-20">
         <h2 className="text-2xl font-bold mb-6">List Your Property</h2>
-        
+
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2">Property Title</label>
+            <label className="block text-sm font-medium mb-2">
+              Property Title
+            </label>
             <input
               type="text"
               value={listingData.title}
-              onChange={(e) => setListingData(prev => ({ ...prev, title: e.target.value }))}
-              placeholder="e.g., Cozy 1BR near USC Campus"
+              onChange={e =>
+                setListingData(prev => ({ ...prev, title: e.target.value }))
+              }
+              placeholder="e.g., Cozy 1BR near downtown"
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Property Address</label>
+            <label className="block text-sm font-medium mb-2">
+              Property Address
+            </label>
             <input
               type="text"
               value={listingData.address}
-              onChange={(e) => setListingData(prev => ({ ...prev, address: e.target.value }))}
+              onChange={e =>
+                setListingData(prev => ({ ...prev, address: e.target.value }))
+              }
               placeholder="Full address including city and state"
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -295,24 +360,35 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Nearest University</label>
-              <select
+              <label className="block text-sm font-medium mb-2">
+                Neighborhood / Area
+              </label>
+              <input
+                type="text"
                 value={listingData.university}
-                onChange={(e) => setListingData(prev => ({ ...prev, university: e.target.value }))}
+                onChange={e =>
+                  setListingData(prev => ({
+                    ...prev,
+                    university: e.target.value,
+                  }))
+                }
+                placeholder="e.g. Downtown, Mission Valley"
                 className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Select University</option>
-                {universities.map(uni => (
-                  <option key={uni} value={uni}>{uni}</option>
-                ))}
-              </select>
+              />
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium mb-2">Property Type</label>
+              <label className="block text-sm font-medium mb-2">
+                Property Type
+              </label>
               <select
                 value={listingData.propertyType}
-                onChange={(e) => setListingData(prev => ({ ...prev, propertyType: e.target.value }))}
+                onChange={e =>
+                  setListingData(prev => ({
+                    ...prev,
+                    propertyType: e.target.value,
+                  }))
+                }
                 className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="apartment">Apartment</option>
@@ -329,20 +405,34 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
               <label className="block text-sm font-medium mb-2">Bedrooms</label>
               <select
                 value={listingData.bedrooms}
-                onChange={(e) => setListingData(prev => ({ ...prev, bedrooms: parseInt(e.target.value) }))}
+                onChange={e =>
+                  setListingData(prev => ({
+                    ...prev,
+                    bedrooms: parseInt(e.target.value),
+                  }))
+                }
                 className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                {[1,2,3,4,5].map(num => (
-                  <option key={num} value={num}>{num} Bedroom{num > 1 ? 's' : ''}</option>
+                {[1, 2, 3, 4, 5].map(num => (
+                  <option key={num} value={num}>
+                    {num} Bedroom{num > 1 ? 's' : ''}
+                  </option>
                 ))}
               </select>
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium mb-2">Bathrooms</label>
+              <label className="block text-sm font-medium mb-2">
+                Bathrooms
+              </label>
               <select
                 value={listingData.bathrooms}
-                onChange={(e) => setListingData(prev => ({ ...prev, bathrooms: parseFloat(e.target.value) }))}
+                onChange={e =>
+                  setListingData(prev => ({
+                    ...prev,
+                    bathrooms: parseFloat(e.target.value),
+                  }))
+                }
                 className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value={1}>1 Bathroom</option>
@@ -355,10 +445,17 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Description</label>
+            <label className="block text-sm font-medium mb-2">
+              Description
+            </label>
             <textarea
               value={listingData.description}
-              onChange={(e) => setListingData(prev => ({ ...prev, description: e.target.value }))}
+              onChange={e =>
+                setListingData(prev => ({
+                  ...prev,
+                  description: e.target.value,
+                }))
+              }
               placeholder="Describe your property, neighborhood, and what makes it special..."
               rows={4}
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -386,7 +483,7 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
           </button>
         </div>
       </div>
-    );
+    )
   }
 
   // Step 2: Photos & Media
@@ -394,20 +491,23 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
     return (
       <div className="p-6 pb-20">
         <h2 className="text-2xl font-bold mb-6">Property Photos</h2>
-        
+
         {/* Upload Error */}
         {uploadError && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
             {uploadError}
           </div>
         )}
-        
+
         {/* Photo Upload */}
         <div className="mb-6">
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
             {isUploading ? (
               <>
-                <Loader2 size={48} className="mx-auto text-blue-500 mb-4 animate-spin" />
+                <Loader2
+                  size={48}
+                  className="mx-auto text-blue-500 mb-4 animate-spin"
+                />
                 <p className="text-blue-600 font-medium">Uploading photos...</p>
               </>
             ) : (
@@ -436,7 +536,9 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
         {/* Photo Gallery */}
         {propertyPhotos.length > 0 && (
           <div className="mb-6">
-            <h3 className="font-semibold mb-3">Property Photos ({propertyPhotos.length})</h3>
+            <h3 className="font-semibold mb-3">
+              Property Photos ({propertyPhotos.length})
+            </h3>
             <div className="grid grid-cols-2 gap-4">
               {propertyPhotos.map((photo, index) => (
                 <div key={photo.id} className="relative">
@@ -482,7 +584,7 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
           </button>
         </div>
       </div>
-    );
+    )
   }
 
   // Step 3: Pricing & Availability
@@ -490,26 +592,34 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
     return (
       <div className="p-6 pb-20">
         <h2 className="text-2xl font-bold mb-6">Pricing & Availability</h2>
-        
+
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Monthly Rent ($)</label>
+              <label className="block text-sm font-medium mb-2">
+                Monthly Rent ($)
+              </label>
               <input
                 type="number"
                 value={listingData.rent}
-                onChange={(e) => setListingData(prev => ({ ...prev, rent: e.target.value }))}
+                onChange={e =>
+                  setListingData(prev => ({ ...prev, rent: e.target.value }))
+                }
                 placeholder="1200"
                 className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium mb-2">Security Deposit ($)</label>
+              <label className="block text-sm font-medium mb-2">
+                Security Deposit ($)
+              </label>
               <input
                 type="number"
                 value={listingData.deposit}
-                onChange={(e) => setListingData(prev => ({ ...prev, deposit: e.target.value }))}
+                onChange={e =>
+                  setListingData(prev => ({ ...prev, deposit: e.target.value }))
+                }
                 placeholder="1200"
                 className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -518,21 +628,35 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Available From</label>
+              <label className="block text-sm font-medium mb-2">
+                Available From
+              </label>
               <input
                 type="date"
                 value={listingData.availableFrom}
-                onChange={(e) => setListingData(prev => ({ ...prev, availableFrom: e.target.value }))}
+                onChange={e =>
+                  setListingData(prev => ({
+                    ...prev,
+                    availableFrom: e.target.value,
+                  }))
+                }
                 className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium mb-2">Available Until</label>
+              <label className="block text-sm font-medium mb-2">
+                Available Until
+              </label>
               <input
                 type="date"
                 value={listingData.availableTo}
-                onChange={(e) => setListingData(prev => ({ ...prev, availableTo: e.target.value }))}
+                onChange={e =>
+                  setListingData(prev => ({
+                    ...prev,
+                    availableTo: e.target.value,
+                  }))
+                }
                 className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -543,7 +667,9 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
             <label className="block text-sm font-medium mb-2">Pet Policy</label>
             <select
               value={listingData.petPolicy}
-              onChange={(e) => setListingData(prev => ({ ...prev, petPolicy: e.target.value }))}
+              onChange={e =>
+                setListingData(prev => ({ ...prev, petPolicy: e.target.value }))
+              }
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="no-pets">No Pets</option>
@@ -555,10 +681,17 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Smoking Policy</label>
+            <label className="block text-sm font-medium mb-2">
+              Smoking Policy
+            </label>
             <select
               value={listingData.smokingPolicy}
-              onChange={(e) => setListingData(prev => ({ ...prev, smokingPolicy: e.target.value }))}
+              onChange={e =>
+                setListingData(prev => ({
+                  ...prev,
+                  smokingPolicy: e.target.value,
+                }))
+              }
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="no-smoking">No Smoking</option>
@@ -589,7 +722,7 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
           </button>
         </div>
       </div>
-    );
+    )
   }
 
   // Step 4: Amenities
@@ -597,9 +730,11 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
     return (
       <div className="p-6 pb-20">
         <h2 className="text-2xl font-bold mb-6">Amenities & Features</h2>
-        
+
         <div className="mb-6">
-          <h3 className="font-semibold mb-3">Select all amenities that apply:</h3>
+          <h3 className="font-semibold mb-3">
+            Select all amenities that apply:
+          </h3>
           <div className="grid grid-cols-2 gap-3">
             {availableAmenities.map(amenity => (
               <button
@@ -637,39 +772,56 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
           </button>
         </div>
       </div>
-    );
+    )
   }
 
   // Step 5: Tenant Requirements
   if (currentStep === 5) {
-    const req = listingData.requirements;
+    const req = listingData.requirements
     const setReq = patch =>
-      setListingData(prev => ({ ...prev, requirements: { ...prev.requirements, ...patch } }));
+      setListingData(prev => ({
+        ...prev,
+        requirements: { ...prev.requirements, ...patch },
+      }))
 
     const incomeOptions = [
       { value: 2.5, label: '2.5× rent' },
-      { value: 3,   label: '3× rent (common)' },
-      { value: 4,   label: '4× rent (strict)' },
+      { value: 3, label: '3× rent (common)' },
+      { value: 4, label: '4× rent (strict)' },
       { value: 'custom', label: 'Custom…' },
-    ];
+    ]
 
     return (
       <div className="p-6 pb-20">
         <h2 className="text-2xl font-bold mb-2">Tenant Requirements</h2>
         <p className="text-sm text-gray-500 mb-6">
-          These criteria are shown to applicants before they apply and are used to
-          auto-qualify group income during review.
+          These criteria are shown to applicants before they apply and are used
+          to auto-qualify group income during review.
         </p>
 
         <div className="space-y-6">
           {/* Guarantor policy */}
           <div>
-            <label className="block text-sm font-semibold mb-3">Guarantor / Co-signer Policy</label>
+            <label className="block text-sm font-semibold mb-3">
+              Guarantor / Co-signer Policy
+            </label>
             <div className="space-y-2">
               {[
-                { value: 'always',        label: 'Always required', sub: 'Every applicant must provide a guarantor' },
-                { value: 'students-only', label: 'Students only',    sub: 'Required only if income < threshold' },
-                { value: 'never',         label: 'Never required',   sub: 'Income verification is sufficient' },
+                {
+                  value: 'always',
+                  label: 'Always required',
+                  sub: 'Every applicant must provide a guarantor',
+                },
+                {
+                  value: 'students-only',
+                  label: 'Students only',
+                  sub: 'Required only if income < threshold',
+                },
+                {
+                  value: 'never',
+                  label: 'Never required',
+                  sub: 'Income verification is sufficient',
+                },
               ].map(opt => (
                 <button
                   key={opt.value}
@@ -680,9 +832,13 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
                       : 'border-gray-200 hover:border-blue-300'
                   }`}
                 >
-                  <div className={`w-4 h-4 rounded-full border-2 mt-0.5 mr-3 flex-shrink-0 ${
-                    req.guarantorPolicy === opt.value ? 'border-blue-600 bg-blue-600' : 'border-gray-300'
-                  }`} />
+                  <div
+                    className={`w-4 h-4 rounded-full border-2 mt-0.5 mr-3 flex-shrink-0 ${
+                      req.guarantorPolicy === opt.value
+                        ? 'border-blue-600 bg-blue-600'
+                        : 'border-gray-300'
+                    }`}
+                  />
                   <div>
                     <p className="font-medium text-sm">{opt.label}</p>
                     <p className="text-xs text-gray-500">{opt.sub}</p>
@@ -694,7 +850,9 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
 
           {/* Income multiple */}
           <div>
-            <label className="block text-sm font-semibold mb-3">Minimum Income Requirement</label>
+            <label className="block text-sm font-semibold mb-3">
+              Minimum Income Requirement
+            </label>
             <div className="grid grid-cols-2 gap-2">
               {incomeOptions.map(opt => (
                 <button
@@ -712,14 +870,18 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
             </div>
             {req.incomeMultiple === 'custom' && (
               <div className="mt-3">
-                <label className="block text-xs text-gray-600 mb-1">Custom multiplier (e.g. 3.5)</label>
+                <label className="block text-xs text-gray-600 mb-1">
+                  Custom multiplier (e.g. 3.5)
+                </label>
                 <input
                   type="number"
                   step="0.5"
                   min="1"
                   max="10"
                   value={req.customIncomeMultiple}
-                  onChange={e => setReq({ customIncomeMultiple: e.target.value })}
+                  onChange={e =>
+                    setReq({ customIncomeMultiple: e.target.value })
+                  }
                   placeholder="3.5"
                   className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
@@ -727,32 +889,56 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
             )}
             {req.incomeMultiple !== 'custom' && listingData.rent && (
               <p className="mt-2 text-xs text-gray-500">
-                Minimum income: <span className="font-semibold text-gray-700">
-                  ${(Number(listingData.rent) * Number(req.incomeMultiple)).toLocaleString()}/mo
-                </span> (individually or combined for groups)
+                Minimum income:{' '}
+                <span className="font-semibold text-gray-700">
+                  $
+                  {(
+                    Number(listingData.rent) * Number(req.incomeMultiple)
+                  ).toLocaleString()}
+                  /mo
+                </span>{' '}
+                (individually or combined for groups)
               </p>
             )}
           </div>
 
           {/* Checks */}
           <div>
-            <label className="block text-sm font-semibold mb-3">Required Verifications</label>
+            <label className="block text-sm font-semibold mb-3">
+              Required Verifications
+            </label>
             <div className="space-y-3">
               {[
-                { key: 'backgroundCheck', label: 'Background Check', sub: 'Criminal and eviction history screening' },
-                { key: 'idVerification',  label: 'Government ID Verification', sub: 'Plaid IDV or equivalent' },
+                {
+                  key: 'backgroundCheck',
+                  label: 'Background Check',
+                  sub: 'Criminal and eviction history screening',
+                },
+                {
+                  key: 'idVerification',
+                  label: 'Government ID Verification',
+                  sub: 'Plaid IDV or equivalent',
+                },
               ].map(item => (
                 <div
                   key={item.key}
                   onClick={() => setReq({ [item.key]: !req[item.key] })}
                   className={`flex items-start p-3 border-2 rounded-lg cursor-pointer transition-colors ${
-                    req[item.key] ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'
+                    req[item.key]
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200 hover:border-blue-300'
                   }`}
                 >
-                  <div className={`w-5 h-5 rounded border-2 mt-0.5 mr-3 flex-shrink-0 flex items-center justify-center ${
-                    req[item.key] ? 'border-blue-600 bg-blue-600' : 'border-gray-300'
-                  }`}>
-                    {req[item.key] && <Check size={12} className="text-white" />}
+                  <div
+                    className={`w-5 h-5 rounded border-2 mt-0.5 mr-3 flex-shrink-0 flex items-center justify-center ${
+                      req[item.key]
+                        ? 'border-blue-600 bg-blue-600'
+                        : 'border-gray-300'
+                    }`}
+                  >
+                    {req[item.key] && (
+                      <Check size={12} className="text-white" />
+                    )}
                   </div>
                   <div>
                     <p className="font-medium text-sm">{item.label}</p>
@@ -765,7 +951,10 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
         </div>
 
         <div className="flex space-x-3 mt-8">
-          <button onClick={() => setCurrentStep(4)} className="flex-1 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+          <button
+            onClick={() => setCurrentStep(4)}
+            className="flex-1 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+          >
             Back
           </button>
           <button
@@ -776,7 +965,7 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
           </button>
         </div>
       </div>
-    );
+    )
   }
 
   // Step 6: Utility Bills & Documents
@@ -784,17 +973,21 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
     return (
       <div className="p-6 pb-20">
         <h2 className="text-2xl font-bold mb-6">Utility Bills & Documents</h2>
-        
+
         {/* Utility Bills Section */}
         <div className="mb-8">
           <h3 className="font-semibold mb-3">Upload Recent Utility Bills</h3>
           <p className="text-sm text-gray-600 mb-4">
-            Upload your recent utility bills to help renters understand average costs. We'll automatically redact sensitive information.
+            Upload your recent utility bills to help renters understand average
+            costs. We'll automatically redact sensitive information.
           </p>
-          
+
           <div className="grid grid-cols-2 gap-4 mb-6">
             {utilityTypes.map(utility => (
-              <div key={utility.id} className="border border-gray-200 rounded-lg p-4">
+              <div
+                key={utility.id}
+                className="border border-gray-200 rounded-lg p-4"
+              >
                 <h4 className="font-medium mb-2">{utility.name}</h4>
                 <label className="cursor-pointer">
                   <div className="border-2 border-dashed border-gray-300 rounded p-3 text-center hover:border-blue-300">
@@ -804,7 +997,7 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
                   <input
                     type="file"
                     accept="image/*,.pdf"
-                    onChange={(e) => handleUtilityBillUpload(e, utility.id)}
+                    onChange={e => handleUtilityBillUpload(e, utility.id)}
                     className="hidden"
                   />
                 </label>
@@ -817,11 +1010,18 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
             <div className="space-y-3">
               <h4 className="font-medium">Uploaded Bills</h4>
               {utilityBills.map(bill => (
-                <div key={bill.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                <div
+                  key={bill.id}
+                  className="flex items-center justify-between p-3 border border-gray-200 rounded-lg"
+                >
                   <div className="flex items-center">
-                    <div className={`w-3 h-3 rounded-full mr-3 bg-${utilityTypes.find(t => t.id === bill.type)?.color || 'gray'}-400`}></div>
+                    <div
+                      className={`w-3 h-3 rounded-full mr-3 bg-${utilityTypes.find(t => t.id === bill.type)?.color || 'gray'}-400`}
+                    ></div>
                     <div>
-                      <p className="font-medium">{utilityTypes.find(t => t.id === bill.type)?.name} Bill</p>
+                      <p className="font-medium">
+                        {utilityTypes.find(t => t.id === bill.type)?.name} Bill
+                      </p>
                       <p className="text-xs text-gray-500">{bill.month}</p>
                     </div>
                   </div>
@@ -841,9 +1041,9 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
                       </button>
                     )}
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeUtilityBill(bill.id);
+                      onClick={e => {
+                        e.stopPropagation()
+                        removeUtilityBill(bill.id)
                       }}
                       className="ml-2 text-red-500 hover:text-red-700"
                     >
@@ -860,9 +1060,10 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
         <div className="mb-8">
           <h3 className="font-semibold mb-3">Legal Documents (Optional)</h3>
           <p className="text-sm text-gray-600 mb-4">
-            Upload lease templates or other documents. Our AI will scan and extract key information.
+            Upload lease templates or other documents. Our AI will scan and
+            extract key information.
           </p>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="cursor-pointer">
@@ -874,23 +1075,25 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
                 <input
                   type="file"
                   accept=".pdf,.doc,.docx,image/*"
-                  onChange={(e) => handleDocumentUpload(e, 'lease')}
+                  onChange={e => handleDocumentUpload(e, 'lease')}
                   className="hidden"
                 />
               </label>
             </div>
-            
+
             <div>
               <label className="cursor-pointer">
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-300">
                   <FileText size={24} className="mx-auto mb-2 text-gray-400" />
-                  <span className="text-sm font-medium">Rental Application</span>
+                  <span className="text-sm font-medium">
+                    Rental Application
+                  </span>
                   <p className="text-xs text-gray-500">PDF, DOC, or Image</p>
                 </div>
                 <input
                   type="file"
                   accept=".pdf,.doc,.docx,image/*"
-                  onChange={(e) => handleDocumentUpload(e, 'application')}
+                  onChange={e => handleDocumentUpload(e, 'application')}
                   className="hidden"
                 />
               </label>
@@ -902,10 +1105,15 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
             <div className="mt-4 space-y-3">
               <h4 className="font-medium">Uploaded Documents</h4>
               {documents.map(doc => (
-                <div key={doc.id} className="p-3 border border-gray-200 rounded-lg">
+                <div
+                  key={doc.id}
+                  className="p-3 border border-gray-200 rounded-lg"
+                >
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium capitalize">{doc.type} Document</p>
+                      <p className="font-medium capitalize">
+                        {doc.type} Document
+                      </p>
                       <p className="text-xs text-gray-500">{doc.file.name}</p>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -924,9 +1132,9 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
                         </button>
                       )}
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeDocument(doc.id);
+                        onClick={e => {
+                          e.stopPropagation()
+                          removeDocument(doc.id)
                         }}
                         className="ml-2 text-red-500 hover:text-red-700"
                       >
@@ -936,9 +1144,14 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
                   </div>
                   {doc.extractedData && (
                     <div className="mt-2 p-2 bg-green-50 rounded text-xs">
-                      <p className="text-green-800 font-medium">Extracted Information:</p>
+                      <p className="text-green-800 font-medium">
+                        Extracted Information:
+                      </p>
                       <p>• Rent: ${doc.extractedData.monthlyRent}/month</p>
-                      <p>• Lease Term: {doc.extractedData.leaseStart} to {doc.extractedData.leaseEnd}</p>
+                      <p>
+                        • Lease Term: {doc.extractedData.leaseStart} to{' '}
+                        {doc.extractedData.leaseEnd}
+                      </p>
                     </div>
                   )}
                 </div>
@@ -978,8 +1191,8 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
           </button>
         </div>
       </div>
-    );
+    )
   }
-};
+}
 
-export default LandlordListingForm;
+export default LandlordListingForm
