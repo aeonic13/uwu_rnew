@@ -63,8 +63,41 @@ const CreateGroup = lazy(() => import('../features/groups/CreateGroup'))
 const GroupDetail = lazy(() => import('../features/groups/GroupDetail'))
 const GroupChat = lazy(() => import('../features/groups/GroupChat'))
 
+// Landing page
+const LandingPage = lazy(() => import('../features/landing/LandingPage'))
+
 // Layout wrapper
 const AppLayout = lazy(() => import('../components/layout/AppLayout'))
+
+/**
+ * Smart home page — shows landing page for guests, browse for tenants,
+ * and redirects landlords to their dashboard
+ */
+function HomePage() {
+  const { user, isLoading } = useAuth()
+
+  if (isLoading) {
+    return <SuspenseFallback />
+  }
+
+  if (user?.userType === 'owner') {
+    return <Navigate to="/dashboard" replace />
+  }
+
+  if (user) {
+    return (
+      <Suspense fallback={<SuspenseFallback />}>
+        <BrowseView />
+      </Suspense>
+    )
+  }
+
+  return (
+    <Suspense fallback={<SuspenseFallback />}>
+      <LandingPage />
+    </Suspense>
+  )
+}
 
 /**
  * Loading fallback component for Suspense
@@ -170,14 +203,10 @@ const routeConfig = [
     ),
     errorElement: <RouteErrorBoundary />,
     children: [
-      // Public browsing routes — no auth required
+      // Home — smart routing for guests, tenants, and landlords
       {
         path: '/',
-        element: (
-          <Suspense fallback={<SuspenseFallback />}>
-            <BrowseView />
-          </Suspense>
-        ),
+        element: <HomePage />,
       },
       {
         path: '/listings',

@@ -51,8 +51,11 @@ export default function Header() {
     { path: '/profile', label: 'Profile', icon: User },
   ]
 
-  // Guest users see only the Browse link
-  const guestNavItems = [{ path: '/', label: 'Browse', icon: Home }]
+  // Guest users see Browse and List Your Property
+  const guestNavItems = [
+    { path: '/listings', label: 'Browse', icon: Home },
+    { path: '/register', label: 'List Your Property', icon: Building2 },
+  ]
 
   const navItems = !user
     ? guestNavItems
