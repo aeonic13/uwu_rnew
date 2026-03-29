@@ -11,33 +11,34 @@ const api = axios.create({
 
 // Request interceptor - add auth token
 api.interceptors.request.use(
-  (config) => {
+  config => {
     const token = localStorage.getItem('authToken')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
     return config
   },
-  (error) => {
+  error => {
     return Promise.reject(error)
   }
 )
 
 // Response interceptor - handle errors
 api.interceptors.response.use(
-  (response) => {
+  response => {
     return response.data
   },
-  (error) => {
+  error => {
     // Handle specific error cases
     if (error.response) {
       const { status, data } = error.response
 
-      // Unauthorized - clear token and redirect
+      // Unauthorized - only redirect if the user had an existing session (token expired)
       if (status === 401) {
+        const hadToken = !!localStorage.getItem('authToken')
         localStorage.removeItem('authToken')
-        // Only redirect if not already on login page
-        if (!window.location.pathname.includes('/login')) {
+        // Only redirect to login if there was a token (session expired), not for guest requests
+        if (hadToken && !window.location.pathname.includes('/login')) {
           window.location.href = '/login'
         }
       }
@@ -55,7 +56,9 @@ api.interceptors.response.use(
 
       // Server errors
       if (status >= 500) {
-        return Promise.reject(new Error('Server error. Please try again later.'))
+        return Promise.reject(
+          new Error('Server error. Please try again later.')
+        )
       }
 
       // Return error message from response
@@ -65,7 +68,9 @@ api.interceptors.response.use(
 
     // Network error
     if (error.request) {
-      return Promise.reject(new Error('Network error. Please check your connection.'))
+      return Promise.reject(
+        new Error('Network error. Please check your connection.')
+      )
     }
 
     // Other errors
