@@ -1,15 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import {
-  Mail,
-  Lock,
-  Eye,
-  EyeOff,
-  Home,
-  User,
-  School,
-  Building2,
-} from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, Home, User, Building2 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 
@@ -27,7 +18,6 @@ function RegisterPage() {
     email: '',
     password: '',
     confirmPassword: '',
-    university: '',
   })
   const [showPassword, setShowPassword] = useState(false)
   const [errors, setErrors] = useState({})
@@ -53,13 +43,6 @@ function RegisterPage() {
       newErrors.email = 'Email is required'
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Invalid email format'
-    }
-    if (
-      userType === 'student' &&
-      formData.email &&
-      !formData.email.endsWith('.edu')
-    ) {
-      newErrors.email = 'Please use your university email (.edu)'
     }
     if (!formData.password) {
       newErrors.password = 'Password is required'
@@ -252,11 +235,7 @@ function RegisterPage() {
                     type="email"
                     value={formData.email}
                     onChange={handleInputChange('email')}
-                    placeholder={
-                      userType === 'student'
-                        ? 'you@university.edu'
-                        : 'you@example.com'
-                    }
+                    placeholder="you@example.com"
                     className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                       errors.email ? 'border-red-500' : 'border-gray-300'
                     }`}
@@ -266,32 +245,6 @@ function RegisterPage() {
                   <p className="text-red-500 text-sm mt-1">{errors.email}</p>
                 )}
               </div>
-
-              {/* University (students only) */}
-              {userType === 'student' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    University
-                  </label>
-                  <div className="relative">
-                    <School
-                      size={20}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                    />
-                    <select
-                      value={formData.university}
-                      onChange={handleInputChange('university')}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
-                    >
-                      <option value="">Select your university</option>
-                      <option value="University of San Diego">
-                        University of San Diego
-                      </option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-                </div>
-              )}
 
               {/* Password */}
               <div>

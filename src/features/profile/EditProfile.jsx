@@ -6,8 +6,6 @@ import {
   User,
   Mail,
   Phone,
-  School,
-  BookOpen,
   FileText,
   Save,
   Instagram,
@@ -89,8 +87,6 @@ function EditProfile() {
     lastName: user?.lastName || '',
     email: user?.email || '',
     phone: user?.phone || '',
-    university: user?.university || '',
-    major: user?.major || '',
     bio: user?.bio || '',
     instagramUrl: user?.instagramUrl || '',
     linkedinUrl: user?.linkedinUrl || '',
@@ -100,19 +96,19 @@ function EditProfile() {
   const [isLoading, setIsLoading] = useState(false)
   const [errors, setErrors] = useState({})
 
-  const handleInputChange = (field) => (e) => {
-    setFormData((prev) => ({ ...prev, [field]: e.target.value }))
+  const handleInputChange = field => e => {
+    setFormData(prev => ({ ...prev, [field]: e.target.value }))
     // Clear error when user starts typing
     if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: null }))
+      setErrors(prev => ({ ...prev, [field]: null }))
     }
   }
 
-  const handleAvatarChange = (e) => {
+  const handleAvatarChange = e => {
     const file = e.target.files?.[0]
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        setErrors((prev) => ({ ...prev, avatar: 'Image must be less than 5MB' }))
+        setErrors(prev => ({ ...prev, avatar: 'Image must be less than 5MB' }))
         return
       }
 
@@ -144,7 +140,7 @@ function EditProfile() {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault()
 
     if (!validateForm()) return
@@ -186,11 +182,7 @@ function EditProfile() {
             className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors disabled:opacity-50"
             aria-label="Save changes"
           >
-            {isLoading ? (
-              <LoadingSpinner size="sm" />
-            ) : (
-              <Save size={24} />
-            )}
+            {isLoading ? <LoadingSpinner size="sm" /> : <Save size={24} />}
           </button>
         </div>
       </div>
@@ -266,31 +258,6 @@ function EditProfile() {
           />
         </div>
 
-        {/* Education Section (for students) */}
-        {user?.userType === 'student' && (
-          <div className="bg-white rounded-lg border border-gray-200 p-4 mb-4">
-            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">
-              Education
-            </h2>
-
-            <FormInput
-              label="University"
-              icon={School}
-              value={formData.university}
-              onChange={handleInputChange('university')}
-              placeholder="Enter your university"
-            />
-
-            <FormInput
-              label="Major"
-              icon={BookOpen}
-              value={formData.major}
-              onChange={handleInputChange('major')}
-              placeholder="Enter your major"
-            />
-          </div>
-        )}
-
         {/* Bio Section */}
         <div className="bg-white rounded-lg border border-gray-200 p-4 mb-4">
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">
@@ -306,33 +273,32 @@ function EditProfile() {
         </div>
 
         {/* Social Profiles Section */}
-        {user?.userType === 'student' && (
-          <div className="bg-white rounded-lg border border-gray-200 p-4 mb-4">
-            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">
-              Social Profiles
-            </h2>
+        <div className="bg-white rounded-lg border border-gray-200 p-4 mb-4">
+          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">
+            Social Profiles
+          </h2>
 
-            <FormInput
-              label="Instagram"
-              icon={Instagram}
-              value={formData.instagramUrl}
-              onChange={handleInputChange('instagramUrl')}
-              placeholder="https://instagram.com/yourusername"
-            />
+          <FormInput
+            label="Instagram"
+            icon={Instagram}
+            value={formData.instagramUrl}
+            onChange={handleInputChange('instagramUrl')}
+            placeholder="https://instagram.com/yourusername"
+          />
 
-            <FormInput
-              label="LinkedIn"
-              icon={Linkedin}
-              value={formData.linkedinUrl}
-              onChange={handleInputChange('linkedinUrl')}
-              placeholder="https://linkedin.com/in/yourprofile"
-            />
+          <FormInput
+            label="LinkedIn"
+            icon={Linkedin}
+            value={formData.linkedinUrl}
+            onChange={handleInputChange('linkedinUrl')}
+            placeholder="https://linkedin.com/in/yourprofile"
+          />
 
-            <p className="text-xs text-gray-500 mt-2">
-              💡 Adding your social profiles helps landlords verify your identity and build trust
-            </p>
-          </div>
-        )}
+          <p className="text-xs text-gray-500 mt-2">
+            💡 Adding your social profiles helps verify your identity and build
+            trust
+          </p>
+        </div>
 
         {/* Submit Error */}
         {errors.submit && (

@@ -76,8 +76,8 @@ export default function LandingPage() {
             <span className="text-blue-200">tenants &amp; landlords</span>
           </h1>
           <p className="text-lg sm:text-xl text-blue-100 mb-10 max-w-xl mx-auto">
-            Browse student rentals near your university, or list your property
-            and connect with verified tenants — all in one place.
+            Find your perfect rental, or list your property and connect with
+            verified tenants — all in one place.
           </p>
 
           {/* Two path cards */}
@@ -92,7 +92,7 @@ export default function LandingPage() {
               </div>
               <h3 className="text-xl font-bold mb-1">I&apos;m a Tenant</h3>
               <p className="text-blue-100 text-sm mb-4">
-                Browse verified rentals near campus, apply online, and manage
+                Browse verified rentals in your area, apply online, and manage
                 your lease — no agent needed.
               </p>
               <span className="inline-flex items-center gap-1 text-white font-semibold text-sm group-hover:gap-2 transition-all">
@@ -200,7 +200,7 @@ export default function LandingPage() {
               Have a property to rent out?
             </h3>
             <p className="text-green-100 text-sm">
-              List for free and reach verified student tenants near top
+              List for free and connect with verified tenants in your area.
               universities.
             </p>
           </div>

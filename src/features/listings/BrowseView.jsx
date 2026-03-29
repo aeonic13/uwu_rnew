@@ -11,7 +11,6 @@ import {
   SlidersHorizontal,
   Bed,
   Bath,
-  GraduationCap,
   Tag,
 } from 'lucide-react'
 import { useListings } from '../../contexts/ListingsContext'
@@ -19,11 +18,23 @@ import { useFavorites } from '../../contexts/FavoritesContext'
 import { ListingShape } from '../../types/propTypes'
 import AdvancedFiltersModal from '../../components/AdvancedFiltersModal'
 
-const universities = [
-  'All Universities', 'University of San Diego',
+const AREAS = [
+  'All Areas',
+  'San Diego',
+  'Mission Valley',
+  'Pacific Beach',
+  'North Park',
+  'Hillcrest',
 ]
 
-const PROPERTY_TYPES = ['Any Type', 'Apartment', 'House', 'Studio', 'Single Room', 'Condo']
+const PROPERTY_TYPES = [
+  'Any Type',
+  'Apartment',
+  'House',
+  'Studio',
+  'Single Room',
+  'Condo',
+]
 
 const PRICE_RANGES = [
   { label: 'Any Price', min: 0, max: Infinity },
@@ -57,19 +68,27 @@ function ListingCard({ listing, isFavorite, onToggleFavorite, onClick }) {
       {/* Image */}
       <div className="relative overflow-hidden">
         <img
-          src={listing.images?.[0] || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600'}
+          src={
+            listing.images?.[0] ||
+            'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600'
+          }
           alt={listing.title}
           className="w-full h-52 object-cover group-hover:scale-105 transition-transform duration-300"
         />
         {/* Favorite button */}
         <button
-          onClick={(e) => { e.stopPropagation(); onToggleFavorite(listing.id) }}
+          onClick={e => {
+            e.stopPropagation()
+            onToggleFavorite(listing.id)
+          }}
           className="absolute top-3 right-3 p-2 rounded-full bg-white/90 backdrop-blur-sm shadow hover:scale-110 transition-transform"
           aria-label={isFavorite ? 'Remove from saved' : 'Save home'}
         >
           <Heart
             size={18}
-            className={isFavorite ? 'text-red-500 fill-red-500' : 'text-gray-500'}
+            className={
+              isFavorite ? 'text-red-500 fill-red-500' : 'text-gray-500'
+            }
           />
         </button>
         {/* Property type badge */}
@@ -107,7 +126,7 @@ function ListingCard({ listing, isFavorite, onToggleFavorite, onClick }) {
             <>
               <span className="text-gray-300">|</span>
               <span className="flex items-center gap-1 text-blue-600">
-                <GraduationCap size={14} />
+                <MapPin size={14} />
                 {listing.university}
               </span>
             </>
@@ -123,7 +142,7 @@ function ListingCard({ listing, isFavorite, onToggleFavorite, onClick }) {
         {/* Amenity pills */}
         {listing.amenities?.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-3">
-            {listing.amenities.slice(0, 3).map((a) => (
+            {listing.amenities.slice(0, 3).map(a => (
               <span
                 key={a}
                 className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full"
@@ -170,18 +189,18 @@ function BrowseView() {
 
     if (priceRange.max !== Infinity || priceRange.min !== 0) {
       result = result.filter(
-        (l) => l.price >= priceRange.min && l.price <= priceRange.max
+        l => l.price >= priceRange.min && l.price <= priceRange.max
       )
     }
 
     if (minBeds !== 'Any Beds') {
       const min = parseInt(minBeds)
-      result = result.filter((l) => l.bedrooms >= min)
+      result = result.filter(l => l.bedrooms >= min)
     }
 
     if (propertyType !== 'Any Type') {
       result = result.filter(
-        (l) => l.propertyType?.toLowerCase() === propertyType.toLowerCase()
+        l => l.propertyType?.toLowerCase() === propertyType.toLowerCase()
       )
     }
 
@@ -199,26 +218,39 @@ function BrowseView() {
           <div className="flex items-center gap-3">
             {/* Search input */}
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <Search
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                size={18}
+              />
               <input
                 type="text"
-                placeholder="Search by city, university, or neighborhood…"
+                placeholder="Search by city, address, or neighborhood…"
                 value={filters.searchTerm || ''}
-                onChange={(e) => setFilters({ searchTerm: e.target.value })}
+                onChange={e => setFilters({ searchTerm: e.target.value })}
                 className="w-full pl-9 pr-4 py-2.5 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 transition-colors"
               />
             </div>
 
-            {/* University filter */}
+            {/* Area filter */}
             <div className="relative hidden sm:block">
               <select
-                value={filters.university || 'All Universities'}
-                onChange={(e) => setFilters({ university: e.target.value })}
+                value={filters.university || 'All Areas'}
+                onChange={e =>
+                  setFilters({
+                    university:
+                      e.target.value === 'All Areas' ? '' : e.target.value,
+                  })
+                }
                 className="appearance-none pl-3 pr-8 py-2.5 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 bg-white cursor-pointer"
               >
-                {universities.map((u) => <option key={u}>{u}</option>)}
+                {AREAS.map(a => (
+                  <option key={a}>{a}</option>
+                ))}
               </select>
-              <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <ChevronDown
+                size={14}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+              />
             </div>
 
             {/* Advanced filters */}
@@ -237,49 +269,63 @@ function BrowseView() {
             <div className="relative flex-shrink-0">
               <select
                 value={priceRange.label}
-                onChange={(e) => setPriceRange(PRICE_RANGES.find(p => p.label === e.target.value))}
+                onChange={e =>
+                  setPriceRange(
+                    PRICE_RANGES.find(p => p.label === e.target.value)
+                  )
+                }
                 className="appearance-none pl-3 pr-7 py-1.5 border border-gray-300 rounded-full text-xs font-medium bg-white cursor-pointer hover:border-blue-500 focus:outline-none focus:border-blue-500"
               >
-                {PRICE_RANGES.map((p) => <option key={p.label}>{p.label}</option>)}
+                {PRICE_RANGES.map(p => (
+                  <option key={p.label}>{p.label}</option>
+                ))}
               </select>
-              <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <ChevronDown
+                size={12}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+              />
             </div>
 
             {/* Beds */}
             <div className="relative flex-shrink-0">
               <select
                 value={minBeds}
-                onChange={(e) => setMinBeds(e.target.value)}
+                onChange={e => setMinBeds(e.target.value)}
                 className="appearance-none pl-3 pr-7 py-1.5 border border-gray-300 rounded-full text-xs font-medium bg-white cursor-pointer hover:border-blue-500 focus:outline-none focus:border-blue-500"
               >
-                {BEDS_OPTIONS.map((b) => <option key={b}>{b}</option>)}
+                {BEDS_OPTIONS.map(b => (
+                  <option key={b}>{b}</option>
+                ))}
               </select>
-              <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <ChevronDown
+                size={12}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+              />
             </div>
 
             {/* Property type */}
             <div className="relative flex-shrink-0">
               <select
                 value={propertyType}
-                onChange={(e) => setPropertyType(e.target.value)}
+                onChange={e => setPropertyType(e.target.value)}
                 className="appearance-none pl-3 pr-7 py-1.5 border border-gray-300 rounded-full text-xs font-medium bg-white cursor-pointer hover:border-blue-500 focus:outline-none focus:border-blue-500"
               >
-                {PROPERTY_TYPES.map((t) => <option key={t}>{t}</option>)}
+                {PROPERTY_TYPES.map(t => (
+                  <option key={t}>{t}</option>
+                ))}
               </select>
-              <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <ChevronDown
+                size={12}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+              />
             </div>
 
-            {/* University search shortcut */}
-            <button
-              onClick={() => navigate('/university-search')}
-              className="flex-shrink-0 flex items-center gap-1.5 pl-3 pr-4 py-1.5 border border-gray-300 rounded-full text-xs font-medium bg-white hover:border-blue-500 hover:text-blue-600 transition-colors"
-            >
-              <GraduationCap size={13} />
-              Near Campus
-            </button>
-
             {/* Clear filters */}
-            {(filters.searchTerm || filters.university !== 'All Universities' || priceRange.min !== 0 || minBeds !== 'Any Beds' || propertyType !== 'Any Type') && (
+            {(filters.searchTerm ||
+              filters.university ||
+              priceRange.min !== 0 ||
+              minBeds !== 'Any Beds' ||
+              propertyType !== 'Any Type') && (
               <button
                 onClick={() => {
                   clearFilters()
@@ -302,10 +348,13 @@ function BrowseView() {
         <div className="flex items-center justify-between mb-5">
           <div>
             <h1 className="text-xl font-bold text-gray-900">
-              {displayedListings.length.toLocaleString()} rental{displayedListings.length !== 1 ? 's' : ''}
+              {displayedListings.length.toLocaleString()} rental
+              {displayedListings.length !== 1 ? 's' : ''}
             </h1>
             {filters.searchTerm && (
-              <p className="text-sm text-gray-500 mt-0.5">Results for &ldquo;{filters.searchTerm}&rdquo;</p>
+              <p className="text-sm text-gray-500 mt-0.5">
+                Results for &ldquo;{filters.searchTerm}&rdquo;
+              </p>
             )}
           </div>
 
@@ -313,14 +362,19 @@ function BrowseView() {
           <div className="relative">
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
+              onChange={e => setSortBy(e.target.value)}
               className="appearance-none pl-3 pr-8 py-2 border border-gray-300 rounded-lg text-sm bg-white cursor-pointer focus:outline-none focus:border-blue-500"
             >
-              {SORT_OPTIONS.map((s) => (
-                <option key={s.value} value={s.value}>{s.label}</option>
+              {SORT_OPTIONS.map(s => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
               ))}
             </select>
-            <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            <ChevronDown
+              size={14}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+            />
           </div>
         </div>
 
@@ -330,7 +384,9 @@ function BrowseView() {
             <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mb-4">
               <Tag size={28} className="text-blue-400" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-700 mb-1">No rentals found</h3>
+            <h3 className="text-lg font-semibold text-gray-700 mb-1">
+              No rentals found
+            </h3>
             <p className="text-gray-400 text-sm max-w-xs">
               Try widening your search or adjusting your filters.
             </p>
@@ -348,7 +404,7 @@ function BrowseView() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-            {displayedListings.map((listing) => (
+            {displayedListings.map(listing => (
               <ListingCard
                 key={listing.id}
                 listing={listing}
