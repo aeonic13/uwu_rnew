@@ -19,7 +19,9 @@ const ConversationView = lazy(
 )
 const ProfileView = lazy(() => import('../features/profile/ProfileView'))
 const EditProfile = lazy(() => import('../features/profile/EditProfile'))
-const StudentTenantDashboard = lazy(() => import('../features/profile/StudentTenantDashboard'))
+const StudentTenantDashboard = lazy(
+  () => import('../features/profile/StudentTenantDashboard')
+)
 const PaymentsView = lazy(() => import('../features/payments/PaymentsView'))
 const ApplicationFlow = lazy(
   () => import('../features/applications/ApplicationFlow')
@@ -137,7 +139,7 @@ function PublicRoute({ children }) {
  * Route configuration
  */
 const routeConfig = [
-  // Public routes (no auth required)
+  // Auth pages (redirect if already logged in)
   {
     path: '/login',
     element: (
@@ -159,26 +161,22 @@ const routeConfig = [
     ),
   },
 
-  // Protected routes with layout
+  // Main app layout — accessible to guests and authenticated users
   {
     element: (
-      <ProtectedRoute>
-        <Suspense fallback={<SuspenseFallback />}>
-          <AppLayout />
-        </Suspense>
-      </ProtectedRoute>
+      <Suspense fallback={<SuspenseFallback />}>
+        <AppLayout />
+      </Suspense>
     ),
     errorElement: <RouteErrorBoundary />,
     children: [
-      // Student routes
+      // Public browsing routes — no auth required
       {
         path: '/',
         element: (
-          <RoleRoute allowedRoles={['student']}>
-            <Suspense fallback={<SuspenseFallback />}>
-              <BrowseView />
-            </Suspense>
-          </RoleRoute>
+          <Suspense fallback={<SuspenseFallback />}>
+            <BrowseView />
+          </Suspense>
         ),
       },
       {
@@ -197,276 +195,332 @@ const routeConfig = [
           </Suspense>
         ),
       },
+
+      // Tenant-only route
       {
         path: '/university-search',
         element: (
-          <RoleRoute allowedRoles={['student']}>
-            <Suspense fallback={<SuspenseFallback />}>
-              <UniversitySearch />
-            </Suspense>
-          </RoleRoute>
+          <ProtectedRoute>
+            <RoleRoute allowedRoles={['student']}>
+              <Suspense fallback={<SuspenseFallback />}>
+                <UniversitySearch />
+              </Suspense>
+            </RoleRoute>
+          </ProtectedRoute>
         ),
       },
 
-      // Messaging routes
+      // Messaging routes (auth required)
       {
         path: '/messages',
         element: (
-          <Suspense fallback={<SuspenseFallback />}>
-            <MessagesView />
-          </Suspense>
+          <ProtectedRoute>
+            <Suspense fallback={<SuspenseFallback />}>
+              <MessagesView />
+            </Suspense>
+          </ProtectedRoute>
         ),
       },
       {
         path: '/messages/:conversationId',
         element: (
-          <Suspense fallback={<SuspenseFallback />}>
-            <ConversationView />
-          </Suspense>
+          <ProtectedRoute>
+            <Suspense fallback={<SuspenseFallback />}>
+              <ConversationView />
+            </Suspense>
+          </ProtectedRoute>
         ),
       },
 
-      // Profile routes
+      // Profile routes (auth required)
       {
         path: '/profile',
         element: (
-          <Suspense fallback={<SuspenseFallback />}>
-            <ProfileView />
-          </Suspense>
+          <ProtectedRoute>
+            <Suspense fallback={<SuspenseFallback />}>
+              <ProfileView />
+            </Suspense>
+          </ProtectedRoute>
         ),
       },
       {
         path: '/profile/edit',
         element: (
-          <Suspense fallback={<SuspenseFallback />}>
-            <EditProfile />
-          </Suspense>
+          <ProtectedRoute>
+            <Suspense fallback={<SuspenseFallback />}>
+              <EditProfile />
+            </Suspense>
+          </ProtectedRoute>
         ),
       },
       {
         path: '/profile/tenant-dashboard',
         element: (
-          <RoleRoute allowedRoles={['student']}>
-            <Suspense fallback={<SuspenseFallback />}>
-              <StudentTenantDashboard />
-            </Suspense>
-          </RoleRoute>
+          <ProtectedRoute>
+            <RoleRoute allowedRoles={['student']}>
+              <Suspense fallback={<SuspenseFallback />}>
+                <StudentTenantDashboard />
+              </Suspense>
+            </RoleRoute>
+          </ProtectedRoute>
         ),
       },
 
-      // Payment routes
+      // Payment routes (auth required)
       {
         path: '/payments',
         element: (
-          <Suspense fallback={<SuspenseFallback />}>
-            <PaymentsView />
-          </Suspense>
+          <ProtectedRoute>
+            <Suspense fallback={<SuspenseFallback />}>
+              <PaymentsView />
+            </Suspense>
+          </ProtectedRoute>
         ),
       },
 
-      // Application routes
+      // Application routes (auth required)
       {
         path: '/apply/:listingId',
         element: (
-          <RoleRoute allowedRoles={['student']}>
-            <Suspense fallback={<SuspenseFallback />}>
-              <ApplicationFlow />
-            </Suspense>
-          </RoleRoute>
+          <ProtectedRoute>
+            <RoleRoute allowedRoles={['student']}>
+              <Suspense fallback={<SuspenseFallback />}>
+                <ApplicationFlow />
+              </Suspense>
+            </RoleRoute>
+          </ProtectedRoute>
         ),
       },
       {
         path: '/agreement/:agreementId',
         element: (
-          <Suspense fallback={<SuspenseFallback />}>
-            <AgreementView />
-          </Suspense>
+          <ProtectedRoute>
+            <Suspense fallback={<SuspenseFallback />}>
+              <AgreementView />
+            </Suspense>
+          </ProtectedRoute>
         ),
       },
 
-      // Roommate routes (student only)
+      // Roommate routes (tenant only, auth required)
       {
         path: '/roommates',
         element: (
-          <RoleRoute allowedRoles={['student']}>
-            <Suspense fallback={<SuspenseFallback />}>
-              <RoommateQuestionnaire />
-            </Suspense>
-          </RoleRoute>
+          <ProtectedRoute>
+            <RoleRoute allowedRoles={['student']}>
+              <Suspense fallback={<SuspenseFallback />}>
+                <RoommateQuestionnaire />
+              </Suspense>
+            </RoleRoute>
+          </ProtectedRoute>
         ),
       },
       {
         path: '/roommates/matching',
         element: (
-          <RoleRoute allowedRoles={['student']}>
-            <Suspense fallback={<SuspenseFallback />}>
-              <RoommateMatching />
-            </Suspense>
-          </RoleRoute>
+          <ProtectedRoute>
+            <RoleRoute allowedRoles={['student']}>
+              <Suspense fallback={<SuspenseFallback />}>
+                <RoommateMatching />
+              </Suspense>
+            </RoleRoute>
+          </ProtectedRoute>
         ),
       },
 
-      // Group routes (student only)
+      // Group routes (tenant only, auth required)
       {
         path: '/groups',
         element: (
-          <RoleRoute allowedRoles={['student']}>
-            <Suspense fallback={<SuspenseFallback />}>
-              <GroupDashboard />
-            </Suspense>
-          </RoleRoute>
+          <ProtectedRoute>
+            <RoleRoute allowedRoles={['student']}>
+              <Suspense fallback={<SuspenseFallback />}>
+                <GroupDashboard />
+              </Suspense>
+            </RoleRoute>
+          </ProtectedRoute>
         ),
       },
       {
         path: '/groups/create',
         element: (
-          <RoleRoute allowedRoles={['student']}>
-            <Suspense fallback={<SuspenseFallback />}>
-              <CreateGroup />
-            </Suspense>
-          </RoleRoute>
+          <ProtectedRoute>
+            <RoleRoute allowedRoles={['student']}>
+              <Suspense fallback={<SuspenseFallback />}>
+                <CreateGroup />
+              </Suspense>
+            </RoleRoute>
+          </ProtectedRoute>
         ),
       },
       {
         path: '/groups/:id',
         element: (
-          <RoleRoute allowedRoles={['student']}>
-            <Suspense fallback={<SuspenseFallback />}>
-              <GroupDetail />
-            </Suspense>
-          </RoleRoute>
+          <ProtectedRoute>
+            <RoleRoute allowedRoles={['student']}>
+              <Suspense fallback={<SuspenseFallback />}>
+                <GroupDetail />
+              </Suspense>
+            </RoleRoute>
+          </ProtectedRoute>
         ),
       },
       {
         path: '/groups/:id/chat',
         element: (
-          <RoleRoute allowedRoles={['student']}>
-            <Suspense fallback={<SuspenseFallback />}>
-              <GroupChat groupId="" />
-            </Suspense>
-          </RoleRoute>
+          <ProtectedRoute>
+            <RoleRoute allowedRoles={['student']}>
+              <Suspense fallback={<SuspenseFallback />}>
+                <GroupChat groupId="" />
+              </Suspense>
+            </RoleRoute>
+          </ProtectedRoute>
         ),
       },
 
-      // Owner routes
+      // Landlord/Owner routes (auth required)
       {
         path: '/dashboard',
         element: (
-          <RoleRoute allowedRoles={['owner']}>
-            <Suspense fallback={<SuspenseFallback />}>
-              <OwnerDashboard />
-            </Suspense>
-          </RoleRoute>
+          <ProtectedRoute>
+            <RoleRoute allowedRoles={['owner']}>
+              <Suspense fallback={<SuspenseFallback />}>
+                <OwnerDashboard />
+              </Suspense>
+            </RoleRoute>
+          </ProtectedRoute>
         ),
       },
       {
         path: '/dashboard/inbox',
         element: (
-          <RoleRoute allowedRoles={['owner']}>
-            <Suspense fallback={<SuspenseFallback />}>
-              <LandlordInbox />
-            </Suspense>
-          </RoleRoute>
+          <ProtectedRoute>
+            <RoleRoute allowedRoles={['owner']}>
+              <Suspense fallback={<SuspenseFallback />}>
+                <LandlordInbox />
+              </Suspense>
+            </RoleRoute>
+          </ProtectedRoute>
         ),
       },
       {
         path: '/dashboard/listings/new',
         element: (
-          <RoleRoute allowedRoles={['owner']}>
-            <Suspense fallback={<SuspenseFallback />}>
-              <LandlordListingForm />
-            </Suspense>
-          </RoleRoute>
+          <ProtectedRoute>
+            <RoleRoute allowedRoles={['owner']}>
+              <Suspense fallback={<SuspenseFallback />}>
+                <LandlordListingForm />
+              </Suspense>
+            </RoleRoute>
+          </ProtectedRoute>
         ),
       },
       {
         path: '/dashboard/listings/:id/edit',
         element: (
-          <RoleRoute allowedRoles={['owner']}>
-            <Suspense fallback={<SuspenseFallback />}>
-              <LandlordListingForm />
-            </Suspense>
-          </RoleRoute>
+          <ProtectedRoute>
+            <RoleRoute allowedRoles={['owner']}>
+              <Suspense fallback={<SuspenseFallback />}>
+                <LandlordListingForm />
+              </Suspense>
+            </RoleRoute>
+          </ProtectedRoute>
         ),
       },
       {
         path: '/dashboard/banking',
         element: (
-          <RoleRoute allowedRoles={['owner']}>
-            <Suspense fallback={<SuspenseFallback />}>
-              <BankingBookkeeping />
-            </Suspense>
-          </RoleRoute>
+          <ProtectedRoute>
+            <RoleRoute allowedRoles={['owner']}>
+              <Suspense fallback={<SuspenseFallback />}>
+                <BankingBookkeeping />
+              </Suspense>
+            </RoleRoute>
+          </ProtectedRoute>
         ),
       },
       {
         path: '/dashboard/rent-collection',
         element: (
-          <RoleRoute allowedRoles={['owner']}>
-            <Suspense fallback={<SuspenseFallback />}>
-              <RentCollectionSystem />
-            </Suspense>
-          </RoleRoute>
+          <ProtectedRoute>
+            <RoleRoute allowedRoles={['owner']}>
+              <Suspense fallback={<SuspenseFallback />}>
+                <RentCollectionSystem />
+              </Suspense>
+            </RoleRoute>
+          </ProtectedRoute>
         ),
       },
       {
         path: '/dashboard/tax',
         element: (
-          <RoleRoute allowedRoles={['owner']}>
-            <Suspense fallback={<SuspenseFallback />}>
-              <TaxCenter />
-            </Suspense>
-          </RoleRoute>
+          <ProtectedRoute>
+            <RoleRoute allowedRoles={['owner']}>
+              <Suspense fallback={<SuspenseFallback />}>
+                <TaxCenter />
+              </Suspense>
+            </RoleRoute>
+          </ProtectedRoute>
         ),
       },
       {
         path: '/dashboard/security-deposits',
         element: (
-          <RoleRoute allowedRoles={['owner']}>
-            <Suspense fallback={<SuspenseFallback />}>
-              <SecurityDepositManager />
-            </Suspense>
-          </RoleRoute>
+          <ProtectedRoute>
+            <RoleRoute allowedRoles={['owner']}>
+              <Suspense fallback={<SuspenseFallback />}>
+                <SecurityDepositManager />
+              </Suspense>
+            </RoleRoute>
+          </ProtectedRoute>
         ),
       },
       {
         path: '/dashboard/approvals',
         element: (
-          <RoleRoute allowedRoles={['owner']}>
-            <Suspense fallback={<SuspenseFallback />}>
-              <OwnerApprovalSystem />
-            </Suspense>
-          </RoleRoute>
+          <ProtectedRoute>
+            <RoleRoute allowedRoles={['owner']}>
+              <Suspense fallback={<SuspenseFallback />}>
+                <OwnerApprovalSystem />
+              </Suspense>
+            </RoleRoute>
+          </ProtectedRoute>
         ),
       },
       {
         path: '/dashboard/documents',
         element: (
-          <RoleRoute allowedRoles={['owner']}>
-            <Suspense fallback={<SuspenseFallback />}>
-              <OwnerDocumentManager />
-            </Suspense>
-          </RoleRoute>
+          <ProtectedRoute>
+            <RoleRoute allowedRoles={['owner']}>
+              <Suspense fallback={<SuspenseFallback />}>
+                <OwnerDocumentManager />
+              </Suspense>
+            </RoleRoute>
+          </ProtectedRoute>
         ),
       },
       {
         path: '/dashboard/disputes',
         element: (
-          <RoleRoute allowedRoles={['owner']}>
-            <Suspense fallback={<SuspenseFallback />}>
-              <DisputeResolutionCenter />
-            </Suspense>
-          </RoleRoute>
+          <ProtectedRoute>
+            <RoleRoute allowedRoles={['owner']}>
+              <Suspense fallback={<SuspenseFallback />}>
+                <DisputeResolutionCenter />
+              </Suspense>
+            </RoleRoute>
+          </ProtectedRoute>
         ),
       },
       {
         path: '/dashboard/inspections',
         element: (
-          <RoleRoute allowedRoles={['owner']}>
-            <Suspense fallback={<SuspenseFallback />}>
-              <PropertyInspectionTools />
-            </Suspense>
-          </RoleRoute>
+          <ProtectedRoute>
+            <RoleRoute allowedRoles={['owner']}>
+              <Suspense fallback={<SuspenseFallback />}>
+                <PropertyInspectionTools />
+              </Suspense>
+            </RoleRoute>
+          </ProtectedRoute>
         ),
       },
     ],

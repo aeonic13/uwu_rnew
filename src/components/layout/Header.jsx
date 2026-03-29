@@ -14,6 +14,7 @@ import {
   LogOut,
   Building2,
   Users,
+  LogIn,
 } from 'lucide-react'
 
 export default function Header() {
@@ -27,7 +28,7 @@ export default function Header() {
     navigate('/login')
   }
 
-  const isActive = (path) => location.pathname === path
+  const isActive = path => location.pathname === path
 
   // Student navigation items
   const studentNavItems = [
@@ -40,13 +41,24 @@ export default function Header() {
   // Owner navigation items
   const ownerNavItems = [
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { path: '/dashboard/listings/new', label: 'Post Listing', icon: PlusCircle },
+    {
+      path: '/dashboard/listings/new',
+      label: 'Post Listing',
+      icon: PlusCircle,
+    },
     { path: '/dashboard/inbox', label: 'Inbox', icon: Inbox },
     { path: '/payments', label: 'Payments', icon: DollarSign },
     { path: '/profile', label: 'Profile', icon: User },
   ]
 
-  const navItems = user?.userType === 'owner' ? ownerNavItems : studentNavItems
+  // Guest users see only the Browse link
+  const guestNavItems = [{ path: '/', label: 'Browse', icon: Home }]
+
+  const navItems = !user
+    ? guestNavItems
+    : user.userType === 'owner'
+      ? ownerNavItems
+      : studentNavItems
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
@@ -60,7 +72,7 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-6">
-            {navItems.map((item) => {
+            {navItems.map(item => {
               const Icon = item.icon
               return (
                 <Link
@@ -81,7 +93,7 @@ export default function Header() {
 
           {/* Desktop User Menu */}
           <div className="hidden md:flex items-center gap-3">
-            {user && (
+            {user ? (
               <>
                 <span className="text-sm text-gray-600">
                   {user.firstName} {user.lastName}
@@ -93,6 +105,22 @@ export default function Header() {
                   <LogOut size={18} />
                   <span>Logout</span>
                 </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <LogIn size={18} />
+                  <span>Sign In</span>
+                </Link>
+                <Link
+                  to="/register"
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                >
+                  <span>Get Started</span>
+                </Link>
               </>
             )}
           </div>
@@ -111,7 +139,7 @@ export default function Header() {
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-gray-200 bg-white">
           <nav className="px-4 py-4 space-y-2">
-            {navItems.map((item) => {
+            {navItems.map(item => {
               const Icon = item.icon
               return (
                 <Link
@@ -130,7 +158,7 @@ export default function Header() {
               )
             })}
 
-            {user && (
+            {user ? (
               <button
                 onClick={() => {
                   handleLogout()
@@ -141,6 +169,24 @@ export default function Header() {
                 <LogOut size={20} />
                 <span>Logout</span>
               </button>
+            ) : (
+              <div className="flex flex-col gap-2 pt-2 border-t border-gray-100">
+                <Link
+                  to="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-gray-700 hover:bg-gray-100"
+                >
+                  <LogIn size={20} />
+                  <span>Sign In</span>
+                </Link>
+                <Link
+                  to="/register"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-white bg-blue-600 hover:bg-blue-700"
+                >
+                  <span>Get Started</span>
+                </Link>
+              </div>
             )}
           </nav>
         </div>

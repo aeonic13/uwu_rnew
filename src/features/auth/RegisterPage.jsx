@@ -1,6 +1,15 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Mail, Lock, Eye, EyeOff, Home, User, School, Building2 } from 'lucide-react'
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  Home,
+  User,
+  School,
+  Building2,
+} from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 
@@ -24,10 +33,10 @@ function RegisterPage() {
   const [errors, setErrors] = useState({})
   const [agreedToTerms, setAgreedToTerms] = useState(false)
 
-  const handleInputChange = (field) => (e) => {
-    setFormData((prev) => ({ ...prev, [field]: e.target.value }))
+  const handleInputChange = field => e => {
+    setFormData(prev => ({ ...prev, [field]: e.target.value }))
     if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: null }))
+      setErrors(prev => ({ ...prev, [field]: null }))
     }
   }
 
@@ -45,7 +54,11 @@ function RegisterPage() {
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Invalid email format'
     }
-    if (userType === 'student' && formData.email && !formData.email.endsWith('.edu')) {
+    if (
+      userType === 'student' &&
+      formData.email &&
+      !formData.email.endsWith('.edu')
+    ) {
       newErrors.email = 'Please use your university email (.edu)'
     }
     if (!formData.password) {
@@ -64,7 +77,7 @@ function RegisterPage() {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault()
     clearError()
 
@@ -111,11 +124,10 @@ function RegisterPage() {
                   <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
                     <School className="text-blue-600" size={24} />
                   </div>
-                  <h3 className="text-lg font-semibold">I&apos;m a Student</h3>
+                  <h3 className="text-lg font-semibold">I&apos;m a Tenant</h3>
                 </div>
                 <p className="text-gray-600 text-sm">
-                  Looking for a place to rental or want to rental my place while
-                  studying abroad
+                  Looking for a place to rent or want to sublet my place
                 </p>
               </button>
 
@@ -127,17 +139,20 @@ function RegisterPage() {
                   <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
                     <Building2 className="text-green-600" size={24} />
                   </div>
-                  <h3 className="text-lg font-semibold">I&apos;m a Property Owner</h3>
+                  <h3 className="text-lg font-semibold">I&apos;m a Landlord</h3>
                 </div>
                 <p className="text-gray-600 text-sm">
-                  I want to list my property for students to rental
+                  I want to list my property and find tenants
                 </p>
               </button>
             </div>
 
             <p className="text-center mt-8 text-gray-600">
               Already have an account?{' '}
-              <Link to="/login" className="text-blue-600 font-semibold hover:underline">
+              <Link
+                to="/login"
+                className="text-blue-600 font-semibold hover:underline"
+              >
                 Sign in
               </Link>
             </p>
@@ -170,7 +185,7 @@ function RegisterPage() {
             </button>
 
             <h2 className="text-2xl font-bold mb-2">
-              {userType === 'student' ? 'Student Sign Up' : 'Property Owner Sign Up'}
+              {userType === 'student' ? 'Tenant Sign Up' : 'Landlord Sign Up'}
             </h2>
             <p className="text-gray-600 mb-6">
               Fill in your details to get started
@@ -198,7 +213,9 @@ function RegisterPage() {
                     />
                   </div>
                   {errors.firstName && (
-                    <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>
+                    <p className="text-red-500 text-xs mt-1">
+                      {errors.firstName}
+                    </p>
                   )}
                 </div>
                 <div>
@@ -214,7 +231,9 @@ function RegisterPage() {
                     }`}
                   />
                   {errors.lastName && (
-                    <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>
+                    <p className="text-red-500 text-xs mt-1">
+                      {errors.lastName}
+                    </p>
                   )}
                 </div>
               </div>
@@ -222,7 +241,7 @@ function RegisterPage() {
               {/* Email */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {userType === 'student' ? 'University Email' : 'Email'}
+                  {userType === 'student' ? 'Email' : 'Email'}
                 </label>
                 <div className="relative">
                   <Mail
@@ -234,7 +253,9 @@ function RegisterPage() {
                     value={formData.email}
                     onChange={handleInputChange('email')}
                     placeholder={
-                      userType === 'student' ? 'you@university.edu' : 'you@example.com'
+                      userType === 'student'
+                        ? 'you@university.edu'
+                        : 'you@example.com'
                     }
                     className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                       errors.email ? 'border-red-500' : 'border-gray-300'
@@ -263,7 +284,9 @@ function RegisterPage() {
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
                     >
                       <option value="">Select your university</option>
-                      <option value="University of San Diego">University of San Diego</option>
+                      <option value="University of San Diego">
+                        University of San Diego
+                      </option>
                       <option value="Other">Other</option>
                     </select>
                   </div>
@@ -317,12 +340,16 @@ function RegisterPage() {
                     value={formData.confirmPassword}
                     onChange={handleInputChange('confirmPassword')}
                     className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
+                      errors.confirmPassword
+                        ? 'border-red-500'
+                        : 'border-gray-300'
                     }`}
                   />
                 </div>
                 {errors.confirmPassword && (
-                  <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.confirmPassword}
+                  </p>
                 )}
               </div>
 
@@ -332,7 +359,7 @@ function RegisterPage() {
                   <input
                     type="checkbox"
                     checked={agreedToTerms}
-                    onChange={(e) => setAgreedToTerms(e.target.checked)}
+                    onChange={e => setAgreedToTerms(e.target.checked)}
                     className="mt-1 mr-3"
                   />
                   <span className="text-sm text-gray-600">
@@ -341,7 +368,10 @@ function RegisterPage() {
                       Terms of Service
                     </Link>{' '}
                     and{' '}
-                    <Link to="/privacy" className="text-blue-600 hover:underline">
+                    <Link
+                      to="/privacy"
+                      className="text-blue-600 hover:underline"
+                    >
                       Privacy Policy
                     </Link>
                   </span>
@@ -365,7 +395,10 @@ function RegisterPage() {
                 className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
                 {isLoading ? (
-                  <LoadingSpinner size="sm" className="border-white border-t-transparent" />
+                  <LoadingSpinner
+                    size="sm"
+                    className="border-white border-t-transparent"
+                  />
                 ) : (
                   'Create Account'
                 )}
@@ -376,7 +409,10 @@ function RegisterPage() {
           {/* Sign In Link */}
           <p className="text-center mt-6 text-gray-600">
             Already have an account?{' '}
-            <Link to="/login" className="text-blue-600 font-semibold hover:underline">
+            <Link
+              to="/login"
+              className="text-blue-600 font-semibold hover:underline"
+            >
               Sign in
             </Link>
           </p>
