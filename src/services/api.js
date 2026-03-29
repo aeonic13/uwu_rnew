@@ -33,14 +33,10 @@ api.interceptors.response.use(
     if (error.response) {
       const { status, data } = error.response
 
-      // Unauthorized - only redirect if the user had an existing session (token expired)
+      // Unauthorized - clear token and let ProtectedRoute handle the redirect
+      // Do NOT force a hard redirect here; public pages should remain accessible
       if (status === 401) {
-        const hadToken = !!localStorage.getItem('authToken')
         localStorage.removeItem('authToken')
-        // Only redirect to login if there was a token (session expired), not for guest requests
-        if (hadToken && !window.location.pathname.includes('/login')) {
-          window.location.href = '/login'
-        }
       }
 
       // Forbidden
