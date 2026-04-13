@@ -258,7 +258,7 @@ function RegisterPage() {
                     type={showPassword ? 'text' : 'password'}
                     value={formData.password}
                     onChange={handleInputChange('password')}
-                    placeholder="At least 8 characters"
+                    placeholder="Min 8 chars with a letter and number"
                     className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 ${
                       errors.password ? 'border-red-500' : 'border-gray-300'
                     }`}

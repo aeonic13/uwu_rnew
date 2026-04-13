@@ -166,12 +166,9 @@ export function validatePasswordStrength(password) {
     errors.push('Password must be at most 128 characters long')
   }
 
-  if (!/[a-z]/.test(password)) {
-    errors.push('Password must contain at least one lowercase letter')
-  }
-
-  if (!/[A-Z]/.test(password)) {
-    errors.push('Password must contain at least one uppercase letter')
+  // Basic strength: at least 8 chars with a letter and a number
+  if (!/[a-zA-Z]/.test(password)) {
+    errors.push('Password must contain at least one letter')
   }
 
   if (!/[0-9]/.test(password)) {
