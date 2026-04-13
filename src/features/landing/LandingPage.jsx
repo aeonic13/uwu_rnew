@@ -70,12 +70,9 @@ export default function LandingPage() {
       {/* ── Hero ── */}
       <div className="bg-gradient-to-br from-brand-500 via-brand-600 to-brand-900 text-white">
         <div className="max-w-5xl mx-auto px-4 py-16 sm:py-24 text-center">
-          <div className="flex justify-center mb-6">
-            <img src="/logo.svg" alt="Rentra" className="h-14 w-auto brightness-0 invert" />
-          </div>
           <h1 className="text-4xl sm:text-5xl font-extrabold mb-4 leading-tight">
-            Rentals made simple for<br />
-            <span className="text-orange-200">tenants &amp; landlords</span>
+            <span className="text-white">Rentra</span><br />
+            <span className="text-orange-200 text-3xl sm:text-4xl font-bold">Rentals made simple</span>
           </h1>
           <p className="text-lg sm:text-xl text-brand-100 mb-10 max-w-xl mx-auto">
             Find your perfect rental, or list your property and connect with

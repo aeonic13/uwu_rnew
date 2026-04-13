@@ -1,18 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 240" fill="none">
-  <!-- Salmon/peach left diagonal stroke -->
-  <polygon
-    points="18,45 72,45 88,200 34,200"
-    fill="#FFB08A"
-    opacity="0.95"/>
-
-  <!-- Dark orange-red: R vertical bar + bowl -->
-  <path
-    d="M62,45 L158,45 Q198,45 198,105 Q198,162 148,168 L62,168 Z"
-    fill="#E84C00"/>
-  <rect x="62" y="45" width="46" height="155" fill="#E84C00"/>
-
-  <!-- Amber/gold leg diagonal -->
-  <polygon
-    points="62,122 186,200 144,200 62,148"
-    fill="#F5A800"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60" fill="none">
+  <!-- Orange circle background -->
+  <circle cx="30" cy="30" r="30" fill="#fc6a03"/>
+  <!-- White R -->
+  <text
+    x="50%"
+    y="50%"
+    dominant-baseline="central"
+    text-anchor="middle"
+    font-family="'Segoe UI', system-ui, -apple-system, Arial, sans-serif"
+    font-size="36"
+    font-weight="800"
+    fill="white">R</text>
 </svg>
