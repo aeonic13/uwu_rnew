@@ -104,7 +104,7 @@ function RegisterPage() {
               >
                 <div className="flex items-center mb-3">
                   <div className="w-12 h-12 bg-brand-100 rounded-full flex items-center justify-center mr-4">
-                    <School className="text-brand-500" size={24} />
+                    <User className="text-brand-500" size={24} />
                   </div>
                   <h3 className="text-lg font-semibold">I&apos;m a Tenant</h3>
                 </div>
