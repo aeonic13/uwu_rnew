@@ -66,6 +66,9 @@ const GroupChat = lazy(() => import('../features/groups/GroupChat'))
 // Landing page
 const LandingPage = lazy(() => import('../features/landing/LandingPage'))
 
+// Pre-qualification
+const PreQualificationFlow = lazy(() => import('../features/applications/PreQualificationFlow'))
+
 // Layout wrapper
 const AppLayout = lazy(() => import('../components/layout/AppLayout'))
 
@@ -303,6 +306,20 @@ const routeConfig = [
             <Suspense fallback={<SuspenseFallback />}>
               <PaymentsView />
             </Suspense>
+          </ProtectedRoute>
+        ),
+      },
+
+      // Pre-qualification (tenant only, auth required)
+      {
+        path: '/pre-qualify',
+        element: (
+          <ProtectedRoute>
+            <RoleRoute allowedRoles={['student']}>
+              <Suspense fallback={<SuspenseFallback />}>
+                <PreQualificationFlow />
+              </Suspense>
+            </RoleRoute>
           </ProtectedRoute>
         ),
       },

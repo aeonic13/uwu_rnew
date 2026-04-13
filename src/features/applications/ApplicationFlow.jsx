@@ -1,33 +1,24 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft,
   Check,
   User,
   Calendar,
-  CreditCard,
   FileText,
   AlertCircle,
-  ShieldCheck,
-  Building2,
-  TrendingUp,
-  Fingerprint,
-  Loader2,
   CheckCircle2,
-  DollarSign,
-  Info,
 } from 'lucide-react'
-import { usePlaidLink } from 'react-plaid-link'
 import { useListings } from '../../contexts/ListingsContext'
 import { useAuth } from '../../contexts/AuthContext'
+import { usePreQualification } from '../../hooks/usePreQualification'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import api from '../../services/api'
 
+// Verify step removed — now handled once via /pre-qualify
 const STEPS = [
   { id: 'info', label: 'Your Info', icon: User },
   { id: 'dates', label: 'Dates', icon: Calendar },
-  { id: 'verify', label: 'Verify', icon: ShieldCheck },
-  { id: 'payment', label: 'Payment', icon: CreditCard },
   { id: 'review', label: 'Review', icon: FileText },
 ]
 
@@ -853,6 +844,14 @@ function ApplicationFlow() {
   const navigate = useNavigate()
   const { getListingById, selectedListing, isLoading } = useListings()
   const { user } = useAuth()
+  const { isPreQualified, preQualData } = usePreQualification()
+
+  // Guard: must be pre-qualified before applying
+  useEffect(() => {
+    if (!isPreQualified) {
+      navigate(`/pre-qualify?returnTo=/apply/${listingId}`, { replace: true })
+    }
+  }, [isPreQualified, listingId, navigate])
 
   const [currentStep, setCurrentStep] = useState('info')
   const [formData, setFormData] = useState({
@@ -864,10 +863,8 @@ function ApplicationFlow() {
     message: '',
     moveInDate: '',
     moveOutDate: '',
-    paymentMethod: '',
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [plaidVerification, setPlaidVerification] = useState(null)
 
   useEffect(() => {
     if (listingId) {
@@ -896,13 +893,25 @@ function ApplicationFlow() {
   const handleSubmit = async () => {
     setIsSubmitting(true)
     try {
+      // Attach pre-qualification data so landlords can see it was verified
+      const verificationData = preQualData
+        ? {
+            preQualified: true,
+            preQualifiedAt: preQualData.completedAt,
+            bankConnected: !!preQualData.verifications?.bank?.verified,
+            incomeVerified: !!preQualData.verifications?.income?.verified,
+            monthlyIncome: preQualData.verifications?.income?.monthlyIncome || null,
+            identityVerified: !!preQualData.verifications?.identity?.verified,
+            applicationFeePaid: true,
+          }
+        : null
       await api.post('/applications', {
         listingId,
         startDate: formData.moveInDate,
         endDate: formData.moveOutDate,
         message: formData.message,
         emergencyContact: formData.emergencyContact,
-        ...(plaidVerification && { verificationData: plaidVerification }),
+        ...(verificationData && { verificationData }),
       })
       navigate('/')
     } catch (err) {
@@ -948,32 +957,6 @@ function ApplicationFlow() {
       )}
       {currentStep === 'dates' && (
         <DatesStep
-          formData={formData}
-          onChange={handleChange}
-          onNext={handleNext}
-          onBack={handleBack}
-          listing={selectedListing}
-        />
-      )}
-      {currentStep === 'verify' && (
-        <VerifyStep
-          listingId={listingId}
-          onNext={handleNext}
-          onBack={handleBack}
-          onVerificationComplete={(token, results) =>
-            setPlaidVerification({
-              bankConnected: true,
-              incomeVerified: results?.income?.verified ?? false,
-              monthlyIncome: results?.income?.monthlyIncome ?? null,
-              identityVerified: results?.identity?.verified ?? false,
-              applicationFeePaid: true,
-              verifiedAt: new Date().toISOString(),
-            })
-          }
-        />
-      )}
-      {currentStep === 'payment' && (
-        <PaymentStep
           formData={formData}
           onChange={handleChange}
           onNext={handleNext}
