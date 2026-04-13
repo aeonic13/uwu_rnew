@@ -872,7 +872,7 @@ const RentraApp = () => {
     return (
       <div className="max-w-md mx-auto bg-white min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-gray-500 text-sm">Loading&hellip;</p>
         </div>
       </div>
@@ -901,7 +901,7 @@ const RentraApp = () => {
   return (
     <div className="max-w-md mx-auto bg-white min-h-screen">
       {/* Header */}
-      <div className="bg-blue-600 text-white p-4">
+      <div className="bg-brand-500 text-white p-4">
         <div className="flex items-center justify-between">
           {currentView !== 'browse' && currentView !== 'owner-dashboard' && (
             <button 
@@ -1179,11 +1179,11 @@ const RentraApp = () => {
               placeholder="Search locations..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-12 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-10 pr-12 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
             <button
               onClick={() => setShowAdvancedSearch(true)}
-              className="absolute right-3 top-2 p-1 text-gray-400 hover:text-blue-600"
+              className="absolute right-3 top-2 p-1 text-gray-400 hover:text-brand-500"
             >
               <Sliders size={20} />
             </button>
@@ -1193,7 +1193,7 @@ const RentraApp = () => {
           <div className="mb-4">
             <button
               onClick={() => setCurrentView('university-search')}
-              className="w-full p-3 border-2 border-blue-200 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 hover:border-blue-300 transition-colors flex items-center justify-center font-medium"
+              className="w-full p-3 border-2 border-brand-200 bg-brand-50 text-brand-600 rounded-lg hover:bg-brand-100 hover:border-brand-300 transition-colors flex items-center justify-center font-medium"
             >
               <Building2 size={20} className="mr-2" />
               University Search
@@ -1205,7 +1205,7 @@ const RentraApp = () => {
             <select
               value={selectedUniversity}
               onChange={(e) => setSelectedUniversity(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               {universities.map(uni => (
                 <option key={uni} value={uni}>{uni}</option>
@@ -1268,7 +1268,7 @@ const RentraApp = () => {
                     />
                     <span className="text-sm font-medium">{listing.owner.name}</span>
                     {listing.owner.verified && (
-                      <Shield size={16} className="ml-1 text-blue-500" />
+                      <Shield size={16} className="ml-1 text-brand-500" />
                     )}
                     <div className="ml-auto flex items-center">
                       <Star size={14} className="text-yellow-400 fill-current" />
@@ -1360,7 +1360,7 @@ const RentraApp = () => {
             />
           ) : (
             <>
-              <div className="bg-blue-600 text-white p-4 flex items-center">
+              <div className="bg-brand-500 text-white p-4 flex items-center">
                 <button 
                   onClick={() => setActiveMessageProperty(null)}
                   className="p-1 mr-3"
@@ -1522,9 +1522,9 @@ const RentraApp = () => {
             <h2 className="text-2xl font-bold text-green-800 mb-2">Booking Confirmed!</h2>
             <p className="text-gray-600 mb-6">Your application has been submitted and payment secured.</p>
             
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div className="bg-brand-50 border border-brand-200 rounded-lg p-4 mb-6">
               <h3 className="font-semibold text-blue-800 mb-2">Next Steps</h3>
-              <p className="text-sm text-blue-700">
+              <p className="text-sm text-brand-600">
                 When you're ready to move in, use our move-in confirmation process to document the property condition and set up utilities.
               </p>
             </div>
@@ -1533,7 +1533,7 @@ const RentraApp = () => {
           <div className="space-y-3">
             <button
               onClick={() => setCurrentView('move-in')}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 flex items-center justify-center"
+              className="w-full bg-brand-500 text-white py-3 rounded-lg font-semibold hover:bg-brand-600 flex items-center justify-center"
             >
               <Home size={20} className="mr-2" />
               Start Move-In Process
@@ -1619,14 +1619,14 @@ const RentraApp = () => {
           
           {/* Listing Type Selection */}
           <div className="space-y-4 mb-6">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <div className="bg-brand-50 border border-brand-200 rounded-lg p-4 mb-4">
               <h3 className="font-semibold text-blue-800 mb-2">Choose Your Listing Type</h3>
-              <p className="text-sm text-blue-700">Select how you want to list your property</p>
+              <p className="text-sm text-brand-600">Select how you want to list your property</p>
             </div>
 
             <button
               onClick={() => setCurrentView('landlord-listing')}
-              className="w-full p-4 border-2 border-gray-300 rounded-lg hover:border-blue-300 text-left"
+              className="w-full p-4 border-2 border-gray-300 rounded-lg hover:border-brand-300 text-left"
             >
               <div className="flex items-center">
                 <div className="bg-green-100 rounded-full p-3 mr-4">
@@ -1641,11 +1641,11 @@ const RentraApp = () => {
 
             <button
               onClick={() => setCurrentView('student-listing')}
-              className="w-full p-4 border-2 border-gray-300 rounded-lg hover:border-blue-300 text-left"
+              className="w-full p-4 border-2 border-gray-300 rounded-lg hover:border-brand-300 text-left"
             >
               <div className="flex items-center">
-                <div className="bg-blue-100 rounded-full p-3 mr-4">
-                  <User size={24} className="text-blue-600" />
+                <div className="bg-brand-100 rounded-full p-3 mr-4">
+                  <User size={24} className="text-brand-500" />
                 </div>
                 <div>
                   <h4 className="font-semibold">I'm a Student/Renter</h4>
@@ -2161,13 +2161,13 @@ const RentraApp = () => {
       {(currentView === 'browse' || currentView === 'map' || currentView === 'university-search') && user?.userType === 'owner' && (
         <div className="p-4 pb-20 text-center">
           <div className="mt-20">
-            <Building2 size={64} className="mx-auto text-blue-600 mb-4" />
+            <Building2 size={64} className="mx-auto text-brand-500 mb-4" />
             <h2 className="text-xl font-bold mb-2">Property Management Hub</h2>
             <p className="text-gray-600 mb-6">Choose how you'd like to manage your properties</p>
             <div className="space-y-3">
               <button
                 onClick={() => setCurrentView('owner-dashboard')}
-                className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 flex items-center justify-center"
+                className="w-full bg-brand-500 text-white py-3 rounded-lg font-medium hover:bg-brand-600 flex items-center justify-center"
               >
                 <BarChart3 size={20} className="mr-2" />
                 Full Management Dashboard
@@ -2243,7 +2243,7 @@ const RentraApp = () => {
             <p className="text-gray-600 mb-6">The page you're looking for doesn't exist or is under development.</p>
             <button
               onClick={() => setCurrentView(user?.userType === 'owner' ? 'owner-dashboard' : 'browse')}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold"
+              className="bg-brand-500 text-white px-6 py-3 rounded-lg font-semibold"
             >
               Go Home
             </button>
@@ -2260,7 +2260,7 @@ const RentraApp = () => {
               <button
                 onClick={() => setCurrentView('owner-dashboard')}
                 className={`flex flex-col items-center py-2 px-2 ${
-                  currentView === 'owner-dashboard' ? 'text-blue-600' : 'text-gray-400'
+                  currentView === 'owner-dashboard' ? 'text-brand-500' : 'text-gray-400'
                 }`}
               >
                 <BarChart3 size={20} />
@@ -2270,7 +2270,7 @@ const RentraApp = () => {
               <button
                 onClick={() => setCurrentView('post')}
                 className={`flex flex-col items-center py-2 px-2 ${
-                  currentView === 'post' ? 'text-blue-600' : 'text-gray-400'
+                  currentView === 'post' ? 'text-brand-500' : 'text-gray-400'
                 }`}
               >
                 <Plus size={20} />
@@ -2280,7 +2280,7 @@ const RentraApp = () => {
               <button
                 onClick={() => setCurrentView('payments')}
                 className={`flex flex-col items-center py-2 px-2 ${
-                  currentView === 'payments' ? 'text-blue-600' : 'text-gray-400'
+                  currentView === 'payments' ? 'text-brand-500' : 'text-gray-400'
                 }`}
               >
                 <DollarSign size={20} />
@@ -2290,7 +2290,7 @@ const RentraApp = () => {
               <button
                 onClick={() => setCurrentView('landlord-inbox')}
                 className={`flex flex-col items-center py-2 px-2 ${
-                  currentView === 'landlord-inbox' ? 'text-blue-600' : 'text-gray-400'
+                  currentView === 'landlord-inbox' ? 'text-brand-500' : 'text-gray-400'
                 }`}
               >
                 <Building2 size={20} />
@@ -2303,7 +2303,7 @@ const RentraApp = () => {
               <button
                 onClick={() => setCurrentView('browse')}
                 className={`flex flex-col items-center py-2 px-3 ${
-                  currentView === 'browse' ? 'text-blue-600' : 'text-gray-400'
+                  currentView === 'browse' ? 'text-brand-500' : 'text-gray-400'
                 }`}
               >
                 <Search size={24} />
@@ -2320,7 +2320,7 @@ const RentraApp = () => {
                   }
                 }}
                 className={`flex flex-col items-center py-2 px-3 ${
-                  ['roommates', 'roommate-discovery', 'group-creator', 'add-to-conversation', 'roommate-questionnaire', 'roommate-matching'].includes(currentView) ? 'text-blue-600' : 'text-gray-400'
+                  ['roommates', 'roommate-discovery', 'group-creator', 'add-to-conversation', 'roommate-questionnaire', 'roommate-matching'].includes(currentView) ? 'text-brand-500' : 'text-gray-400'
                 }`}
               >
                 <Users size={24} />
@@ -2333,7 +2333,7 @@ const RentraApp = () => {
                   setCurrentView('messages');
                 }}
                 className={`flex flex-col items-center py-2 px-3 relative ${
-                  currentView === 'messages' ? 'text-blue-600' : 'text-gray-400'
+                  currentView === 'messages' ? 'text-brand-500' : 'text-gray-400'
                 }`}
               >
                 <MessageCircle size={24} />
@@ -2348,7 +2348,7 @@ const RentraApp = () => {
               <button
                 onClick={() => setCurrentView('profile')}
                 className={`flex flex-col items-center py-2 px-3 ${
-                  currentView === 'profile' ? 'text-blue-600' : 'text-gray-400'
+                  currentView === 'profile' ? 'text-brand-500' : 'text-gray-400'
                 }`}
               >
                 <User size={24} />
@@ -2421,14 +2421,14 @@ const ProfileView = ({ user, onBack, onSignOut, onNavigate, favorites = [] }) =>
   return (
     <div className="p-4 pb-20">
       <div className="text-center mb-6">
-        <div className="w-24 h-24 bg-blue-100 rounded-full mx-auto mb-4 flex items-center justify-center">
-          <User size={48} className="text-blue-600" />
+        <div className="w-24 h-24 bg-brand-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+          <User size={48} className="text-brand-500" />
         </div>
         <h2 className="text-xl font-semibold">{user?.name}</h2>
         <p className="text-gray-600">{user?.email}</p>
         <div className="flex items-center justify-center mt-2">
-          <Shield size={16} className="text-blue-500 mr-1" />
-          <span className="text-sm text-blue-600">
+          <Shield size={16} className="text-brand-500 mr-1" />
+          <span className="text-sm text-brand-500">
             {user?.userType === 'owner' ? 'Verified Owner' : 'Verified Student'}
           </span>
         </div>
@@ -2479,7 +2479,7 @@ const ProfileView = ({ user, onBack, onSignOut, onNavigate, favorites = [] }) =>
               className="w-full text-left p-2 hover:bg-gray-100 rounded flex items-center justify-between"
             >
               <span>Saved Properties</span>
-              <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full">
+              <span className="text-xs bg-brand-100 text-brand-500 px-2 py-1 rounded-full">
                 {favorites.length}
               </span>
             </button>
@@ -2500,7 +2500,7 @@ const ProfileView = ({ user, onBack, onSignOut, onNavigate, favorites = [] }) =>
                 onClick={handleViewLease}
                 className="w-full text-left p-2 hover:bg-gray-100 rounded flex items-center"
               >
-                <FileText size={16} className="mr-2 text-blue-600" />
+                <FileText size={16} className="mr-2 text-brand-500" />
                 View Lease
               </button>
               {/* Renters Insurance - Only show for accepted renters */}
@@ -2555,7 +2555,7 @@ const ProfileView = ({ user, onBack, onSignOut, onNavigate, favorites = [] }) =>
                   onClick={() => onNavigate('tenant-rights')}
                   className="w-full text-left p-2 hover:bg-gray-100 rounded flex items-center"
                 >
-                  <Scale size={16} className="mr-2 text-blue-600" />
+                  <Scale size={16} className="mr-2 text-brand-500" />
                   Know Your Tenant Rights
                 </button>
             <button 
@@ -2580,7 +2580,7 @@ const ProfileView = ({ user, onBack, onSignOut, onNavigate, favorites = [] }) =>
                   onClick={() => onNavigate('document-manager')}
                   className="w-full text-left p-2 hover:bg-gray-100 rounded flex items-center"
                 >
-                  <FileText size={16} className="mr-2 text-blue-600" />
+                  <FileText size={16} className="mr-2 text-brand-500" />
                   <div className="flex-1">
                     <span>Document Manager</span>
                     <span className="block text-xs text-gray-500">Upload leases & applications</span>
@@ -2653,7 +2653,7 @@ const ConfirmationView = ({ onContinue }) => {
 
       <button
         onClick={onContinue}
-        className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold"
+        className="w-full bg-brand-500 text-white py-3 rounded-lg font-semibold"
       >
         Continue Browsing
       </button>
@@ -2667,9 +2667,9 @@ const LeaseAgreementView = ({ agreement, onSign, onBack }) => {
   
   return (
     <div className="p-4 pb-20">
-      <div className="bg-blue-600 text-white p-4 rounded-lg mb-6">
+      <div className="bg-brand-500 text-white p-4 rounded-lg mb-6">
         <h2 className="text-lg font-semibold">Rentra Legal</h2>
-        <p className="text-blue-100 text-sm">AI-Generated Legal Document</p>
+        <p className="text-brand-100 text-sm">AI-Generated Legal Document</p>
       </div>
 
       <div className="bg-gray-50 p-4 rounded-lg mb-6">
@@ -2694,10 +2694,10 @@ const LeaseAgreementView = ({ agreement, onSign, onBack }) => {
         </div>
       </div>
 
-      <div className="bg-white border-2 border-blue-200 rounded-lg p-6 mb-6">
+      <div className="bg-white border-2 border-brand-200 rounded-lg p-6 mb-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">Digital Signature Required</h3>
         
-        <div className="border-2 rounded-lg p-4 bg-blue-50 border-blue-300">
+        <div className="border-2 rounded-lg p-4 bg-brand-50 border-brand-300">
           <div className="flex items-center justify-between">
             <div>
               <p className="font-semibold text-gray-800">{agreement.tenant.name}</p>
@@ -2707,7 +2707,7 @@ const LeaseAgreementView = ({ agreement, onSign, onBack }) => {
             {!tenantSigned ? (
               <button
                 onClick={() => setTenantSigned(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium"
+                className="bg-brand-500 hover:bg-brand-600 text-white px-6 py-2 rounded-lg font-medium"
               >
                 Sign Here
               </button>
@@ -2723,7 +2723,7 @@ const LeaseAgreementView = ({ agreement, onSign, onBack }) => {
         disabled={!tenantSigned}
         className={`w-full py-3 rounded-lg font-semibold ${
           tenantSigned
-            ? 'bg-blue-600 text-white hover:bg-blue-700'
+            ? 'bg-brand-500 text-white hover:bg-brand-600'
             : 'bg-gray-300 text-gray-500 cursor-not-allowed'
         }`}
       >

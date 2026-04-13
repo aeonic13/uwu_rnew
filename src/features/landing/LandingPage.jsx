@@ -68,14 +68,16 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* ── Hero ── */}
-      <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 text-white">
+      <div className="bg-gradient-to-br from-brand-500 via-brand-600 to-brand-900 text-white">
         <div className="max-w-5xl mx-auto px-4 py-16 sm:py-24 text-center">
+          <div className="flex justify-center mb-6">
+            <img src="/logo.svg" alt="Rentra" className="h-14 w-auto brightness-0 invert" />
+          </div>
           <h1 className="text-4xl sm:text-5xl font-extrabold mb-4 leading-tight">
-            Rentals made simple for
-            <br />
-            <span className="text-blue-200">tenants &amp; landlords</span>
+            Rentals made simple for<br />
+            <span className="text-orange-200">tenants &amp; landlords</span>
           </h1>
-          <p className="text-lg sm:text-xl text-blue-100 mb-10 max-w-xl mx-auto">
+          <p className="text-lg sm:text-xl text-brand-100 mb-10 max-w-xl mx-auto">
             Find your perfect rental, or list your property and connect with
             verified tenants — all in one place.
           </p>
@@ -87,11 +89,11 @@ export default function LandingPage() {
               onClick={() => navigate('/listings')}
               className="group bg-white/10 hover:bg-white/20 backdrop-blur border border-white/20 rounded-2xl p-6 text-left transition-all"
             >
-              <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center mb-4">
+              <div className="w-12 h-12 bg-brand-500 rounded-xl flex items-center justify-center mb-4">
                 <Search size={24} className="text-white" />
               </div>
               <h3 className="text-xl font-bold mb-1">I&apos;m a Tenant</h3>
-              <p className="text-blue-100 text-sm mb-4">
+              <p className="text-brand-100 text-sm mb-4">
                 Browse verified rentals in your area, apply online, and manage
                 your lease — no agent needed.
               </p>
@@ -109,7 +111,7 @@ export default function LandingPage() {
                 <Building2 size={24} className="text-white" />
               </div>
               <h3 className="text-xl font-bold mb-1">I&apos;m a Landlord</h3>
-              <p className="text-blue-100 text-sm mb-4">
+              <p className="text-brand-100 text-sm mb-4">
                 List your property, screen tenants with verified applications,
                 collect rent, and manage leases digitally.
               </p>
@@ -128,8 +130,8 @@ export default function LandingPage() {
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm text-center">
-            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-              <Shield size={22} className="text-blue-600" />
+            <div className="w-12 h-12 bg-brand-100 rounded-full flex items-center justify-center mx-auto mb-3">
+              <Shield size={22} className="text-brand-500" />
             </div>
             <h4 className="font-semibold text-gray-900 mb-1">
               Verified Listings
@@ -175,7 +177,7 @@ export default function LandingPage() {
             </h2>
             <button
               onClick={() => navigate('/listings')}
-              className="text-blue-600 font-medium text-sm hover:underline flex items-center gap-1"
+              className="text-brand-500 font-medium text-sm hover:underline flex items-center gap-1"
             >
               View all <ChevronRight size={16} />
             </button>

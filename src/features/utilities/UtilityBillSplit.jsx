@@ -20,7 +20,7 @@ import {
 
 const UTILITY_TYPES = [
   { value: 'electricity', label: 'Electricity', icon: Zap, color: 'text-yellow-500' },
-  { value: 'water', label: 'Water & Sewer', icon: Droplets, color: 'text-blue-500' },
+  { value: 'water', label: 'Water & Sewer', icon: Droplets, color: 'text-brand-500' },
   { value: 'internet', label: 'Internet', icon: Wifi, color: 'text-purple-500' },
   { value: 'gas', label: 'Natural Gas', icon: Flame, color: 'text-orange-500' },
   { value: 'other', label: 'Other', icon: FileText, color: 'text-gray-500' },
@@ -44,7 +44,7 @@ function Avatar({ name, size = 'md' }) {
   const sizeClass = size === 'sm' ? 'w-8 h-8 text-xs' : 'w-10 h-10 text-sm'
   return (
     <div
-      className={`${sizeClass} rounded-full bg-blue-100 text-blue-700 font-semibold flex items-center justify-center flex-shrink-0`}
+      className={`${sizeClass} rounded-full bg-brand-100 text-brand-600 font-semibold flex items-center justify-center flex-shrink-0`}
     >
       {initials}
     </div>
@@ -62,9 +62,9 @@ function StepIndicator({ currentStep }) {
             <div
               className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${
                 idx < currentIdx
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-brand-500 text-white'
                   : idx === currentIdx
-                  ? 'bg-blue-600 text-white ring-4 ring-blue-100'
+                  ? 'bg-brand-500 text-white ring-4 ring-blue-100'
                   : 'bg-gray-100 text-gray-400'
               }`}
             >
@@ -72,7 +72,7 @@ function StepIndicator({ currentStep }) {
             </div>
             <span
               className={`text-xs mt-1 font-medium ${
-                idx <= currentIdx ? 'text-blue-600' : 'text-gray-400'
+                idx <= currentIdx ? 'text-brand-500' : 'text-gray-400'
               }`}
             >
               {label}
@@ -81,7 +81,7 @@ function StepIndicator({ currentStep }) {
           {idx < labels.length - 1 && (
             <div
               className={`flex-1 h-0.5 mx-2 mb-4 transition-colors ${
-                idx < currentIdx ? 'bg-blue-600' : 'bg-gray-200'
+                idx < currentIdx ? 'bg-brand-500' : 'bg-gray-200'
               }`}
             />
           )}
@@ -247,7 +247,7 @@ export default function UtilityBillSplit() {
           </div>
           <button
             onClick={() => { setShowNewSplit(true); setStep('upload') }}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-brand-500 text-white rounded-lg text-sm font-medium hover:bg-brand-600 transition-colors"
           >
             <Plus size={16} /> Split a Bill
           </button>
@@ -255,8 +255,8 @@ export default function UtilityBillSplit() {
 
         {splits.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center mb-4">
-              <SplitSquareHorizontal size={26} className="text-blue-400" />
+            <div className="w-14 h-14 rounded-full bg-brand-50 flex items-center justify-center mb-4">
+              <SplitSquareHorizontal size={26} className="text-brand-400" />
             </div>
             <h4 className="font-semibold text-gray-700 mb-1">No bills split yet</h4>
             <p className="text-gray-400 text-sm max-w-xs">
@@ -265,7 +265,7 @@ export default function UtilityBillSplit() {
             </p>
             <button
               onClick={() => { setShowNewSplit(true); setStep('upload') }}
-              className="mt-4 px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+              className="mt-4 px-5 py-2 bg-brand-500 text-white rounded-lg text-sm font-medium hover:bg-brand-600"
             >
               Split your first bill
             </button>
@@ -394,8 +394,8 @@ export default function UtilityBillSplit() {
             onClick={() => !billFile && fileInputRef.current?.click()}
             className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
               billFile
-                ? 'border-blue-300 bg-blue-50'
-                : 'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50 cursor-pointer'
+                ? 'border-brand-300 bg-brand-50'
+                : 'border-gray-300 bg-gray-50 hover:border-brand-400 hover:bg-brand-50 cursor-pointer'
             }`}
           >
             <input
@@ -411,15 +411,15 @@ export default function UtilityBillSplit() {
                   <img
                     src={billPreview}
                     alt="Bill preview"
-                    className="max-h-40 rounded-lg object-contain border border-blue-200"
+                    className="max-h-40 rounded-lg object-contain border border-brand-200"
                   />
                 ) : (
-                  <div className="w-16 h-16 bg-blue-100 rounded-xl flex items-center justify-center">
-                    <FileText size={32} className="text-blue-600" />
+                  <div className="w-16 h-16 bg-brand-100 rounded-xl flex items-center justify-center">
+                    <FileText size={32} className="text-brand-500" />
                   </div>
                 )}
                 <div>
-                  <p className="font-medium text-blue-700">{billFile.name}</p>
+                  <p className="font-medium text-brand-600">{billFile.name}</p>
                   <p className="text-xs text-gray-400 mt-0.5">
                     {(billFile.size / 1024).toFixed(0)} KB
                   </p>
@@ -455,7 +455,7 @@ export default function UtilityBillSplit() {
           <button
             disabled={!billFile}
             onClick={() => setStep('confirm')}
-            className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold text-sm hover:bg-blue-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full py-3 bg-brand-500 text-white rounded-xl font-semibold text-sm hover:bg-brand-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             Next: Confirm Amount <ChevronRight size={16} />
           </button>
@@ -486,7 +486,7 @@ export default function UtilityBillSplit() {
                     onClick={() => setUtilityType(u.value)}
                     className={`flex flex-col items-center gap-1 py-3 px-2 rounded-xl border-2 text-xs font-medium transition-colors ${
                       utilityType === u.value
-                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        ? 'border-brand-500 bg-brand-50 text-brand-600'
                         : 'border-gray-200 text-gray-600 hover:border-gray-300'
                     }`}
                   >
@@ -514,7 +514,7 @@ export default function UtilityBillSplit() {
                 placeholder="0.00"
                 value={totalAmount}
                 onChange={(e) => setTotalAmount(e.target.value)}
-                className="w-full pl-9 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 text-lg font-semibold"
+                className="w-full pl-9 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-brand-500 text-lg font-semibold"
               />
             </div>
           </div>
@@ -529,7 +529,7 @@ export default function UtilityBillSplit() {
                 placeholder="e.g. SDG&E"
                 value={provider}
                 onChange={(e) => setProvider(e.target.value)}
-                className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 text-sm"
+                className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-brand-500 text-sm"
               />
             </div>
             <div>
@@ -540,7 +540,7 @@ export default function UtilityBillSplit() {
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 text-sm"
+                className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-brand-500 text-sm"
               />
             </div>
           </div>
@@ -555,7 +555,7 @@ export default function UtilityBillSplit() {
             <button
               disabled={!canProceedFromConfirm}
               onClick={() => setStep('split')}
-              className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-semibold text-sm hover:bg-blue-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="flex-1 py-3 bg-brand-500 text-white rounded-xl font-semibold text-sm hover:bg-brand-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               Next: Split <ChevronRight size={16} />
             </button>
@@ -566,9 +566,9 @@ export default function UtilityBillSplit() {
       {/* ── Step 3: Split ── */}
       {step === 'split' && (
         <div className="space-y-5">
-          <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 flex items-center justify-between">
-            <span className="text-sm text-blue-700 font-medium">Total bill</span>
-            <span className="text-xl font-bold text-blue-700">
+          <div className="bg-brand-50 border border-brand-100 rounded-xl px-4 py-3 flex items-center justify-between">
+            <span className="text-sm text-brand-600 font-medium">Total bill</span>
+            <span className="text-xl font-bold text-brand-600">
               ${parseFloat(totalAmount).toFixed(2)}
             </span>
           </div>
@@ -579,7 +579,7 @@ export default function UtilityBillSplit() {
               onClick={() => setSplitMode('equal')}
               className={`flex-1 py-2.5 text-sm font-semibold transition-colors ${
                 splitMode === 'equal'
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-brand-500 text-white'
                   : 'text-gray-600 hover:bg-gray-50'
               }`}
             >
@@ -589,7 +589,7 @@ export default function UtilityBillSplit() {
               onClick={() => setSplitMode('custom')}
               className={`flex-1 py-2.5 text-sm font-semibold transition-colors ${
                 splitMode === 'custom'
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-brand-500 text-white'
                   : 'text-gray-600 hover:bg-gray-50'
               }`}
             >
@@ -611,7 +611,7 @@ export default function UtilityBillSplit() {
                     onClick={() => toggleParticipant(contact)}
                     className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border-2 transition-colors ${
                       selected
-                        ? 'border-blue-500 bg-blue-50'
+                        ? 'border-brand-500 bg-brand-50'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
@@ -640,13 +640,13 @@ export default function UtilityBillSplit() {
                                 [contact.id]: e.target.value,
                               }))
                             }
-                            className="w-16 px-2 py-1 border border-gray-300 rounded-lg text-sm text-center focus:outline-none focus:border-blue-500"
+                            className="w-16 px-2 py-1 border border-gray-300 rounded-lg text-sm text-center focus:outline-none focus:border-brand-500"
                           />
                           <span className="text-xs text-gray-500">%</span>
                         </div>
                       )}
                       {selected && splitMode === 'equal' && (
-                        <span className="text-sm font-semibold text-blue-700">
+                        <span className="text-sm font-semibold text-brand-600">
                           $
                           {(
                             parseFloat(totalAmount) / participants.length
@@ -656,7 +656,7 @@ export default function UtilityBillSplit() {
                       <div
                         className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                           selected
-                            ? 'bg-blue-600 border-blue-600'
+                            ? 'bg-brand-500 border-brand-500'
                             : 'border-gray-300'
                         }`}
                       >
@@ -673,7 +673,7 @@ export default function UtilityBillSplit() {
                 .map((p) => (
                   <div
                     key={p.id}
-                    className="w-full flex items-center justify-between px-4 py-3 rounded-xl border-2 border-blue-500 bg-blue-50"
+                    className="w-full flex items-center justify-between px-4 py-3 rounded-xl border-2 border-brand-500 bg-brand-50"
                   >
                     <div className="flex items-center gap-3">
                       <Avatar name={p.name} size="sm" />
@@ -696,13 +696,13 @@ export default function UtilityBillSplit() {
                                 [p.id]: e.target.value,
                               }))
                             }
-                            className="w-16 px-2 py-1 border border-gray-300 rounded-lg text-sm text-center focus:outline-none focus:border-blue-500"
+                            className="w-16 px-2 py-1 border border-gray-300 rounded-lg text-sm text-center focus:outline-none focus:border-brand-500"
                           />
                           <span className="text-xs text-gray-500">%</span>
                         </div>
                       )}
                       {splitMode === 'equal' && (
-                        <span className="text-sm font-semibold text-blue-700">
+                        <span className="text-sm font-semibold text-brand-600">
                           ${(parseFloat(totalAmount) / participants.length).toFixed(2)}
                         </span>
                       )}
@@ -729,7 +729,7 @@ export default function UtilityBillSplit() {
                 value={newPersonName}
                 onChange={(e) => setNewPersonName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && addCustomPerson()}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-brand-500"
               />
               <button
                 onClick={addCustomPerson}
@@ -766,7 +766,7 @@ export default function UtilityBillSplit() {
             <button
               disabled={!canProceedFromSplit}
               onClick={finalizeSplit}
-              className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-semibold text-sm hover:bg-blue-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex-1 py-3 bg-brand-500 text-white rounded-xl font-semibold text-sm hover:bg-brand-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Create Split
             </button>
@@ -813,7 +813,7 @@ export default function UtilityBillSplit() {
 
           <button
             onClick={reset}
-            className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold text-sm hover:bg-blue-700 transition-colors"
+            className="w-full py-3 bg-brand-500 text-white rounded-xl font-semibold text-sm hover:bg-brand-600 transition-colors"
           >
             Done
           </button>

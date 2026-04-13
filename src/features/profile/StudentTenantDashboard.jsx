@@ -38,7 +38,7 @@ function StudentTenantDashboard() {
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header */}
-      <div className="bg-blue-600 text-white p-4 sticky top-0 z-10">
+      <div className="bg-brand-500 text-white p-4 sticky top-0 z-10">
         <div className="flex items-center">
           <button onClick={() => navigate('/profile')} className="mr-3">
             <ArrowLeft size={24} />
@@ -58,7 +58,7 @@ function StudentTenantDashboard() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex-1 min-w-fit px-4 py-3 text-sm font-medium flex items-center justify-center space-x-2 border-b-2 transition-colors ${
                   activeTab === tab.id
-                    ? 'border-blue-600 text-blue-600 bg-blue-50'
+                    ? 'border-brand-500 text-brand-500 bg-brand-50'
                     : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
@@ -130,7 +130,7 @@ function PayRentTab({ user }) {
           </div>
           <div className="flex justify-between">
             <span className="text-gray-600">Next Payment:</span>
-            <span className="font-medium text-blue-600">
+            <span className="font-medium text-brand-500">
               {new Date(currentLease.nextDueDate).toLocaleDateString('en-US', {
                 month: 'long',
                 day: 'numeric',
@@ -142,9 +142,9 @@ function PayRentTab({ user }) {
       </div>
 
       {/* Payment Amount */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
+      <div className="bg-brand-50 border border-brand-200 rounded-lg p-6 text-center">
         <p className="text-gray-600 text-sm mb-2">Amount Due</p>
-        <p className="text-4xl font-bold text-blue-600">
+        <p className="text-4xl font-bold text-brand-500">
           ${currentLease.monthlyRent}
         </p>
         <p className="text-gray-500 text-sm mt-2">
@@ -188,7 +188,7 @@ function PayRentTab({ user }) {
             <CreditCard size={20} className="text-gray-400" />
           </label>
 
-          <button className="w-full text-blue-600 py-2 text-sm font-medium hover:bg-blue-50 rounded-lg">
+          <button className="w-full text-brand-500 py-2 text-sm font-medium hover:bg-brand-50 rounded-lg">
             + Add Payment Method
           </button>
         </div>
@@ -201,7 +201,7 @@ function PayRentTab({ user }) {
         className={`w-full py-4 rounded-lg font-semibold text-white ${
           isProcessing
             ? 'bg-gray-400 cursor-not-allowed'
-            : 'bg-blue-600 hover:bg-blue-700'
+            : 'bg-brand-500 hover:bg-brand-600'
         }`}
       >
         {isProcessing ? (
@@ -226,7 +226,7 @@ function PayRentTab({ user }) {
           </div>
           <label className="relative inline-flex items-center cursor-pointer">
             <input type="checkbox" className="sr-only peer" />
-            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
           </label>
         </div>
       </div>
@@ -277,7 +277,7 @@ function UtilitiesTab({ user }) {
     <div className="space-y-4">
       {/* Total Due Summary */}
       <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg p-6">
-        <p className="text-blue-100 text-sm mb-2">Total Utilities Due</p>
+        <p className="text-brand-100 text-sm mb-2">Total Utilities Due</p>
         <p className="text-4xl font-bold mb-1">
           $
           {utilities
@@ -285,7 +285,7 @@ function UtilitiesTab({ user }) {
             .reduce((sum, u) => sum + u.amount, 0)
             .toFixed(2)}
         </p>
-        <p className="text-blue-100 text-sm">
+        <p className="text-brand-100 text-sm">
           {utilities.filter((u) => u.status === 'pending').length} bills pending
         </p>
       </div>
@@ -299,8 +299,8 @@ function UtilitiesTab({ user }) {
           >
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center">
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                  <Zap size={20} className="text-blue-600" />
+                <div className="w-10 h-10 bg-brand-100 rounded-full flex items-center justify-center mr-3">
+                  <Zap size={20} className="text-brand-500" />
                 </div>
                 <div>
                   <h4 className="font-semibold">{utility.name}</h4>
@@ -326,7 +326,7 @@ function UtilitiesTab({ user }) {
                 Due: {new Date(utility.dueDate).toLocaleDateString()}
               </span>
               {utility.status === 'pending' && (
-                <button className="text-blue-600 font-medium hover:underline">
+                <button className="text-brand-500 font-medium hover:underline">
                   Pay Now
                 </button>
               )}
@@ -336,18 +336,18 @@ function UtilitiesTab({ user }) {
       </div>
 
       {/* Split Utilities Info */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div className="bg-brand-50 border border-brand-200 rounded-lg p-4">
         <div className="flex items-start">
-          <AlertCircle size={20} className="text-blue-600 mr-3 mt-0.5" />
+          <AlertCircle size={20} className="text-brand-500 mr-3 mt-0.5" />
           <div>
             <h4 className="font-medium text-blue-900 mb-1">
               Split with Roommates
             </h4>
-            <p className="text-sm text-blue-700">
+            <p className="text-sm text-brand-600">
               If you have roommates, utility costs can be automatically split
               and charged separately.
             </p>
-            <button className="mt-2 text-sm text-blue-600 font-medium hover:underline">
+            <button className="mt-2 text-sm text-brand-500 font-medium hover:underline">
               Set up split payments →
             </button>
           </div>
@@ -416,7 +416,7 @@ function MaintenanceTab({ user }) {
       case 'completed':
         return 'bg-green-100 text-green-700'
       case 'in-progress':
-        return 'bg-blue-100 text-blue-700'
+        return 'bg-brand-100 text-brand-600'
       default:
         return 'bg-yellow-100 text-yellow-700'
     }
@@ -439,7 +439,7 @@ function MaintenanceTab({ user }) {
       {!showForm && (
         <button
           onClick={() => setShowForm(true)}
-          className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 flex items-center justify-center"
+          className="w-full bg-brand-500 text-white py-3 rounded-lg font-semibold hover:bg-brand-600 flex items-center justify-center"
         >
           <Wrench size={20} className="mr-2" />
           Submit New Maintenance Request
@@ -470,7 +470,7 @@ function MaintenanceTab({ user }) {
                 onChange={(e) =>
                   setFormData({ ...formData, category: e.target.value })
                 }
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none"
               >
                 <option value="">Select category</option>
                 <option value="plumbing">Plumbing</option>
@@ -491,7 +491,7 @@ function MaintenanceTab({ user }) {
                     key={priority}
                     className={`flex-1 p-3 border rounded-lg cursor-pointer text-center font-medium ${
                       formData.priority === priority
-                        ? 'border-blue-600 bg-blue-50 text-blue-600'
+                        ? 'border-brand-500 bg-brand-50 text-brand-500'
                         : 'border-gray-300 hover:bg-gray-50'
                     }`}
                   >
@@ -523,7 +523,7 @@ function MaintenanceTab({ user }) {
                   setFormData({ ...formData, description: e.target.value })
                 }
                 placeholder="Please describe the issue in detail..."
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none"
               />
             </div>
 
@@ -531,7 +531,7 @@ function MaintenanceTab({ user }) {
               <label className="block text-sm font-medium mb-2">
                 Photos (Optional)
               </label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 cursor-pointer">
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-brand-400 cursor-pointer">
                 <Upload size={32} className="mx-auto text-gray-400 mb-2" />
                 <p className="text-sm text-gray-600">
                   Click to upload photos of the issue
@@ -556,7 +556,7 @@ function MaintenanceTab({ user }) {
                 className={`flex-1 py-3 rounded-lg font-medium text-white ${
                   isSubmitting
                     ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-blue-600 hover:bg-blue-700'
+                    : 'bg-brand-500 hover:bg-brand-600'
                 }`}
               >
                 {isSubmitting ? 'Submitting...' : 'Submit Request'}
@@ -702,7 +702,7 @@ function LeasesTab({ user }) {
           </div>
 
           <div className="flex space-x-2 pt-3 border-t border-gray-200">
-            <button className="flex-1 flex items-center justify-center py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
+            <button className="flex-1 flex items-center justify-center py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 font-medium">
               <Eye size={18} className="mr-2" />
               View Lease
             </button>
@@ -713,9 +713,9 @@ function LeasesTab({ user }) {
           </div>
 
           {lease.status === 'active' && (
-            <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
-              <AlertCircle size={16} className="inline text-blue-600 mr-2" />
-              <span className="text-blue-700">
+            <div className="mt-3 bg-brand-50 border border-brand-200 rounded-lg p-3 text-sm">
+              <AlertCircle size={16} className="inline text-brand-500 mr-2" />
+              <span className="text-brand-600">
                 {Math.ceil(
                   (new Date(lease.endDate) - new Date()) /
                     (1000 * 60 * 60 * 24)
@@ -840,7 +840,7 @@ function PaymentHistoryTab({ user }) {
             onClick={() => setFilterType(type)}
             className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap ${
               filterType === type
-                ? 'bg-blue-600 text-white'
+                ? 'bg-brand-500 text-white'
                 : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
             }`}
           >
@@ -879,7 +879,7 @@ function PaymentHistoryTab({ user }) {
                   year: 'numeric',
                 })}
               </span>
-              <button className="text-blue-600 font-medium hover:underline">
+              <button className="text-brand-500 font-medium hover:underline">
                 View Receipt
               </button>
             </div>

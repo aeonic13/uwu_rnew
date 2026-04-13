@@ -67,7 +67,7 @@ function ConversationCard({ conversation, onClick }) {
     <button
       onClick={() => onClick(conversation.id)}
       className={`w-full p-4 flex items-start gap-3 hover:bg-gray-50 transition-colors text-left border-b border-gray-100 ${
-        isUnread ? 'bg-blue-50/50' : ''
+        isUnread ? 'bg-brand-50/50' : ''
       }`}
     >
       {/* Avatar */}
@@ -78,7 +78,7 @@ function ConversationCard({ conversation, onClick }) {
           className="w-14 h-14 rounded-full object-cover"
         />
         {isUnread && (
-          <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
+          <div className="absolute -top-1 -right-1 w-5 h-5 bg-brand-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
             {conversation.unreadCount}
           </div>
         )}
@@ -105,7 +105,7 @@ function ConversationCard({ conversation, onClick }) {
           {isFromMe && lm && (
             <span className="flex-shrink-0">
               {lm.isRead ? (
-                <CheckCheck size={14} className="text-blue-500" />
+                <CheckCheck size={14} className="text-brand-500" />
               ) : (
                 <Check size={14} className="text-gray-400" />
               )}
@@ -225,7 +225,7 @@ function MessagesView() {
           <div className="flex justify-between items-center mb-4">
             <h1 className="text-2xl font-bold">Messages</h1>
             {unreadCount > 0 && (
-              <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-medium">
+              <span className="bg-brand-500 text-white px-3 py-1 rounded-full text-sm font-medium">
                 {unreadCount} new
               </span>
             )}
@@ -239,7 +239,7 @@ function MessagesView() {
               placeholder="Search conversations..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
         </div>
@@ -260,7 +260,7 @@ function MessagesView() {
           {!searchTerm && user?.userType === 'student' && (
             <button
               onClick={() => navigate('/listings')}
-              className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              className="mt-4 bg-brand-500 text-white px-6 py-2 rounded-lg hover:bg-brand-600 transition-colors"
             >
               Browse Listings
             </button>

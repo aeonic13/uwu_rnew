@@ -112,7 +112,7 @@ function AgreementView() {
         </h2>
         <button
           onClick={() => navigate(-1)}
-          className="text-blue-600 hover:underline"
+          className="text-brand-500 hover:underline"
         >
           Go back
         </button>
@@ -191,7 +191,7 @@ function AgreementView() {
         <div className="bg-white rounded-lg border p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <FileText className="text-blue-600 mr-3" size={24} />
+              <FileText className="text-brand-500 mr-3" size={24} />
               <div>
                 <p className="font-semibold">Agreement #{agreement.id}</p>
                 <p className="text-sm text-gray-500">
@@ -300,7 +300,7 @@ function AgreementView() {
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4">
           <button
             onClick={() => setShowSignModal(true)}
-            className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center"
+            className="w-full bg-brand-500 text-white py-3 rounded-lg font-semibold hover:bg-brand-600 transition-colors flex items-center justify-center"
           >
             <Pen size={20} className="mr-2" />
             Sign Agreement
@@ -329,7 +329,7 @@ function AgreementView() {
                 value={signature}
                 onChange={(e) => setSignature(e.target.value)}
                 placeholder="John Doe"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
 
@@ -359,7 +359,7 @@ function AgreementView() {
               <button
                 onClick={handleSign}
                 disabled={!signature.trim() || !agreedToTerms || isSigning}
-                className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50"
+                className="flex-1 bg-brand-500 text-white py-3 rounded-lg font-semibold hover:bg-brand-600 transition-colors disabled:opacity-50"
               >
                 {isSigning ? 'Signing...' : 'Confirm & Sign'}
               </button>

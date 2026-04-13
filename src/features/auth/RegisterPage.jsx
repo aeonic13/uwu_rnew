@@ -83,8 +83,7 @@ function RegisterPage() {
         {/* Header */}
         <div className="bg-white border-b p-4">
           <div className="flex items-center justify-center">
-            <Home className="text-blue-600 mr-2" size={28} />
-            <h1 className="text-2xl font-bold text-blue-600">Rentra</h1>
+            <img src="/logo.svg" alt="Rentra" className="h-10 w-auto" />
           </div>
         </div>
 
@@ -101,11 +100,11 @@ function RegisterPage() {
             <div className="space-y-4">
               <button
                 onClick={() => setUserType('student')}
-                className="w-full bg-white border-2 border-gray-200 rounded-xl p-6 text-left hover:border-blue-500 hover:bg-blue-50 transition-all"
+                className="w-full bg-white border-2 border-gray-200 rounded-xl p-6 text-left hover:border-brand-500 hover:bg-brand-50 transition-all"
               >
                 <div className="flex items-center mb-3">
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
-                    <School className="text-blue-600" size={24} />
+                  <div className="w-12 h-12 bg-brand-100 rounded-full flex items-center justify-center mr-4">
+                    <School className="text-brand-500" size={24} />
                   </div>
                   <h3 className="text-lg font-semibold">I&apos;m a Tenant</h3>
                 </div>
@@ -116,7 +115,7 @@ function RegisterPage() {
 
               <button
                 onClick={() => setUserType('owner')}
-                className="w-full bg-white border-2 border-gray-200 rounded-xl p-6 text-left hover:border-blue-500 hover:bg-blue-50 transition-all"
+                className="w-full bg-white border-2 border-gray-200 rounded-xl p-6 text-left hover:border-brand-500 hover:bg-brand-50 transition-all"
               >
                 <div className="flex items-center mb-3">
                   <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
@@ -134,7 +133,7 @@ function RegisterPage() {
               Already have an account?{' '}
               <Link
                 to="/login"
-                className="text-blue-600 font-semibold hover:underline"
+                className="text-brand-500 font-semibold hover:underline"
               >
                 Sign in
               </Link>
@@ -151,8 +150,7 @@ function RegisterPage() {
       {/* Header */}
       <div className="bg-white border-b p-4">
         <div className="flex items-center justify-center">
-          <Home className="text-blue-600 mr-2" size={28} />
-          <h1 className="text-2xl font-bold text-blue-600">Rentra</h1>
+          <img src="/logo.svg" alt="Rentra" className="h-10 w-auto" />
         </div>
       </div>
 
@@ -162,7 +160,7 @@ function RegisterPage() {
           <div className="bg-white rounded-lg shadow-sm border p-6">
             <button
               onClick={() => setUserType(null)}
-              className="text-blue-600 text-sm mb-4 hover:underline"
+              className="text-brand-500 text-sm mb-4 hover:underline"
             >
               ← Back to selection
             </button>
@@ -190,7 +188,7 @@ function RegisterPage() {
                       type="text"
                       value={formData.firstName}
                       onChange={handleInputChange('firstName')}
-                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 ${
                         errors.firstName ? 'border-red-500' : 'border-gray-300'
                       }`}
                     />
@@ -209,7 +207,7 @@ function RegisterPage() {
                     type="text"
                     value={formData.lastName}
                     onChange={handleInputChange('lastName')}
-                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 ${
                       errors.lastName ? 'border-red-500' : 'border-gray-300'
                     }`}
                   />
@@ -236,7 +234,7 @@ function RegisterPage() {
                     value={formData.email}
                     onChange={handleInputChange('email')}
                     placeholder="you@example.com"
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 ${
                       errors.email ? 'border-red-500' : 'border-gray-300'
                     }`}
                   />
@@ -261,7 +259,7 @@ function RegisterPage() {
                     value={formData.password}
                     onChange={handleInputChange('password')}
                     placeholder="At least 8 characters"
-                    className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 ${
                       errors.password ? 'border-red-500' : 'border-gray-300'
                     }`}
                   />
@@ -292,7 +290,7 @@ function RegisterPage() {
                     type={showPassword ? 'text' : 'password'}
                     value={formData.confirmPassword}
                     onChange={handleInputChange('confirmPassword')}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 ${
                       errors.confirmPassword
                         ? 'border-red-500'
                         : 'border-gray-300'
@@ -317,13 +315,13 @@ function RegisterPage() {
                   />
                   <span className="text-sm text-gray-600">
                     I agree to Rentra&apos;s{' '}
-                    <Link to="/terms" className="text-blue-600 hover:underline">
+                    <Link to="/terms" className="text-brand-500 hover:underline">
                       Terms of Service
                     </Link>{' '}
                     and{' '}
                     <Link
                       to="/privacy"
-                      className="text-blue-600 hover:underline"
+                      className="text-brand-500 hover:underline"
                     >
                       Privacy Policy
                     </Link>
@@ -345,7 +343,7 @@ function RegisterPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                className="w-full bg-brand-500 text-white py-3 rounded-lg font-semibold hover:bg-brand-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
                 {isLoading ? (
                   <LoadingSpinner
@@ -364,7 +362,7 @@ function RegisterPage() {
             Already have an account?{' '}
             <Link
               to="/login"
-              className="text-blue-600 font-semibold hover:underline"
+              className="text-brand-500 font-semibold hover:underline"
             >
               Sign in
             </Link>

@@ -114,7 +114,7 @@ function StatusBadge({ status }) {
     processing: {
       icon: Clock,
       text: 'Processing',
-      className: 'bg-blue-100 text-blue-700',
+      className: 'bg-brand-100 text-brand-600',
     },
   }
 
@@ -188,7 +188,7 @@ function PaymentMethodCard({ method, onSelect }) {
   return (
     <button
       onClick={() => onSelect(method)}
-      className="w-full flex items-center p-4 bg-white border border-gray-200 rounded-lg hover:border-blue-300 transition-colors"
+      className="w-full flex items-center p-4 bg-white border border-gray-200 rounded-lg hover:border-brand-300 transition-colors"
     >
       <div className="w-12 h-8 bg-gray-100 rounded flex items-center justify-center mr-3">
         {method.type === 'card' ? (
@@ -210,7 +210,7 @@ function PaymentMethodCard({ method, onSelect }) {
         </p>
       </div>
       {method.isDefault && (
-        <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs font-medium">
+        <span className="bg-brand-100 text-brand-600 px-2 py-0.5 rounded text-xs font-medium">
           Default
         </span>
       )}
@@ -292,7 +292,7 @@ function PaymentsView() {
             onClick={() => setActiveTab('transactions')}
             className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'transactions'
-                ? 'border-blue-600 text-blue-600'
+                ? 'border-brand-500 text-brand-500'
                 : 'border-transparent text-gray-500'
             }`}
           >
@@ -302,7 +302,7 @@ function PaymentsView() {
             onClick={() => setActiveTab('methods')}
             className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'methods'
-                ? 'border-blue-600 text-blue-600'
+                ? 'border-brand-500 text-brand-500'
                 : 'border-transparent text-gray-500'
             }`}
           >
@@ -368,7 +368,7 @@ function PaymentsView() {
             />
           ))}
 
-          <button className="w-full flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-blue-300 hover:text-blue-600 transition-colors">
+          <button className="w-full flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-brand-300 hover:text-brand-500 transition-colors">
             <Plus size={20} className="mr-2" />
             Add Payment Method
           </button>
@@ -447,7 +447,7 @@ function PaymentsView() {
               </div>
 
               {selectedTransaction.status === 'pending' && (
-                <button className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold mt-6 hover:bg-blue-700 transition-colors">
+                <button className="w-full bg-brand-500 text-white py-3 rounded-lg font-semibold mt-6 hover:bg-brand-600 transition-colors">
                   Pay Now
                 </button>
               )}

@@ -243,7 +243,7 @@ const OwnerApprovalSystem = ({ user, onBack, onNavigate }) => {
       case 'approved': return 'bg-green-100 text-green-800';
       case 'rejected': return 'bg-red-100 text-red-800';
       case 'expired': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-blue-100 text-blue-800';
+      default: return 'bg-brand-100 text-blue-800';
     }
   };
 
@@ -319,7 +319,7 @@ const OwnerApprovalSystem = ({ user, onBack, onNavigate }) => {
             <div className="text-sm text-gray-600">Approval Rate</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">{approvalData.statistics.avgProcessingTime}</div>
+            <div className="text-2xl font-bold text-brand-500">{approvalData.statistics.avgProcessingTime}</div>
             <div className="text-sm text-gray-600">Avg Processing</div>
           </div>
           <div className="text-center">
@@ -336,7 +336,7 @@ const OwnerApprovalSystem = ({ user, onBack, onNavigate }) => {
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`flex-shrink-0 py-2 px-4 text-sm font-medium rounded-md transition-colors ${
-              activeTab === tab ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600'
+              activeTab === tab ? 'bg-white text-brand-500 shadow-sm' : 'text-gray-600'
             }`}
           >
             {tab === 'pending' && `Pending (${approvalData.pendingRequests.length})`}
@@ -415,7 +415,7 @@ const OwnerApprovalSystem = ({ user, onBack, onNavigate }) => {
               <div className="flex space-x-3 pt-4 border-t border-gray-200">
                 <button
                   onClick={() => setSelectedRequest(request)}
-                  className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 flex items-center justify-center"
+                  className="flex-1 bg-brand-500 text-white py-2 rounded-lg font-medium hover:bg-brand-600 flex items-center justify-center"
                 >
                   <Eye size={16} className="mr-2" />
                   Review Details
@@ -494,7 +494,7 @@ const OwnerApprovalSystem = ({ user, onBack, onNavigate }) => {
               )}
 
               <div className="flex space-x-3 pt-4 border-t border-gray-200">
-                <button className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700">
+                <button className="flex-1 bg-brand-500 text-white py-2 rounded-lg font-medium hover:bg-brand-600">
                   View Details
                 </button>
                 <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
@@ -567,7 +567,7 @@ const OwnerApprovalSystem = ({ user, onBack, onNavigate }) => {
                 {/* Student Information */}
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h3 className="font-semibold mb-3 flex items-center">
-                    <GraduationCap size={20} className="mr-2 text-blue-600" />
+                    <GraduationCap size={20} className="mr-2 text-brand-500" />
                     Current Tenant
                   </h3>
                   <div className="space-y-2 text-sm">
@@ -733,7 +733,7 @@ const OwnerApprovalSystem = ({ user, onBack, onNavigate }) => {
                     : 'Explain why this request is being rejected...'
                   }
                   rows={4}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                   required
                 />
               </div>

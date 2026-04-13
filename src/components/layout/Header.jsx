@@ -68,9 +68,8 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
-            <Building2 className="text-blue-600" size={32} />
-            <span className="text-2xl font-bold text-gray-900">Rentra</span>
+          <Link to="/" className="flex items-center">
+            <img src="/logo.svg" alt="Rentra" className="h-10 w-auto" />
           </Link>
 
           {/* Desktop Navigation */}
@@ -83,7 +82,7 @@ export default function Header() {
                   to={item.path}
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                     isActive(item.path)
-                      ? 'bg-blue-50 text-blue-600'
+                      ? 'bg-brand-50 text-brand-500'
                       : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
                   }`}
                 >
@@ -120,7 +119,7 @@ export default function Header() {
                 </Link>
                 <Link
                   to="/register"
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-brand-500 hover:bg-brand-600 rounded-lg transition-colors"
                 >
                   <span>Get Started</span>
                 </Link>
@@ -151,7 +150,7 @@ export default function Header() {
                   onClick={() => setMobileMenuOpen(false)}
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium transition-colors ${
                     isActive(item.path)
-                      ? 'bg-blue-50 text-blue-600'
+                      ? 'bg-brand-50 text-brand-500'
                       : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
@@ -185,7 +184,7 @@ export default function Header() {
                 <Link
                   to="/register"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-white bg-blue-600 hover:bg-blue-700"
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-white bg-brand-500 hover:bg-brand-600"
                 >
                   <span>Get Started</span>
                 </Link>

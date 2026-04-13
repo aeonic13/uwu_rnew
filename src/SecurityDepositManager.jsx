@@ -121,7 +121,7 @@ const SecurityDepositManager = ({ lease, userType, onBack }) => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'held': return 'bg-blue-100 text-blue-800';
+      case 'held': return 'bg-brand-100 text-blue-800';
       case 'processing': return 'bg-yellow-100 text-yellow-800';
       case 'returned': return 'bg-green-100 text-green-800';
       case 'disputed': return 'bg-red-100 text-red-800';
@@ -136,12 +136,12 @@ const SecurityDepositManager = ({ lease, userType, onBack }) => {
     <div className="p-4 pb-20">
       <div className="mb-6">
         <h2 className="text-2xl font-bold mb-2">Security Deposit Protection</h2>
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+        <div className="bg-brand-50 border border-brand-200 rounded-lg p-3">
           <div className="flex items-center text-sm text-blue-800">
             <Shield size={16} className="mr-2" />
             <span>Protected by Rentra Escrow</span>
           </div>
-          <p className="text-sm text-blue-600 mt-1">
+          <p className="text-sm text-brand-500 mt-1">
             ${depositData.deposit.originalAmount} held securely • California law: 21-day return
           </p>
         </div>
@@ -152,7 +152,7 @@ const SecurityDepositManager = ({ lease, userType, onBack }) => {
         <button
           onClick={() => setActiveTab('overview')}
           className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
-            activeTab === 'overview' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
+            activeTab === 'overview' ? 'bg-white text-brand-500 shadow-sm' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
           }`}
         >
           Overview
@@ -160,7 +160,7 @@ const SecurityDepositManager = ({ lease, userType, onBack }) => {
         <button
           onClick={() => setActiveTab('deductions')}
           className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
-            activeTab === 'deductions' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
+            activeTab === 'deductions' ? 'bg-white text-brand-500 shadow-sm' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
           }`}
         >
           Deductions
@@ -168,7 +168,7 @@ const SecurityDepositManager = ({ lease, userType, onBack }) => {
         <button
           onClick={() => setActiveTab('timeline')}
           className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
-            activeTab === 'timeline' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
+            activeTab === 'timeline' ? 'bg-white text-brand-500 shadow-sm' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
           }`}
         >
           Timeline
@@ -193,7 +193,7 @@ const SecurityDepositManager = ({ lease, userType, onBack }) => {
                 <div className="text-sm text-gray-600">Original Amount</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{daysUntilReturn}</div>
+                <div className="text-2xl font-bold text-brand-500">{daysUntilReturn}</div>
                 <div className="text-sm text-gray-600">Days Until Return</div>
               </div>
             </div>
@@ -253,7 +253,7 @@ const SecurityDepositManager = ({ lease, userType, onBack }) => {
                   </div>
                 </div>
                 {!depositData.moveOutInspection.completed && (
-                  <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">
+                  <button className="bg-brand-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-brand-600">
                     Schedule Inspection
                   </button>
                 )}
@@ -287,7 +287,7 @@ const SecurityDepositManager = ({ lease, userType, onBack }) => {
               <h3 className="font-semibold">Deposit Return Calculator</h3>
               <button
                 onClick={handleCalculateReturn}
-                className="flex items-center text-blue-600 hover:text-blue-700 text-sm font-medium"
+                className="flex items-center text-brand-500 hover:text-brand-600 text-sm font-medium"
               >
                 <Calculator size={16} className="mr-1" />
                 Calculate
@@ -367,7 +367,7 @@ const SecurityDepositManager = ({ lease, userType, onBack }) => {
                   <select
                     value={deductionForm.category}
                     onChange={(e) => setDeductionForm(prev => ({ ...prev, category: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                   >
                     <option value="">Select category</option>
                     <option value="Cleaning">Cleaning</option>
@@ -384,7 +384,7 @@ const SecurityDepositManager = ({ lease, userType, onBack }) => {
                     value={deductionForm.description}
                     onChange={(e) => setDeductionForm(prev => ({ ...prev, description: e.target.value }))}
                     placeholder="Describe the issue and justification for deduction..."
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                     rows={3}
                   />
                 </div>
@@ -398,7 +398,7 @@ const SecurityDepositManager = ({ lease, userType, onBack }) => {
                       value={deductionForm.amount}
                       onChange={(e) => setDeductionForm(prev => ({ ...prev, amount: e.target.value }))}
                       placeholder="0.00"
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                     />
                   </div>
                 </div>
@@ -410,7 +410,7 @@ const SecurityDepositManager = ({ lease, userType, onBack }) => {
                   
                   <div className="space-y-3">
                     {/* Receipt/Document Upload */}
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-300 transition-colors">
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-brand-300 transition-colors">
                       <div className="text-center">
                         <Paperclip size={24} className="mx-auto text-gray-400 mb-2" />
                         <p className="text-sm text-gray-600 mb-2">Upload Receipts & Documents</p>
@@ -437,7 +437,7 @@ const SecurityDepositManager = ({ lease, userType, onBack }) => {
                         />
                         <label
                           htmlFor="receipt-upload"
-                          className="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 cursor-pointer"
+                          className="inline-block bg-brand-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-brand-600 cursor-pointer"
                         >
                           Choose Files
                         </label>
@@ -491,7 +491,7 @@ const SecurityDepositManager = ({ lease, userType, onBack }) => {
                               {deductionForm.receiptFiles.map((fileObj, index) => (
                                 <div key={index} className="flex items-center justify-between bg-white rounded p-2 border">
                                   <div className="flex items-center">
-                                    <FileText size={16} className="text-blue-600 mr-2" />
+                                    <FileText size={16} className="text-brand-500 mr-2" />
                                     <div>
                                       <p className="text-sm font-medium">{fileObj.name}</p>
                                       <p className="text-xs text-gray-500">{(fileObj.size / 1024 / 1024).toFixed(2)} MB</p>
@@ -569,13 +569,13 @@ const SecurityDepositManager = ({ lease, userType, onBack }) => {
         <div className="space-y-4">
           {depositData.timeline.map((event, index) => (
             <div key={index} className="flex items-start">
-              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-4 mt-1">
+              <div className="w-8 h-8 bg-brand-100 rounded-full flex items-center justify-center mr-4 mt-1">
                 {event.type === 'deposit' ? (
-                  <DollarSign size={16} className="text-blue-600" />
+                  <DollarSign size={16} className="text-brand-500" />
                 ) : event.type === 'inspection' ? (
-                  <Camera size={16} className="text-blue-600" />
+                  <Camera size={16} className="text-brand-500" />
                 ) : (
-                  <Clock size={16} className="text-blue-600" />
+                  <Clock size={16} className="text-brand-500" />
                 )}
               </div>
               <div className="flex-1">
@@ -628,15 +628,15 @@ const SecurityDepositManager = ({ lease, userType, onBack }) => {
                   </div>
                 </div>
 
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <p className="text-sm text-blue-700">
+                <div className="bg-brand-50 border border-brand-200 rounded-lg p-3">
+                  <p className="text-sm text-brand-600">
                     <strong>State Requirement:</strong> Deposit must be returned within {depositData.deposit.returnDeadline} days of lease end in {depositData.deposit.state}.
                   </p>
                 </div>
 
                 <button
                   onClick={() => setShowCalculator(false)}
-                  className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700"
+                  className="w-full bg-brand-500 text-white py-3 rounded-lg font-medium hover:bg-brand-600"
                 >
                   Close
                 </button>

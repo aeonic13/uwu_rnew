@@ -45,7 +45,7 @@ function FormInput({
           onChange={onChange}
           placeholder={placeholder}
           disabled={disabled}
-          className={`w-full ${Icon ? 'pl-10' : 'pl-4'} pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+          className={`w-full ${Icon ? 'pl-10' : 'pl-4'} pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 ${
             error ? 'border-red-500' : 'border-gray-300'
           } ${disabled ? 'bg-gray-100 text-gray-500' : ''}`}
         />
@@ -69,7 +69,7 @@ function FormTextarea({ label, value, onChange, placeholder, rows = 4 }) {
         onChange={onChange}
         placeholder={placeholder}
         rows={rows}
-        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
       />
     </div>
   )
@@ -179,7 +179,7 @@ function EditProfile() {
           <button
             onClick={handleSubmit}
             disabled={isLoading}
-            className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors disabled:opacity-50"
+            className="p-2 text-brand-500 hover:bg-brand-50 rounded-full transition-colors disabled:opacity-50"
             aria-label="Save changes"
           >
             {isLoading ? <LoadingSpinner size="sm" /> : <Save size={24} />}
@@ -196,7 +196,7 @@ function EditProfile() {
               alt="Profile"
               className="w-24 h-24 rounded-full object-cover"
             />
-            <label className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full cursor-pointer hover:bg-blue-700 transition-colors">
+            <label className="absolute bottom-0 right-0 bg-brand-500 text-white p-2 rounded-full cursor-pointer hover:bg-brand-600 transition-colors">
               <Camera size={18} />
               <input
                 type="file"
@@ -311,7 +311,7 @@ function EditProfile() {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-brand-500 text-white py-3 rounded-lg font-semibold hover:bg-brand-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? 'Saving...' : 'Save Changes'}
         </button>

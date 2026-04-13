@@ -184,7 +184,7 @@ const RoommateManagement = ({ property, currentUser, userType, onBack, onNavigat
           {userType === 'tenant' && (
             <button
               onClick={() => setShowInviteModal(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 flex items-center"
+              className="bg-brand-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-brand-600 flex items-center"
             >
               <UserPlus size={16} className="mr-2" />
               Invite Roommate
@@ -212,7 +212,7 @@ const RoommateManagement = ({ property, currentUser, userType, onBack, onNavigat
         <button
           onClick={() => setActiveTab('overview')}
           className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
-            activeTab === 'overview' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600'
+            activeTab === 'overview' ? 'bg-white text-brand-500 shadow-sm' : 'text-gray-600'
           }`}
         >
           Overview
@@ -220,7 +220,7 @@ const RoommateManagement = ({ property, currentUser, userType, onBack, onNavigat
         <button
           onClick={() => setActiveTab('roommates')}
           className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
-            activeTab === 'roommates' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600'
+            activeTab === 'roommates' ? 'bg-white text-brand-500 shadow-sm' : 'text-gray-600'
           }`}
         >
           Roommates
@@ -228,7 +228,7 @@ const RoommateManagement = ({ property, currentUser, userType, onBack, onNavigat
         <button
           onClick={() => setActiveTab('finances')}
           className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
-            activeTab === 'finances' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600'
+            activeTab === 'finances' ? 'bg-white text-brand-500 shadow-sm' : 'text-gray-600'
           }`}
         >
           Finances
@@ -237,7 +237,7 @@ const RoommateManagement = ({ property, currentUser, userType, onBack, onNavigat
           <button
             onClick={() => setActiveTab('settings')}
             className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
-              activeTab === 'settings' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600'
+              activeTab === 'settings' ? 'bg-white text-brand-500 shadow-sm' : 'text-gray-600'
             }`}
           >
             Settings
@@ -250,9 +250,9 @@ const RoommateManagement = ({ property, currentUser, userType, onBack, onNavigat
         <div className="space-y-6">
           {/* Quick Stats */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-              <div className="text-2xl font-bold text-blue-600">{activeTenants.length}</div>
-              <div className="text-sm text-blue-700">Active Tenants</div>
+            <div className="bg-brand-50 p-4 rounded-lg border border-brand-200">
+              <div className="text-2xl font-bold text-brand-500">{activeTenants.length}</div>
+              <div className="text-sm text-brand-600">Active Tenants</div>
             </div>
             <div className="bg-green-50 p-4 rounded-lg border border-green-200">
               <div className="text-2xl font-bold text-green-600">${rentalData.financials.collectedThisMonth}</div>
@@ -282,8 +282,8 @@ const RoommateManagement = ({ property, currentUser, userType, onBack, onNavigat
                 </div>
               </div>
               <div className="flex items-center">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                  <Mail size={16} className="text-blue-600" />
+                <div className="w-8 h-8 bg-brand-100 rounded-full flex items-center justify-center mr-3">
+                  <Mail size={16} className="text-brand-500" />
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-medium">Roommate invitation sent to john@berkeley.edu</p>
@@ -323,7 +323,7 @@ const RoommateManagement = ({ property, currentUser, userType, onBack, onNavigat
               {userType === 'owner' && (
                 <button className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                   <div className="flex items-center">
-                    <FileText size={20} className="text-blue-600 mr-3" />
+                    <FileText size={20} className="text-brand-500 mr-3" />
                     <div className="text-left">
                       <p className="font-medium">Generate Rent Report</p>
                       <p className="text-sm text-gray-600">Export financial summary and records</p>
@@ -380,7 +380,7 @@ const RoommateManagement = ({ property, currentUser, userType, onBack, onNavigat
                     </div>
                     <button
                       onClick={() => setShowInviteModal(true)}
-                      className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 flex items-center"
+                      className="bg-brand-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-brand-600 flex items-center"
                     >
                       <Plus size={16} className="mr-2" />
                       Find Roommate
@@ -397,9 +397,9 @@ const RoommateManagement = ({ property, currentUser, userType, onBack, onNavigat
                       <div className="flex-1">
                         <div className="flex items-center">
                           <h4 className="font-semibold mr-2">{tenant.name}</h4>
-                          {tenant.verified && <Shield size={16} className="text-blue-500" />}
+                          {tenant.verified && <Shield size={16} className="text-brand-500" />}
                           {tenant.role === 'primary' && (
-                            <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                            <span className="ml-2 px-2 py-1 bg-brand-100 text-blue-800 text-xs rounded-full">
                               Primary
                             </span>
                           )}
@@ -416,7 +416,7 @@ const RoommateManagement = ({ property, currentUser, userType, onBack, onNavigat
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <button className="p-2 text-gray-500 hover:text-blue-600">
+                      <button className="p-2 text-gray-500 hover:text-brand-500">
                         <MessageCircle size={16} />
                       </button>
                       {(userType === 'owner' || tenant.role !== 'primary') && (
@@ -547,8 +547,8 @@ const RoommateManagement = ({ property, currentUser, userType, onBack, onNavigat
               {rentalData.financials.utilityBills.map((bill, index) => (
                 <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                      <FileText size={16} className="text-blue-600" />
+                    <div className="w-8 h-8 bg-brand-100 rounded-full flex items-center justify-center mr-3">
+                      <FileText size={16} className="text-brand-500" />
                     </div>
                     <div>
                       <p className="font-medium capitalize">{bill.type}</p>
@@ -581,7 +581,7 @@ const RoommateManagement = ({ property, currentUser, userType, onBack, onNavigat
                 <input
                   type="number"
                   defaultValue={rentalData.property.totalRent}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
               <div>
@@ -589,7 +589,7 @@ const RoommateManagement = ({ property, currentUser, userType, onBack, onNavigat
                 <input
                   type="date"
                   defaultValue={rentalData.property.leaseEnd}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
               <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -597,7 +597,7 @@ const RoommateManagement = ({ property, currentUser, userType, onBack, onNavigat
                   <p className="font-medium">Allow Roommate Invitations</p>
                   <p className="text-sm text-gray-600">Let tenants invite their own roommates</p>
                 </div>
-                <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-blue-600">
+                <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-brand-500">
                   <span className="inline-block h-4 w-4 transform rounded-full bg-white transition translate-x-6" />
                 </button>
               </div>
@@ -637,7 +637,7 @@ const RoommateManagement = ({ property, currentUser, userType, onBack, onNavigat
                     type="text"
                     value={inviteForm.name}
                     onChange={(e) => setInviteForm(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                     placeholder="Enter roommate's name"
                   />
                 </div>
@@ -648,7 +648,7 @@ const RoommateManagement = ({ property, currentUser, userType, onBack, onNavigat
                     type="email"
                     value={inviteForm.email}
                     onChange={(e) => setInviteForm(prev => ({ ...prev, email: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                     placeholder="roommate@university.edu"
                   />
                 </div>
@@ -659,7 +659,7 @@ const RoommateManagement = ({ property, currentUser, userType, onBack, onNavigat
                     type="number"
                     value={inviteForm.rentAmount}
                     onChange={(e) => setInviteForm(prev => ({ ...prev, rentAmount: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                     placeholder="1100"
                   />
                 </div>
@@ -670,7 +670,7 @@ const RoommateManagement = ({ property, currentUser, userType, onBack, onNavigat
                     type="date"
                     value={inviteForm.moveInDate}
                     onChange={(e) => setInviteForm(prev => ({ ...prev, moveInDate: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                   />
                 </div>
 
@@ -679,7 +679,7 @@ const RoommateManagement = ({ property, currentUser, userType, onBack, onNavigat
                   <textarea
                     value={inviteForm.message}
                     onChange={(e) => setInviteForm(prev => ({ ...prev, message: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                     rows={3}
                     placeholder="Hi! I'd love to have you as a roommate..."
                   />
@@ -698,7 +698,7 @@ const RoommateManagement = ({ property, currentUser, userType, onBack, onNavigat
                   disabled={!inviteForm.email || !inviteForm.name || !inviteForm.rentAmount}
                   className={`flex-1 py-3 rounded-lg font-semibold ${
                     inviteForm.email && inviteForm.name && inviteForm.rentAmount
-                      ? 'bg-blue-600 text-white hover:bg-blue-700'
+                      ? 'bg-brand-500 text-white hover:bg-brand-600'
                       : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   }`}
                 >

@@ -89,7 +89,7 @@ export default function GroupDetail() {
         </h2>
         <button
           onClick={() => navigate('/groups')}
-          className="text-blue-600 hover:underline"
+          className="text-brand-500 hover:underline"
         >
           Back to groups
         </button>
@@ -103,8 +103,8 @@ export default function GroupDetail() {
       <div className="bg-white rounded-lg shadow-md p-6 lg:p-8 mb-6">
         <div className="flex items-start justify-between mb-6">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-              <Users size={32} className="text-blue-600" />
+            <div className="w-16 h-16 bg-brand-100 rounded-full flex items-center justify-center">
+              <Users size={32} className="text-brand-500" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">{selectedGroup.name}</h1>
@@ -133,7 +133,7 @@ export default function GroupDetail() {
         <div className="flex flex-wrap gap-3">
           <button
             onClick={() => navigate(`/groups/${id}/chat`)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors"
           >
             <MessageSquare size={18} />
             Group Chat
@@ -142,7 +142,7 @@ export default function GroupDetail() {
           {isAdmin && (
             <button
               onClick={() => setShowInviteModal(true)}
-              className="flex items-center gap-2 px-4 py-2 border-2 border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 border-2 border-brand-500 text-brand-500 rounded-lg hover:bg-brand-50 transition-colors"
             >
               <UserPlus size={18} />
               Invite Members
@@ -176,7 +176,7 @@ export default function GroupDetail() {
                       <Crown size={14} className="text-yellow-500" />
                     )}
                     {member.verified && (
-                      <Shield size={14} className="text-blue-500" />
+                      <Shield size={14} className="text-brand-500" />
                     )}
                   </div>
                   <p className="text-sm text-gray-500">
@@ -241,7 +241,7 @@ export default function GroupDetail() {
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
                 placeholder="friend@university.edu"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                 autoFocus
               />
             </div>
@@ -256,7 +256,7 @@ export default function GroupDetail() {
               <button
                 onClick={handleInvite}
                 disabled={!inviteEmail.trim()}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 disabled:bg-gray-300 transition-colors"
               >
                 <Mail size={18} />
                 Send Invite

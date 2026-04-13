@@ -106,7 +106,7 @@ function OwnerCard({ owner, onContact }) {
           <div className="flex items-center">
             <h3 className="font-semibold">{owner.name}</h3>
             {owner.verified && (
-              <Shield size={16} className="ml-1 text-blue-500" />
+              <Shield size={16} className="ml-1 text-brand-500" />
             )}
           </div>
           <div className="flex items-center text-sm text-gray-600">
@@ -121,7 +121,7 @@ function OwnerCard({ owner, onContact }) {
 
       <button
         onClick={onContact}
-        className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center"
+        className="w-full bg-brand-500 text-white py-3 rounded-lg font-medium hover:bg-brand-600 transition-colors flex items-center justify-center"
       >
         <MessageCircle size={20} className="mr-2" />
         Contact Owner
@@ -208,7 +208,7 @@ function PropertyDetail() {
           </h2>
           <button
             onClick={() => navigate('/listings')}
-            className="text-blue-600 hover:underline"
+            className="text-brand-500 hover:underline"
           >
             Browse all listings
           </button>
@@ -359,13 +359,13 @@ function PropertyDetail() {
               <div className="hidden lg:flex gap-3 mt-6 pt-6 border-t">
                 <button
                   onClick={handleContact}
-                  className="flex-1 border-2 border-blue-600 text-blue-600 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
+                  className="flex-1 border-2 border-brand-500 text-brand-500 py-3 rounded-lg font-semibold hover:bg-brand-50 transition-colors"
                 >
                   Message Owner
                 </button>
                 <button
                   onClick={handleApply}
-                  className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                  className="flex-1 bg-brand-500 text-white py-3 rounded-lg font-semibold hover:bg-brand-600 transition-colors"
                 >
                   Apply Now
                 </button>
@@ -381,13 +381,13 @@ function PropertyDetail() {
           <div className="flex gap-3">
               <button
                 onClick={handleContact}
-                className="flex-1 border-2 border-blue-600 text-blue-600 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
+                className="flex-1 border-2 border-brand-500 text-brand-500 py-3 rounded-lg font-semibold hover:bg-brand-50 transition-colors"
               >
                 Message
               </button>
               <button
                 onClick={handleApply}
-                className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                className="flex-1 bg-brand-500 text-white py-3 rounded-lg font-semibold hover:bg-brand-600 transition-colors"
               >
                 Apply Now
               </button>
@@ -413,7 +413,7 @@ function PropertyDetail() {
                 navigator.clipboard.writeText(window.location.href)
                 setShowShareModal(false)
               }}
-              className="w-full bg-blue-600 text-white py-2 rounded-lg mb-2"
+              className="w-full bg-brand-500 text-white py-2 rounded-lg mb-2"
             >
               Copy Link
             </button>

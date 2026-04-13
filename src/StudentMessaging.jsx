@@ -82,7 +82,7 @@ const StudentMessaging = ({
   return (
     <div className="flex flex-col h-full">
       {/* Chat Header */}
-      <div className="bg-blue-600 text-white p-4 flex items-center justify-between">
+      <div className="bg-brand-500 text-white p-4 flex items-center justify-between">
         <div className="flex items-center">
           <button onClick={onBack} className="mr-3">
             <ArrowLeft size={20} />
@@ -102,7 +102,7 @@ const StudentMessaging = ({
               </div>
               <div>
                 <h3 className="font-semibold">Group Chat</h3>
-                <p className="text-blue-200 text-sm">{conversation.members?.length} members</p>
+                <p className="text-brand-200 text-sm">{conversation.members?.length} members</p>
               </div>
             </div>
           ) : (
@@ -114,7 +114,7 @@ const StudentMessaging = ({
               />
               <div>
                 <h3 className="font-semibold">{otherPerson?.name}</h3>
-                <p className="text-blue-200 text-sm">{otherPerson?.university}</p>
+                <p className="text-brand-200 text-sm">{otherPerson?.university}</p>
               </div>
             </div>
           )}
@@ -125,7 +125,7 @@ const StudentMessaging = ({
             <>
               <button 
                 onClick={() => onVideoCall?.(otherPerson)}
-                className="p-2 rounded-full hover:bg-blue-700"
+                className="p-2 rounded-full hover:bg-brand-600"
               >
                 <Video size={20} />
               </button>
@@ -133,7 +133,7 @@ const StudentMessaging = ({
               {otherPerson?.instagramHandle && (
                 <button 
                   onClick={handleInstagramConnect}
-                  className="p-2 rounded-full hover:bg-blue-700 bg-pink-500"
+                  className="p-2 rounded-full hover:bg-brand-600 bg-pink-500"
                 >
                   <Instagram size={20} />
                 </button>
@@ -141,7 +141,7 @@ const StudentMessaging = ({
               
               <button 
                 onClick={handleInviteToGroup}
-                className="p-2 rounded-full hover:bg-blue-700"
+                className="p-2 rounded-full hover:bg-brand-600"
               >
                 <Users size={20} />
               </button>
@@ -151,7 +151,7 @@ const StudentMessaging = ({
           {isGroupChat && (
             <button 
               onClick={() => setShowGroupInfo(!showGroupInfo)}
-              className="p-2 rounded-full hover:bg-blue-700"
+              className="p-2 rounded-full hover:bg-brand-600"
             >
               <Info size={20} />
             </button>
@@ -225,7 +225,7 @@ const StudentMessaging = ({
             >
               <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
                 isOwnMessage 
-                  ? 'bg-blue-600 text-white' 
+                  ? 'bg-brand-500 text-white' 
                   : 'bg-gray-200 text-gray-800'
               }`}>
                 {isGroupChat && !isOwnMessage && (
@@ -243,7 +243,7 @@ const StudentMessaging = ({
                 )}
                 
                 <p className={`text-xs mt-1 ${
-                  isOwnMessage ? 'text-blue-100' : 'text-gray-500'
+                  isOwnMessage ? 'text-brand-100' : 'text-gray-500'
                 }`}>
                   {new Date(message.timestamp).toLocaleTimeString([], {
                     hour: '2-digit',
@@ -266,7 +266,7 @@ const StudentMessaging = ({
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               placeholder={isGroupChat ? "Message the group..." : `Message ${otherPerson?.name}...`}
-              className="w-full p-3 pr-12 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 pr-12 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
             <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex space-x-1">
               <button 
@@ -288,7 +288,7 @@ const StudentMessaging = ({
             disabled={!newMessage.trim()}
             className={`p-3 rounded-full ${
               newMessage.trim() 
-                ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                ? 'bg-brand-500 text-white hover:bg-brand-600' 
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
           >
@@ -414,7 +414,7 @@ const GroupInfoPanel = ({ conversation, currentUser, onClose, onAddMembers, onIn
       <div className="flex space-x-2">
         <button 
           onClick={onAddMembers}
-          className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg text-sm flex items-center justify-center"
+          className="flex-1 bg-brand-500 text-white py-2 px-4 rounded-lg text-sm flex items-center justify-center"
         >
           <Plus size={16} className="mr-1" />
           Add Members
@@ -512,7 +512,7 @@ export const GroupChatCreator = ({
         </h3>
         <div className="flex flex-wrap gap-2">
           {selectedMembers.map(member => (
-            <div key={member.id} className="flex items-center bg-blue-100 rounded-full px-3 py-1">
+            <div key={member.id} className="flex items-center bg-brand-100 rounded-full px-3 py-1">
               <img
                 src={member.photos?.[0] || 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100'}
                 alt={member.name}
@@ -522,7 +522,7 @@ export const GroupChatCreator = ({
               {member.id !== currentUser.id && (
                 <button 
                   onClick={() => handleToggleMember(member)}
-                  className="ml-2 text-blue-600"
+                  className="ml-2 text-brand-500"
                 >
                   ✕
                 </button>
@@ -545,7 +545,7 @@ export const GroupChatCreator = ({
                   onClick={() => handleToggleMember(student)}
                   className={`flex items-center p-3 rounded-lg border cursor-pointer ${
                     isSelected 
-                      ? 'border-blue-500 bg-blue-50' 
+                      ? 'border-brand-500 bg-brand-50' 
                       : 'border-gray-200 hover:bg-gray-50'
                   }`}
                 >
@@ -559,7 +559,7 @@ export const GroupChatCreator = ({
                     <p className="text-sm text-gray-600">{student.university} • {student.major}</p>
                   </div>
                   {isSelected && (
-                    <div className="text-blue-600">✓</div>
+                    <div className="text-brand-500">✓</div>
                   )}
                 </div>
               );
@@ -572,7 +572,7 @@ export const GroupChatCreator = ({
         disabled={selectedMembers.length < 2}
         className={`w-full py-3 rounded-lg font-semibold mt-4 ${
           selectedMembers.length >= 2
-            ? 'bg-blue-600 text-white hover:bg-blue-700'
+            ? 'bg-brand-500 text-white hover:bg-brand-600'
             : 'bg-gray-300 text-gray-500 cursor-not-allowed'
         }`}
       >

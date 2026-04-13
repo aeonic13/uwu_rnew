@@ -29,7 +29,7 @@ const RoommateMatching = ({ userAnswers, potentialRoommates, onBack, onMessageUs
   const getScoreColor = (score) => {
     if (score >= 85) return 'text-green-600 bg-green-50'
     if (score >= 70) return 'text-green-600 bg-green-50'
-    if (score >= 55) return 'text-blue-600 bg-blue-50'
+    if (score >= 55) return 'text-brand-500 bg-brand-50'
     if (score >= 40) return 'text-yellow-600 bg-yellow-50'
     return 'text-red-600 bg-red-50'
   }
@@ -48,8 +48,8 @@ const RoommateMatching = ({ userAnswers, potentialRoommates, onBack, onMessageUs
       >
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center">
-            <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mr-3">
-              <User className="w-6 h-6 text-blue-600" />
+            <div className="w-12 h-12 rounded-full bg-brand-100 flex items-center justify-center mr-3">
+              <User className="w-6 h-6 text-brand-500" />
             </div>
             <div>
               <h3 className="font-semibold text-gray-900">{match.name}</h3>
@@ -68,7 +68,7 @@ const RoommateMatching = ({ userAnswers, potentialRoommates, onBack, onMessageUs
 
         <div className="flex items-center justify-between">
           <div className="flex items-center text-sm">
-            <span className={`font-medium ${compatibility.interpretation.color === 'green' ? 'text-green-600' : compatibility.interpretation.color === 'blue' ? 'text-blue-600' : compatibility.interpretation.color === 'yellow' ? 'text-yellow-600' : 'text-red-600'}`}>
+            <span className={`font-medium ${compatibility.interpretation.color === 'green' ? 'text-green-600' : compatibility.interpretation.color === 'blue' ? 'text-brand-500' : compatibility.interpretation.color === 'yellow' ? 'text-yellow-600' : 'text-red-600'}`}>
               {compatibility.interpretation.text}
             </span>
           </div>
@@ -78,7 +78,7 @@ const RoommateMatching = ({ userAnswers, potentialRoommates, onBack, onMessageUs
               e.stopPropagation()
               onMessageUser(match)
             }}
-            className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+            className="p-2 text-brand-500 hover:bg-brand-50 rounded-full transition-colors"
           >
             <MessageCircle className="w-5 h-5" />
           </button>
@@ -116,8 +116,8 @@ const RoommateMatching = ({ userAnswers, potentialRoommates, onBack, onMessageUs
             
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mr-4">
-                  <User className="w-8 h-8 text-blue-600" />
+                <div className="w-16 h-16 rounded-full bg-brand-100 flex items-center justify-center mr-4">
+                  <User className="w-8 h-8 text-brand-500" />
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-gray-900">{match.name}</h2>
@@ -168,7 +168,7 @@ const RoommateMatching = ({ userAnswers, potentialRoommates, onBack, onMessageUs
                         <div
                           className={`h-2 rounded-full ${
                             data.score >= 70 ? 'bg-green-500' : 
-                            data.score >= 55 ? 'bg-blue-500' : 
+                            data.score >= 55 ? 'bg-brand-500' : 
                             data.score >= 40 ? 'bg-yellow-500' : 'bg-red-500'
                           }`}
                           style={{ width: `${data.score}%` }}
@@ -230,7 +230,7 @@ const RoommateMatching = ({ userAnswers, potentialRoommates, onBack, onMessageUs
                   onMessageUser(match)
                   setShowDetails(false)
                 }}
-                className="w-full bg-blue-600 text-white py-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center"
+                className="w-full bg-brand-500 text-white py-4 rounded-lg font-semibold hover:bg-brand-600 transition-colors flex items-center justify-center"
               >
                 <MessageCircle className="w-5 h-5 mr-2" />
                 Send Message

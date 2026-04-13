@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 240" fill="none">
+  <!-- Salmon/peach left diagonal stroke -->
+  <polygon
+    points="18,45 72,45 88,200 34,200"
+    fill="#FFB08A"
+    opacity="0.95"/>
+
+  <!-- Dark orange-red: R vertical bar + bowl -->
+  <path
+    d="M62,45 L158,45 Q198,45 198,105 Q198,162 148,168 L62,168 Z"
+    fill="#E84C00"/>
+  <rect x="62" y="45" width="46" height="155" fill="#E84C00"/>
+
+  <!-- Amber/gold leg diagonal -->
+  <polygon
+    points="62,122 186,200 144,200 62,148"
+    fill="#F5A800"/>
+</svg>

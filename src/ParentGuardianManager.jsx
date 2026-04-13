@@ -180,7 +180,7 @@ const ParentGuardianManager = ({ user, onBack, onNavigate }) => {
 
   const getRelationshipIcon = (relationship) => {
     switch (relationship) {
-      case 'father': return <User size={20} className="text-blue-600" />;
+      case 'father': return <User size={20} className="text-brand-500" />;
       case 'mother': return <User size={20} className="text-pink-600" />;
       case 'guardian': return <Shield size={20} className="text-purple-600" />;
       default: return <Users size={20} className="text-gray-600" />;
@@ -204,7 +204,7 @@ const ParentGuardianManager = ({ user, onBack, onNavigate }) => {
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`flex-shrink-0 py-2 px-3 text-sm font-medium rounded-md transition-colors ${
-              activeTab === tab ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600'
+              activeTab === tab ? 'bg-white text-brand-500 shadow-sm' : 'text-gray-600'
             }`}
           >
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -236,7 +236,7 @@ const ParentGuardianManager = ({ user, onBack, onNavigate }) => {
               </div>
               <div>
                 <div className="text-sm text-gray-600">Payment History</div>
-                <div className="font-semibold text-blue-600">{parentData.summary.onTimeRate}% on-time</div>
+                <div className="font-semibold text-brand-500">{parentData.summary.onTimeRate}% on-time</div>
                 <div className="text-xs text-gray-500">${parentData.summary.totalPaid.toLocaleString()} total paid</div>
               </div>
             </div>
@@ -251,7 +251,7 @@ const ParentGuardianManager = ({ user, onBack, onNavigate }) => {
                 className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 <div className="flex items-center">
-                  <UserPlus size={20} className="text-blue-600 mr-3" />
+                  <UserPlus size={20} className="text-brand-500 mr-3" />
                   <div className="text-left">
                     <p className="font-medium">Add Parent/Guardian</p>
                     <p className="text-sm text-gray-600">Invite family member to help with rent</p>
@@ -337,8 +337,8 @@ const ParentGuardianManager = ({ user, onBack, onNavigate }) => {
                 <span className="text-sm font-semibold text-green-600">$2,400</span>
               </div>
               <div className="flex items-center">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                  <Bell size={16} className="text-blue-600" />
+                <div className="w-8 h-8 bg-brand-100 rounded-full flex items-center justify-center mr-3">
+                  <Bell size={16} className="text-brand-500" />
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-medium">Rent reminder sent to family</p>
@@ -366,7 +366,7 @@ const ParentGuardianManager = ({ user, onBack, onNavigate }) => {
             <h3 className="font-semibold">Family Members</h3>
             <button
               onClick={() => setShowAddParent(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 flex items-center"
+              className="bg-brand-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-brand-600 flex items-center"
             >
               <Plus size={16} className="mr-2" />
               Add Parent/Guardian
@@ -410,7 +410,7 @@ const ParentGuardianManager = ({ user, onBack, onNavigate }) => {
                 </div>
                 <div>
                   <div className="text-sm text-gray-600">On-Time Payments</div>
-                  <div className="font-semibold text-blue-600">{parent.onTimePayments}</div>
+                  <div className="font-semibold text-brand-500">{parent.onTimePayments}</div>
                 </div>
                 <div>
                   <div className="text-sm text-gray-600">Added</div>
@@ -458,7 +458,7 @@ const ParentGuardianManager = ({ user, onBack, onNavigate }) => {
               </div>
 
               <div className="flex space-x-3 pt-4 border-t border-gray-200">
-                <button className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700">
+                <button className="flex-1 bg-brand-500 text-white py-2 rounded-lg font-medium hover:bg-brand-600">
                   Edit Permissions
                 </button>
                 <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
@@ -493,7 +493,7 @@ const ParentGuardianManager = ({ user, onBack, onNavigate }) => {
                 <div className="text-sm text-gray-600">Total Paid</div>
               </div>
               <div className="text-center">
-                <div className="text-xl font-bold text-blue-600">{parentData.summary.onTimeRate}%</div>
+                <div className="text-xl font-bold text-brand-500">{parentData.summary.onTimeRate}%</div>
                 <div className="text-sm text-gray-600">On-Time Rate</div>
               </div>
               <div className="text-center">
@@ -563,7 +563,7 @@ const ParentGuardianManager = ({ user, onBack, onNavigate }) => {
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input type="checkbox" checked={parentData.familySettings.autoPayEnabled} className="sr-only peer" readOnly />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
                 </label>
               </div>
             </div>
@@ -580,7 +580,7 @@ const ParentGuardianManager = ({ user, onBack, onNavigate }) => {
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input type="checkbox" checked={parentData.familySettings.familyNotifications} className="sr-only peer" readOnly />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
                 </label>
               </div>
 
@@ -591,7 +591,7 @@ const ParentGuardianManager = ({ user, onBack, onNavigate }) => {
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input type="checkbox" checked={parentData.familySettings.studentOverride} className="sr-only peer" readOnly />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
                 </label>
               </div>
             </div>
@@ -623,7 +623,7 @@ const ParentGuardianManager = ({ user, onBack, onNavigate }) => {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="font-semibold">Family Notifications</h3>
-            <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+            <button className="text-brand-500 hover:text-brand-600 text-sm font-medium">
               Mark All Read
             </button>
           </div>
@@ -635,7 +635,7 @@ const ParentGuardianManager = ({ user, onBack, onNavigate }) => {
                   <div className={`w-3 h-3 rounded-full mr-3 ${
                     notification.type === 'payment_success' ? 'bg-green-500' :
                     notification.type === 'rent_reminder' ? 'bg-yellow-500' :
-                    'bg-blue-500'
+                    'bg-brand-500'
                   }`}></div>
                   <div>
                     <p className="font-medium">{notification.message}</p>
@@ -670,7 +670,7 @@ const ParentGuardianManager = ({ user, onBack, onNavigate }) => {
                     type="text"
                     value={parentForm.name}
                     onChange={(e) => setParentForm(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                     placeholder="Enter parent's full name"
                   />
                 </div>
@@ -681,7 +681,7 @@ const ParentGuardianManager = ({ user, onBack, onNavigate }) => {
                     type="email"
                     value={parentForm.email}
                     onChange={(e) => setParentForm(prev => ({ ...prev, email: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                     placeholder="parent@email.com"
                   />
                 </div>
@@ -692,7 +692,7 @@ const ParentGuardianManager = ({ user, onBack, onNavigate }) => {
                     type="tel"
                     value={parentForm.phone}
                     onChange={(e) => setParentForm(prev => ({ ...prev, phone: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                     placeholder="(555) 123-4567"
                   />
                 </div>
@@ -702,7 +702,7 @@ const ParentGuardianManager = ({ user, onBack, onNavigate }) => {
                   <select
                     value={parentForm.relationship}
                     onChange={(e) => setParentForm(prev => ({ ...prev, relationship: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                   >
                     <option value="parent">Parent</option>
                     <option value="father">Father</option>
@@ -780,7 +780,7 @@ const ParentGuardianManager = ({ user, onBack, onNavigate }) => {
                   disabled={!parentForm.name || !parentForm.email}
                   className={`flex-1 py-3 rounded-lg font-semibold ${
                     parentForm.name && parentForm.email
-                      ? 'bg-blue-600 text-white hover:bg-blue-700'
+                      ? 'bg-brand-500 text-white hover:bg-brand-600'
                       : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   }`}
                 >

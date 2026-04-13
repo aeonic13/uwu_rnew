@@ -339,7 +339,7 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
                 setListingData(prev => ({ ...prev, title: e.target.value }))
               }
               placeholder="e.g., Cozy 1BR near downtown"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
@@ -354,7 +354,7 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
                 setListingData(prev => ({ ...prev, address: e.target.value }))
               }
               placeholder="Full address including city and state"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
@@ -373,7 +373,7 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
                   }))
                 }
                 placeholder="e.g. Downtown, Mission Valley"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
 
@@ -389,7 +389,7 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
                     propertyType: e.target.value,
                   }))
                 }
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
               >
                 <option value="apartment">Apartment</option>
                 <option value="house">House</option>
@@ -411,7 +411,7 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
                     bedrooms: parseInt(e.target.value),
                   }))
                 }
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
               >
                 {[1, 2, 3, 4, 5].map(num => (
                   <option key={num} value={num}>
@@ -433,7 +433,7 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
                     bathrooms: parseFloat(e.target.value),
                   }))
                 }
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
               >
                 <option value={1}>1 Bathroom</option>
                 <option value={1.5}>1.5 Bathrooms</option>
@@ -458,7 +458,7 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
               }
               placeholder="Describe your property, neighborhood, and what makes it special..."
               rows={4}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
         </div>
@@ -475,7 +475,7 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
             disabled={!listingData.title || !listingData.address}
             className={`flex-1 py-3 rounded-lg font-semibold ${
               listingData.title && listingData.address
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                ? 'bg-brand-500 text-white hover:bg-brand-600'
                 : 'bg-gray-300 text-gray-500'
             }`}
           >
@@ -506,15 +506,15 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
               <>
                 <Loader2
                   size={48}
-                  className="mx-auto text-blue-500 mb-4 animate-spin"
+                  className="mx-auto text-brand-500 mb-4 animate-spin"
                 />
-                <p className="text-blue-600 font-medium">Uploading photos...</p>
+                <p className="text-brand-500 font-medium">Uploading photos...</p>
               </>
             ) : (
               <>
                 <Camera size={48} className="mx-auto text-gray-400 mb-4" />
                 <label className="cursor-pointer">
-                  <span className="text-blue-600 font-medium hover:underline">
+                  <span className="text-brand-500 font-medium hover:underline">
                     Upload property photos
                   </span>
                   <input
@@ -554,7 +554,7 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
                     <X size={14} />
                   </button>
                   {index === 0 && (
-                    <div className="absolute bottom-2 left-2 bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium">
+                    <div className="absolute bottom-2 left-2 bg-brand-500 text-white px-2 py-1 rounded text-xs font-medium">
                       Cover Photo
                     </div>
                   )}
@@ -576,7 +576,7 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
             disabled={propertyPhotos.length === 0}
             className={`flex-1 py-3 rounded-lg font-semibold ${
               propertyPhotos.length > 0
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                ? 'bg-brand-500 text-white hover:bg-brand-600'
                 : 'bg-gray-300 text-gray-500'
             }`}
           >
@@ -606,7 +606,7 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
                   setListingData(prev => ({ ...prev, rent: e.target.value }))
                 }
                 placeholder="1200"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
 
@@ -621,7 +621,7 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
                   setListingData(prev => ({ ...prev, deposit: e.target.value }))
                 }
                 placeholder="1200"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
           </div>
@@ -640,7 +640,7 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
                     availableFrom: e.target.value,
                   }))
                 }
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
 
@@ -657,7 +657,7 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
                     availableTo: e.target.value,
                   }))
                 }
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
           </div>
@@ -670,7 +670,7 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
               onChange={e =>
                 setListingData(prev => ({ ...prev, petPolicy: e.target.value }))
               }
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               <option value="no-pets">No Pets</option>
               <option value="cats-only">Cats Only</option>
@@ -692,7 +692,7 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
                   smokingPolicy: e.target.value,
                 }))
               }
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               <option value="no-smoking">No Smoking</option>
               <option value="outdoor-only">Outdoor Only</option>
@@ -714,7 +714,7 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
             disabled={!listingData.rent || !listingData.deposit}
             className={`flex-1 py-3 rounded-lg font-semibold ${
               listingData.rent && listingData.deposit
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                ? 'bg-brand-500 text-white hover:bg-brand-600'
                 : 'bg-gray-300 text-gray-500'
             }`}
           >
@@ -742,14 +742,14 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
                 onClick={() => toggleAmenity(amenity)}
                 className={`p-3 border rounded-lg text-left transition-colors ${
                   listingData.amenities.includes(amenity)
-                    ? 'border-blue-500 bg-blue-50 text-blue-700'
-                    : 'border-gray-300 text-gray-700 hover:border-blue-300'
+                    ? 'border-brand-500 bg-brand-50 text-brand-600'
+                    : 'border-gray-300 text-gray-700 hover:border-brand-300'
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">{amenity}</span>
                   {listingData.amenities.includes(amenity) && (
-                    <Check size={16} className="text-blue-600" />
+                    <Check size={16} className="text-brand-500" />
                   )}
                 </div>
               </button>
@@ -766,7 +766,7 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
           </button>
           <button
             onClick={() => setCurrentStep(5)}
-            className="flex-1 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700"
+            className="flex-1 py-3 bg-brand-500 text-white rounded-lg font-semibold hover:bg-brand-600"
           >
             Continue
           </button>
@@ -828,14 +828,14 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
                   onClick={() => setReq({ guarantorPolicy: opt.value })}
                   className={`w-full flex items-start p-3 border-2 rounded-lg text-left transition-colors ${
                     req.guarantorPolicy === opt.value
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-blue-300'
+                      ? 'border-brand-500 bg-brand-50'
+                      : 'border-gray-200 hover:border-brand-300'
                   }`}
                 >
                   <div
                     className={`w-4 h-4 rounded-full border-2 mt-0.5 mr-3 flex-shrink-0 ${
                       req.guarantorPolicy === opt.value
-                        ? 'border-blue-600 bg-blue-600'
+                        ? 'border-brand-500 bg-brand-500'
                         : 'border-gray-300'
                     }`}
                   />
@@ -883,7 +883,7 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
                     setReq({ customIncomeMultiple: e.target.value })
                   }
                   placeholder="3.5"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
             )}
@@ -925,14 +925,14 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
                   onClick={() => setReq({ [item.key]: !req[item.key] })}
                   className={`flex items-start p-3 border-2 rounded-lg cursor-pointer transition-colors ${
                     req[item.key]
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-blue-300'
+                      ? 'border-brand-500 bg-brand-50'
+                      : 'border-gray-200 hover:border-brand-300'
                   }`}
                 >
                   <div
                     className={`w-5 h-5 rounded border-2 mt-0.5 mr-3 flex-shrink-0 flex items-center justify-center ${
                       req[item.key]
-                        ? 'border-blue-600 bg-blue-600'
+                        ? 'border-brand-500 bg-brand-500'
                         : 'border-gray-300'
                     }`}
                   >
@@ -959,7 +959,7 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
           </button>
           <button
             onClick={() => setCurrentStep(6)}
-            className="flex-1 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700"
+            className="flex-1 py-3 bg-brand-500 text-white rounded-lg font-semibold hover:bg-brand-600"
           >
             Continue
           </button>
@@ -990,7 +990,7 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
               >
                 <h4 className="font-medium mb-2">{utility.name}</h4>
                 <label className="cursor-pointer">
-                  <div className="border-2 border-dashed border-gray-300 rounded p-3 text-center hover:border-blue-300">
+                  <div className="border-2 border-dashed border-gray-300 rounded p-3 text-center hover:border-brand-300">
                     <Upload size={20} className="mx-auto mb-1 text-gray-400" />
                     <span className="text-xs text-gray-600">Upload Bill</span>
                   </div>
@@ -1034,7 +1034,7 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
                     ) : (
                       <button
                         onClick={() => simulateBillProcessing(bill.id)}
-                        className="text-blue-600 text-sm hover:underline flex items-center"
+                        className="text-brand-500 text-sm hover:underline flex items-center"
                       >
                         <Scan size={16} className="mr-1" />
                         Process
@@ -1067,7 +1067,7 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="cursor-pointer">
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-300">
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-brand-300">
                   <FileText size={24} className="mx-auto mb-2 text-gray-400" />
                   <span className="text-sm font-medium">Lease Agreement</span>
                   <p className="text-xs text-gray-500">PDF, DOC, or Image</p>
@@ -1083,7 +1083,7 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
 
             <div>
               <label className="cursor-pointer">
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-300">
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-brand-300">
                   <FileText size={24} className="mx-auto mb-2 text-gray-400" />
                   <span className="text-sm font-medium">
                     Rental Application
@@ -1125,7 +1125,7 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
                       ) : (
                         <button
                           onClick={() => simulateDocumentScan(doc.id)}
-                          className="text-blue-600 text-sm hover:underline flex items-center"
+                          className="text-brand-500 text-sm hover:underline flex items-center"
                         >
                           <Scan size={16} className="mr-1" />
                           Scan

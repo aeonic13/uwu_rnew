@@ -57,7 +57,7 @@ const MessagesList = ({
             placeholder="Search conversations..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+            className="w-full pl-10 pr-4 py-2 bg-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white"
           />
         </div>
       </div>
@@ -92,7 +92,7 @@ const MessagesList = ({
                     className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
                   />
                   {conversation.property.owner.verified && (
-                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-brand-500 rounded-full flex items-center justify-center">
                       <Check size={10} className="text-white" />
                     </div>
                   )}
@@ -116,12 +116,12 @@ const MessagesList = ({
                         </div>
                       )}
                       {getMessageStatus(conversation.lastMessage) === 'read' && (
-                        <CheckCheck size={14} className="text-blue-500" />
+                        <CheckCheck size={14} className="text-brand-500" />
                       )}
                       {getMessageStatus(conversation.lastMessage) === 'sent' && (
                         <Check size={14} className="text-gray-400" />
                       )}
-                      <span className={`text-xs ${isUnread ? 'text-blue-600 font-medium' : 'text-gray-500'}`}>
+                      <span className={`text-xs ${isUnread ? 'text-brand-500 font-medium' : 'text-gray-500'}`}>
                         {formatTimestamp(conversation.lastMessage.timestamp)}
                       </span>
                     </div>
@@ -143,7 +143,7 @@ const MessagesList = ({
                     
                     {/* Unread Indicator */}
                     {isUnread && (
-                      <div className="w-2 h-2 bg-blue-600 rounded-full ml-2 flex-shrink-0"></div>
+                      <div className="w-2 h-2 bg-brand-500 rounded-full ml-2 flex-shrink-0"></div>
                     )}
                   </div>
                 </div>

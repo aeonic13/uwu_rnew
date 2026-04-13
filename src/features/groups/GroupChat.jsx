@@ -116,12 +116,12 @@ export default function GroupChat({ groupId }) {
   return (
     <div className="flex flex-col h-full bg-white">
       {/* Group Header */}
-      <div className="bg-blue-600 text-white p-4 border-b">
+      <div className="bg-brand-500 text-white p-4 border-b">
         <div className="flex items-center gap-3">
           <Users size={24} />
           <div>
             <h2 className="font-semibold">{selectedGroup?.name || 'Group Chat'}</h2>
-            <p className="text-sm text-blue-100">
+            <p className="text-sm text-brand-100">
               {selectedGroup?.members?.length || 0} members
             </p>
           </div>
@@ -160,7 +160,7 @@ export default function GroupChat({ groupId }) {
                   <div
                     className={`max-w-md px-4 py-2 rounded-lg ${
                       isOwnMessage
-                        ? 'bg-blue-600 text-white'
+                        ? 'bg-brand-500 text-white'
                         : 'bg-gray-100 text-gray-900'
                     }`}
                   >
@@ -181,7 +181,7 @@ export default function GroupChat({ groupId }) {
                         <h4 className="font-semibold text-sm line-clamp-2">
                           {message.listingData.title}
                         </h4>
-                        <Home size={16} className="text-blue-600 flex-shrink-0" />
+                        <Home size={16} className="text-brand-500 flex-shrink-0" />
                       </div>
                       <p className="text-xs text-gray-600 mt-1">
                         {message.listingData.location}
@@ -240,13 +240,13 @@ export default function GroupChat({ groupId }) {
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Type a message..."
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
 
           <button
             onClick={handleSendMessage}
             disabled={!newMessage.trim()}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+            className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
           >
             <Send size={20} />
             <span className="hidden sm:inline">Send</span>

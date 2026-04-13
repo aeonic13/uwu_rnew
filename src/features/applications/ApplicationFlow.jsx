@@ -51,7 +51,7 @@ function ProgressSteps({ currentStep, steps }) {
                 isCompleted
                   ? 'bg-green-500 text-white'
                   : isCurrent
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-brand-500 text-white'
                     : 'bg-gray-200 text-gray-500'
               }`}
             >
@@ -178,7 +178,7 @@ function InfoStep({ formData, onChange, onNext, user }) {
 
       <button
         type="submit"
-        className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+        className="w-full bg-brand-500 text-white py-3 rounded-lg font-semibold hover:bg-brand-600 transition-colors"
       >
         Continue
       </button>
@@ -214,8 +214,8 @@ function DatesStep({ formData, onChange, onNext, onBack, listing }) {
     <form onSubmit={handleSubmit} className="p-4 space-y-4">
       <h2 className="text-xl font-bold mb-4">Select Dates</h2>
 
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-        <p className="text-sm text-blue-700">
+      <div className="bg-brand-50 border border-brand-200 rounded-lg p-4 mb-4">
+        <p className="text-sm text-brand-600">
           Available: {listing?.dates || 'Contact owner for availability'}
         </p>
       </div>
@@ -260,7 +260,7 @@ function DatesStep({ formData, onChange, onNext, onBack, listing }) {
         </button>
         <button
           type="submit"
-          className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+          className="flex-1 bg-brand-500 text-white py-3 rounded-lg font-semibold hover:bg-brand-600 transition-colors"
         >
           Continue
         </button>
@@ -402,11 +402,11 @@ function VerifyStep({ listingId, onNext, onBack, onVerificationComplete }) {
       </div>
 
       {/* $50 Fee Banner */}
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
-        <DollarSign size={20} className="text-blue-600 flex-shrink-0 mt-0.5" />
+      <div className="bg-brand-50 border border-brand-200 rounded-xl p-4 flex items-start gap-3">
+        <DollarSign size={20} className="text-brand-500 flex-shrink-0 mt-0.5" />
         <div>
           <p className="font-semibold text-blue-900">$50 Application Fee</p>
-          <p className="text-sm text-blue-700 mt-0.5">
+          <p className="text-sm text-brand-600 mt-0.5">
             Non-refundable. Covers bank connection, income verification, and
             identity check. Charged after successful bank connection.
           </p>
@@ -446,7 +446,7 @@ function VerifyStep({ listingId, onNext, onBack, onVerificationComplete }) {
             <button
               onClick={() => openPlaid()}
               disabled={!plaidReady || plaidStatus === 'loading'}
-              className="px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-1.5"
+              className="px-3 py-1.5 bg-brand-500 text-white text-sm font-medium rounded-lg hover:bg-brand-600 disabled:opacity-50 flex items-center gap-1.5"
             >
               {plaidStatus === 'loading' ? (
                 <>
@@ -472,14 +472,14 @@ function VerifyStep({ listingId, onNext, onBack, onVerificationComplete }) {
               incomeDone
                 ? 'bg-green-100'
                 : bankDone
-                  ? 'bg-blue-50'
+                  ? 'bg-brand-50'
                   : 'bg-gray-100'
             }`}
           >
             {incomeDone ? (
               <CheckCircle2 size={20} className="text-green-600" />
             ) : bankDone && plaidStatus === 'loading' ? (
-              <Loader2 size={18} className="text-blue-500 animate-spin" />
+              <Loader2 size={18} className="text-brand-500 animate-spin" />
             ) : (
               <TrendingUp size={18} className="text-gray-500" />
             )}
@@ -518,14 +518,14 @@ function VerifyStep({ listingId, onNext, onBack, onVerificationComplete }) {
               identityDone
                 ? 'bg-green-100'
                 : bankDone
-                  ? 'bg-blue-50'
+                  ? 'bg-brand-50'
                   : 'bg-gray-100'
             }`}
           >
             {identityDone ? (
               <CheckCircle2 size={20} className="text-green-600" />
             ) : bankDone && plaidStatus === 'loading' ? (
-              <Loader2 size={18} className="text-blue-500 animate-spin" />
+              <Loader2 size={18} className="text-brand-500 animate-spin" />
             ) : (
               <Fingerprint size={18} className="text-gray-500" />
             )}
@@ -586,7 +586,7 @@ function VerifyStep({ listingId, onNext, onBack, onVerificationComplete }) {
               <button
                 onClick={handleChargeFee}
                 disabled={feeStatus === 'charging'}
-                className="px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-1.5"
+                className="px-3 py-1.5 bg-brand-500 text-white text-sm font-medium rounded-lg hover:bg-brand-600 disabled:opacity-50 flex items-center gap-1.5"
               >
                 {feeStatus === 'charging' ? (
                   <>
@@ -633,7 +633,7 @@ function VerifyStep({ listingId, onNext, onBack, onVerificationComplete }) {
           type="button"
           onClick={onNext}
           disabled={!canProceed}
-          className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50"
+          className="flex-1 bg-brand-500 text-white py-3 rounded-lg font-semibold hover:bg-brand-600 transition-colors disabled:opacity-50"
         >
           Continue
         </button>
@@ -745,7 +745,7 @@ function PaymentStep({ formData, onChange, onNext, onBack, listing }) {
           type="button"
           onClick={onNext}
           disabled={!formData.paymentMethod}
-          className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50"
+          className="flex-1 bg-brand-500 text-white py-3 rounded-lg font-semibold hover:bg-brand-600 transition-colors disabled:opacity-50"
         >
           Continue
         </button>
@@ -836,7 +836,7 @@ function ReviewStep({ formData, onBack, onSubmit, listing, isSubmitting }) {
           type="button"
           onClick={onSubmit}
           disabled={isSubmitting}
-          className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50"
+          className="flex-1 bg-brand-500 text-white py-3 rounded-lg font-semibold hover:bg-brand-600 transition-colors disabled:opacity-50"
         >
           {isSubmitting ? 'Submitting...' : 'Submit Application'}
         </button>

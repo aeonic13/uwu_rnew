@@ -328,9 +328,9 @@ const LegalTemplateSystem = ({ property, application, onGenerateAgreement, onBac
 
       {/* State Information */}
       {stateLaws && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <div className="bg-brand-50 border border-brand-200 rounded-lg p-4 mb-6">
           <div className="flex items-center mb-3">
-            <MapPin size={20} className="text-blue-600 mr-2" />
+            <MapPin size={20} className="text-brand-500 mr-2" />
             <h3 className="font-semibold text-blue-800">
               {stateLaws.name} Housing Law Compliance
             </h3>
@@ -338,11 +338,11 @@ const LegalTemplateSystem = ({ property, application, onGenerateAgreement, onBac
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div>
               <span className="font-medium">Security Deposit Limit:</span>
-              <p className="text-blue-700">{stateLaws.securityDepositLimit}</p>
+              <p className="text-brand-600">{stateLaws.securityDepositLimit}</p>
             </div>
             <div>
               <span className="font-medium">Notice Period:</span>
-              <p className="text-blue-700">{stateLaws.noticePeriod} days</p>
+              <p className="text-brand-600">{stateLaws.noticePeriod} days</p>
             </div>
           </div>
         </div>
@@ -358,8 +358,8 @@ const LegalTemplateSystem = ({ property, application, onGenerateAgreement, onBac
               onClick={() => setSelectedTemplate(key)}
               className={`w-full p-4 border-2 rounded-lg text-left transition-colors ${
                 selectedTemplate === key
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-300 hover:border-blue-300'
+                  ? 'border-brand-500 bg-brand-50'
+                  : 'border-gray-300 hover:border-brand-300'
               }`}
             >
               <div className="flex items-start justify-between">
@@ -369,7 +369,7 @@ const LegalTemplateSystem = ({ property, application, onGenerateAgreement, onBac
                 </div>
                 <div className={`w-5 h-5 rounded-full border-2 ${
                   selectedTemplate === key
-                    ? 'border-blue-500 bg-blue-500'
+                    ? 'border-brand-500 bg-brand-500'
                     : 'border-gray-300'
                 }`}>
                   {selectedTemplate === key && (
@@ -435,7 +435,7 @@ const LegalTemplateSystem = ({ property, application, onGenerateAgreement, onBac
               value={customizations.utilities || ''}
               onChange={(e) => setCustomizations(prev => ({ ...prev, utilities: e.target.value }))}
               placeholder="Specify which utilities are included/excluded..."
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
               rows={3}
             />
           </div>
@@ -445,7 +445,7 @@ const LegalTemplateSystem = ({ property, application, onGenerateAgreement, onBac
             <select
               value={customizations.petPolicy || 'no-pets'}
               onChange={(e) => setCustomizations(prev => ({ ...prev, petPolicy: e.target.value }))}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               <option value="no-pets">No pets allowed</option>
               <option value="cats-only">Cats allowed with deposit</option>
@@ -459,7 +459,7 @@ const LegalTemplateSystem = ({ property, application, onGenerateAgreement, onBac
             <select
               value={customizations.occupancyLimit || '1'}
               onChange={(e) => setCustomizations(prev => ({ ...prev, occupancyLimit: e.target.value }))}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               <option value="1">1 person</option>
               <option value="2">2 people</option>
@@ -479,7 +479,7 @@ const LegalTemplateSystem = ({ property, application, onGenerateAgreement, onBac
                     type="date"
                     value={customizations.masterLeaseEndDate || ''}
                     onChange={(e) => setCustomizations(prev => ({ ...prev, masterLeaseEndDate: e.target.value }))}
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                   />
                 </div>
                 <div>
@@ -487,7 +487,7 @@ const LegalTemplateSystem = ({ property, application, onGenerateAgreement, onBac
                   <select
                     value={customizations.landlordConsent || 'required'}
                     onChange={(e) => setCustomizations(prev => ({ ...prev, landlordConsent: e.target.value }))}
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                   >
                     <option value="required">Landlord consent required</option>
                     <option value="obtained">Landlord consent obtained</option>
@@ -508,7 +508,7 @@ const LegalTemplateSystem = ({ property, application, onGenerateAgreement, onBac
                     value={customizations.existingRoommates || ''}
                     onChange={(e) => setCustomizations(prev => ({ ...prev, existingRoommates: e.target.value }))}
                     placeholder="List current roommates (names and contact info)..."
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                     rows={2}
                   />
                 </div>
@@ -517,7 +517,7 @@ const LegalTemplateSystem = ({ property, application, onGenerateAgreement, onBac
                   <select
                     value={customizations.rentSplit || 'equal'}
                     onChange={(e) => setCustomizations(prev => ({ ...prev, rentSplit: e.target.value }))}
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                   >
                     <option value="equal">Equal split among all tenants</option>
                     <option value="by-room">Based on room size</option>
@@ -539,7 +539,7 @@ const LegalTemplateSystem = ({ property, application, onGenerateAgreement, onBac
                     value={customizations.roomDescription || ''}
                     onChange={(e) => setCustomizations(prev => ({ ...prev, roomDescription: e.target.value }))}
                     placeholder="Describe the private room (size, furnishing, etc.)..."
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                     rows={2}
                   />
                 </div>
@@ -549,7 +549,7 @@ const LegalTemplateSystem = ({ property, application, onGenerateAgreement, onBac
                     value={customizations.sharedAreas || ''}
                     onChange={(e) => setCustomizations(prev => ({ ...prev, sharedAreas: e.target.value }))}
                     placeholder="List shared spaces (kitchen, living room, bathrooms, etc.)..."
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                     rows={2}
                   />
                 </div>
@@ -564,7 +564,7 @@ const LegalTemplateSystem = ({ property, application, onGenerateAgreement, onBac
       <div className="space-y-4">
         <button
           onClick={generateStateCompliantAgreement}
-          className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 flex items-center justify-center"
+          className="w-full bg-brand-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-brand-600 flex items-center justify-center"
         >
           <FileText size={20} className="mr-2" />
           Generate State-Compliant Agreement
@@ -596,11 +596,11 @@ const LegalTemplateSystem = ({ property, application, onGenerateAgreement, onBac
             
             <div className="p-6">
               <div className="mb-6">
-                <div className="bg-blue-50 p-4 rounded-lg mb-4">
+                <div className="bg-brand-50 p-4 rounded-lg mb-4">
                   <h3 className="font-semibold text-blue-800">
                     {LEASE_TEMPLATES[generatedAgreement.template].name}
                   </h3>
-                  <p className="text-sm text-blue-600">
+                  <p className="text-sm text-brand-500">
                     Compliant with {stateLaws.name} housing laws
                   </p>
                 </div>
@@ -655,7 +655,7 @@ const LegalTemplateSystem = ({ property, application, onGenerateAgreement, onBac
                     onGenerateAgreement(generatedAgreement);
                     setShowPreview(false);
                   }}
-                  className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="flex-1 py-2 px-4 bg-brand-500 text-white rounded-lg hover:bg-brand-600"
                 >
                   Use This Agreement
                 </button>

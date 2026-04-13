@@ -210,7 +210,7 @@ const BankingBookkeeping = ({ user, onBack, onNavigate }) => {
     switch (type) {
       case 'income': return 'text-green-600';
       case 'expense': return 'text-red-600';
-      case 'deposit': return 'text-blue-600';
+      case 'deposit': return 'text-brand-500';
       default: return 'text-gray-600';
     }
   };
@@ -248,7 +248,7 @@ const BankingBookkeeping = ({ user, onBack, onNavigate }) => {
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`flex-shrink-0 py-2 px-3 text-sm font-medium rounded-md transition-colors ${
-              activeTab === tab ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
+              activeTab === tab ? 'bg-white text-brand-500 shadow-sm' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
             }`}
           >
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -265,7 +265,7 @@ const BankingBookkeeping = ({ user, onBack, onNavigate }) => {
               <div key={account.id} className="bg-white border border-gray-200 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center">
-                    <div className="text-blue-600 mr-3">
+                    <div className="text-brand-500 mr-3">
                       {getAccountTypeIcon(account.type)}
                     </div>
                     <div>
@@ -319,9 +319,9 @@ const BankingBookkeeping = ({ user, onBack, onNavigate }) => {
               </div>
             </div>
             <div className="mt-4 pt-4 border-t border-gray-200 text-center">
-              <div className="text-2xl font-bold text-blue-600">$38,400</div>
+              <div className="text-2xl font-bold text-brand-500">$38,400</div>
               <div className="text-sm text-gray-600">Net Income</div>
-              <div className="text-xs text-blue-600">-0.8% vs last month</div>
+              <div className="text-xs text-brand-500">-0.8% vs last month</div>
             </div>
           </div>
 
@@ -331,7 +331,7 @@ const BankingBookkeeping = ({ user, onBack, onNavigate }) => {
               <h3 className="font-semibold">Recent Transactions</h3>
               <button
                 onClick={() => setActiveTab('transactions')}
-                className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                className="text-brand-500 hover:text-brand-600 text-sm font-medium"
               >
                 View All
               </button>
@@ -381,7 +381,7 @@ const BankingBookkeeping = ({ user, onBack, onNavigate }) => {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="font-semibold">Bank Accounts</h3>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 flex items-center">
+            <button className="bg-brand-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-brand-600 flex items-center">
               <Plus size={16} className="mr-2" />
               Connect Account
             </button>
@@ -391,14 +391,14 @@ const BankingBookkeeping = ({ user, onBack, onNavigate }) => {
             <div key={account.id} className="bg-white border border-gray-200 rounded-lg p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center">
-                  <div className="text-blue-600 mr-4">
+                  <div className="text-brand-500 mr-4">
                     {getAccountTypeIcon(account.type)}
                   </div>
                   <div>
                     <div className="flex items-center">
                       <h4 className="font-semibold mr-2">{account.name}</h4>
                       {account.isDefault && (
-                        <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">Default</span>
+                        <span className="px-2 py-1 bg-brand-100 text-blue-800 text-xs rounded">Default</span>
                       )}
                     </div>
                     <p className="text-sm text-gray-600">{account.bank}</p>
@@ -429,7 +429,7 @@ const BankingBookkeeping = ({ user, onBack, onNavigate }) => {
               </div>
 
               <div className="flex space-x-3 pt-4 border-t border-gray-200">
-                <button className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700">
+                <button className="flex-1 bg-brand-500 text-white py-2 rounded-lg font-medium hover:bg-brand-600">
                   View Transactions
                 </button>
                 <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
@@ -466,7 +466,7 @@ const BankingBookkeeping = ({ user, onBack, onNavigate }) => {
               <button className="p-2 border border-gray-300 rounded-lg">
                 <Filter size={16} />
               </button>
-              <button className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 flex items-center">
+              <button className="bg-brand-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-brand-600 flex items-center">
                 <Plus size={16} className="mr-2" />
                 Add Transaction
               </button>
@@ -516,13 +516,13 @@ const BankingBookkeeping = ({ user, onBack, onNavigate }) => {
                   {transaction.vendor || transaction.tenant || 'System'}
                 </div>
                 <div className="flex space-x-2">
-                  <button className="p-2 text-gray-500 hover:text-blue-600">
+                  <button className="p-2 text-gray-500 hover:text-brand-500">
                     <FileText size={16} />
                   </button>
-                  <button className="p-2 text-gray-500 hover:text-blue-600">
+                  <button className="p-2 text-gray-500 hover:text-brand-500">
                     <Receipt size={16} />
                   </button>
-                  <button className="p-2 text-gray-500 hover:text-blue-600">
+                  <button className="p-2 text-gray-500 hover:text-brand-500">
                     <Download size={16} />
                   </button>
                 </div>
@@ -548,7 +548,7 @@ const BankingBookkeeping = ({ user, onBack, onNavigate }) => {
                 <option value="year">This Year</option>
                 <option value="custom">Custom Range</option>
               </select>
-              <button className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 flex items-center">
+              <button className="bg-brand-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-brand-600 flex items-center">
                 <Download size={16} className="mr-2" />
                 Export Report
               </button>
@@ -558,7 +558,7 @@ const BankingBookkeeping = ({ user, onBack, onNavigate }) => {
           {/* Income vs Expenses Trend */}
           <div className="bg-white border border-gray-200 rounded-lg p-6">
             <h4 className="font-semibold mb-4 flex items-center">
-              <TrendingUp size={20} className="mr-2 text-blue-600" />
+              <TrendingUp size={20} className="mr-2 text-brand-500" />
               6-Month Trend
             </h4>
             <div className="space-y-3">
@@ -571,7 +571,7 @@ const BankingBookkeeping = ({ user, onBack, onNavigate }) => {
                       <span className="text-gray-400 mx-2">|</span>
                       <span className="text-red-600">-${month.expenses.toLocaleString()}</span>
                     </div>
-                    <div className="font-semibold text-blue-600">
+                    <div className="font-semibold text-brand-500">
                       ${month.netIncome.toLocaleString()}
                     </div>
                   </div>
@@ -631,7 +631,7 @@ const BankingBookkeeping = ({ user, onBack, onNavigate }) => {
         <div className="space-y-6">
           <div className="flex justify-between items-center">
             <h3 className="font-semibold">Tax Management</h3>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 flex items-center">
+            <button className="bg-brand-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-brand-600 flex items-center">
               <Download size={16} className="mr-2" />
               Generate Tax Report
             </button>
@@ -646,7 +646,7 @@ const BankingBookkeeping = ({ user, onBack, onNavigate }) => {
                 <div className="text-sm text-gray-600">Total Deductions</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">${financialData.taxInfo.estimatedTaxSavings.toLocaleString()}</div>
+                <div className="text-2xl font-bold text-brand-500">${financialData.taxInfo.estimatedTaxSavings.toLocaleString()}</div>
                 <div className="text-sm text-gray-600">Estimated Savings</div>
               </div>
             </div>
@@ -698,7 +698,7 @@ const BankingBookkeeping = ({ user, onBack, onNavigate }) => {
         <div className="space-y-6">
           <div className="flex justify-between items-center">
             <h3 className="font-semibold">Automation Rules</h3>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 flex items-center">
+            <button className="bg-brand-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-brand-600 flex items-center">
               <Plus size={16} className="mr-2" />
               Create Rule
             </button>
@@ -725,7 +725,7 @@ const BankingBookkeeping = ({ user, onBack, onNavigate }) => {
                       className="sr-only peer"
                       readOnly
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
                   </label>
                 </div>
                 <div className="flex items-center justify-between pt-3 border-t border-gray-200">
@@ -746,7 +746,7 @@ const BankingBookkeeping = ({ user, onBack, onNavigate }) => {
           </div>
 
           {/* Suggested Rules */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+          <div className="bg-brand-50 border border-brand-200 rounded-lg p-6">
             <h4 className="font-semibold text-blue-800 mb-4">Suggested Automation Rules</h4>
             <div className="space-y-3">
               <div className="flex items-center justify-between p-3 bg-white rounded-lg">
@@ -754,7 +754,7 @@ const BankingBookkeeping = ({ user, onBack, onNavigate }) => {
                   <p className="font-medium">Auto-categorize utility bills</p>
                   <p className="text-sm text-gray-600">Automatically categorize transactions from utility companies</p>
                 </div>
-                <button className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">
+                <button className="px-3 py-1 text-sm bg-brand-500 text-white rounded hover:bg-brand-600">
                   Create Rule
                 </button>
               </div>
@@ -763,7 +763,7 @@ const BankingBookkeeping = ({ user, onBack, onNavigate }) => {
                   <p className="font-medium">Security deposit handling</p>
                   <p className="text-sm text-gray-600">Automatically move security deposits to escrow account</p>
                 </div>
-                <button className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">
+                <button className="px-3 py-1 text-sm bg-brand-500 text-white rounded hover:bg-brand-600">
                   Create Rule
                 </button>
               </div>

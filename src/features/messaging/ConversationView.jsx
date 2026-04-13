@@ -87,14 +87,14 @@ function MessageBubble({ message, isMe }) {
       <div
         className={`max-w-[75%] px-4 py-2 rounded-2xl ${
           isMe
-            ? 'bg-blue-600 text-white rounded-br-md'
+            ? 'bg-brand-500 text-white rounded-br-md'
             : 'bg-gray-100 text-gray-900 rounded-bl-md'
         }`}
       >
         <p className="text-sm">{message.text}</p>
         <span
           className={`text-xs mt-1 block ${
-            isMe ? 'text-blue-200' : 'text-gray-500'
+            isMe ? 'text-brand-200' : 'text-gray-500'
           }`}
         >
           {formatTime(message.timestamp)}
@@ -238,7 +238,7 @@ function ConversationView() {
         </h2>
         <button
           onClick={() => navigate('/messages')}
-          className="text-blue-600 hover:underline"
+          className="text-brand-500 hover:underline"
         >
           Back to messages
         </button>
@@ -367,7 +367,7 @@ function ConversationView() {
               onKeyPress={handleKeyPress}
               placeholder="Type a message..."
               rows={1}
-              className="w-full px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none max-h-32"
+              className="w-full px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none max-h-32"
               style={{ minHeight: '40px' }}
             />
           </div>
@@ -377,7 +377,7 @@ function ConversationView() {
             disabled={!newMessage.trim() || isSending}
             className={`p-3 rounded-full transition-colors ${
               newMessage.trim() && !isSending
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                ? 'bg-brand-500 text-white hover:bg-brand-600'
                 : 'bg-gray-100 text-gray-400'
             }`}
             aria-label="Send message"

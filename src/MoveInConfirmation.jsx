@@ -107,9 +107,9 @@ const MoveInConfirmation = ({ lease, onConfirm, onBack }) => {
         </div>
 
         {/* Property Info */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <div className="bg-brand-50 border border-brand-200 rounded-lg p-4 mb-6">
           <h3 className="font-semibold text-blue-800 mb-2">{lease.property.address}</h3>
-          <div className="flex items-center text-blue-700 text-sm">
+          <div className="flex items-center text-brand-600 text-sm">
             <Calendar size={16} className="mr-2" />
             <span>Move-in: {new Date().toLocaleDateString()}</span>
           </div>
@@ -121,7 +121,7 @@ const MoveInConfirmation = ({ lease, onConfirm, onBack }) => {
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
             <Camera size={48} className="mx-auto text-gray-400 mb-4" />
             <label className="cursor-pointer">
-              <span className="text-blue-600 font-medium hover:underline">
+              <span className="text-brand-500 font-medium hover:underline">
                 Take photos or upload from gallery
               </span>
               <input
@@ -168,7 +168,7 @@ const MoveInConfirmation = ({ lease, onConfirm, onBack }) => {
             onChange={(e) => setConfirmationData(prev => ({ ...prev, conditionNotes: e.target.value }))}
             placeholder="Note any existing issues or damage you observe..."
             rows={4}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
         </div>
 
@@ -182,7 +182,7 @@ const MoveInConfirmation = ({ lease, onConfirm, onBack }) => {
           </button>
           <button
             onClick={() => setCurrentStep(2)}
-            className="flex-1 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700"
+            className="flex-1 py-3 bg-brand-500 text-white rounded-lg font-semibold hover:bg-brand-600"
           >
             Continue
           </button>
@@ -212,8 +212,8 @@ const MoveInConfirmation = ({ lease, onConfirm, onBack }) => {
               <div key={utility.id} className="border border-gray-200 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center">
-                    <div className="bg-blue-100 rounded-full p-2 mr-3">
-                      <IconComponent size={20} className="text-blue-600" />
+                    <div className="bg-brand-100 rounded-full p-2 mr-3">
+                      <IconComponent size={20} className="text-brand-500" />
                     </div>
                     <div>
                       <h4 className="font-semibold">{utility.name}</h4>
@@ -237,7 +237,7 @@ const MoveInConfirmation = ({ lease, onConfirm, onBack }) => {
                 <div className="flex space-x-2">
                   <a
                     href={`tel:${utility.phone}`}
-                    className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg text-sm font-medium text-center hover:bg-blue-700"
+                    className="flex-1 bg-brand-500 text-white py-2 px-4 rounded-lg text-sm font-medium text-center hover:bg-brand-600"
                   >
                     Call {utility.phone}
                   </a>
@@ -267,7 +267,7 @@ const MoveInConfirmation = ({ lease, onConfirm, onBack }) => {
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div 
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              className="bg-brand-500 h-2 rounded-full transition-all duration-300"
               style={{ 
                 width: `${(Object.values(confirmationData.utilitiesSetup).filter(Boolean).length / utilityServices.length) * 100}%` 
               }}
@@ -281,13 +281,13 @@ const MoveInConfirmation = ({ lease, onConfirm, onBack }) => {
           <div className="space-y-3">
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
               <span className="font-medium">Landlord</span>
-              <a href={`tel:${lease.landlord.phone}`} className="text-blue-600 hover:underline">
+              <a href={`tel:${lease.landlord.phone}`} className="text-brand-500 hover:underline">
                 {lease.landlord.phone}
               </a>
             </div>
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
               <span className="font-medium">Rentra Support</span>
-              <a href="tel:(555) 123-4567" className="text-blue-600 hover:underline">
+              <a href="tel:(555) 123-4567" className="text-brand-500 hover:underline">
                 (555) 123-4567
               </a>
             </div>
@@ -304,7 +304,7 @@ const MoveInConfirmation = ({ lease, onConfirm, onBack }) => {
           </button>
           <button
             onClick={() => setCurrentStep(3)}
-            className="flex-1 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700"
+            className="flex-1 py-3 bg-brand-500 text-white rounded-lg font-semibold hover:bg-brand-600"
           >
             Complete Move-In
           </button>
@@ -353,12 +353,12 @@ const MoveInConfirmation = ({ lease, onConfirm, onBack }) => {
         </div>
 
         {/* Payment Release Notice */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <div className="bg-brand-50 border border-brand-200 rounded-lg p-4 mb-6">
           <div className="flex items-center mb-2">
-            <CheckCircle size={20} className="text-blue-600 mr-2" />
+            <CheckCircle size={20} className="text-brand-500 mr-2" />
             <span className="font-semibold text-blue-800">Payment Released</span>
           </div>
-          <p className="text-sm text-blue-700">
+          <p className="text-sm text-brand-600">
             Your security deposit and first month's rent have been released to the landlord. 
             Future rent payments will be due on the 1st of each month.
           </p>
@@ -369,20 +369,20 @@ const MoveInConfirmation = ({ lease, onConfirm, onBack }) => {
           <h3 className="font-semibold mb-3">What's Next?</h3>
           <div className="space-y-3">
             <div className="flex items-start">
-              <div className="bg-blue-100 rounded-full p-1 mr-3 mt-1">
-                <Check size={12} className="text-blue-600" />
+              <div className="bg-brand-100 rounded-full p-1 mr-3 mt-1">
+                <Check size={12} className="text-brand-500" />
               </div>
               <span className="text-sm">We'll send you monthly rent reminders</span>
             </div>
             <div className="flex items-start">
-              <div className="bg-blue-100 rounded-full p-1 mr-3 mt-1">
-                <Check size={12} className="text-blue-600" />
+              <div className="bg-brand-100 rounded-full p-1 mr-3 mt-1">
+                <Check size={12} className="text-brand-500" />
               </div>
               <span className="text-sm">Your photos are saved for security deposit protection</span>
             </div>
             <div className="flex items-start">
-              <div className="bg-blue-100 rounded-full p-1 mr-3 mt-1">
-                <Check size={12} className="text-blue-600" />
+              <div className="bg-brand-100 rounded-full p-1 mr-3 mt-1">
+                <Check size={12} className="text-brand-500" />
               </div>
               <span className="text-sm">24/7 support is available if you need help</span>
             </div>
@@ -391,7 +391,7 @@ const MoveInConfirmation = ({ lease, onConfirm, onBack }) => {
 
         <button
           onClick={handleMoveInConfirmation}
-          className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700"
+          className="w-full py-3 bg-brand-500 text-white rounded-lg font-semibold hover:bg-brand-600"
         >
           Complete Move-In Process
         </button>

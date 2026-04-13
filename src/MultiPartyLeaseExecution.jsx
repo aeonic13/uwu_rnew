@@ -63,13 +63,13 @@ const SignatureTracker = ({ signatories }) => (
       >
         <div
           className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 flex-shrink-0 ${
-            s.role === 'guarantor' ? 'bg-purple-100' : 'bg-blue-100'
+            s.role === 'guarantor' ? 'bg-purple-100' : 'bg-brand-100'
           }`}
         >
           {s.role === 'guarantor' ? (
             <Shield size={15} className="text-purple-600" />
           ) : (
-            <User size={15} className="text-blue-600" />
+            <User size={15} className="text-brand-500" />
           )}
         </div>
         <div className="flex-1 min-w-0">
@@ -118,12 +118,12 @@ const TenantLeaseScreen = ({ groupApplication, listing, signatories, currentUser
   return (
     <div className="p-4 pb-20 space-y-6">
       {/* Property banner */}
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+      <div className="bg-brand-50 border border-brand-200 rounded-xl p-4">
         <div className="flex items-center mb-1">
-          <Home size={16} className="text-blue-600 mr-2" />
+          <Home size={16} className="text-brand-500 mr-2" />
           <span className="font-semibold text-blue-800">{listing?.title}</span>
         </div>
-        <div className="flex flex-wrap gap-3 text-sm text-blue-700 mt-2">
+        <div className="flex flex-wrap gap-3 text-sm text-brand-600 mt-2">
           <span className="flex items-center">
             <DollarSign size={14} className="mr-1" />${listing?.price}/mo
           </span>
@@ -154,7 +154,7 @@ const TenantLeaseScreen = ({ groupApplication, listing, signatories, currentUser
       <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold">Joint-and-Several Lease</h3>
-          <button className="flex items-center text-blue-600 text-sm font-medium">
+          <button className="flex items-center text-brand-500 text-sm font-medium">
             <Eye size={14} className="mr-1" /> Full PDF
           </button>
         </div>
@@ -206,7 +206,7 @@ const TenantLeaseScreen = ({ groupApplication, listing, signatories, currentUser
                   value={signatureInput}
                   onChange={e => setSignatureInput(e.target.value)}
                   placeholder={currentUser?.name || 'Your Full Name'}
-                  className="w-full p-3 border border-gray-300 rounded-lg font-signature italic text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-3 border border-gray-300 rounded-lg font-signature italic text-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                   style={{ fontFamily: 'cursive' }}
                 />
               </div>
@@ -215,7 +215,7 @@ const TenantLeaseScreen = ({ groupApplication, listing, signatories, currentUser
                 disabled={!signatureInput.trim() || signing}
                 className={`w-full py-3 rounded-xl font-semibold transition-colors flex items-center justify-center ${
                   signatureInput.trim() && !signing
-                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                    ? 'bg-brand-500 text-white hover:bg-brand-600'
                     : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                 }`}
               >
@@ -375,10 +375,10 @@ const DocumentVaultScreen = ({ listing, groupApplication, onViewLease, onEmailCo
     </div>
 
     {/* Document vault card */}
-    <div className="bg-white border-2 border-blue-200 rounded-xl p-5 text-left space-y-3">
+    <div className="bg-white border-2 border-brand-200 rounded-xl p-5 text-left space-y-3">
       <div className="flex items-center">
-        <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center mr-3">
-          <FileText size={20} className="text-blue-600" />
+        <div className="w-10 h-10 bg-brand-100 rounded-xl flex items-center justify-center mr-3">
+          <FileText size={20} className="text-brand-500" />
         </div>
         <div>
           <p className="font-semibold">Active Lease</p>
@@ -404,7 +404,7 @@ const DocumentVaultScreen = ({ listing, groupApplication, onViewLease, onEmailCo
     <div className="space-y-3">
       <button
         onClick={onViewLease}
-        className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center"
+        className="w-full bg-brand-500 text-white py-3 rounded-xl font-semibold hover:bg-brand-600 transition-colors flex items-center justify-center"
       >
         <Eye size={18} className="mr-2" />
         View Active Lease

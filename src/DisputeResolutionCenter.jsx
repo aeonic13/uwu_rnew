@@ -226,7 +226,7 @@ const DisputeResolutionCenter = ({ user, onBack, onNavigate }) => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'mediation_scheduled': return 'bg-blue-100 text-blue-800';
+      case 'mediation_scheduled': return 'bg-brand-100 text-blue-800';
       case 'under_review': return 'bg-yellow-100 text-yellow-800';
       case 'in_mediation': return 'bg-purple-100 text-purple-800';
       case 'resolved': return 'bg-green-100 text-green-800';
@@ -251,7 +251,7 @@ const DisputeResolutionCenter = ({ user, onBack, onNavigate }) => {
       case 'Property Damage': return <Home size={20} className="text-orange-600" />;
       case 'Noise Complaint': return <Bell size={20} className="text-red-600" />;
       case 'Lease Violation': return <FileText size={20} className="text-purple-600" />;
-      case 'Roommate Issues': return <Users size={20} className="text-blue-600" />;
+      case 'Roommate Issues': return <Users size={20} className="text-brand-500" />;
       case 'Maintenance Issues': return <Settings size={20} className="text-yellow-600" />;
       default: return <Scale size={20} className="text-gray-600" />;
     }
@@ -292,7 +292,7 @@ const DisputeResolutionCenter = ({ user, onBack, onNavigate }) => {
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`flex-shrink-0 py-2 px-3 text-sm font-medium rounded-md transition-colors ${
-              activeTab === tab ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600'
+              activeTab === tab ? 'bg-white text-brand-500 shadow-sm' : 'text-gray-600'
             }`}
           >
             {tab.charAt(0).toUpperCase() + tab.slice(1).replace('-', ' ')}
@@ -308,7 +308,7 @@ const DisputeResolutionCenter = ({ user, onBack, onNavigate }) => {
             <h3 className="font-semibold mb-4">Your Dispute Summary</h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{disputeData.user.activeCases}</div>
+                <div className="text-2xl font-bold text-brand-500">{disputeData.user.activeCases}</div>
                 <div className="text-sm text-gray-600">Active Cases</div>
               </div>
               <div className="text-center">
@@ -335,7 +335,7 @@ const DisputeResolutionCenter = ({ user, onBack, onNavigate }) => {
                 className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 <div className="flex items-center">
-                  <Plus size={20} className="text-blue-600 mr-3" />
+                  <Plus size={20} className="text-brand-500 mr-3" />
                   <div className="text-left">
                     <p className="font-medium">File New Dispute</p>
                     <p className="text-sm text-gray-600">Start a new dispute resolution case</p>
@@ -394,7 +394,7 @@ const DisputeResolutionCenter = ({ user, onBack, onNavigate }) => {
               <h3 className="font-semibold">Your Active Cases</h3>
               <button
                 onClick={() => setActiveTab('my-cases')}
-                className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                className="text-brand-500 hover:text-brand-600 text-sm font-medium"
               >
                 View All
               </button>
@@ -431,12 +431,12 @@ const DisputeResolutionCenter = ({ user, onBack, onNavigate }) => {
           </div>
 
           {/* Service Information */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="bg-brand-50 border border-brand-200 rounded-lg p-4">
             <h3 className="font-semibold text-blue-800 mb-3 flex items-center">
               <Shield size={20} className="mr-2" />
               Professional Mediation Services
             </h3>
-            <div className="text-sm text-blue-700 space-y-2">
+            <div className="text-sm text-brand-600 space-y-2">
               <p>• <strong>Free Service:</strong> All mediation services are provided at no cost to students and renters</p>
               <p>• <strong>Certified Mediators:</strong> All mediators are licensed and specialized in housing disputes</p>
               <p>• <strong>Quick Resolution:</strong> Average resolution time is {disputeData.statistics.averageResolutionTime}</p>
@@ -453,7 +453,7 @@ const DisputeResolutionCenter = ({ user, onBack, onNavigate }) => {
             <h3 className="font-semibold">My Dispute Cases</h3>
             <button
               onClick={() => setShowNewDispute(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 flex items-center"
+              className="bg-brand-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-brand-600 flex items-center"
             >
               <Plus size={16} className="mr-2" />
               New Case
@@ -508,7 +508,7 @@ const DisputeResolutionCenter = ({ user, onBack, onNavigate }) => {
                 {case_.mediator && (
                   <div className="bg-gray-50 p-3 rounded-lg mb-3">
                     <div className="flex items-center">
-                      <User size={16} className="text-blue-600 mr-2" />
+                      <User size={16} className="text-brand-500 mr-2" />
                       <div>
                         <div className="font-medium">{case_.mediator.name}</div>
                         <div className="text-xs text-gray-600">{case_.mediator.credentials}</div>
@@ -520,7 +520,7 @@ const DisputeResolutionCenter = ({ user, onBack, onNavigate }) => {
                 <div className="flex space-x-3 pt-3 border-t border-gray-200">
                   <button
                     onClick={() => setSelectedCase(case_)}
-                    className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700"
+                    className="flex-1 bg-brand-500 text-white py-2 rounded-lg font-medium hover:bg-brand-600"
                   >
                     View Details
                   </button>
@@ -596,8 +596,8 @@ const DisputeResolutionCenter = ({ user, onBack, onNavigate }) => {
             <div key={mediator.id} className="bg-white border border-gray-200 rounded-lg p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center">
-                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mr-4">
-                    <User size={24} className="text-blue-600" />
+                  <div className="w-16 h-16 bg-brand-100 rounded-full flex items-center justify-center mr-4">
+                    <User size={24} className="text-brand-500" />
                   </div>
                   <div>
                     <h4 className="font-semibold text-lg">{mediator.name}</h4>
@@ -623,7 +623,7 @@ const DisputeResolutionCenter = ({ user, onBack, onNavigate }) => {
                 <div className="text-sm font-medium mb-2">Specialties</div>
                 <div className="flex flex-wrap gap-2">
                   {mediator.specialties.map((specialty, index) => (
-                    <span key={index} className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full">
+                    <span key={index} className="text-xs bg-brand-100 text-brand-500 px-2 py-1 rounded-full">
                       {specialty}
                     </span>
                   ))}
@@ -644,7 +644,7 @@ const DisputeResolutionCenter = ({ user, onBack, onNavigate }) => {
               </div>
 
               <div className="flex space-x-3">
-                <button className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700">
+                <button className="flex-1 bg-brand-500 text-white py-2 rounded-lg font-medium hover:bg-brand-600">
                   Request Mediator
                 </button>
                 <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
@@ -664,13 +664,13 @@ const DisputeResolutionCenter = ({ user, onBack, onNavigate }) => {
           {/* Resolution Process */}
           <div className="bg-white border border-gray-200 rounded-lg p-6">
             <h4 className="font-semibold mb-4 flex items-center">
-              <Target size={20} className="text-blue-600 mr-2" />
+              <Target size={20} className="text-brand-500 mr-2" />
               How Mediation Works
             </h4>
             <div className="space-y-4">
               <div className="flex items-start">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                  <span className="text-sm font-semibold text-blue-600">1</span>
+                <div className="w-8 h-8 bg-brand-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                  <span className="text-sm font-semibold text-brand-500">1</span>
                 </div>
                 <div>
                   <h5 className="font-medium">File Your Case</h5>
@@ -678,8 +678,8 @@ const DisputeResolutionCenter = ({ user, onBack, onNavigate }) => {
                 </div>
               </div>
               <div className="flex items-start">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                  <span className="text-sm font-semibold text-blue-600">2</span>
+                <div className="w-8 h-8 bg-brand-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                  <span className="text-sm font-semibold text-brand-500">2</span>
                 </div>
                 <div>
                   <h5 className="font-medium">Mediator Assignment</h5>
@@ -687,8 +687,8 @@ const DisputeResolutionCenter = ({ user, onBack, onNavigate }) => {
                 </div>
               </div>
               <div className="flex items-start">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                  <span className="text-sm font-semibold text-blue-600">3</span>
+                <div className="w-8 h-8 bg-brand-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                  <span className="text-sm font-semibold text-brand-500">3</span>
                 </div>
                 <div>
                   <h5 className="font-medium">Mediation Session</h5>
@@ -756,7 +756,7 @@ const DisputeResolutionCenter = ({ user, onBack, onNavigate }) => {
               <div className="text-sm text-gray-600">Resolution Rate</div>
             </div>
             <div className="bg-white border border-gray-200 rounded-lg p-6 text-center">
-              <div className="text-3xl font-bold text-blue-600">{disputeData.statistics.averageResolutionTime}</div>
+              <div className="text-3xl font-bold text-brand-500">{disputeData.statistics.averageResolutionTime}</div>
               <div className="text-sm text-gray-600">Avg Resolution Time</div>
             </div>
             <div className="bg-white border border-gray-200 rounded-lg p-6 text-center">
@@ -782,7 +782,7 @@ const DisputeResolutionCenter = ({ user, onBack, onNavigate }) => {
                   <div className="flex items-center">
                     <div className="w-20 bg-gray-200 rounded-full h-2 mr-3">
                       <div
-                        className="bg-blue-600 h-2 rounded-full"
+                        className="bg-brand-500 h-2 rounded-full"
                         style={{ width: `${type.percentage}%` }}
                       ></div>
                     </div>
@@ -813,7 +813,7 @@ const DisputeResolutionCenter = ({ user, onBack, onNavigate }) => {
                   <select
                     value={newDisputeForm.type}
                     onChange={(e) => setNewDisputeForm(prev => ({ ...prev, type: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                   >
                     <option value="">Select dispute type</option>
                     <option value="Security Deposit">Security Deposit</option>
@@ -833,7 +833,7 @@ const DisputeResolutionCenter = ({ user, onBack, onNavigate }) => {
                     value={newDisputeForm.propertyAddress}
                     onChange={(e) => setNewDisputeForm(prev => ({ ...prev, propertyAddress: e.target.value }))}
                     placeholder="Enter the property address"
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                   />
                 </div>
 
@@ -844,7 +844,7 @@ const DisputeResolutionCenter = ({ user, onBack, onNavigate }) => {
                     onChange={(e) => setNewDisputeForm(prev => ({ ...prev, description: e.target.value }))}
                     placeholder="Provide detailed description of the dispute..."
                     rows={4}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                   />
                 </div>
 
@@ -853,7 +853,7 @@ const DisputeResolutionCenter = ({ user, onBack, onNavigate }) => {
                   <select
                     value={newDisputeForm.urgency}
                     onChange={(e) => setNewDisputeForm(prev => ({ ...prev, urgency: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                   >
                     <option value="low">Low - Can wait 1-2 weeks</option>
                     <option value="medium">Medium - Need resolution within a week</option>
@@ -868,7 +868,7 @@ const DisputeResolutionCenter = ({ user, onBack, onNavigate }) => {
                     onChange={(e) => setNewDisputeForm(prev => ({ ...prev, preferredResolution: e.target.value }))}
                     placeholder="What outcome would you like to see? (optional)"
                     rows={2}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                   />
                 </div>
 
@@ -876,7 +876,7 @@ const DisputeResolutionCenter = ({ user, onBack, onNavigate }) => {
                 <div className="border border-gray-200 rounded-lg p-4">
                   <div className="text-sm font-medium mb-2">Evidence & Documentation</div>
                   <p className="text-xs text-gray-600 mb-3">Upload photos, documents, or other evidence to support your case</p>
-                  <button className="w-full border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-300 transition-colors">
+                  <button className="w-full border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-brand-300 transition-colors">
                     <Upload size={24} className="mx-auto text-gray-400 mb-2" />
                     <p className="text-sm text-gray-600">Click to upload files or drag and drop</p>
                   </button>
@@ -895,7 +895,7 @@ const DisputeResolutionCenter = ({ user, onBack, onNavigate }) => {
                   disabled={!newDisputeForm.type || !newDisputeForm.description || !newDisputeForm.propertyAddress}
                   className={`flex-1 py-3 rounded-lg font-semibold ${
                     newDisputeForm.type && newDisputeForm.description && newDisputeForm.propertyAddress
-                      ? 'bg-blue-600 text-white hover:bg-blue-700'
+                      ? 'bg-brand-500 text-white hover:bg-brand-600'
                       : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   }`}
                 >
@@ -997,7 +997,7 @@ const DisputeResolutionCenter = ({ user, onBack, onNavigate }) => {
                     <div className="bg-gray-50 p-4 rounded-lg">
                       <h3 className="font-semibold mb-3">Assigned Mediator</h3>
                       <div className="flex items-center">
-                        <User size={20} className="text-blue-600 mr-3" />
+                        <User size={20} className="text-brand-500 mr-3" />
                         <div>
                           <div className="font-medium">{selectedCase.mediator.name}</div>
                           <div className="text-sm text-gray-600">{selectedCase.mediator.credentials}</div>
@@ -1016,7 +1016,7 @@ const DisputeResolutionCenter = ({ user, onBack, onNavigate }) => {
                     <div className="space-y-3">
                       {selectedCase.timeline.map((event, index) => (
                         <div key={index} className="flex items-start">
-                          <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                          <div className="w-2 h-2 bg-brand-500 rounded-full mt-2 mr-3 flex-shrink-0"></div>
                           <div className="text-sm">
                             <div className="font-medium">{event.event}</div>
                             <div className="text-gray-600">by {event.actor}</div>
@@ -1047,7 +1047,7 @@ const DisputeResolutionCenter = ({ user, onBack, onNavigate }) => {
 
               {/* Actions */}
               <div className="flex space-x-3 mt-6 pt-6 border-t border-gray-200">
-                <button className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700">
+                <button className="flex-1 bg-brand-500 text-white py-3 rounded-lg font-medium hover:bg-brand-600">
                   Send Message
                 </button>
                 <button className="flex-1 bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700">

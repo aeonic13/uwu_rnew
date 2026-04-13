@@ -80,7 +80,7 @@ const PropertyInspectionTools = ({ lease, inspectionType = 'move-in', onComplete
 
   const conditionOptions = {
     excellent: { label: 'Excellent', color: 'bg-green-100 text-green-800', icon: CheckCircle },
-    good: { label: 'Good', color: 'bg-blue-100 text-blue-800', icon: CheckCircle },
+    good: { label: 'Good', color: 'bg-brand-100 text-blue-800', icon: CheckCircle },
     fair: { label: 'Fair', color: 'bg-yellow-100 text-yellow-800', icon: AlertTriangle },
     poor: { label: 'Poor', color: 'bg-red-100 text-red-800', icon: XCircle },
     damaged: { label: 'Damaged', color: 'bg-red-200 text-red-900', icon: XCircle }
@@ -186,9 +186,9 @@ const PropertyInspectionTools = ({ lease, inspectionType = 'move-in', onComplete
 
         {/* Summary Stats */}
         <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-            <div className="text-2xl font-bold text-blue-600">{summary.itemsInspected}</div>
-            <div className="text-sm text-blue-700">Items Inspected</div>
+          <div className="bg-brand-50 p-4 rounded-lg border border-brand-200">
+            <div className="text-2xl font-bold text-brand-500">{summary.itemsInspected}</div>
+            <div className="text-sm text-brand-600">Items Inspected</div>
           </div>
           <div className="bg-green-50 p-4 rounded-lg border border-green-200">
             <div className="text-2xl font-bold text-green-600">{summary.photosUploaded}</div>
@@ -224,7 +224,7 @@ const PropertyInspectionTools = ({ lease, inspectionType = 'move-in', onComplete
                   className={`px-4 py-2 rounded-lg font-medium ${
                     signatures.tenant?.signed
                       ? 'bg-green-100 text-green-700'
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                      : 'bg-brand-500 text-white hover:bg-brand-600'
                   }`}
                 >
                   {signatures.tenant?.signed ? 'Signed' : 'Sign Here'}
@@ -245,7 +245,7 @@ const PropertyInspectionTools = ({ lease, inspectionType = 'move-in', onComplete
                   className={`px-4 py-2 rounded-lg font-medium ${
                     signatures.landlord?.signed
                       ? 'bg-green-100 text-green-700'
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                      : 'bg-brand-500 text-white hover:bg-brand-600'
                   }`}
                 >
                   {signatures.landlord?.signed ? 'Signed' : 'Sign Here'}
@@ -289,12 +289,12 @@ const PropertyInspectionTools = ({ lease, inspectionType = 'move-in', onComplete
         <h2 className="text-2xl font-bold mb-2">
           {inspectionType === 'move-in' ? 'Move-In' : 'Move-Out'} Inspection
         </h2>
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+        <div className="bg-brand-50 border border-brand-200 rounded-lg p-3">
           <div className="flex items-center text-sm text-blue-800">
             <MapPin size={16} className="mr-2" />
             <span>{lease.property?.address || 'Property Address'}</span>
           </div>
-          <div className="flex items-center text-sm text-blue-700 mt-1">
+          <div className="flex items-center text-sm text-brand-600 mt-1">
             <Calendar size={16} className="mr-2" />
             <span>{new Date().toLocaleDateString()}</span>
           </div>
@@ -317,8 +317,8 @@ const PropertyInspectionTools = ({ lease, inspectionType = 'move-in', onComplete
                 onClick={() => setCurrentRoom(key)}
                 className={`p-3 rounded-lg border-2 text-left transition-colors ${
                   currentRoom === key
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-300 hover:border-blue-300'
+                    ? 'border-brand-500 bg-brand-50'
+                    : 'border-gray-300 hover:border-brand-300'
                 }`}
               >
                 <div className="font-medium">{room.name}</div>
@@ -327,7 +327,7 @@ const PropertyInspectionTools = ({ lease, inspectionType = 'move-in', onComplete
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-1 mt-2">
                   <div
-                    className="bg-blue-600 h-1 rounded-full transition-all"
+                    className="bg-brand-500 h-1 rounded-full transition-all"
                     style={{ width: `${(roomProgress / totalItems) * 100}%` }}
                   />
                 </div>
@@ -340,7 +340,7 @@ const PropertyInspectionTools = ({ lease, inspectionType = 'move-in', onComplete
       {/* Current Room Inspection */}
       <div className="mb-6">
         <h3 className="font-semibold mb-4 flex items-center">
-          <CheckCircle size={20} className="text-blue-600 mr-2" />
+          <CheckCircle size={20} className="text-brand-500 mr-2" />
           Inspecting: {currentRoomData.name}
         </h3>
 
@@ -386,7 +386,7 @@ const PropertyInspectionTools = ({ lease, inspectionType = 'move-in', onComplete
                       onClick={() => {
                         fileInputRef.current?.click();
                       }}
-                      className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center"
+                      className="text-brand-500 hover:text-brand-600 text-sm font-medium flex items-center"
                     >
                       <Camera size={14} className="mr-1" />
                       Add Photo
@@ -442,7 +442,7 @@ const PropertyInspectionTools = ({ lease, inspectionType = 'move-in', onComplete
                     value={itemNote}
                     onChange={(e) => handleNote(currentRoom, item, e.target.value)}
                     placeholder="Any additional notes about this item..."
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm"
                     rows={2}
                   />
                 </div>

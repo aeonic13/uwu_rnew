@@ -97,7 +97,7 @@ function ListingCard({ listing, isFavorite, onToggleFavorite, onClick }) {
         </span>
         {/* Verified badge */}
         {listing.owner?.verified && (
-          <span className="absolute bottom-3 left-3 bg-blue-600 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1">
+          <span className="absolute bottom-3 left-3 bg-brand-500 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1">
             <Shield size={11} /> Verified
           </span>
         )}
@@ -125,7 +125,7 @@ function ListingCard({ listing, isFavorite, onToggleFavorite, onClick }) {
           {listing.university && (
             <>
               <span className="text-gray-300">|</span>
-              <span className="flex items-center gap-1 text-blue-600">
+              <span className="flex items-center gap-1 text-brand-500">
                 <MapPin size={14} />
                 {listing.university}
               </span>
@@ -227,7 +227,7 @@ function BrowseView() {
                 placeholder="Search by city, address, or neighborhood…"
                 value={filters.searchTerm || ''}
                 onChange={e => setFilters({ searchTerm: e.target.value })}
-                className="w-full pl-9 pr-4 py-2.5 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                className="w-full pl-9 pr-4 py-2.5 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-500 transition-colors"
               />
             </div>
 
@@ -241,7 +241,7 @@ function BrowseView() {
                       e.target.value === 'All Areas' ? '' : e.target.value,
                   })
                 }
-                className="appearance-none pl-3 pr-8 py-2.5 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 bg-white cursor-pointer"
+                className="appearance-none pl-3 pr-8 py-2.5 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-500 bg-white cursor-pointer"
               >
                 {AREAS.map(a => (
                   <option key={a}>{a}</option>
@@ -256,7 +256,7 @@ function BrowseView() {
             {/* Advanced filters */}
             <button
               onClick={() => setShowAdvancedFilters(true)}
-              className="flex items-center gap-2 px-3 py-2.5 border-2 border-gray-200 rounded-lg text-sm text-gray-600 hover:border-blue-500 hover:text-blue-600 transition-colors"
+              className="flex items-center gap-2 px-3 py-2.5 border-2 border-gray-200 rounded-lg text-sm text-gray-600 hover:border-brand-500 hover:text-brand-500 transition-colors"
             >
               <SlidersHorizontal size={16} />
               <span className="hidden md:inline">Filters</span>
@@ -274,7 +274,7 @@ function BrowseView() {
                     PRICE_RANGES.find(p => p.label === e.target.value)
                   )
                 }
-                className="appearance-none pl-3 pr-7 py-1.5 border border-gray-300 rounded-full text-xs font-medium bg-white cursor-pointer hover:border-blue-500 focus:outline-none focus:border-blue-500"
+                className="appearance-none pl-3 pr-7 py-1.5 border border-gray-300 rounded-full text-xs font-medium bg-white cursor-pointer hover:border-brand-500 focus:outline-none focus:border-brand-500"
               >
                 {PRICE_RANGES.map(p => (
                   <option key={p.label}>{p.label}</option>
@@ -291,7 +291,7 @@ function BrowseView() {
               <select
                 value={minBeds}
                 onChange={e => setMinBeds(e.target.value)}
-                className="appearance-none pl-3 pr-7 py-1.5 border border-gray-300 rounded-full text-xs font-medium bg-white cursor-pointer hover:border-blue-500 focus:outline-none focus:border-blue-500"
+                className="appearance-none pl-3 pr-7 py-1.5 border border-gray-300 rounded-full text-xs font-medium bg-white cursor-pointer hover:border-brand-500 focus:outline-none focus:border-brand-500"
               >
                 {BEDS_OPTIONS.map(b => (
                   <option key={b}>{b}</option>
@@ -308,7 +308,7 @@ function BrowseView() {
               <select
                 value={propertyType}
                 onChange={e => setPropertyType(e.target.value)}
-                className="appearance-none pl-3 pr-7 py-1.5 border border-gray-300 rounded-full text-xs font-medium bg-white cursor-pointer hover:border-blue-500 focus:outline-none focus:border-blue-500"
+                className="appearance-none pl-3 pr-7 py-1.5 border border-gray-300 rounded-full text-xs font-medium bg-white cursor-pointer hover:border-brand-500 focus:outline-none focus:border-brand-500"
               >
                 {PROPERTY_TYPES.map(t => (
                   <option key={t}>{t}</option>
@@ -363,7 +363,7 @@ function BrowseView() {
             <select
               value={sortBy}
               onChange={e => setSortBy(e.target.value)}
-              className="appearance-none pl-3 pr-8 py-2 border border-gray-300 rounded-lg text-sm bg-white cursor-pointer focus:outline-none focus:border-blue-500"
+              className="appearance-none pl-3 pr-8 py-2 border border-gray-300 rounded-lg text-sm bg-white cursor-pointer focus:outline-none focus:border-brand-500"
             >
               {SORT_OPTIONS.map(s => (
                 <option key={s.value} value={s.value}>
@@ -381,8 +381,8 @@ function BrowseView() {
         {/* Grid */}
         {displayedListings.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mb-4">
-              <Tag size={28} className="text-blue-400" />
+            <div className="w-16 h-16 rounded-full bg-brand-50 flex items-center justify-center mb-4">
+              <Tag size={28} className="text-brand-400" />
             </div>
             <h3 className="text-lg font-semibold text-gray-700 mb-1">
               No rentals found
@@ -397,7 +397,7 @@ function BrowseView() {
                 setMinBeds('Any Beds')
                 setPropertyType('Any Type')
               }}
-              className="mt-4 px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+              className="mt-4 px-5 py-2 bg-brand-500 text-white rounded-lg text-sm font-medium hover:bg-brand-600 transition-colors"
             >
               Clear filters
             </button>

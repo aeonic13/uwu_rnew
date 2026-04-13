@@ -125,7 +125,7 @@ const UniversitySearch = ({ onBack, onSelectListing }) => {
             placeholder="Search universities..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
+            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 text-lg"
           />
         </div>
 
@@ -135,11 +135,11 @@ const UniversitySearch = ({ onBack, onSelectListing }) => {
             <button
               key={university.id}
               onClick={() => handleUniversitySelect(university)}
-              className="w-full text-left p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors"
+              className="w-full text-left p-4 border border-gray-200 rounded-lg hover:border-brand-300 hover:bg-brand-50 transition-colors"
             >
               <div className="flex items-center">
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
-                  <MapPin className="text-blue-600" size={24} />
+                <div className="w-12 h-12 bg-brand-100 rounded-full flex items-center justify-center mr-4">
+                  <MapPin className="text-brand-500" size={24} />
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-lg">{university.name}</h3>
@@ -164,11 +164,11 @@ const UniversitySearch = ({ onBack, onSelectListing }) => {
   return (
     <div className="p-4 pb-20">
       {/* Header with selected university */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+      <div className="bg-brand-50 border border-brand-200 rounded-lg p-4 mb-6">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center">
-            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-              <MapPin className="text-blue-600" size={20} />
+            <div className="w-10 h-10 bg-brand-100 rounded-full flex items-center justify-center mr-3">
+              <MapPin className="text-brand-500" size={20} />
             </div>
             <div>
               <h3 className="font-semibold">{selectedUniversity.name}</h3>
@@ -177,7 +177,7 @@ const UniversitySearch = ({ onBack, onSelectListing }) => {
           </div>
           <button
             onClick={() => setShowResults(false)}
-            className="text-blue-600 text-sm font-medium hover:underline"
+            className="text-brand-500 text-sm font-medium hover:underline"
           >
             Change University
           </button>
@@ -190,7 +190,7 @@ const UniversitySearch = ({ onBack, onSelectListing }) => {
               <Sliders size={16} className="inline mr-2" />
               Search Radius
             </label>
-            <span className="text-sm font-semibold text-blue-600">
+            <span className="text-sm font-semibold text-brand-500">
               {radiusMiles} {radiusMiles === 1 ? 'mile' : 'miles'}
             </span>
           </div>
@@ -229,7 +229,7 @@ const UniversitySearch = ({ onBack, onSelectListing }) => {
           <p className="text-gray-500 mb-4">Try increasing your search radius</p>
           <button
             onClick={() => setRadiusMiles(Math.min(25, radiusMiles + 5))}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+            className="bg-brand-500 text-white px-4 py-2 rounded-lg hover:bg-brand-600"
           >
             Expand to {Math.min(25, radiusMiles + 5)} miles
           </button>
@@ -270,7 +270,7 @@ const UniversitySearch = ({ onBack, onSelectListing }) => {
                 
                 <div className="flex flex-wrap gap-1 mb-3">
                   {listing.amenities.slice(0, 3).map(amenity => (
-                    <span key={amenity} className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                    <span key={amenity} className="px-2 py-1 bg-brand-100 text-blue-800 rounded-full text-xs">
                       {amenity}
                     </span>
                   ))}

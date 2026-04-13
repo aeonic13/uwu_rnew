@@ -450,7 +450,7 @@ const RoommateQuestionnaire = ({ onComplete, onBack, existingAnswers = null }) =
           {/* Progress bar */}
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              className="bg-brand-500 h-2 rounded-full transition-all duration-300"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -483,14 +483,14 @@ const RoommateQuestionnaire = ({ onComplete, onBack, existingAnswers = null }) =
                         onClick={() => handleAnswer(q.id, option.value, q.type === 'multiple')}
                         className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-all ${
                           isSelected
-                            ? 'border-blue-600 bg-blue-50'
+                            ? 'border-brand-500 bg-brand-50'
                             : 'border-gray-200 hover:border-gray-300'
                         }`}
                       >
                         <div className="flex items-center justify-between">
                           <span className="text-sm">{option.label}</span>
                           {isSelected && (
-                            <Check className="w-5 h-5 text-blue-600" />
+                            <Check className="w-5 h-5 text-brand-500" />
                           )}
                         </div>
                       </button>
@@ -505,7 +505,7 @@ const RoommateQuestionnaire = ({ onComplete, onBack, existingAnswers = null }) =
         {/* Navigation */}
         <button
           onClick={handleNext}
-          className="w-full bg-blue-600 text-white py-4 rounded-lg font-semibold flex items-center justify-center hover:bg-blue-700 transition-colors"
+          className="w-full bg-brand-500 text-white py-4 rounded-lg font-semibold flex items-center justify-center hover:bg-brand-600 transition-colors"
         >
           {currentStep === totalSteps - 1 ? 'Complete' : 'Next'}
           <ArrowRight className="w-5 h-5 ml-2" />

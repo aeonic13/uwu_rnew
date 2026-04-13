@@ -143,12 +143,12 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
         </div>
 
         {/* Important Notice */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <div className="bg-brand-50 border border-brand-200 rounded-lg p-4 mb-6">
           <div className="flex items-start">
-            <Info size={20} className="text-blue-600 mr-3 mt-0.5" />
+            <Info size={20} className="text-brand-500 mr-3 mt-0.5" />
             <div>
               <h3 className="font-semibold text-blue-800 mb-1">Owner Approval Required</h3>
-              <p className="text-sm text-blue-700">
+              <p className="text-sm text-brand-600">
                 Your property owner must approve this listing before it goes live. We'll contact them directly to ensure everything is legitimate and legal.
               </p>
             </div>
@@ -163,7 +163,7 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
               value={listingData.title}
               onChange={(e) => setListingData(prev => ({ ...prev, title: e.target.value }))}
               placeholder="e.g., My room in shared apartment near USC"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
@@ -174,7 +174,7 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
               value={listingData.address}
               onChange={(e) => setListingData(prev => ({ ...prev, address: e.target.value }))}
               placeholder="Full address of the property"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
@@ -184,7 +184,7 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
               <select
                 value={listingData.university}
                 onChange={(e) => setListingData(prev => ({ ...prev, university: e.target.value }))}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
               >
                 <option value="">Select University</option>
                 {universities.map(uni => (
@@ -198,7 +198,7 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
               <select
                 value={listingData.propertyType}
                 onChange={(e) => setListingData(prev => ({ ...prev, propertyType: e.target.value }))}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
               >
                 <option value="room">My room</option>
                 <option value="apartment">Entire apartment</option>
@@ -213,7 +213,7 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
             <select
               value={listingData.reasonForRentalting}
               onChange={(e) => setListingData(prev => ({ ...prev, reasonForRentalting: e.target.value }))}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               <option value="">Select reason</option>
               {rentaltingReasons.map(reason => (
@@ -229,7 +229,7 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
               onChange={(e) => setListingData(prev => ({ ...prev, description: e.target.value }))}
               placeholder="Describe your space, what makes it special, house rules, etc."
               rows={4}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
         </div>
@@ -246,7 +246,7 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
             disabled={!listingData.title || !listingData.address || !listingData.reasonForRentalting}
             className={`flex-1 py-3 rounded-lg font-semibold ${
               listingData.title && listingData.address && listingData.reasonForRentalting
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                ? 'bg-brand-500 text-white hover:bg-brand-600'
                 : 'bg-gray-300 text-gray-500'
             }`}
           >
@@ -283,7 +283,7 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
               value={listingData.ownerName}
               onChange={(e) => setListingData(prev => ({ ...prev, ownerName: e.target.value }))}
               placeholder="Full name of your landlord/property owner"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
@@ -294,7 +294,7 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
               value={listingData.ownerEmail}
               onChange={(e) => setListingData(prev => ({ ...prev, ownerEmail: e.target.value }))}
               placeholder="owner@email.com"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
@@ -305,7 +305,7 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
               value={listingData.ownerPhone}
               onChange={(e) => setListingData(prev => ({ ...prev, ownerPhone: e.target.value }))}
               placeholder="(555) 123-4567"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
@@ -314,7 +314,7 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
             <select
               value={listingData.ownerRelationship}
               onChange={(e) => setListingData(prev => ({ ...prev, ownerRelationship: e.target.value }))}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               <option value="landlord">They are my landlord</option>
               <option value="parent">They are my parent/guardian</option>
@@ -330,7 +330,7 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
               <FileText size={32} className="mx-auto text-gray-400 mb-2" />
               <label className="cursor-pointer">
-                <span className="text-blue-600 font-medium hover:underline">
+                <span className="text-brand-500 font-medium hover:underline">
                   Upload lease document
                 </span>
                 <input
@@ -359,7 +359,7 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
             <div className={`p-4 rounded-lg border ${
               listingData.ownerVerified 
                 ? 'bg-green-50 border-green-200' 
-                : 'bg-blue-50 border-blue-200'
+                : 'bg-brand-50 border-brand-200'
             }`}>
               <div className="flex items-center">
                 {listingData.ownerVerified ? (
@@ -369,13 +369,13 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
                   </>
                 ) : (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-brand-500 mr-2"></div>
                     <span className="text-blue-800 font-medium">Waiting for owner approval...</span>
                   </>
                 )}
               </div>
               {!listingData.ownerVerified && (
-                <p className="text-sm text-blue-700 mt-2">
+                <p className="text-sm text-brand-600 mt-2">
                   We've sent a verification request to {listingData.ownerEmail}
                 </p>
               )}
@@ -396,7 +396,7 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
               disabled={!listingData.ownerName || !listingData.ownerEmail}
               className={`flex-1 py-3 rounded-lg font-semibold ${
                 listingData.ownerName && listingData.ownerEmail
-                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                  ? 'bg-brand-500 text-white hover:bg-brand-600'
                   : 'bg-gray-300 text-gray-500'
               }`}
             >
@@ -408,7 +408,7 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
               disabled={!listingData.ownerVerified}
               className={`flex-1 py-3 rounded-lg font-semibold ${
                 listingData.ownerVerified
-                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                  ? 'bg-brand-500 text-white hover:bg-brand-600'
                   : 'bg-gray-300 text-gray-500'
               }`}
             >
@@ -435,7 +435,7 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
                 value={listingData.suggestedRent}
                 onChange={(e) => setListingData(prev => ({ ...prev, suggestedRent: e.target.value }))}
                 placeholder="1200"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
               <p className="text-xs text-gray-500 mt-1">Owner can adjust this amount</p>
             </div>
@@ -459,7 +459,7 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
                 type="date"
                 value={listingData.availableFrom}
                 onChange={(e) => setListingData(prev => ({ ...prev, availableFrom: e.target.value }))}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
             
@@ -469,7 +469,7 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
                 type="date"
                 value={listingData.availableTo}
                 onChange={(e) => setListingData(prev => ({ ...prev, availableTo: e.target.value }))}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
           </div>
@@ -482,7 +482,7 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
               value={listingData.guestPolicy}
               onChange={(e) => setListingData(prev => ({ ...prev, guestPolicy: e.target.value }))}
               placeholder="e.g., Guests welcome with 24hr notice"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
@@ -493,7 +493,7 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
               value={listingData.cleaningArrangement}
               onChange={(e) => setListingData(prev => ({ ...prev, cleaningArrangement: e.target.value }))}
               placeholder="e.g., Shared cleaning schedule, personal spaces only"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
@@ -504,7 +504,7 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
               value={listingData.keyAccess}
               onChange={(e) => setListingData(prev => ({ ...prev, keyAccess: e.target.value }))}
               placeholder="e.g., Spare key provided, digital lock code"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
@@ -515,7 +515,7 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
               onChange={(e) => setListingData(prev => ({ ...prev, specialTerms: e.target.value }))}
               placeholder="Any other important information rentalter should know..."
               rows={3}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
         </div>
@@ -532,7 +532,7 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
             disabled={!listingData.suggestedRent || !listingData.availableFrom}
             className={`flex-1 py-3 rounded-lg font-semibold ${
               listingData.suggestedRent && listingData.availableFrom
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                ? 'bg-brand-500 text-white hover:bg-brand-600'
                 : 'bg-gray-300 text-gray-500'
             }`}
           >
@@ -555,7 +555,7 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
             <Camera size={48} className="mx-auto text-gray-400 mb-4" />
             <label className="cursor-pointer">
-              <span className="text-blue-600 font-medium hover:underline">
+              <span className="text-brand-500 font-medium hover:underline">
                 Upload photos of your space
               </span>
               <input
@@ -606,14 +606,14 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
                 onClick={() => toggleAmenity(amenity)}
                 className={`p-3 border rounded-lg text-left transition-colors ${
                   listingData.amenities.includes(amenity)
-                    ? 'border-blue-500 bg-blue-50 text-blue-700'
-                    : 'border-gray-300 text-gray-700 hover:border-blue-300'
+                    ? 'border-brand-500 bg-brand-50 text-brand-600'
+                    : 'border-gray-300 text-gray-700 hover:border-brand-300'
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">{amenity}</span>
                   {listingData.amenities.includes(amenity) && (
-                    <Check size={16} className="text-blue-600" />
+                    <Check size={16} className="text-brand-500" />
                   )}
                 </div>
               </button>
@@ -630,7 +630,7 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
           </button>
           <button
             onClick={() => setCurrentStep(5)}
-            className="flex-1 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700"
+            className="flex-1 py-3 bg-brand-500 text-white rounded-lg font-semibold hover:bg-brand-600"
           >
             Continue
           </button>
@@ -715,9 +715,9 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
         </div>
 
         {/* Next Steps */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <div className="bg-brand-50 border border-brand-200 rounded-lg p-4 mb-6">
           <h3 className="font-semibold text-blue-800 mb-2">Next Steps After Listing</h3>
-          <div className="text-sm text-blue-700 space-y-2">
+          <div className="text-sm text-brand-600 space-y-2">
             <p>• Create a legally binding lease contract to protect yourself and your sublessee</p>
             <p>• Set up payment collection and security deposit management</p>
             <p>• Screen potential sublessees with our verification tools</p>
@@ -727,7 +727,7 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
               // This would navigate to the lease contract manager
               alert('After submitting, you can create a lease contract in your profile under "Student Features"');
             }}
-            className="mt-3 text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center"
+            className="mt-3 text-brand-500 hover:text-brand-600 text-sm font-medium flex items-center"
           >
             <FileText size={16} className="mr-1" />
             Learn about lease contracts →

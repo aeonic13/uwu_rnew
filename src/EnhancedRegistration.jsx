@@ -107,7 +107,7 @@ const EnhancedRegistration = ({ onComplete }) => {
     return (
       <div className="max-w-md mx-auto bg-white min-h-screen flex flex-col justify-center p-6">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-blue-600 mb-2">Welcome to Rentra</h1>
+          <h1 className="text-3xl font-bold text-brand-500 mb-2">Welcome to Rentra</h1>
           <p className="text-gray-600">Connect with fellow students for safe rentalting</p>
         </div>
 
@@ -120,11 +120,11 @@ const EnhancedRegistration = ({ onComplete }) => {
                 setUserIntent('looking-to-rent');
                 nextStep();
               }}
-              className="w-full p-6 border-2 border-gray-300 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors text-left"
+              className="w-full p-6 border-2 border-gray-300 rounded-lg hover:border-brand-300 hover:bg-brand-50 transition-colors text-left"
             >
               <div className="flex items-center">
-                <div className="bg-blue-100 rounded-full p-3 mr-4">
-                  <Search size={28} className="text-blue-600" />
+                <div className="bg-brand-100 rounded-full p-3 mr-4">
+                  <Search size={28} className="text-brand-500" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-lg">Looking to Rent</h3>
@@ -173,11 +173,11 @@ const EnhancedRegistration = ({ onComplete }) => {
                 setListerType('student-lease');
                 nextStep();
               }}
-              className="w-full p-6 border-2 border-gray-300 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors text-left"
+              className="w-full p-6 border-2 border-gray-300 rounded-lg hover:border-brand-300 hover:bg-brand-50 transition-colors text-left"
             >
               <div className="flex items-center">
-                <div className="bg-blue-100 rounded-full p-3 mr-4">
-                  <GraduationCap size={28} className="text-blue-600" />
+                <div className="bg-brand-100 rounded-full p-3 mr-4">
+                  <GraduationCap size={28} className="text-brand-500" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-lg">Student Looking to Lease</h3>
@@ -224,11 +224,11 @@ const EnhancedRegistration = ({ onComplete }) => {
         </div>
 
         <div className="mb-6">
-          <div className="flex items-center mb-4 p-4 bg-blue-50 rounded-lg">
-            <Shield className="text-blue-600 mr-3" size={24} />
+          <div className="flex items-center mb-4 p-4 bg-brand-50 rounded-lg">
+            <Shield className="text-brand-500 mr-3" size={24} />
             <div>
               <h3 className="font-semibold text-blue-800">University Email Required</h3>
-              <p className="text-sm text-blue-600">We verify all student renters with their .edu email</p>
+              <p className="text-sm text-brand-500">We verify all student renters with their .edu email</p>
             </div>
           </div>
 
@@ -237,7 +237,7 @@ const EnhancedRegistration = ({ onComplete }) => {
             value={formData.email}
             onChange={handleEmailChange}
             placeholder="Enter your university email"
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
 
           {formData.email && !isEmailValid && (
@@ -257,7 +257,7 @@ const EnhancedRegistration = ({ onComplete }) => {
             disabled={!isEmailValid}
             className={`flex-1 py-3 rounded-lg font-semibold flex items-center justify-center ${
               isEmailValid
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                ? 'bg-brand-500 text-white hover:bg-brand-600'
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
           >
@@ -291,11 +291,11 @@ const EnhancedRegistration = ({ onComplete }) => {
 
           <div className="mb-6">
             {isStudentLister && (
-              <div className="flex items-center mb-4 p-4 bg-blue-50 rounded-lg">
-                <Shield className="text-blue-600 mr-3" size={24} />
+              <div className="flex items-center mb-4 p-4 bg-brand-50 rounded-lg">
+                <Shield className="text-brand-500 mr-3" size={24} />
                 <div>
                   <h3 className="font-semibold text-blue-800">University Email Required</h3>
-                  <p className="text-sm text-blue-600">Students must verify with their .edu email</p>
+                  <p className="text-sm text-brand-500">Students must verify with their .edu email</p>
                 </div>
               </div>
             )}
@@ -315,7 +315,7 @@ const EnhancedRegistration = ({ onComplete }) => {
               value={formData.email}
               onChange={handleEmailChange}
               placeholder={isStudentLister ? "Enter your university email" : "Enter your email address"}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
 
             {formData.email && !isEmailValid && (
@@ -340,7 +340,7 @@ const EnhancedRegistration = ({ onComplete }) => {
               disabled={!isEmailValid}
               className={`flex-1 py-3 rounded-lg font-semibold flex items-center justify-center ${
                 isEmailValid
-                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                  ? 'bg-brand-500 text-white hover:bg-brand-600'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}
             >
@@ -369,7 +369,7 @@ const EnhancedRegistration = ({ onComplete }) => {
                 <User size={40} className="text-gray-400" />
               )}
             </div>
-            <label className="absolute bottom-0 right-0 bg-blue-600 text-white rounded-full p-2 cursor-pointer hover:bg-blue-700">
+            <label className="absolute bottom-0 right-0 bg-brand-500 text-white rounded-full p-2 cursor-pointer hover:bg-brand-600">
               <Camera size={16} />
               <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
             </label>
@@ -385,14 +385,14 @@ const EnhancedRegistration = ({ onComplete }) => {
               placeholder="First Name"
               value={formData.firstName}
               onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
-              className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
             <input
               type="text"
               placeholder="Last Name"
               value={formData.lastName}
               onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
-              className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
           
@@ -401,7 +401,7 @@ const EnhancedRegistration = ({ onComplete }) => {
             placeholder="Phone Number"
             value={formData.phone}
             onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
           
           {/* Only show university field for students */}
@@ -411,7 +411,7 @@ const EnhancedRegistration = ({ onComplete }) => {
               placeholder="University Name"
               value={formData.university}
               onChange={(e) => setFormData(prev => ({ ...prev, university: e.target.value }))}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           )}
 
@@ -422,7 +422,7 @@ const EnhancedRegistration = ({ onComplete }) => {
               placeholder="Create password (min. 8 chars, 1 uppercase, 1 number)"
               value={formData.password}
               onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-              className="w-full pr-10 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pr-10 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
             <button
               type="button"
@@ -441,7 +441,7 @@ const EnhancedRegistration = ({ onComplete }) => {
                 placeholder="Confirm password"
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                className={`w-full pr-10 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full pr-10 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 ${
                   formData.confirmPassword && formData.password !== formData.confirmPassword
                     ? 'border-red-400'
                     : 'border-gray-300'
@@ -477,7 +477,7 @@ const EnhancedRegistration = ({ onComplete }) => {
             className={`flex-1 py-3 rounded-lg font-semibold ${
               formData.firstName && formData.lastName && formData.phone &&
               formData.password.length >= 8 && formData.password === formData.confirmPassword
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                ? 'bg-brand-500 text-white hover:bg-brand-600'
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
           >
@@ -597,20 +597,20 @@ const EnhancedRegistration = ({ onComplete }) => {
             onClick={() => setFormData(prev => ({ ...prev, wantsCreditCheck: true }))}
             className={`w-full p-4 border-2 rounded-lg text-left transition-colors ${
               formData.wantsCreditCheck
-                ? 'border-blue-500 bg-blue-50 text-blue-700'
-                : 'border-gray-300 hover:border-blue-300'
+                ? 'border-brand-500 bg-brand-50 text-brand-600'
+                : 'border-gray-300 hover:border-brand-300'
             }`}
           >
             <div className="flex items-center">
-              <div className="bg-blue-100 rounded-full p-2 mr-4">
-                <FileCheck className="text-blue-600" size={20} />
+              <div className="bg-brand-100 rounded-full p-2 mr-4">
+                <FileCheck className="text-brand-500" size={20} />
               </div>
               <div className="flex-1">
                 <h4 className="font-semibold">Yes, set up pre-approval now</h4>
                 <p className="text-sm text-gray-600">Get verified and stand out to landlords</p>
               </div>
               {formData.wantsCreditCheck && (
-                <Check className="text-blue-600" size={24} />
+                <Check className="text-brand-500" size={24} />
               )}
             </div>
           </button>
@@ -638,8 +638,8 @@ const EnhancedRegistration = ({ onComplete }) => {
           </button>
         </div>
 
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-          <p className="text-sm text-blue-700">
+        <div className="bg-brand-50 border border-brand-200 rounded-lg p-4 mb-6">
+          <p className="text-sm text-brand-600">
             <strong>Note:</strong> In the meantime, feel free to save places and begin messaging with property owners. You can complete verification anytime from your profile.
           </p>
         </div>
@@ -656,8 +656,8 @@ const EnhancedRegistration = ({ onComplete }) => {
             disabled={isSubmitting}
             className={`flex-1 py-3 rounded-lg font-semibold ${
               isSubmitting
-                ? 'bg-blue-400 text-white cursor-not-allowed'
-                : 'bg-blue-600 text-white hover:bg-blue-700'
+                ? 'bg-brand-400 text-white cursor-not-allowed'
+                : 'bg-brand-500 text-white hover:bg-brand-600'
             }`}
           >
             {isSubmitting ? 'Creating account…' : 'Complete Registration'}

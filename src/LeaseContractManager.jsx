@@ -194,7 +194,7 @@ const LeaseContractManager = ({ user, currentLease, onBack, onNavigate }) => {
     switch (status) {
       case 'active': return 'bg-green-100 text-green-800';
       case 'pending_approval': return 'bg-yellow-100 text-yellow-800';
-      case 'pending_signatures': return 'bg-blue-100 text-blue-800';
+      case 'pending_signatures': return 'bg-brand-100 text-blue-800';
       case 'expired': return 'bg-gray-100 text-gray-800';
       case 'terminated': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
@@ -205,7 +205,7 @@ const LeaseContractManager = ({ user, currentLease, onBack, onNavigate }) => {
     switch (status) {
       case 'active': return <CheckCircle size={16} className="text-green-600" />;
       case 'pending_approval': return <Clock size={16} className="text-yellow-600" />;
-      case 'pending_signatures': return <PenTool size={16} className="text-blue-600" />;
+      case 'pending_signatures': return <PenTool size={16} className="text-brand-500" />;
       case 'expired': return <XCircle size={16} className="text-gray-600" />;
       case 'terminated': return <XCircle size={16} className="text-red-600" />;
       default: return <FileText size={16} className="text-gray-600" />;
@@ -397,7 +397,7 @@ const LeaseContractManager = ({ user, currentLease, onBack, onNavigate }) => {
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`flex-shrink-0 py-2 px-3 text-sm font-medium rounded-md transition-colors ${
-              activeTab === tab ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600'
+              activeTab === tab ? 'bg-white text-brand-500 shadow-sm' : 'text-gray-600'
             }`}
           >
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -434,8 +434,8 @@ const LeaseContractManager = ({ user, currentLease, onBack, onNavigate }) => {
                 <Clock size={20} className="text-yellow-600" />
               </div>
             </div>
-            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-700">
+            <div className="mt-4 p-3 bg-brand-50 rounded-lg">
+              <p className="text-sm text-brand-600">
                 <strong>Note:</strong> Your landlord's approval is required before any lease can become active. 
                 We'll handle the approval request process for you.
               </p>
@@ -470,7 +470,7 @@ const LeaseContractManager = ({ user, currentLease, onBack, onNavigate }) => {
             <h3 className="font-semibold mb-4">Rentalting Overview</h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{contractData.analytics.totalContracts}</div>
+                <div className="text-2xl font-bold text-brand-500">{contractData.analytics.totalContracts}</div>
                 <div className="text-sm text-gray-600">Total Contracts</div>
               </div>
               <div className="text-center">
@@ -497,7 +497,7 @@ const LeaseContractManager = ({ user, currentLease, onBack, onNavigate }) => {
                 className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 <div className="flex items-center">
-                  <Plus size={20} className="text-blue-600 mr-3" />
+                  <Plus size={20} className="text-brand-500 mr-3" />
                   <div className="text-left">
                     <p className="font-medium">Create New Lease</p>
                     <p className="text-sm text-gray-600">Start a new rentalting agreement</p>
@@ -551,8 +551,8 @@ const LeaseContractManager = ({ user, currentLease, onBack, onNavigate }) => {
                 <span className="text-sm font-semibold text-green-600">$1,200</span>
               </div>
               <div className="flex items-center">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                  <FileText size={16} className="text-blue-600" />
+                <div className="w-8 h-8 bg-brand-100 rounded-full flex items-center justify-center mr-3">
+                  <FileText size={16} className="text-brand-500" />
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-medium">New contract created for James Park</p>
@@ -580,7 +580,7 @@ const LeaseContractManager = ({ user, currentLease, onBack, onNavigate }) => {
             <h3 className="font-semibold">Your Lease Contracts</h3>
             <button
               onClick={() => setActiveTab('create')}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 flex items-center"
+              className="bg-brand-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-brand-600 flex items-center"
             >
               <Plus size={16} className="mr-2" />
               New Contract
@@ -640,7 +640,7 @@ const LeaseContractManager = ({ user, currentLease, onBack, onNavigate }) => {
               <div className="flex space-x-3 pt-4 border-t border-gray-200">
                 <button 
                   onClick={() => setSelectedContract(contract)}
-                  className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 flex items-center justify-center"
+                  className="flex-1 bg-brand-500 text-white py-2 rounded-lg font-medium hover:bg-brand-600 flex items-center justify-center"
                 >
                   <Eye size={16} className="mr-2" />
                   View Contract
@@ -679,11 +679,11 @@ const LeaseContractManager = ({ user, currentLease, onBack, onNavigate }) => {
                   onClick={() => setContractForm(prev => ({ ...prev, rentalType: type }))}
                   className={`flex items-center p-4 border-2 rounded-lg text-left transition-colors ${
                     contractForm.rentalType === type
-                      ? 'border-blue-300 bg-blue-50'
+                      ? 'border-brand-300 bg-brand-50'
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
                 >
-                  <Icon size={24} className="text-blue-600 mr-3" />
+                  <Icon size={24} className="text-brand-500 mr-3" />
                   <div>
                     <div className="font-medium">{title}</div>
                     <div className="text-sm text-gray-600">{desc}</div>
@@ -703,7 +703,7 @@ const LeaseContractManager = ({ user, currentLease, onBack, onNavigate }) => {
                   type="date"
                   value={contractForm.startDate}
                   onChange={(e) => setContractForm(prev => ({ ...prev, startDate: e.target.value }))}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
               <div>
@@ -712,7 +712,7 @@ const LeaseContractManager = ({ user, currentLease, onBack, onNavigate }) => {
                   type="date"
                   value={contractForm.endDate}
                   onChange={(e) => setContractForm(prev => ({ ...prev, endDate: e.target.value }))}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
             </div>
@@ -730,7 +730,7 @@ const LeaseContractManager = ({ user, currentLease, onBack, onNavigate }) => {
                     type="number"
                     value={contractForm.monthlyRent}
                     onChange={(e) => setContractForm(prev => ({ ...prev, monthlyRent: e.target.value }))}
-                    className="w-full pl-8 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full pl-8 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                     placeholder="1200"
                   />
                 </div>
@@ -743,7 +743,7 @@ const LeaseContractManager = ({ user, currentLease, onBack, onNavigate }) => {
                     type="number"
                     value={contractForm.securityDeposit}
                     onChange={(e) => setContractForm(prev => ({ ...prev, securityDeposit: e.target.value }))}
-                    className="w-full pl-8 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full pl-8 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                     placeholder="600"
                   />
                 </div>
@@ -754,7 +754,7 @@ const LeaseContractManager = ({ user, currentLease, onBack, onNavigate }) => {
               <select
                 value={contractForm.utilities}
                 onChange={(e) => setContractForm(prev => ({ ...prev, utilities: e.target.value }))}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
               >
                 <option value="included">Included in rent</option>
                 <option value="separate">Paid separately by sublessee</option>
@@ -777,7 +777,7 @@ const LeaseContractManager = ({ user, currentLease, onBack, onNavigate }) => {
                       ...prev,
                       sublessee: { ...prev.sublessee, name: e.target.value }
                     }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                     placeholder="Enter sublessee's full name"
                   />
                 </div>
@@ -790,7 +790,7 @@ const LeaseContractManager = ({ user, currentLease, onBack, onNavigate }) => {
                       ...prev,
                       sublessee: { ...prev.sublessee, university: e.target.value }
                     }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                     placeholder="e.g., USC, UCLA"
                   />
                 </div>
@@ -805,7 +805,7 @@ const LeaseContractManager = ({ user, currentLease, onBack, onNavigate }) => {
                       ...prev,
                       sublessee: { ...prev.sublessee, email: e.target.value }
                     }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                     placeholder="student@university.edu"
                   />
                 </div>
@@ -818,7 +818,7 @@ const LeaseContractManager = ({ user, currentLease, onBack, onNavigate }) => {
                       ...prev,
                       sublessee: { ...prev.sublessee, phone: e.target.value }
                     }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                     placeholder="(555) 123-4567"
                   />
                 </div>
@@ -862,7 +862,7 @@ const LeaseContractManager = ({ user, currentLease, onBack, onNavigate }) => {
               onChange={(e) => setContractForm(prev => ({ ...prev, additionalTerms: e.target.value }))}
               placeholder="Add any specific terms, conditions, or house rules..."
               rows={4}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
@@ -879,7 +879,7 @@ const LeaseContractManager = ({ user, currentLease, onBack, onNavigate }) => {
               disabled={!contractForm.sublessee.name || !contractForm.sublessee.email || !contractForm.monthlyRent}
               className={`flex-1 py-3 rounded-lg font-semibold ${
                 contractForm.sublessee.name && contractForm.sublessee.email && contractForm.monthlyRent
-                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                  ? 'bg-brand-500 text-white hover:bg-brand-600'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}
             >
@@ -894,7 +894,7 @@ const LeaseContractManager = ({ user, currentLease, onBack, onNavigate }) => {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="font-semibold">Contract Templates</h3>
-            <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+            <button className="text-brand-500 hover:text-brand-600 text-sm font-medium">
               Browse All Templates
             </button>
           </div>
@@ -913,7 +913,7 @@ const LeaseContractManager = ({ user, currentLease, onBack, onNavigate }) => {
                   <p className="text-sm text-gray-600 mb-3">{template.description}</p>
                   <div className="flex flex-wrap gap-2">
                     {template.features.map((feature, index) => (
-                      <span key={index} className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full">
+                      <span key={index} className="text-xs bg-brand-100 text-brand-500 px-2 py-1 rounded-full">
                         {feature}
                       </span>
                     ))}
@@ -924,7 +924,7 @@ const LeaseContractManager = ({ user, currentLease, onBack, onNavigate }) => {
                 <span className="text-xs text-gray-500">
                   Last updated: {template.lastUpdated}
                 </span>
-                <button className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700">
+                <button className="bg-brand-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-brand-600">
                   Use Template
                 </button>
               </div>
@@ -968,7 +968,7 @@ const LeaseContractManager = ({ user, currentLease, onBack, onNavigate }) => {
             <div className="space-y-3">
               {contractData.legalRequirements.mandatoryClauses.map((clause, index) => (
                 <div key={index} className="flex items-start">
-                  <Scale size={16} className="text-blue-600 mr-3 flex-shrink-0 mt-0.5" />
+                  <Scale size={16} className="text-brand-500 mr-3 flex-shrink-0 mt-0.5" />
                   <span className="text-sm">{clause}</span>
                 </div>
               ))}
@@ -999,16 +999,16 @@ const LeaseContractManager = ({ user, currentLease, onBack, onNavigate }) => {
             </div>
           </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="bg-brand-50 border border-brand-200 rounded-lg p-4">
             <div className="flex items-start">
-              <Shield size={20} className="text-blue-600 mr-3 flex-shrink-0 mt-0.5" />
+              <Shield size={20} className="text-brand-500 mr-3 flex-shrink-0 mt-0.5" />
               <div>
                 <h4 className="font-semibold text-blue-800 mb-2">Rentra Legal Protection</h4>
-                <p className="text-sm text-blue-700 mb-3">
+                <p className="text-sm text-brand-600 mb-3">
                   All contracts generated through Rentra are automatically updated to comply with current 
                   state and local laws. Our legal AI ensures your agreements are enforceable and protect both parties.
                 </p>
-                <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                <button className="text-sm text-brand-500 hover:text-brand-600 font-medium">
                   Learn more about our legal protection →
                 </button>
               </div>
@@ -1125,7 +1125,7 @@ const LeaseContractManager = ({ user, currentLease, onBack, onNavigate }) => {
 
                 {/* Actions */}
                 <div className="flex space-x-3">
-                  <button className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700">
+                  <button className="flex-1 bg-brand-500 text-white py-3 rounded-lg font-medium hover:bg-brand-600">
                     Download PDF
                   </button>
                   <button className="flex-1 bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700">

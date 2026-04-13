@@ -55,12 +55,12 @@ const KickoffScreen = ({ listing, roommateGroups, onSolo, onSelectGroup, onCreat
   return (
     <div className="p-4 pb-20 space-y-6">
       {/* Property banner */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div className="bg-brand-50 border border-brand-200 rounded-lg p-4">
         <div className="flex items-center mb-1">
-          <Home size={16} className="text-blue-600 mr-2" />
+          <Home size={16} className="text-brand-500 mr-2" />
           <span className="font-semibold text-blue-800">{listing.title}</span>
         </div>
-        <div className="flex items-center text-sm text-blue-700">
+        <div className="flex items-center text-sm text-brand-600">
           <DollarSign size={14} className="mr-1" />
           <span>${listing.price}/mo &nbsp;·&nbsp; {listing.location}</span>
         </div>
@@ -80,10 +80,10 @@ const KickoffScreen = ({ listing, roommateGroups, onSolo, onSelectGroup, onCreat
       {/* Solo */}
       <button
         onClick={onSolo}
-        className="w-full flex items-center p-4 border-2 border-gray-200 rounded-xl hover:border-blue-300 hover:bg-blue-50 transition-colors text-left"
+        className="w-full flex items-center p-4 border-2 border-gray-200 rounded-xl hover:border-brand-300 hover:bg-brand-50 transition-colors text-left"
       >
-        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
-          <User size={20} className="text-blue-600" />
+        <div className="w-10 h-10 bg-brand-100 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
+          <User size={20} className="text-brand-500" />
         </div>
         <div className="flex-1">
           <p className="font-semibold">Just Me (Solo)</p>
@@ -100,7 +100,7 @@ const KickoffScreen = ({ listing, roommateGroups, onSolo, onSelectGroup, onCreat
             <button
               key={group.id}
               onClick={() => onSelectGroup(group)}
-              className="w-full flex items-center p-4 border-2 border-gray-200 rounded-xl hover:border-blue-300 hover:bg-blue-50 transition-colors text-left"
+              className="w-full flex items-center p-4 border-2 border-gray-200 rounded-xl hover:border-brand-300 hover:bg-brand-50 transition-colors text-left"
             >
               <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
                 <Users size={20} className="text-purple-600" />
@@ -123,7 +123,7 @@ const KickoffScreen = ({ listing, roommateGroups, onSolo, onSelectGroup, onCreat
       {!showCreate ? (
         <button
           onClick={() => setShowCreate(true)}
-          className="w-full flex items-center p-4 border-2 border-dashed border-gray-300 rounded-xl hover:border-blue-300 hover:bg-blue-50 transition-colors text-left"
+          className="w-full flex items-center p-4 border-2 border-dashed border-gray-300 rounded-xl hover:border-brand-300 hover:bg-brand-50 transition-colors text-left"
         >
           <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
             <Plus size={20} className="text-green-600" />
@@ -134,7 +134,7 @@ const KickoffScreen = ({ listing, roommateGroups, onSolo, onSelectGroup, onCreat
           </div>
         </button>
       ) : (
-        <div className="border-2 border-blue-200 rounded-xl p-4 space-y-3 bg-blue-50">
+        <div className="border-2 border-brand-200 rounded-xl p-4 space-y-3 bg-brand-50">
           <div className="flex justify-between items-center">
             <p className="font-semibold">New Group</p>
             <button onClick={() => setShowCreate(false)}>
@@ -148,7 +148,7 @@ const KickoffScreen = ({ listing, roommateGroups, onSolo, onSelectGroup, onCreat
               value={newGroupName}
               onChange={e => setNewGroupName(e.target.value)}
               placeholder='e.g. "The Senior Year Squad"'
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
           <div>
@@ -160,7 +160,7 @@ const KickoffScreen = ({ listing, roommateGroups, onSolo, onSelectGroup, onCreat
               value={newGroupEmails}
               onChange={e => setNewGroupEmails(e.target.value)}
               placeholder="sarah@usc.edu, mike@usc.edu"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
           <button
@@ -168,7 +168,7 @@ const KickoffScreen = ({ listing, roommateGroups, onSolo, onSelectGroup, onCreat
             disabled={!newGroupName.trim()}
             className={`w-full py-3 rounded-lg font-semibold transition-colors ${
               newGroupName.trim()
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                ? 'bg-brand-500 text-white hover:bg-brand-600'
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'
             }`}
           >
@@ -219,8 +219,8 @@ const GuarantorInviteScreen = ({ member, savedGuarantors, onSave, onSkip }) => {
               onClick={() => handleSelectSaved(g)}
               className={`w-full flex items-center p-3 border-2 rounded-lg transition-colors text-left ${
                 useSaved && form.email === g.email
-                  ? 'border-blue-400 bg-blue-50'
-                  : 'border-gray-200 hover:border-blue-200'
+                  ? 'border-brand-400 bg-brand-50'
+                  : 'border-gray-200 hover:border-brand-200'
               }`}
             >
               <User size={18} className="text-gray-500 mr-3 flex-shrink-0" />
@@ -229,7 +229,7 @@ const GuarantorInviteScreen = ({ member, savedGuarantors, onSave, onSkip }) => {
                 <p className="text-xs text-gray-500">{g.email} · {g.phone}</p>
               </div>
               {useSaved && form.email === g.email && (
-                <CheckCircle size={16} className="text-blue-600 ml-auto" />
+                <CheckCircle size={16} className="text-brand-500 ml-auto" />
               )}
             </button>
           ))}
@@ -246,7 +246,7 @@ const GuarantorInviteScreen = ({ member, savedGuarantors, onSave, onSkip }) => {
             value={form.name}
             onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
             placeholder="Jane Smith"
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
         </div>
         <div>
@@ -258,7 +258,7 @@ const GuarantorInviteScreen = ({ member, savedGuarantors, onSave, onSkip }) => {
               value={form.phone}
               onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
               placeholder="(555) 000-0000"
-              className="w-full pl-9 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-9 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
         </div>
@@ -271,7 +271,7 @@ const GuarantorInviteScreen = ({ member, savedGuarantors, onSave, onSkip }) => {
               value={form.email}
               onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
               placeholder="guarantor@email.com"
-              className="w-full pl-9 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-9 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
         </div>
@@ -293,7 +293,7 @@ const GuarantorInviteScreen = ({ member, savedGuarantors, onSave, onSkip }) => {
         disabled={!form.name || !form.email}
         className={`w-full py-3 rounded-lg font-semibold transition-colors ${
           form.name && form.email
-            ? 'bg-blue-600 text-white hover:bg-blue-700'
+            ? 'bg-brand-500 text-white hover:bg-brand-600'
             : 'bg-gray-200 text-gray-400 cursor-not-allowed'
         }`}
       >
@@ -324,9 +324,9 @@ const GroupTrackerScreen = ({ groupApplication, listing, onRemind, onSubmit, onN
   return (
     <div className="p-4 pb-20 space-y-6">
       {/* Property */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div className="bg-brand-50 border border-brand-200 rounded-lg p-4">
         <p className="font-semibold text-blue-800">{listing.title}</p>
-        <p className="text-sm text-blue-700">{listing.location} · ${listing.price}/mo</p>
+        <p className="text-sm text-brand-600">{listing.location} · ${listing.price}/mo</p>
       </div>
 
       {/* Legend */}
@@ -347,8 +347,8 @@ const GroupTrackerScreen = ({ groupApplication, listing, onRemind, onSubmit, onN
             <div key={i} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center">
-                  <div className="w-9 h-9 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                    <User size={18} className="text-blue-600" />
+                  <div className="w-9 h-9 bg-brand-100 rounded-full flex items-center justify-center mr-3">
+                    <User size={18} className="text-brand-500" />
                   </div>
                   <div>
                     <p className="font-semibold">{member.name}</p>
@@ -390,7 +390,7 @@ const GroupTrackerScreen = ({ groupApplication, listing, onRemind, onSubmit, onN
                     {member.guarantor.verificationStatus === 'pending' && (
                       <button
                         onClick={() => onNavigateToVerify(member)}
-                        className="ml-auto text-xs text-blue-600 underline"
+                        className="ml-auto text-xs text-brand-500 underline"
                       >
                         Preview
                       </button>
@@ -423,7 +423,7 @@ const GroupTrackerScreen = ({ groupApplication, listing, onRemind, onSubmit, onN
         disabled={!allReady}
         className={`w-full py-3 rounded-lg font-semibold transition-colors ${
           allReady
-            ? 'bg-blue-600 text-white hover:bg-blue-700'
+            ? 'bg-brand-500 text-white hover:bg-brand-600'
             : 'bg-gray-200 text-gray-400 cursor-not-allowed'
         }`}
       >

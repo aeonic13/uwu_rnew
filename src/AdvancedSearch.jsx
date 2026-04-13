@@ -133,7 +133,7 @@ const AdvancedSearch = ({ onSearch, onClose, initialFilters = {} }) => {
                 placeholder="Search by location, description, etc."
                 value={filters.keywords}
                 onChange={(e) => setFilters(prev => ({ ...prev, keywords: e.target.value }))}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
           </div>
@@ -151,7 +151,7 @@ const AdvancedSearch = ({ onSearch, onClose, initialFilters = {} }) => {
                   placeholder="Min"
                   value={filters.minRent}
                   onChange={(e) => setFilters(prev => ({ ...prev, minRent: e.target.value }))}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
                 <p className="text-xs text-gray-500 mt-1">Minimum</p>
               </div>
@@ -161,7 +161,7 @@ const AdvancedSearch = ({ onSearch, onClose, initialFilters = {} }) => {
                   placeholder="Max"
                   value={filters.maxRent}
                   onChange={(e) => setFilters(prev => ({ ...prev, maxRent: e.target.value }))}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
                 <p className="text-xs text-gray-500 mt-1">Maximum</p>
               </div>
@@ -178,7 +178,7 @@ const AdvancedSearch = ({ onSearch, onClose, initialFilters = {} }) => {
               type="date"
               value={filters.moveInDate}
               onChange={(e) => setFilters(prev => ({ ...prev, moveInDate: e.target.value }))}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
             <p className="text-xs text-gray-500 mt-1">Properties available ±2 weeks from this date</p>
           </div>
@@ -196,8 +196,8 @@ const AdvancedSearch = ({ onSearch, onClose, initialFilters = {} }) => {
                   onClick={() => setFilters(prev => ({ ...prev, propertyType: option.value }))}
                   className={`p-3 border rounded-lg text-sm font-medium transition-colors ${
                     filters.propertyType === option.value
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-gray-300 text-gray-700 hover:border-blue-300'
+                      ? 'border-brand-500 bg-brand-50 text-brand-600'
+                      : 'border-gray-300 text-gray-700 hover:border-brand-300'
                   }`}
                 >
                   {option.label}
@@ -219,8 +219,8 @@ const AdvancedSearch = ({ onSearch, onClose, initialFilters = {} }) => {
                   onClick={() => setFilters(prev => ({ ...prev, bedrooms: option.value }))}
                   className={`p-3 border rounded-lg text-sm font-medium transition-colors ${
                     filters.bedrooms === option.value
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-gray-300 text-gray-700 hover:border-blue-300'
+                      ? 'border-brand-500 bg-brand-50 text-brand-600'
+                      : 'border-gray-300 text-gray-700 hover:border-brand-300'
                   }`}
                 >
                   {option.label}
@@ -242,8 +242,8 @@ const AdvancedSearch = ({ onSearch, onClose, initialFilters = {} }) => {
                   onClick={() => setFilters(prev => ({ ...prev, bathrooms: option.value }))}
                   className={`p-3 border rounded-lg text-sm font-medium transition-colors ${
                     filters.bathrooms === option.value
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-gray-300 text-gray-700 hover:border-blue-300'
+                      ? 'border-brand-500 bg-brand-50 text-brand-600'
+                      : 'border-gray-300 text-gray-700 hover:border-brand-300'
                   }`}
                 >
                   {option.label}
@@ -265,8 +265,8 @@ const AdvancedSearch = ({ onSearch, onClose, initialFilters = {} }) => {
                   onClick={() => setFilters(prev => ({ ...prev, termLength: option.value }))}
                   className={`p-3 border rounded-lg text-sm font-medium transition-colors ${
                     filters.termLength === option.value
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-gray-300 text-gray-700 hover:border-blue-300'
+                      ? 'border-brand-500 bg-brand-50 text-brand-600'
+                      : 'border-gray-300 text-gray-700 hover:border-brand-300'
                   }`}
                 >
                   {option.label}
@@ -288,14 +288,14 @@ const AdvancedSearch = ({ onSearch, onClose, initialFilters = {} }) => {
                   onClick={() => setFilters(prev => ({ ...prev, leaseType: option.value }))}
                   className={`w-full p-3 border rounded-lg text-left font-medium transition-colors ${
                     filters.leaseType === option.value
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-gray-300 text-gray-700 hover:border-blue-300'
+                      ? 'border-brand-500 bg-brand-50 text-brand-600'
+                      : 'border-gray-300 text-gray-700 hover:border-brand-300'
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <span>{option.label}</span>
                     {filters.leaseType === option.value && (
-                      <Check size={20} className="text-blue-600" />
+                      <Check size={20} className="text-brand-500" />
                     )}
                   </div>
                 </button>
@@ -316,14 +316,14 @@ const AdvancedSearch = ({ onSearch, onClose, initialFilters = {} }) => {
                   onClick={() => handleAmenityToggle(amenity)}
                   className={`p-3 border rounded-lg text-sm font-medium transition-colors ${
                     filters.amenities.includes(amenity)
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-gray-300 text-gray-700 hover:border-blue-300'
+                      ? 'border-brand-500 bg-brand-50 text-brand-600'
+                      : 'border-gray-300 text-gray-700 hover:border-brand-300'
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <span>{amenity}</span>
                     {filters.amenities.includes(amenity) && (
-                      <Check size={16} className="text-blue-600" />
+                      <Check size={16} className="text-brand-500" />
                     )}
                   </div>
                 </button>
@@ -343,7 +343,7 @@ const AdvancedSearch = ({ onSearch, onClose, initialFilters = {} }) => {
             </button>
             <button
               onClick={handleSearch}
-              className="flex-1 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex items-center justify-center"
+              className="flex-1 py-3 bg-brand-500 text-white rounded-lg hover:bg-brand-600 font-medium flex items-center justify-center"
             >
               <Search size={20} className="mr-2" />
               Search {activeFiltersCount > 0 && `(${activeFiltersCount} filters)`}

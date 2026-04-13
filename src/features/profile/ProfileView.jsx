@@ -40,7 +40,7 @@ function MenuItem({ icon: Icon, label, onClick, badge, danger }) {
       </div>
       <div className="flex items-center">
         {badge && (
-          <span className="bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full text-xs font-medium mr-2">
+          <span className="bg-brand-100 text-brand-500 px-2 py-0.5 rounded-full text-xs font-medium mr-2">
             {badge}
           </span>
         )}
@@ -95,7 +95,7 @@ function ProfileView() {
               className="w-20 h-20 rounded-full object-cover"
             />
             {user?.verified && (
-              <div className="absolute -bottom-1 -right-1 bg-blue-600 rounded-full p-1">
+              <div className="absolute -bottom-1 -right-1 bg-brand-500 rounded-full p-1">
                 <Shield size={14} className="text-white" />
               </div>
             )}
@@ -133,10 +133,10 @@ function ProfileView() {
                     href={user.linkedinUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-2 bg-blue-50 hover:bg-blue-100 rounded-full transition-colors"
+                    className="p-2 bg-brand-50 hover:bg-brand-100 rounded-full transition-colors"
                     aria-label="LinkedIn profile"
                   >
-                    <Linkedin size={18} className="text-blue-600" />
+                    <Linkedin size={18} className="text-brand-500" />
                   </a>
                 )}
               </div>
@@ -163,7 +163,7 @@ function ProfileView() {
         ) : (
           <button
             onClick={() => navigate('/profile/verify')}
-            className="mt-4 w-full bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center justify-center text-blue-700 hover:bg-blue-100 transition-colors"
+            className="mt-4 w-full bg-brand-50 border border-brand-200 rounded-lg p-3 flex items-center justify-center text-brand-600 hover:bg-brand-100 transition-colors"
           >
             <Shield size={18} className="mr-2" />
             <span className="text-sm font-medium">Verify your account</span>

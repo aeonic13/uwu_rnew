@@ -64,7 +64,7 @@ const AddToConversation = ({
       </div>
 
       {/* Current Conversation Info */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+      <div className="bg-brand-50 border border-brand-200 rounded-lg p-4 mb-4">
         <h3 className="font-semibold text-blue-800 mb-2 flex items-center">
           <MessageCircle size={16} className="mr-2" />
           Current Conversation
@@ -85,11 +85,11 @@ const AddToConversation = ({
         </div>
         
         <div className="mt-3">
-          <p className="text-sm text-blue-700">
+          <p className="text-sm text-brand-600">
             <strong>Landlord:</strong> {currentConversation.property?.owner?.name}
           </p>
           {currentConversation.members && currentConversation.members.length > 1 && (
-            <p className="text-sm text-blue-700">
+            <p className="text-sm text-brand-600">
               <strong>Current members:</strong> {currentConversation.members.map(m => m.name).join(', ')}
             </p>
           )}
@@ -104,7 +104,7 @@ const AddToConversation = ({
           placeholder="Search friends and roommates..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
         />
       </div>
 
@@ -175,7 +175,7 @@ const AddToConversation = ({
                     <div className="flex items-center">
                       <h4 className="font-semibold">{roommate.name}</h4>
                       {roommate.verificationStatus === 'verified' && (
-                        <CheckCircle size={16} className="ml-2 text-blue-500" />
+                        <CheckCircle size={16} className="ml-2 text-brand-500" />
                       )}
                     </div>
                     <p className="text-sm text-gray-600">
@@ -187,7 +187,7 @@ const AddToConversation = ({
                       </p>
                     )}
                     {roommate.relationshipType && (
-                      <p className="text-xs text-blue-600 font-medium">
+                      <p className="text-xs text-brand-500 font-medium">
                         {roommate.relationshipType}
                       </p>
                     )}
@@ -218,7 +218,7 @@ const AddToConversation = ({
           disabled={selectedMembers.length === 0}
           className={`w-full py-3 rounded-lg font-semibold flex items-center justify-center ${
             selectedMembers.length > 0
-              ? 'bg-blue-600 text-white hover:bg-blue-700'
+              ? 'bg-brand-500 text-white hover:bg-brand-600'
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`}
         >

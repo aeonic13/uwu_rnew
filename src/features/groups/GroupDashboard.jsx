@@ -50,7 +50,7 @@ export default function GroupDashboard() {
         </div>
         <button
           onClick={handleCreateGroup}
-          className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+          className="flex items-center gap-2 px-6 py-3 bg-brand-500 text-white rounded-lg font-semibold hover:bg-brand-600 transition-colors"
         >
           <Plus size={20} />
           Create Group
@@ -66,10 +66,10 @@ export default function GroupDashboard() {
               <div
                 key={invitation.id}
                 onClick={() => handleInvitationClick(invitation.id)}
-                className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4 cursor-pointer hover:bg-blue-100 transition-colors"
+                className="bg-brand-50 border-2 border-brand-200 rounded-lg p-4 cursor-pointer hover:bg-brand-100 transition-colors"
               >
                 <div className="flex items-center gap-3 mb-2">
-                  <Users size={20} className="text-blue-600" />
+                  <Users size={20} className="text-brand-500" />
                   <span className="font-semibold text-blue-900">
                     Group Invitation
                   </span>
@@ -95,7 +95,7 @@ export default function GroupDashboard() {
           </p>
           <button
             onClick={handleCreateGroup}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-brand-500 text-white rounded-lg font-semibold hover:bg-brand-600 transition-colors"
           >
             <Plus size={20} />
             Create Your First Group
@@ -117,8 +117,8 @@ export default function GroupDashboard() {
                 {/* Group Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                      <Users size={24} className="text-blue-600" />
+                    <div className="w-12 h-12 bg-brand-100 rounded-full flex items-center justify-center">
+                      <Users size={24} className="text-brand-500" />
                     </div>
                     {isAdmin && (
                       <Crown size={16} className="text-yellow-500" />
@@ -161,7 +161,7 @@ export default function GroupDashboard() {
                       e.stopPropagation()
                       navigate(`/groups/${group.id}/chat`)
                     }}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-brand-50 text-brand-500 rounded-lg hover:bg-brand-100 transition-colors"
                   >
                     <MessageSquare size={16} />
                     <span className="text-sm font-medium">Chat</span>
