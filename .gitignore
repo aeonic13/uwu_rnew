@@ -91,3 +91,7 @@ export-everything.json
 .vscode-testserver/uploads/
 .vercel
 .env*.local
+
+/src/generated/prisma
+
+/generated/prisma
