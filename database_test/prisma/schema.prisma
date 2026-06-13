@@ -1,0 +1,240 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// USERS
+/////////////////////////////////////////////////
+
+model User {
+  id          String @id @default(uuid())
+
+  email       String @unique
+  name        String?
+
+  verified    Boolean @default(false)
+
+  listings    Listing[]
+
+  createdAt   DateTime @default(now())
+}
+
+/////////////////////////////////////////////////
+// LISTINGS
+/////////////////////////////////////////////////
+
+model Listing {
+
+  id              String @id @default(uuid())
+
+  ownerId         String
+  owner           User @relation(fields: [ownerId], references: [id])
+
+  title           String
+
+  status          ListingStatus @default(DRAFT)
+
+  publishedAt     DateTime?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  //////////////////////////////////////////////////
+  // Relations
+  //////////////////////////////////////////////////
+
+  photos          Photo[]
+
+  requirements    Requirement?
+
+  location        Location?
+
+  pricing         Pricing?
+
+  roomInfo        RoomInfo?
+
+  amenities       Amenity?
+
+}
+
+/////////////////////////////////////////////////
+// PHOTOS
+/////////////////////////////////////////////////
+
+model Photo {
+
+  id          String @id @default(uuid())
+
+  listingId   String
+  listing     Listing @relation(fields:[listingId], references:[id])
+
+  imageUrl    String
+
+  orderIndex  Int
+
+  isCover     Boolean @default(false)
+}
+
+/////////////////////////////////////////////////
+// REQUIREMENTS
+/////////////////////////////////////////////////
+
+model Requirement {
+
+  id                      String @id @default(uuid())
+
+  listingId               String @unique
+  listing                 Listing @relation(fields:[listingId], references:[id])
+
+  roommatesAllowed        Boolean
+
+  maxOccupants            Int
+
+  incomeRequirement       Int?
+
+  creditScoreMinimum      Int?
+
+  backgroundCheck         Boolean
+
+  petsAllowed             Boolean
+
+  smokingAllowed          Boolean
+
+  quietHours              String?
+
+}
+
+/////////////////////////////////////////////////
+// LOCATION
+/////////////////////////////////////////////////
+
+model Location {
+
+  id                  String @id @default(uuid())
+
+  listingId           String @unique
+  listing             Listing @relation(fields:[listingId], references:[id])
+
+  address             String
+
+  apartmentUnit       String?
+
+  city                String
+
+  zip                 String
+
+  neighborhood        String?
+
+  latitude            Float
+
+  longitude           Float
+
+  distanceToCampus    Float?
+
+  hideExactAddress    Boolean @default(false)
+}
+
+/////////////////////////////////////////////////
+// PRICING
+/////////////////////////////////////////////////
+
+model Pricing {
+
+  id              String @id @default(uuid())
+
+  listingId       String @unique
+  listing         Listing @relation(fields:[listingId], references:[id])
+
+  monthlyRent     Int
+
+  deposit         Int?
+
+  applicationFee  Int?
+
+  utilitiesIncluded Boolean
+
+  leaseType       LeaseType
+
+  moveInDate      DateTime?
+
+  moveOutDate     DateTime?
+}
+
+/////////////////////////////////////////////////
+// ROOM INFO
+/////////////////////////////////////////////////
+
+model RoomInfo {
+
+  id              String @id @default(uuid())
+
+  listingId       String @unique
+  listing         Listing @relation(fields:[listingId], references:[id])
+
+  numberOfRooms   Int
+
+  roomType        RoomType
+
+  bathroomType    BathroomType
+
+  roommateCount   Int
+}
+
+/////////////////////////////////////////////////
+// AMENITIES
+/////////////////////////////////////////////////
+
+model Amenity {
+
+  id              String @id @default(uuid())
+
+  listingId       String @unique
+  listing         Listing @relation(fields:[listingId], references:[id])
+
+  furnished       Boolean
+
+  laundry         Boolean
+
+  parking         Boolean
+
+  wifiIncluded    Boolean
+
+  gasIncluded     Boolean
+
+  waterIncluded   Boolean
+}
+
+/////////////////////////////////////////////////
+// ENUMS
+/////////////////////////////////////////////////
+
+enum ListingStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum LeaseType {
+  MONTH_TO_MONTH
+  SIX_MONTH
+  TWELVE_MONTH
+  CUSTOM
+}
+
+enum RoomType {
+  PRIVATE
+  SHARED
+}
+
+enum BathroomType {
+  PRIVATE
+  SHARED
+}
