@@ -84,6 +84,7 @@ model User {
   receivedReviews     Review[]            @relation("ReviewSubject")
   cosignedApplications Cosigner[]         @relation("CosignerUser")
   cosignersForTenant  Cosigner[]          @relation("TenantUser")
+  housemateProfile    HousemateProfile?
 
   @@index([email])
   @@index([userType])
@@ -280,6 +281,38 @@ model Review {
   @@index([authorId])
   @@index([subjectId])
   @@index([listingId])
+}
+
+// Housemate compatibility profile - powers the people-first Housemates tab.
+// Stores how a user actually lives so we can compute a Compatibility Score
+// between any two users before they message each other.
+model HousemateProfile {
+  id             String   @id @default(cuid())
+  // Lifestyle answers (kept as simple strings so the quiz can evolve freely)
+  sleepSchedule  String?  // morning, night
+  cleanliness    String?  // very, relaxed
+  noiseTolerance String?  // quiet, lively
+  guestFrequency String?  // rarely, often
+  // Discovery / display fields
+  audience       String?  // professional, student, parent, remote, retiree
+  occupation     String?
+  location       String?
+  budgetMin      Int?
+  budgetMax      Int?
+  bio            String?
+  tags           String[]
+  lookingForRoom Boolean  @default(false)
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([audience])
+  @@index([active])
 }
 
 // Cosigner model - links cosigners to tenant applications

@@ -27,6 +27,7 @@ import webhooksRoutes from './routes/webhooks.js'
 import uploadsRoutes from './routes/uploads.js'
 import cosignersRoutes from './routes/cosigners.js'
 import dashboardRoutes from './routes/dashboard.js'
+import housematesRoutes from './routes/housemates.js'
 
 // Get __dirname equivalent in ES modules
 const __filename = fileURLToPath(import.meta.url)
@@ -91,6 +92,7 @@ app.get('/api', (req, res) => {
       webhooks: '/api/webhooks',
       cosigners: '/api/cosigners',
       dashboard: '/api/dashboard',
+      housemates: '/api/housemates',
     },
   })
 })
@@ -109,6 +111,7 @@ app.use('/api/webhooks', webhooksRoutes)
 app.use('/api/uploads', uploadsRoutes)
 app.use('/api/cosigners', cosignersRoutes)
 app.use('/api/dashboard', dashboardRoutes)
+app.use('/api/housemates', housematesRoutes)
 
 // Error handling middleware
 app.use((err, req, res, next) => {
