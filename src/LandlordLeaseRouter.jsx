@@ -79,16 +79,16 @@ const SignatureTracker = ({ signatories, highlightId }) => (
           s.signed
             ? 'border-green-200 bg-green-50'
             : s.id === highlightId
-              ? 'border-blue-300 bg-blue-50'
+              ? 'border-brand-300 bg-brand-50'
               : 'border-gray-200 bg-white'
         }`}
       >
         <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 flex-shrink-0 ${
-          s.role === 'guarantor' ? 'bg-purple-100' : 'bg-blue-100'
+          s.role === 'guarantor' ? 'bg-purple-100' : 'bg-brand-100'
         }`}>
           {s.role === 'guarantor'
             ? <Shield size={14} className="text-purple-600" />
-            : <User size={14} className="text-blue-600" />
+            : <User size={14} className="text-brand-500" />
           }
         </div>
         <div className="flex-1 min-w-0">
@@ -104,7 +104,7 @@ const SignatureTracker = ({ signatories, highlightId }) => (
               {s.signedAt ? new Date(s.signedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Signed'}
             </span>
           ) : s.id === highlightId ? (
-            <span className="flex items-center text-xs text-blue-600 font-medium">
+            <span className="flex items-center text-xs text-brand-500 font-medium">
               <Clock size={14} className="mr-1 animate-pulse" /> Signing…
             </span>
           ) : (
@@ -127,7 +127,7 @@ const LeasePreviewScreen = ({ groupApplication, listing, landlordUser, onSend, o
 
   return (
     <div className="p-4 pb-24 space-y-5">
-      <button onClick={onBack} className="flex items-center text-blue-600 text-sm font-medium">
+      <button onClick={onBack} className="flex items-center text-brand-500 text-sm font-medium">
         <ArrowLeft size={16} className="mr-1" /> Back to Chat
       </button>
 
@@ -158,7 +158,7 @@ const LeasePreviewScreen = ({ groupApplication, listing, landlordUser, onSend, o
           <div>
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Property</p>
             <div className="flex items-start">
-              <Home size={16} className="text-blue-600 mr-2 mt-0.5 flex-shrink-0" />
+              <Home size={16} className="text-brand-500 mr-2 mt-0.5 flex-shrink-0" />
               <div>
                 <p className="font-semibold">{listing?.title || groupApplication.propertyTitle}</p>
                 <p className="text-sm text-gray-600">{listing?.location || 'Los Angeles, CA'}</p>
@@ -192,7 +192,7 @@ const LeasePreviewScreen = ({ groupApplication, listing, landlordUser, onSend, o
             {groupApplication.members.map((m, i) => (
               <div key={i} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
                 <div className="flex items-center">
-                  <User size={13} className="text-blue-500 mr-2" />
+                  <User size={13} className="text-brand-500 mr-2" />
                   <div>
                     <p className="text-sm font-medium">{m.name}</p>
                     <p className="text-xs text-gray-400">{m.email}</p>
@@ -237,7 +237,7 @@ const LeasePreviewScreen = ({ groupApplication, listing, landlordUser, onSend, o
         disabled={!reviewed}
         className={`w-full py-4 rounded-xl font-semibold flex items-center justify-center transition-colors ${
           reviewed
-            ? 'bg-blue-600 text-white hover:bg-blue-700'
+            ? 'bg-brand-500 text-white hover:bg-brand-600'
             : 'bg-gray-200 text-gray-400 cursor-not-allowed'
         }`}
       >
@@ -334,7 +334,7 @@ const SignatureProgressScreen = ({ signatories: initialSigs, groupApplication, l
           className={`w-full py-3 rounded-xl font-medium text-sm border-2 transition-colors flex items-center justify-center ${
             autoRunning
               ? 'border-gray-200 text-gray-400 bg-gray-50 cursor-not-allowed'
-              : 'border-blue-400 text-blue-600 hover:bg-blue-50'
+              : 'border-brand-400 text-brand-500 hover:bg-brand-50'
           }`}
         >
           {autoRunning
@@ -395,7 +395,7 @@ const LandlordCountersignScreen = ({ landlordUser, listing, groupApplication, si
       <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold text-sm">Lease Summary</h3>
-          <button className="flex items-center text-blue-600 text-xs font-medium">
+          <button className="flex items-center text-brand-500 text-xs font-medium">
             <Eye size={13} className="mr-1" /> Full PDF
           </button>
         </div>
@@ -422,9 +422,9 @@ const LandlordCountersignScreen = ({ landlordUser, listing, groupApplication, si
       </div>
 
       {/* Countersign form */}
-      <div className="bg-white border-2 border-blue-200 rounded-xl p-5 space-y-4">
+      <div className="bg-white border-2 border-brand-200 rounded-xl p-5 space-y-4">
         <div className="flex items-center">
-          <Building2 size={18} className="text-blue-600 mr-2" />
+          <Building2 size={18} className="text-brand-500 mr-2" />
           <div>
             <p className="font-semibold">{landlordUser?.name || 'Landlord'}</p>
             <p className="text-xs text-gray-500">Landlord Countersignature</p>
@@ -455,7 +455,7 @@ const LandlordCountersignScreen = ({ landlordUser, listing, groupApplication, si
                 value={signature}
                 onChange={e => setSignature(e.target.value)}
                 placeholder={landlordUser?.name || 'Your Full Legal Name'}
-                className="w-full p-3 border border-gray-300 rounded-xl text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 border border-gray-300 rounded-xl text-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                 style={{ fontFamily: 'cursive' }}
               />
             </div>
@@ -464,7 +464,7 @@ const LandlordCountersignScreen = ({ landlordUser, listing, groupApplication, si
               disabled={!signature.trim() || signing}
               className={`w-full py-4 rounded-xl font-semibold flex items-center justify-center transition-colors ${
                 signature.trim() && !signing
-                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                  ? 'bg-brand-500 text-white hover:bg-brand-600'
                   : 'bg-gray-200 text-gray-400 cursor-not-allowed'
               }`}
             >
@@ -524,7 +524,7 @@ const FinalDistributionScreen = ({
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
         <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
           <div className="flex items-center">
-            <Mail size={15} className="text-blue-600 mr-2" />
+            <Mail size={15} className="text-brand-500 mr-2" />
             <span className="font-semibold text-sm">Distribution List</span>
           </div>
           <span className="text-xs text-gray-500">{distributionList.length} recipient{distributionList.length !== 1 ? 's' : ''}</span>
@@ -532,11 +532,11 @@ const FinalDistributionScreen = ({
         {distributionList.map((r, i) => (
           <div key={i} className="flex items-center px-4 py-3 border-b border-gray-50 last:border-0">
             <div className={`w-7 h-7 rounded-full flex items-center justify-center mr-3 flex-shrink-0 ${
-              r.role === 'Landlord'         ? 'bg-blue-100'   :
+              r.role === 'Landlord'         ? 'bg-brand-100'   :
               r.role.startsWith('Guarantor') ? 'bg-purple-100' : 'bg-gray-100'
             }`}>
               {r.role === 'Landlord'
-                ? <Building2 size={13} className="text-blue-600" />
+                ? <Building2 size={13} className="text-brand-500" />
                 : r.role.startsWith('Guarantor')
                   ? <Shield size={13} className="text-purple-600" />
                   : <User size={13} className="text-gray-600" />
@@ -561,7 +561,7 @@ const FinalDistributionScreen = ({
         className={`w-full py-4 rounded-xl font-semibold flex items-center justify-center transition-colors ${
           emailSent
             ? 'bg-gray-100 text-gray-400 cursor-default'
-            : 'bg-blue-600 text-white hover:bg-blue-700'
+            : 'bg-brand-500 text-white hover:bg-brand-600'
         }`}
       >
         {emailSent ? (
@@ -582,7 +582,7 @@ const FinalDistributionScreen = ({
       <div className="space-y-3">
         <button
           onClick={onNavigateToPropertyManagement}
-          className="w-full py-3 rounded-xl border-2 border-blue-200 text-blue-600 font-semibold hover:bg-blue-50 flex items-center justify-center transition-colors"
+          className="w-full py-3 rounded-xl border-2 border-brand-200 text-brand-500 font-semibold hover:bg-brand-50 flex items-center justify-center transition-colors"
         >
           <Building2 size={18} className="mr-2" /> Go to Property Management
         </button>

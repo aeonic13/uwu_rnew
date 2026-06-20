@@ -244,22 +244,22 @@ const TenantRightsCenter = ({ userState = 'CA', onBack }) => {
 
       {/* State Selection */}
       <div className="mb-6">
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="bg-brand-50 border border-brand-200 rounded-lg p-4">
           <div className="flex items-center mb-3">
-            <Scale size={20} className="text-blue-600 mr-2" />
+            <Scale size={20} className="text-brand-500 mr-2" />
             <h3 className="font-semibold text-blue-800">Select Your State</h3>
           </div>
           <select
             value={selectedState}
             onChange={(e) => setSelectedState(e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
           >
             <option value="CA">California</option>
             <option value="NY">New York</option>
             <option value="TX">Texas</option>
             <option value="FL">Florida</option>
           </select>
-          <p className="text-sm text-blue-600 mt-2">
+          <p className="text-sm text-brand-500 mt-2">
             Currently viewing tenant rights for {stateData.name}
           </p>
         </div>
@@ -274,7 +274,7 @@ const TenantRightsCenter = ({ userState = 'CA', onBack }) => {
             placeholder="Search rights, issues, or topics..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
         </div>
       </div>
@@ -284,7 +284,7 @@ const TenantRightsCenter = ({ userState = 'CA', onBack }) => {
         <button
           onClick={() => setActiveTab('overview')}
           className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
-            activeTab === 'overview' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600'
+            activeTab === 'overview' ? 'bg-white text-brand-500 shadow-sm' : 'text-gray-600'
           }`}
         >
           Overview
@@ -292,7 +292,7 @@ const TenantRightsCenter = ({ userState = 'CA', onBack }) => {
         <button
           onClick={() => setActiveTab('rights')}
           className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
-            activeTab === 'rights' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600'
+            activeTab === 'rights' ? 'bg-white text-brand-500 shadow-sm' : 'text-gray-600'
           }`}
         >
           Your Rights
@@ -300,7 +300,7 @@ const TenantRightsCenter = ({ userState = 'CA', onBack }) => {
         <button
           onClick={() => setActiveTab('issues')}
           className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
-            activeTab === 'issues' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600'
+            activeTab === 'issues' ? 'bg-white text-brand-500 shadow-sm' : 'text-gray-600'
           }`}
         >
           Common Issues
@@ -308,7 +308,7 @@ const TenantRightsCenter = ({ userState = 'CA', onBack }) => {
         <button
           onClick={() => setActiveTab('resources')}
           className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
-            activeTab === 'resources' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600'
+            activeTab === 'resources' ? 'bg-white text-brand-500 shadow-sm' : 'text-gray-600'
           }`}
         >
           Help Resources
@@ -321,7 +321,7 @@ const TenantRightsCenter = ({ userState = 'CA', onBack }) => {
           {/* Quick Facts */}
           <div className="bg-white border border-gray-200 rounded-lg p-6">
             <h3 className="font-semibold mb-4 flex items-center">
-              <Info size={20} className="text-blue-600 mr-2" />
+              <Info size={20} className="text-brand-500 mr-2" />
               {stateData.name} Tenant Basics
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -422,9 +422,9 @@ const TenantRightsCenter = ({ userState = 'CA', onBack }) => {
               {selectedIssue === index && (
                 <div className="px-4 pb-4 border-t border-gray-100">
                   <div className="mt-4 space-y-4">
-                    <div className="bg-blue-50 p-3 rounded-lg">
+                    <div className="bg-brand-50 p-3 rounded-lg">
                       <h4 className="font-semibold text-blue-800 mb-2">Your Rights:</h4>
-                      <p className="text-sm text-blue-700">{issue.yourRights}</p>
+                      <p className="text-sm text-brand-600">{issue.yourRights}</p>
                     </div>
                     <div className="bg-green-50 p-3 rounded-lg">
                       <h4 className="font-semibold text-green-800 mb-2">Action You Can Take:</h4>
@@ -441,11 +441,11 @@ const TenantRightsCenter = ({ userState = 'CA', onBack }) => {
       {/* Resources Tab */}
       {activeTab === 'resources' && (
         <div className="space-y-4">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+          <div className="bg-brand-50 border border-brand-200 rounded-lg p-4 mb-4">
             <h3 className="font-semibold text-blue-800 mb-2">
               {stateData.name} Housing Resources
             </h3>
-            <p className="text-sm text-blue-700">
+            <p className="text-sm text-brand-600">
               Free and low-cost legal assistance for housing issues
             </p>
           </div>
@@ -463,7 +463,7 @@ const TenantRightsCenter = ({ userState = 'CA', onBack }) => {
                       </div>
                     )}
                     {resource.url && (
-                      <div className="flex items-center text-sm text-blue-600">
+                      <div className="flex items-center text-sm text-brand-500">
                         <ExternalLink size={16} className="mr-2" />
                         <a href={resource.url} target="_blank" rel="noopener noreferrer" className="hover:underline">
                           Visit Website
@@ -483,7 +483,7 @@ const TenantRightsCenter = ({ userState = 'CA', onBack }) => {
               Need More Help?
             </h3>
             <div className="space-y-2">
-              <button className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 flex items-center justify-center">
+              <button className="w-full bg-brand-500 text-white py-2 px-4 rounded-lg font-medium hover:bg-brand-600 flex items-center justify-center">
                 <MessageCircle size={16} className="mr-2" />
                 Chat with Rentra Legal Support
               </button>

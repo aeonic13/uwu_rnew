@@ -213,9 +213,9 @@ const OwnerDashboard = ({ user, onBack, onNavigate }) => {
       case 'current': return 'bg-green-100 text-green-800';
       case 'overdue': return 'bg-red-100 text-red-800';
       case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'active': return 'bg-blue-100 text-blue-800';
+      case 'active': return 'bg-brand-100 text-blue-800';
       case 'vacant': return 'bg-gray-100 text-gray-800';
-      case 'in-progress': return 'bg-blue-100 text-blue-800';
+      case 'in-progress': return 'bg-brand-100 text-blue-800';
       case 'completed': return 'bg-green-100 text-green-800';
       case 'under-review': return 'bg-purple-100 text-purple-800';
       case 'approved': return 'bg-green-100 text-green-800';
@@ -250,7 +250,7 @@ const OwnerDashboard = ({ user, onBack, onNavigate }) => {
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`flex-shrink-0 py-2 px-3 text-sm font-medium rounded-md transition-colors ${
-              activeTab === tab ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
+              activeTab === tab ? 'bg-white text-brand-500 shadow-sm' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
             }`}
           >
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -263,13 +263,13 @@ const OwnerDashboard = ({ user, onBack, onNavigate }) => {
         <div className="space-y-6">
           {/* Key Metrics */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <div className="bg-brand-50 p-4 rounded-lg border border-brand-200">
               <div className="flex items-center justify-between mb-2">
-                <div className="text-2xl font-bold text-blue-600">{dashboardData.overview.occupancyRate}%</div>
-                <TrendingUp size={20} className="text-blue-600" />
+                <div className="text-2xl font-bold text-brand-500">{dashboardData.overview.occupancyRate}%</div>
+                <TrendingUp size={20} className="text-brand-500" />
               </div>
-              <div className="text-sm text-blue-700">Occupancy Rate</div>
-              <div className="text-xs text-blue-600 mt-1">{dashboardData.overview.occupiedUnits}/{dashboardData.overview.totalUnits} units occupied</div>
+              <div className="text-sm text-brand-600">Occupancy Rate</div>
+              <div className="text-xs text-brand-500 mt-1">{dashboardData.overview.occupiedUnits}/{dashboardData.overview.totalUnits} units occupied</div>
             </div>
             
             <div className="bg-green-50 p-4 rounded-lg border border-green-200">
@@ -407,7 +407,7 @@ const OwnerDashboard = ({ user, onBack, onNavigate }) => {
                 className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 <div className="flex items-center">
-                  <BarChart3 size={20} className="text-blue-600 mr-3" />
+                  <BarChart3 size={20} className="text-brand-500 mr-3" />
                   <div className="text-left">
                     <p className="font-medium">Financial Reports</p>
                     <p className="text-sm text-gray-600">View income and expense reports</p>
@@ -472,7 +472,7 @@ const OwnerDashboard = ({ user, onBack, onNavigate }) => {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="font-semibold">Property Portfolio</h3>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 flex items-center">
+            <button className="bg-brand-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-brand-600 flex items-center">
               <Plus size={16} className="mr-2" />
               Add Property
             </button>
@@ -507,7 +507,7 @@ const OwnerDashboard = ({ user, onBack, onNavigate }) => {
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
                     <div className="text-sm font-medium">Occupancy</div>
-                    <div className="text-lg font-bold text-blue-600">
+                    <div className="text-lg font-bold text-brand-500">
                       {property.occupiedUnits}/{property.units} units
                     </div>
                     <div className="text-xs text-gray-500">{property.occupancyRate}% occupied</div>
@@ -542,13 +542,13 @@ const OwnerDashboard = ({ user, onBack, onNavigate }) => {
                     Manager: {property.manager}
                   </div>
                   <div className="flex space-x-2">
-                    <button className="p-2 text-gray-500 hover:text-blue-600">
+                    <button className="p-2 text-gray-500 hover:text-brand-500">
                       <Eye size={16} />
                     </button>
-                    <button className="p-2 text-gray-500 hover:text-blue-600">
+                    <button className="p-2 text-gray-500 hover:text-brand-500">
                       <Edit size={16} />
                     </button>
-                    <button className="p-2 text-gray-500 hover:text-blue-600">
+                    <button className="p-2 text-gray-500 hover:text-brand-500">
                       <Settings size={16} />
                     </button>
                   </div>
@@ -586,7 +586,7 @@ const OwnerDashboard = ({ user, onBack, onNavigate }) => {
                   <div>
                     <div className="flex items-center">
                       <h4 className="font-semibold mr-2">{tenant.name}</h4>
-                      <Shield size={16} className="text-blue-500" />
+                      <Shield size={16} className="text-brand-500" />
                     </div>
                     <div className="text-sm text-gray-600">{tenant.university} • {tenant.unit}</div>
                     <div className="flex items-center mt-1">
@@ -631,13 +631,13 @@ const OwnerDashboard = ({ user, onBack, onNavigate }) => {
                   Payment History: {tenant.paymentHistory}
                 </div>
                 <div className="flex space-x-2">
-                  <button className="p-2 text-gray-500 hover:text-blue-600">
+                  <button className="p-2 text-gray-500 hover:text-brand-500">
                     <MessageSquare size={16} />
                   </button>
-                  <button className="p-2 text-gray-500 hover:text-blue-600">
+                  <button className="p-2 text-gray-500 hover:text-brand-500">
                     <FileText size={16} />
                   </button>
-                  <button className="p-2 text-gray-500 hover:text-blue-600">
+                  <button className="p-2 text-gray-500 hover:text-brand-500">
                     <Settings size={16} />
                   </button>
                 </div>
@@ -734,7 +734,7 @@ const OwnerDashboard = ({ user, onBack, onNavigate }) => {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="font-semibold">Maintenance Requests</h3>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 flex items-center">
+            <button className="bg-brand-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-brand-600 flex items-center">
               <Plus size={16} className="mr-2" />
               Create Request
             </button>
@@ -802,7 +802,7 @@ const OwnerDashboard = ({ user, onBack, onNavigate }) => {
               )}
 
               <div className="flex space-x-3 pt-4 border-t border-gray-200">
-                <button className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700">
+                <button className="flex-1 bg-brand-500 text-white py-2 rounded-lg font-medium hover:bg-brand-600">
                   {request.assignedTo ? 'Update' : 'Assign'}
                 </button>
                 <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
@@ -827,7 +827,7 @@ const OwnerDashboard = ({ user, onBack, onNavigate }) => {
                 <Download size={16} className="mr-2" />
                 Export
               </button>
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center">
+              <button className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 flex items-center">
                 <Receipt size={16} className="mr-2" />
                 Generate Report
               </button>
@@ -862,7 +862,7 @@ const OwnerDashboard = ({ user, onBack, onNavigate }) => {
               {dashboardData.financials.expenseCategories.map((expense, index) => (
                 <div key={index} className="flex items-center justify-between">
                   <div className="flex items-center">
-                    <div className="w-4 h-4 bg-blue-500 rounded mr-3" style={{ opacity: expense.percentage / 100 + 0.3 }}></div>
+                    <div className="w-4 h-4 bg-brand-500 rounded mr-3" style={{ opacity: expense.percentage / 100 + 0.3 }}></div>
                     <span className="font-medium">{expense.category}</span>
                   </div>
                   <div className="text-right">
@@ -886,7 +886,7 @@ const OwnerDashboard = ({ user, onBack, onNavigate }) => {
                   </div>
                   <div className="text-right">
                     <div className="font-semibold">${payment.amount.toLocaleString()}</div>
-                    <button className="text-sm text-blue-600 hover:text-blue-700">Pay Now</button>
+                    <button className="text-sm text-brand-500 hover:text-brand-600">Pay Now</button>
                   </div>
                 </div>
               ))}
@@ -904,7 +904,7 @@ const OwnerDashboard = ({ user, onBack, onNavigate }) => {
           <div className="grid grid-cols-1 gap-4">
             <div className="bg-white border border-gray-200 rounded-lg p-6">
               <h4 className="font-semibold mb-4 flex items-center">
-                <TrendingUp size={20} className="mr-2 text-blue-600" />
+                <TrendingUp size={20} className="mr-2 text-brand-500" />
                 Occupancy Trend (6 months)
               </h4>
               <div className="space-y-2">
@@ -913,7 +913,7 @@ const OwnerDashboard = ({ user, onBack, onNavigate }) => {
                     <span className="text-sm">{data.month}</span>
                     <div className="flex items-center">
                       <div className="w-24 bg-gray-200 rounded-full h-2 mr-2">
-                        <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${data.rate}%` }}></div>
+                        <div className="bg-brand-500 h-2 rounded-full" style={{ width: `${data.rate}%` }}></div>
                       </div>
                       <span className="text-sm font-medium">{data.rate}%</span>
                     </div>
@@ -949,7 +949,7 @@ const OwnerDashboard = ({ user, onBack, onNavigate }) => {
                 </div>
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <span>Average Days to Fill Vacancy</span>
-                  <span className="font-semibold text-blue-600">12 days</span>
+                  <span className="font-semibold text-brand-500">12 days</span>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <span>Maintenance Response Time</span>

@@ -227,7 +227,7 @@ const SecurityDepositProtection = ({ user, onBack, onNavigate }) => {
     switch (status) {
       case 'active': return 'bg-green-100 text-green-800';
       case 'pending_inspection': return 'bg-yellow-100 text-yellow-800';
-      case 'pending_return': return 'bg-blue-100 text-blue-800';
+      case 'pending_return': return 'bg-brand-100 text-blue-800';
       case 'returned': return 'bg-gray-100 text-gray-800';
       case 'disputed': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
@@ -238,7 +238,7 @@ const SecurityDepositProtection = ({ user, onBack, onNavigate }) => {
     switch (status) {
       case 'active': return <Shield className="text-green-600" size={16} />;
       case 'pending_inspection': return <Clock className="text-yellow-600" size={16} />;
-      case 'pending_return': return <RefreshCw className="text-blue-600" size={16} />;
+      case 'pending_return': return <RefreshCw className="text-brand-500" size={16} />;
       case 'returned': return <CheckCircle className="text-gray-600" size={16} />;
       case 'disputed': return <AlertTriangle className="text-red-600" size={16} />;
       default: return <Shield className="text-gray-600" size={16} />;
@@ -300,7 +300,7 @@ const SecurityDepositProtection = ({ user, onBack, onNavigate }) => {
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`flex-shrink-0 py-2 px-3 text-sm font-medium rounded-md transition-colors ${
-              activeTab === tab ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600'
+              activeTab === tab ? 'bg-white text-brand-500 shadow-sm' : 'text-gray-600'
             }`}
           >
             {tab.charAt(0).toUpperCase() + tab.slice(1).replace('-', ' ')}
@@ -320,7 +320,7 @@ const SecurityDepositProtection = ({ user, onBack, onNavigate }) => {
                 <div className="text-sm text-gray-600">Total Protected</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{depositData.user.activeDeposits}</div>
+                <div className="text-2xl font-bold text-brand-500">{depositData.user.activeDeposits}</div>
                 <div className="text-sm text-gray-600">Active Deposits</div>
               </div>
               <div className="text-center">
@@ -343,7 +343,7 @@ const SecurityDepositProtection = ({ user, onBack, onNavigate }) => {
                 className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 <div className="flex items-center">
-                  <Plus size={20} className="text-blue-600 mr-3" />
+                  <Plus size={20} className="text-brand-500 mr-3" />
                   <div className="text-left">
                     <p className="font-medium">Set Up Deposit Protection</p>
                     <p className="text-sm text-gray-600">Secure your next security deposit in escrow</p>
@@ -402,7 +402,7 @@ const SecurityDepositProtection = ({ user, onBack, onNavigate }) => {
               <h3 className="font-semibold">Your Active Deposits</h3>
               <button
                 onClick={() => setActiveTab('my-deposits')}
-                className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                className="text-brand-500 hover:text-brand-600 text-sm font-medium"
               >
                 View All
               </button>
@@ -412,7 +412,7 @@ const SecurityDepositProtection = ({ user, onBack, onNavigate }) => {
               <div key={deposit.id} className="border border-gray-200 rounded-lg p-4 mb-3">
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center">
-                    <Home size={20} className="text-blue-600 mr-3" />
+                    <Home size={20} className="text-brand-500 mr-3" />
                     <div>
                       <h4 className="font-medium">{deposit.property.address}</h4>
                       <p className="text-sm text-gray-600">{formatCurrency(deposit.deposit.amount)} • Escrow #{deposit.escrowId}</p>
@@ -467,7 +467,7 @@ const SecurityDepositProtection = ({ user, onBack, onNavigate }) => {
             <h3 className="font-semibold mb-4">Platform Statistics</h3>
             <div className="grid grid-cols-2 gap-4 text-center">
               <div>
-                <div className="text-lg font-bold text-blue-600">{formatCurrency(depositData.statistics.totalDepositsProtected)}</div>
+                <div className="text-lg font-bold text-brand-500">{formatCurrency(depositData.statistics.totalDepositsProtected)}</div>
                 <div className="text-xs text-gray-600">Total Protected</div>
               </div>
               <div>
@@ -494,7 +494,7 @@ const SecurityDepositProtection = ({ user, onBack, onNavigate }) => {
             <h3 className="font-semibold">My Protected Deposits</h3>
             <button
               onClick={() => setShowNewEscrow(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 flex items-center"
+              className="bg-brand-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-brand-600 flex items-center"
             >
               <Plus size={16} className="mr-2" />
               New Protection
@@ -508,7 +508,7 @@ const SecurityDepositProtection = ({ user, onBack, onNavigate }) => {
               <div key={deposit.id} className="border border-gray-200 rounded-lg p-4 mb-4">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center">
-                    <Home size={24} className="text-blue-600 mr-3" />
+                    <Home size={24} className="text-brand-500 mr-3" />
                     <div>
                       <h4 className="font-semibold">{deposit.property.address}</h4>
                       <p className="text-sm text-gray-600">{deposit.property.type} • {deposit.property.bedrooms} bed, {deposit.property.bathrooms} bath</p>
@@ -567,7 +567,7 @@ const SecurityDepositProtection = ({ user, onBack, onNavigate }) => {
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div 
-                      className="bg-blue-600 h-2 rounded-full"
+                      className="bg-brand-500 h-2 rounded-full"
                       style={{ 
                         width: `${Math.max(0, Math.min(100, ((new Date() - new Date(deposit.lease.startDate)) / (new Date(deposit.lease.endDate) - new Date(deposit.lease.startDate))) * 100))}%` 
                       }}
@@ -578,7 +578,7 @@ const SecurityDepositProtection = ({ user, onBack, onNavigate }) => {
                 <div className="flex space-x-3 pt-3 border-t border-gray-200">
                   <button
                     onClick={() => setSelectedDeposit(deposit)}
-                    className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700"
+                    className="flex-1 bg-brand-500 text-white py-2 rounded-lg font-medium hover:bg-brand-600"
                   >
                     View Details
                   </button>
@@ -625,8 +625,8 @@ const SecurityDepositProtection = ({ user, onBack, onNavigate }) => {
             <div key={provider.id} className="bg-white border border-gray-200 rounded-lg p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center">
-                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mr-4">
-                    <Building2 size={24} className="text-blue-600" />
+                  <div className="w-16 h-16 bg-brand-100 rounded-full flex items-center justify-center mr-4">
+                    <Building2 size={24} className="text-brand-500" />
                   </div>
                   <div>
                     <h4 className="font-semibold text-lg">{provider.name}</h4>
@@ -674,7 +674,7 @@ const SecurityDepositProtection = ({ user, onBack, onNavigate }) => {
               </div>
 
               <div className="flex space-x-3">
-                <button className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700">
+                <button className="flex-1 bg-brand-500 text-white py-2 rounded-lg font-medium hover:bg-brand-600">
                   Choose Provider
                 </button>
                 <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
@@ -707,10 +707,10 @@ const SecurityDepositProtection = ({ user, onBack, onNavigate }) => {
                   </div>
                 </div>
 
-                <div className="bg-blue-50 p-3 rounded-lg mb-3">
+                <div className="bg-brand-50 p-3 rounded-lg mb-3">
                   <div className="text-sm">
                     <div className="font-medium text-blue-800">Automatic Return Process</div>
-                    <div className="text-blue-700">Your deposit will be automatically returned 3 days after lease end unless disputed by landlord</div>
+                    <div className="text-brand-600">Your deposit will be automatically returned 3 days after lease end unless disputed by landlord</div>
                   </div>
                 </div>
 
@@ -769,7 +769,7 @@ const SecurityDepositProtection = ({ user, onBack, onNavigate }) => {
                     <span className="text-sm font-medium">{deposit.satisfaction}/5</span>
                     <span className="text-sm text-gray-600 ml-2">satisfaction rating</span>
                   </div>
-                  <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                  <button className="text-brand-500 hover:text-brand-600 text-sm font-medium">
                     Download Receipt
                   </button>
                 </div>
@@ -787,7 +787,7 @@ const SecurityDepositProtection = ({ user, onBack, onNavigate }) => {
           {/* Coverage Details */}
           <div className="bg-white border border-gray-200 rounded-lg p-6">
             <h4 className="font-semibold mb-4 flex items-center">
-              <Shield size={20} className="text-blue-600 mr-2" />
+              <Shield size={20} className="text-brand-500 mr-2" />
               What's Covered
             </h4>
             <div className="space-y-4">
@@ -839,13 +839,13 @@ const SecurityDepositProtection = ({ user, onBack, onNavigate }) => {
           {/* How It Works */}
           <div className="bg-white border border-gray-200 rounded-lg p-6">
             <h4 className="font-semibold mb-4 flex items-center">
-              <Target size={20} className="text-blue-600 mr-2" />
+              <Target size={20} className="text-brand-500 mr-2" />
               How Protection Works
             </h4>
             <div className="space-y-4">
               <div className="flex items-start">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                  <span className="text-sm font-semibold text-blue-600">1</span>
+                <div className="w-8 h-8 bg-brand-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                  <span className="text-sm font-semibold text-brand-500">1</span>
                 </div>
                 <div>
                   <h5 className="font-medium">Set Up Protection</h5>
@@ -853,8 +853,8 @@ const SecurityDepositProtection = ({ user, onBack, onNavigate }) => {
                 </div>
               </div>
               <div className="flex items-start">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                  <span className="text-sm font-semibold text-blue-600">2</span>
+                <div className="w-8 h-8 bg-brand-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                  <span className="text-sm font-semibold text-brand-500">2</span>
                 </div>
                 <div>
                   <h5 className="font-medium">Deposit Funds</h5>
@@ -862,8 +862,8 @@ const SecurityDepositProtection = ({ user, onBack, onNavigate }) => {
                 </div>
               </div>
               <div className="flex items-start">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                  <span className="text-sm font-semibold text-blue-600">3</span>
+                <div className="w-8 h-8 bg-brand-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                  <span className="text-sm font-semibold text-brand-500">3</span>
                 </div>
                 <div>
                   <h5 className="font-medium">Professional Inspections</h5>
@@ -906,9 +906,9 @@ const SecurityDepositProtection = ({ user, onBack, onNavigate }) => {
           </div>
 
           {/* Success Stories */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="bg-brand-50 border border-brand-200 rounded-lg p-4">
             <h4 className="font-semibold text-blue-800 mb-3">Success Stories</h4>
-            <div className="space-y-3 text-sm text-blue-700">
+            <div className="space-y-3 text-sm text-brand-600">
               <div>
                 <p><strong>Sarah M., USC Student:</strong> "Got my full $2,200 deposit back plus $48 in interest. The documentation photos saved me when my landlord tried to claim damage that wasn't there."</p>
               </div>
@@ -943,7 +943,7 @@ const SecurityDepositProtection = ({ user, onBack, onNavigate }) => {
                     value={newEscrowForm.propertyAddress}
                     onChange={(e) => setNewEscrowForm(prev => ({ ...prev, propertyAddress: e.target.value }))}
                     placeholder="Enter the rental property address"
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                   />
                 </div>
 
@@ -954,7 +954,7 @@ const SecurityDepositProtection = ({ user, onBack, onNavigate }) => {
                     value={newEscrowForm.depositAmount}
                     onChange={(e) => setNewEscrowForm(prev => ({ ...prev, depositAmount: e.target.value }))}
                     placeholder="2400"
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                   />
                 </div>
 
@@ -965,7 +965,7 @@ const SecurityDepositProtection = ({ user, onBack, onNavigate }) => {
                     value={newEscrowForm.landlordEmail}
                     onChange={(e) => setNewEscrowForm(prev => ({ ...prev, landlordEmail: e.target.value }))}
                     placeholder="landlord@email.com"
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                   />
                 </div>
 
@@ -976,7 +976,7 @@ const SecurityDepositProtection = ({ user, onBack, onNavigate }) => {
                       type="date"
                       value={newEscrowForm.leaseStartDate}
                       onChange={(e) => setNewEscrowForm(prev => ({ ...prev, leaseStartDate: e.target.value }))}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                     />
                   </div>
                   <div>
@@ -985,7 +985,7 @@ const SecurityDepositProtection = ({ user, onBack, onNavigate }) => {
                       type="date"
                       value={newEscrowForm.leaseEndDate}
                       onChange={(e) => setNewEscrowForm(prev => ({ ...prev, leaseEndDate: e.target.value }))}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                     />
                   </div>
                 </div>
@@ -997,14 +997,14 @@ const SecurityDepositProtection = ({ user, onBack, onNavigate }) => {
                     onChange={(e) => setNewEscrowForm(prev => ({ ...prev, additionalTerms: e.target.value }))}
                     placeholder="Any special conditions or terms..."
                     rows={3}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                   />
                 </div>
 
                 <div className="border border-gray-200 rounded-lg p-4">
                   <div className="text-sm font-medium mb-2">Move-in Inspection Scheduling</div>
                   <p className="text-xs text-gray-600 mb-3">Schedule a professional move-in inspection to document property condition</p>
-                  <button className="w-full border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-300 transition-colors">
+                  <button className="w-full border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-brand-300 transition-colors">
                     <Calendar size={24} className="mx-auto text-gray-400 mb-2" />
                     <p className="text-sm text-gray-600">Schedule Move-in Inspection</p>
                   </button>
@@ -1042,7 +1042,7 @@ const SecurityDepositProtection = ({ user, onBack, onNavigate }) => {
                   disabled={!newEscrowForm.propertyAddress || !newEscrowForm.depositAmount || !newEscrowForm.landlordEmail}
                   className={`flex-1 py-3 rounded-lg font-semibold ${
                     newEscrowForm.propertyAddress && newEscrowForm.depositAmount && newEscrowForm.landlordEmail
-                      ? 'bg-blue-600 text-white hover:bg-blue-700'
+                      ? 'bg-brand-500 text-white hover:bg-brand-600'
                       : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   }`}
                 >
@@ -1077,9 +1077,9 @@ const SecurityDepositProtection = ({ user, onBack, onNavigate }) => {
                   </div>
                 </div>
 
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="bg-brand-50 border border-brand-200 rounded-lg p-4">
                   <h4 className="font-semibold text-blue-800 mb-2">Return Process</h4>
-                  <div className="text-sm text-blue-700 space-y-1">
+                  <div className="text-sm text-brand-600 space-y-1">
                     <p>• Move-out inspection will be scheduled within 48 hours</p>
                     <p>• Landlord has 7 days to dispute any charges</p>
                     <p>• Funds will be released to your account within 2-3 business days</p>
@@ -1089,7 +1089,7 @@ const SecurityDepositProtection = ({ user, onBack, onNavigate }) => {
 
                 <div>
                   <label className="block text-sm font-medium mb-2">Bank Account for Deposit Return</label>
-                  <select className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <select className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500">
                     <option>Wells Fargo Checking (...4567)</option>
                     <option>Chase Savings (...8901)</option>
                     <option>Add new bank account</option>
@@ -1101,7 +1101,7 @@ const SecurityDepositProtection = ({ user, onBack, onNavigate }) => {
                   <textarea
                     placeholder="Any special instructions or concerns..."
                     rows={3}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                   />
                 </div>
               </div>

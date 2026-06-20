@@ -92,7 +92,7 @@ export default function AdvancedFiltersModal({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <div className="flex items-center gap-2">
-            <Sliders size={24} className="text-blue-600" />
+            <Sliders size={24} className="text-brand-500" />
             <h2 className="text-2xl font-bold">Advanced Filters</h2>
           </div>
           <button
@@ -119,7 +119,7 @@ export default function AdvancedFiltersModal({
                   placeholder="$0"
                   value={localFilters.minRent || ''}
                   onChange={(e) => handlePriceChange('minRent', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
               <div>
@@ -131,7 +131,7 @@ export default function AdvancedFiltersModal({
                   placeholder="$5000"
                   value={localFilters.maxRent || ''}
                   onChange={(e) => handlePriceChange('maxRent', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
             </div>
@@ -147,7 +147,7 @@ export default function AdvancedFiltersModal({
                   onClick={() => handlePropertyTypeChange(type)}
                   className={`px-4 py-2 rounded-lg border-2 transition-all ${
                     localFilters.propertyType === type
-                      ? 'border-blue-600 bg-blue-50 text-blue-600 font-medium'
+                      ? 'border-brand-500 bg-brand-50 text-brand-500 font-medium'
                       : 'border-gray-300 hover:border-gray-400'
                   }`}
                 >
@@ -167,7 +167,7 @@ export default function AdvancedFiltersModal({
                   onClick={() => handleBedroomsChange(count)}
                   className={`px-4 py-2 rounded-lg border-2 transition-all ${
                     localFilters.bedrooms === count
-                      ? 'border-blue-600 bg-blue-50 text-blue-600 font-medium'
+                      ? 'border-brand-500 bg-brand-50 text-brand-500 font-medium'
                       : 'border-gray-300 hover:border-gray-400'
                   }`}
                 >
@@ -187,7 +187,7 @@ export default function AdvancedFiltersModal({
                   onClick={() => handleBathroomsChange(count)}
                   className={`px-4 py-2 rounded-lg border-2 transition-all ${
                     localFilters.bathrooms === count
-                      ? 'border-blue-600 bg-blue-50 text-blue-600 font-medium'
+                      ? 'border-brand-500 bg-brand-50 text-brand-500 font-medium'
                       : 'border-gray-300 hover:border-gray-400'
                   }`}
                 >
@@ -204,7 +204,7 @@ export default function AdvancedFiltersModal({
               type="date"
               value={localFilters.moveInDate || ''}
               onChange={(e) => handleMoveInDateChange(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
             <p className="text-sm text-gray-500 mt-2">
               We'll show listings within 2 weeks of this date
@@ -221,7 +221,7 @@ export default function AdvancedFiltersModal({
                   onClick={() => handleAmenityToggle(amenity)}
                   className={`px-4 py-2 rounded-lg border-2 text-sm transition-all ${
                     (localFilters.amenities || []).includes(amenity)
-                      ? 'border-blue-600 bg-blue-50 text-blue-600 font-medium'
+                      ? 'border-brand-500 bg-brand-50 text-brand-500 font-medium'
                       : 'border-gray-300 hover:border-gray-400'
                   }`}
                 >
@@ -242,7 +242,7 @@ export default function AdvancedFiltersModal({
           </button>
           <button
             onClick={handleApply}
-            className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+            className="flex-1 px-6 py-3 bg-brand-500 text-white rounded-lg font-semibold hover:bg-brand-600 transition-colors"
           >
             Apply Filters
           </button>

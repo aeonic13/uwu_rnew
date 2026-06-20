@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Zap, Droplets, Wifi, Flame, Phone, Car, Plus, Check, AlertCircle, CreditCard, Calendar, DollarSign, Clock, Building2 } from 'lucide-react';
+import { ArrowLeft, Zap, Droplets, Wifi, Flame, Phone, Car, Plus, Check, AlertCircle, CreditCard, Calendar, DollarSign, Clock, Building2, SplitSquareHorizontal } from 'lucide-react';
+import UtilityBillSplit from './features/utilities/UtilityBillSplit';
 
 const UtilitiesManagementView = ({ user, lease, onBack, onPayUtility }) => {
   const [activeTab, setActiveTab] = useState('overview');
+  const tabs = ['overview', 'setup', 'split'];
   const [showSetupForm, setShowSetupForm] = useState(false);
   const [selectedUtility, setSelectedUtility] = useState(null);
   const [setupData, setSetupData] = useState({
@@ -49,9 +51,9 @@ const UtilitiesManagementView = ({ user, lease, onBack, onPayUtility }) => {
       setupDate: '2024-01-01',
       autoPayEnabled: false,
       icon: Droplets,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
-      borderColor: 'border-blue-200'
+      color: 'text-brand-500',
+      bgColor: 'bg-brand-50',
+      borderColor: 'border-brand-200'
     },
     {
       id: 3,
@@ -162,7 +164,7 @@ const UtilitiesManagementView = ({ user, lease, onBack, onPayUtility }) => {
       case 'pending_setup': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
       case 'pending_activation': return 'text-orange-600 bg-orange-50 border-orange-200';
       case 'overdue': return 'text-red-600 bg-red-50 border-red-200';
-      case 'paid': return 'text-blue-600 bg-blue-50 border-blue-200';
+      case 'paid': return 'text-brand-500 bg-brand-50 border-brand-200';
       default: return 'text-gray-600 bg-gray-50 border-gray-200';
     }
   };
@@ -191,7 +193,7 @@ const UtilitiesManagementView = ({ user, lease, onBack, onPayUtility }) => {
             <select
               value={setupData.utilityType}
               onChange={(e) => setSetupData(prev => ({ ...prev, utilityType: e.target.value }))}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               <option value="">Select utility type</option>
               {availableUtilities.map(utility => (
@@ -208,7 +210,7 @@ const UtilitiesManagementView = ({ user, lease, onBack, onPayUtility }) => {
               <select
                 value={setupData.provider}
                 onChange={(e) => setSetupData(prev => ({ ...prev, provider: e.target.value }))}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
               >
                 <option value="">Select provider</option>
                 {availableUtilities
@@ -228,7 +230,7 @@ const UtilitiesManagementView = ({ user, lease, onBack, onPayUtility }) => {
               type="text"
               value={setupData.serviceAddress}
               onChange={(e) => setSetupData(prev => ({ ...prev, serviceAddress: e.target.value }))}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
               placeholder="Property address"
             />
           </div>
@@ -242,7 +244,7 @@ const UtilitiesManagementView = ({ user, lease, onBack, onPayUtility }) => {
                   type="number"
                   value={setupData.estimatedMonthlyAmount}
                   onChange={(e) => setSetupData(prev => ({ ...prev, estimatedMonthlyAmount: e.target.value }))}
-                  className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                   placeholder="0.00"
                 />
               </div>
@@ -256,7 +258,7 @@ const UtilitiesManagementView = ({ user, lease, onBack, onPayUtility }) => {
                   type="number"
                   value={setupData.setupFee}
                   onChange={(e) => setSetupData(prev => ({ ...prev, setupFee: e.target.value }))}
-                  className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                   placeholder="0.00"
                 />
               </div>
@@ -272,7 +274,7 @@ const UtilitiesManagementView = ({ user, lease, onBack, onPayUtility }) => {
                   type="number"
                   value={setupData.depositRequired}
                   onChange={(e) => setSetupData(prev => ({ ...prev, depositRequired: e.target.value }))}
-                  className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                   placeholder="0.00"
                 />
               </div>
@@ -284,7 +286,7 @@ const UtilitiesManagementView = ({ user, lease, onBack, onPayUtility }) => {
                 type="date"
                 value={setupData.serviceStartDate}
                 onChange={(e) => setSetupData(prev => ({ ...prev, serviceStartDate: e.target.value }))}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
           </div>
@@ -295,7 +297,7 @@ const UtilitiesManagementView = ({ user, lease, onBack, onPayUtility }) => {
               id="autopay"
               checked={setupData.autoPayEnabled}
               onChange={(e) => setSetupData(prev => ({ ...prev, autoPayEnabled: e.target.checked }))}
-              className="mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              className="mr-3 h-4 w-4 text-brand-500 focus:ring-brand-500 border-gray-300 rounded"
             />
             <label htmlFor="autopay" className="text-sm">
               Enable automatic payments
@@ -324,7 +326,7 @@ const UtilitiesManagementView = ({ user, lease, onBack, onPayUtility }) => {
             disabled={!setupData.utilityType || !setupData.provider}
             className={`w-full py-3 rounded-lg font-semibold ${
               setupData.utilityType && setupData.provider
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                ? 'bg-brand-500 text-white hover:bg-brand-600'
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
           >
@@ -344,13 +346,48 @@ const UtilitiesManagementView = ({ user, lease, onBack, onPayUtility }) => {
         <h2 className="text-xl font-bold">Utilities Management</h2>
       </div>
 
+      {/* Tab Navigation */}
+      <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
+        <button
+          onClick={() => setActiveTab('overview')}
+          className={`flex-1 py-2 px-3 text-sm font-medium rounded-md transition-colors ${
+            activeTab === 'overview' ? 'bg-white text-brand-500 shadow-sm' : 'text-gray-600 hover:text-gray-800'
+          }`}
+        >
+          Overview
+        </button>
+        <button
+          onClick={() => setActiveTab('setup')}
+          className={`flex-1 py-2 px-3 text-sm font-medium rounded-md transition-colors ${
+            activeTab === 'setup' ? 'bg-white text-brand-500 shadow-sm' : 'text-gray-600 hover:text-gray-800'
+          }`}
+        >
+          Setup
+        </button>
+        <button
+          onClick={() => setActiveTab('split')}
+          className={`flex-1 py-2 px-3 text-sm font-medium rounded-md transition-colors flex items-center justify-center gap-1 ${
+            activeTab === 'split' ? 'bg-white text-brand-500 shadow-sm' : 'text-gray-600 hover:text-gray-800'
+          }`}
+        >
+          <SplitSquareHorizontal size={14} />
+          Split Bill
+        </button>
+      </div>
+
+      {/* Split Bill Tab */}
+      {activeTab === 'split' && <UtilityBillSplit />}
+
+      {/* Overview + Setup tabs */}
+      {activeTab !== 'split' && <>
+
       {/* Overview Cards */}
       <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+        <div className="bg-brand-50 p-4 rounded-lg border border-brand-200">
           <div className="flex items-center">
-            <DollarSign size={20} className="text-blue-600 mr-2" />
+            <DollarSign size={20} className="text-brand-500 mr-2" />
             <div>
-              <p className="text-sm text-blue-600">Monthly Total</p>
+              <p className="text-sm text-brand-500">Monthly Total</p>
               <p className="text-xl font-bold text-blue-800">${getTotalMonthlyUtilities().toFixed(2)}</p>
             </div>
           </div>
@@ -370,7 +407,7 @@ const UtilitiesManagementView = ({ user, lease, onBack, onPayUtility }) => {
       {/* Add New Utility Button */}
       <button
         onClick={() => setShowSetupForm(true)}
-        className="w-full mb-6 p-4 border-2 border-dashed border-blue-300 rounded-lg text-blue-600 hover:bg-blue-50 flex items-center justify-center"
+        className="w-full mb-6 p-4 border-2 border-dashed border-brand-300 rounded-lg text-brand-500 hover:bg-brand-50 flex items-center justify-center"
       >
         <Plus size={20} className="mr-2" />
         Set Up New Utility
@@ -427,7 +464,7 @@ const UtilitiesManagementView = ({ user, lease, onBack, onPayUtility }) => {
                   {!utility.autoPayEnabled && (
                     <button
                       onClick={() => handlePayUtility(utility)}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 flex items-center"
+                      className="px-4 py-2 bg-brand-500 text-white rounded-lg text-sm hover:bg-brand-600 flex items-center"
                     >
                       <CreditCard size={16} className="mr-1" />
                       Pay Now
@@ -480,6 +517,7 @@ const UtilitiesManagementView = ({ user, lease, onBack, onPayUtility }) => {
           </p>
         </div>
       )}
+      </> }
     </div>
   );
 };

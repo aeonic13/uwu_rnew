@@ -189,7 +189,7 @@ const RentCollectionSystem = ({ user, onBack, onNavigate }) => {
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`flex-shrink-0 py-2 px-3 text-sm font-medium rounded-md transition-colors ${
-              activeTab === tab ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
+              activeTab === tab ? 'bg-white text-brand-500 shadow-sm' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
             }`}
           >
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -220,13 +220,13 @@ const RentCollectionSystem = ({ user, onBack, onNavigate }) => {
               <div className="text-xs text-red-600 mt-1">{rentData.overview.missedPayments} tenant overdue</div>
             </div>
 
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <div className="bg-brand-50 p-4 rounded-lg border border-brand-200">
               <div className="flex items-center justify-between mb-2">
-                <div className="text-2xl font-bold text-blue-600">{rentData.overview.avgDaysToCollect}</div>
-                <Clock size={20} className="text-blue-600" />
+                <div className="text-2xl font-bold text-brand-500">{rentData.overview.avgDaysToCollect}</div>
+                <Clock size={20} className="text-brand-500" />
               </div>
-              <div className="text-sm text-blue-700">Avg Collection Days</div>
-              <div className="text-xs text-blue-600 mt-1">Industry avg: 7.2 days</div>
+              <div className="text-sm text-brand-600">Avg Collection Days</div>
+              <div className="text-xs text-brand-500 mt-1">Industry avg: 7.2 days</div>
             </div>
 
             <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
@@ -267,7 +267,7 @@ const RentCollectionSystem = ({ user, onBack, onNavigate }) => {
             <div className="grid grid-cols-1 gap-3">
               <button className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                 <div className="flex items-center">
-                  <Mail size={20} className="text-blue-600 mr-3" />
+                  <Mail size={20} className="text-brand-500 mr-3" />
                   <div className="text-left">
                     <p className="font-medium">Send Rent Reminders</p>
                     <p className="text-sm text-gray-600">3 tenants need reminders</p>
@@ -306,7 +306,7 @@ const RentCollectionSystem = ({ user, onBack, onNavigate }) => {
               <h3 className="font-semibold">Recent Payments</h3>
               <button
                 onClick={() => setActiveTab('tenants')}
-                className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                className="text-brand-500 hover:text-brand-600 text-sm font-medium"
               >
                 View All
               </button>
@@ -362,7 +362,7 @@ const RentCollectionSystem = ({ user, onBack, onNavigate }) => {
                     <div className="flex items-center">
                       <h4 className="font-semibold mr-2">{tenant.name}</h4>
                       {tenant.autoPayEnabled && (
-                        <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded flex items-center">
+                        <span className="px-2 py-1 bg-brand-100 text-blue-800 text-xs rounded flex items-center">
                           <Repeat size={12} className="mr-1" />
                           AutoPay
                         </span>
@@ -454,7 +454,7 @@ const RentCollectionSystem = ({ user, onBack, onNavigate }) => {
         <div className="space-y-6">
           <div className="flex justify-between items-center">
             <h3 className="font-semibold">Automation Settings</h3>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700">
+            <button className="bg-brand-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-brand-600">
               Save Changes
             </button>
           </div>
@@ -463,18 +463,18 @@ const RentCollectionSystem = ({ user, onBack, onNavigate }) => {
           <div className="bg-white border border-gray-200 rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <h4 className="font-semibold flex items-center">
-                <Repeat size={20} className="mr-2 text-blue-600" />
+                <Repeat size={20} className="mr-2 text-brand-500" />
                 AutoPay Settings
               </h4>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" checked={rentData.automation.autoPayments.enabled} className="sr-only peer" readOnly />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
               </label>
             </div>
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <div className="text-sm text-gray-600">Enrollment Rate</div>
-                <div className="text-xl font-bold text-blue-600">{rentData.automation.autoPayments.enrollmentRate}%</div>
+                <div className="text-xl font-bold text-brand-500">{rentData.automation.autoPayments.enrollmentRate}%</div>
                 <div className="text-xs text-gray-500">{rentData.automation.autoPayments.totalEnrolled} of {rentData.overview.totalTenants} tenants</div>
               </div>
               <div>
@@ -483,8 +483,8 @@ const RentCollectionSystem = ({ user, onBack, onNavigate }) => {
                 <div className="text-xs text-gray-500">Last 30 days</div>
               </div>
             </div>
-            <div className="bg-blue-50 p-3 rounded-lg">
-              <p className="text-sm text-blue-700">
+            <div className="bg-brand-50 p-3 rounded-lg">
+              <p className="text-sm text-brand-600">
                 <strong>Benefits:</strong> AutoPay reduces late payments by 87% and increases on-time collection rates to 98.2%
               </p>
             </div>
@@ -502,7 +502,7 @@ const RentCollectionSystem = ({ user, onBack, onNavigate }) => {
                   <div className="flex items-center">
                     <label className="relative inline-flex items-center cursor-pointer mr-4">
                       <input type="checkbox" checked={setting.enabled} className="sr-only peer" readOnly />
-                      <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                      <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-500"></div>
                     </label>
                     <div>
                       <p className="font-medium">{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</p>
@@ -528,7 +528,7 @@ const RentCollectionSystem = ({ user, onBack, onNavigate }) => {
               </h4>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" checked={rentData.automation.lateFeeSettings.enabled} className="sr-only peer" readOnly />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
               </label>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -567,7 +567,7 @@ const RentCollectionSystem = ({ user, onBack, onNavigate }) => {
           <div className="flex justify-between items-center">
             <h3 className="font-semibold">Communication History</h3>
             <div className="flex space-x-2">
-              <button className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 flex items-center">
+              <button className="bg-brand-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-brand-600 flex items-center">
                 <Plus size={16} className="mr-2" />
                 Send Message
               </button>
@@ -613,10 +613,10 @@ const RentCollectionSystem = ({ user, onBack, onNavigate }) => {
                   {comm.status}
                 </span>
                 <div className="flex space-x-2">
-                  <button className="p-2 text-gray-500 hover:text-blue-600">
+                  <button className="p-2 text-gray-500 hover:text-brand-500">
                     <Eye size={16} />
                   </button>
-                  <button className="p-2 text-gray-500 hover:text-blue-600">
+                  <button className="p-2 text-gray-500 hover:text-brand-500">
                     <Download size={16} />
                   </button>
                 </div>
@@ -642,7 +642,7 @@ const RentCollectionSystem = ({ user, onBack, onNavigate }) => {
                 <option value="year">This Year</option>
                 <option value="custom">Custom Range</option>
               </select>
-              <button className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 flex items-center">
+              <button className="bg-brand-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-brand-600 flex items-center">
                 <Download size={16} className="mr-2" />
                 Export
               </button>
@@ -652,7 +652,7 @@ const RentCollectionSystem = ({ user, onBack, onNavigate }) => {
           {/* Collection Trend */}
           <div className="bg-white border border-gray-200 rounded-lg p-6">
             <h4 className="font-semibold mb-4 flex items-center">
-              <TrendingUp size={20} className="mr-2 text-blue-600" />
+              <TrendingUp size={20} className="mr-2 text-brand-500" />
               6-Month Collection Trend
             </h4>
             <div className="space-y-3">
@@ -687,7 +687,7 @@ const RentCollectionSystem = ({ user, onBack, onNavigate }) => {
               {rentData.reports.paymentMethods.map((method, index) => (
                 <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center">
-                    <div className="w-4 h-4 bg-blue-500 rounded mr-3" style={{ opacity: method.percentage / 100 + 0.3 }}></div>
+                    <div className="w-4 h-4 bg-brand-500 rounded mr-3" style={{ opacity: method.percentage / 100 + 0.3 }}></div>
                     <span className="font-medium">{method.method}</span>
                   </div>
                   <div className="text-right">
@@ -712,7 +712,7 @@ const RentCollectionSystem = ({ user, onBack, onNavigate }) => {
               </div>
               <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <span>Average Collection Time</span>
-                <span className="font-semibold text-blue-600">{rentData.overview.avgDaysToCollect} days</span>
+                <span className="font-semibold text-brand-500">{rentData.overview.avgDaysToCollect} days</span>
               </div>
               <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <span>AutoPay Adoption</span>

@@ -1,8 +1,17 @@
+// Catch startup errors early
+process.on('uncaughtException', (err) => {
+  console.error('UNCAUGHT EXCEPTION:', err)
+  process.exit(1)
+})
+process.on('unhandledRejection', (err) => {
+  console.error('UNHANDLED REJECTION:', err)
+  process.exit(1)
+})
+
 import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
 import morgan from 'morgan'
-import dotenv from 'dotenv'
 import rateLimit from 'express-rate-limit'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -24,9 +33,6 @@ import housematesRoutes from './routes/housemates.js'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-// Load environment variables
-dotenv.config()
-
 const app = express()
 const PORT = process.env.PORT || 5000
 
@@ -38,8 +44,10 @@ app.use(
   cors({
     origin: [
       process.env.CLIENT_URL || 'http://localhost:3000',
+      'https://myrentra.com',
+      'https://www.myrentra.com',
+      'https://rentra-poko65k4v-aeonic13s-projects.vercel.app',
       'http://localhost:3001',
-      'http://172.18.35.231:3001'
     ],
     credentials: true,
   })
@@ -122,6 +130,7 @@ app.use((req, res) => {
 })
 
 // Start server
+console.log(`Attempting to listen on port ${PORT}...`)
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`)
   console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`)

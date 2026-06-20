@@ -15,10 +15,12 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  CheckCircle2,
 } from 'lucide-react'
 import { useListings } from '../../contexts/ListingsContext'
 import { useFavorites } from '../../contexts/FavoritesContext'
 import { useAuth } from '../../contexts/AuthContext'
+import { usePreQualification } from '../../hooks/usePreQualification'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 
 /**
@@ -106,7 +108,7 @@ function OwnerCard({ owner, onContact }) {
           <div className="flex items-center">
             <h3 className="font-semibold">{owner.name}</h3>
             {owner.verified && (
-              <Shield size={16} className="ml-1 text-blue-500" />
+              <Shield size={16} className="ml-1 text-brand-500" />
             )}
           </div>
           <div className="flex items-center text-sm text-gray-600">
@@ -121,7 +123,7 @@ function OwnerCard({ owner, onContact }) {
 
       <button
         onClick={onContact}
-        className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center"
+        className="w-full bg-brand-500 text-white py-3 rounded-lg font-medium hover:bg-brand-600 transition-colors flex items-center justify-center"
       >
         <MessageCircle size={20} className="mr-2" />
         Contact Owner
@@ -150,6 +152,7 @@ function PropertyDetail() {
   const { getListingById, selectedListing, isLoading, error } = useListings()
   const { isFavorite, toggleFavorite } = useFavorites()
   const { user } = useAuth()
+  const { isPreQualified } = usePreQualification()
 
   const [showShareModal, setShowShareModal] = useState(false)
 
@@ -169,7 +172,11 @@ function PropertyDetail() {
   }
 
   const handleApply = () => {
-    navigate(`/apply/${id}`)
+    if (isPreQualified) {
+      navigate(`/apply/${id}`)
+    } else {
+      navigate(`/pre-qualify?returnTo=/listings/${id}`)
+    }
   }
 
   const handleShare = () => {
@@ -208,7 +215,7 @@ function PropertyDetail() {
           </h2>
           <button
             onClick={() => navigate('/listings')}
-            className="text-blue-600 hover:underline"
+            className="text-brand-500 hover:underline"
           >
             Browse all listings
           </button>
@@ -356,19 +363,32 @@ function PropertyDetail() {
 
             {/* Desktop CTA Buttons */}
             {user?.userType === 'student' && (
-              <div className="hidden lg:flex gap-3 mt-6 pt-6 border-t">
-                <button
-                  onClick={handleContact}
-                  className="flex-1 border-2 border-blue-600 text-blue-600 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
-                >
-                  Message Owner
-                </button>
-                <button
-                  onClick={handleApply}
-                  className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-                >
-                  Apply Now
-                </button>
+              <div className="hidden lg:flex flex-col gap-3 mt-6 pt-6 border-t">
+                {!isPreQualified && (
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-sm text-orange-800">
+                    <strong>Pre-qualification required</strong> — Complete the one-time $50 screening to apply to this and any listing.
+                  </div>
+                )}
+                {isPreQualified && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-800 flex items-center gap-2">
+                    <CheckCircle2 size={16} className="text-green-600" />
+                    You&apos;re pre-qualified — ready to apply instantly.
+                  </div>
+                )}
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleContact}
+                    className="flex-1 border-2 border-brand-500 text-brand-500 py-3 rounded-lg font-semibold hover:bg-brand-50 transition-colors"
+                  >
+                    Message Owner
+                  </button>
+                  <button
+                    onClick={handleApply}
+                    className="flex-1 bg-brand-500 text-white py-3 rounded-lg font-semibold hover:bg-brand-600 transition-colors"
+                  >
+                    {isPreQualified ? 'Apply Now' : 'Get Pre-Qualified'}
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -379,21 +399,21 @@ function PropertyDetail() {
       {user?.userType === 'student' && (
         <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t p-4 z-20">
           <div className="flex gap-3">
-              <button
-                onClick={handleContact}
-                className="flex-1 border-2 border-blue-600 text-blue-600 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
-              >
-                Message
-              </button>
-              <button
-                onClick={handleApply}
-                className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-              >
-                Apply Now
-              </button>
-            </div>
+            <button
+              onClick={handleContact}
+              className="flex-1 border-2 border-brand-500 text-brand-500 py-3 rounded-lg font-semibold hover:bg-brand-50 transition-colors"
+            >
+              Message
+            </button>
+            <button
+              onClick={handleApply}
+              className="flex-1 bg-brand-500 text-white py-3 rounded-lg font-semibold hover:bg-brand-600 transition-colors"
+            >
+              {isPreQualified ? 'Apply Now' : 'Get Pre-Qualified'}
+            </button>
           </div>
-        )}
+        </div>
+      )}
 
       {/* Share Modal */}
       {showShareModal && (
@@ -413,7 +433,7 @@ function PropertyDetail() {
                 navigator.clipboard.writeText(window.location.href)
                 setShowShareModal(false)
               }}
-              className="w-full bg-blue-600 text-white py-2 rounded-lg mb-2"
+              className="w-full bg-brand-500 text-white py-2 rounded-lg mb-2"
             >
               Copy Link
             </button>

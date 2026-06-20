@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MessageCircle, User, Star, Shield, Calendar, DollarSign, FileText, Check, X, Clock, ChevronRight, CreditCard, TrendingUp, AlertCircle, Users, CheckCircle } from 'lucide-react';
+import { MessageCircle, User, Star, Shield, Calendar, DollarSign, FileText, Check, X, Clock, ChevronRight, CreditCard, TrendingUp, AlertCircle, Users, CheckCircle, Building2, Fingerprint, CircleDollarSign } from 'lucide-react';
 
 // ─── Pipeline stages ─────────────────────────────────────────────────────────
 const PIPELINE_STAGES = [
@@ -16,7 +16,7 @@ const stageBadge = key => {
   if (!s) return null
   const cls = {
     yellow: 'bg-yellow-100 text-yellow-700',
-    blue:   'bg-blue-100 text-blue-700',
+    blue:   'bg-brand-100 text-brand-600',
     green:  'bg-green-100 text-green-700',
     purple: 'bg-purple-100 text-purple-700',
     orange: 'bg-orange-100 text-orange-700',
@@ -175,7 +175,7 @@ const GroupApplicationsTab = ({
       <div className="p-4 pb-24 space-y-5">
         <button
           onClick={() => setSelectedGroup(null)}
-          className="flex items-center text-blue-600 text-sm font-medium mb-2"
+          className="flex items-center text-brand-500 text-sm font-medium mb-2"
         >
           ← Back to Group Applications
         </button>
@@ -236,6 +236,35 @@ const GroupApplicationsTab = ({
                   {m.applicationStatus === 'complete' ? '✅ Complete' : '⏳ Pending'}
                 </span>
               </div>
+              {/* Plaid verification chips */}
+              {m.verificationData && (
+                <div className="flex flex-wrap gap-1.5 mt-2 mb-2">
+                  {m.verificationData.bankConnected && (
+                    <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-brand-50 text-brand-600 font-medium">
+                      <Building2 size={11} /> Bank Connected
+                    </span>
+                  )}
+                  {m.verificationData.incomeVerified && (
+                    <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700 font-medium">
+                      <TrendingUp size={11} />
+                      Income Verified
+                      {m.verificationData.monthlyIncome
+                        ? ` · $${m.verificationData.monthlyIncome.toLocaleString()}/mo`
+                        : ''}
+                    </span>
+                  )}
+                  {m.verificationData.identityVerified && (
+                    <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 font-medium">
+                      <Fingerprint size={11} /> Identity Verified
+                    </span>
+                  )}
+                  {m.verificationData.applicationFeePaid && (
+                    <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-yellow-50 text-yellow-700 font-medium">
+                      <CircleDollarSign size={11} /> $50 Fee Paid
+                    </span>
+                  )}
+                </div>
+              )}
               <div className="flex items-center justify-between text-sm mt-2">
                 <span className="text-gray-600">${m.monthlyIncome.toLocaleString()}/mo</span>
                 {m.guarantor ? (
@@ -254,9 +283,9 @@ const GroupApplicationsTab = ({
 
         {/* Tour status */}
         <div className={`rounded-xl p-3 flex items-center ${
-          app.tourStatus === 'scheduled' ? 'bg-green-50 border border-green-200' : 'bg-blue-50 border border-blue-200'
+          app.tourStatus === 'scheduled' ? 'bg-green-50 border border-green-200' : 'bg-brand-50 border border-brand-200'
         }`}>
-          <Calendar size={16} className={app.tourStatus === 'scheduled' ? 'text-green-600 mr-2' : 'text-blue-600 mr-2'} />
+          <Calendar size={16} className={app.tourStatus === 'scheduled' ? 'text-green-600 mr-2' : 'text-brand-500 mr-2'} />
           <span className="text-sm font-medium">
             {app.tourStatus === 'scheduled'
               ? `Tour scheduled · ${new Date(app.tourDate).toLocaleDateString()}`
@@ -270,7 +299,7 @@ const GroupApplicationsTab = ({
         {app.status === 'pending_verifications' && (
           <button
             onClick={() => onOpenWaitingRoom(app)}
-            className="w-full py-3 rounded-xl font-semibold border-2 border-blue-500 text-blue-600 hover:bg-blue-50 flex items-center justify-center transition-colors"
+            className="w-full py-3 rounded-xl font-semibold border-2 border-brand-500 text-brand-500 hover:bg-brand-50 flex items-center justify-center transition-colors"
           >
             <Clock size={18} className="mr-2" />
             View Verification Waiting Room
@@ -303,7 +332,7 @@ const GroupApplicationsTab = ({
             </div>
             <button
               onClick={() => onOpenChat(app)}
-              className="w-full py-3 rounded-xl font-semibold bg-blue-600 text-white hover:bg-blue-700 flex items-center justify-center transition-colors"
+              className="w-full py-3 rounded-xl font-semibold bg-brand-500 text-white hover:bg-brand-600 flex items-center justify-center transition-colors"
             >
               <MessageCircle size={18} className="mr-2" />
               Open Group Chat Thread
@@ -509,7 +538,7 @@ const LandlordInbox = ({ properties, onSelectApplicant, onSendMessage, onSchedul
 
   const getCreditScoreColor = (score) => {
     if (score >= 750) return 'text-green-600 bg-green-100';
-    if (score >= 700) return 'text-blue-600 bg-blue-100';
+    if (score >= 700) return 'text-brand-500 bg-brand-100';
     if (score >= 650) return 'text-yellow-600 bg-yellow-100';
     return 'text-red-600 bg-red-100';
   };
@@ -546,7 +575,7 @@ const LandlordInbox = ({ properties, onSelectApplicant, onSendMessage, onSchedul
   const getTourStatusColor = (tourStatus) => {
     switch (tourStatus) {
       case 'not-requested': return 'text-gray-600 bg-gray-100';
-      case 'requested': return 'text-blue-600 bg-blue-100';
+      case 'requested': return 'text-brand-500 bg-brand-100';
       case 'scheduled': return 'text-green-600 bg-green-100';
       case 'completed': return 'text-purple-600 bg-purple-100';
       default: return 'text-gray-600 bg-gray-100';
@@ -586,7 +615,7 @@ const LandlordInbox = ({ properties, onSelectApplicant, onSendMessage, onSchedul
                 className="p-2 hover:bg-gray-100 rounded-full relative"
                 title="Student Approvals"
               >
-                <Clock size={20} className="text-blue-600" />
+                <Clock size={20} className="text-brand-500" />
                 <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
                   <span className="text-xs text-white font-bold">2</span>
                 </div>
@@ -601,7 +630,7 @@ const LandlordInbox = ({ properties, onSelectApplicant, onSendMessage, onSchedul
           <button
             onClick={() => setActiveTab('individual')}
             className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center ${
-              activeTab === 'individual' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600'
+              activeTab === 'individual' ? 'bg-white text-brand-500 shadow-sm' : 'text-gray-600'
             }`}
           >
             <User size={14} className="mr-1" /> Individual
@@ -637,7 +666,7 @@ const LandlordInbox = ({ properties, onSelectApplicant, onSendMessage, onSchedul
           <select
             value={selectedProperty || ''}
             onChange={(e) => setSelectedProperty(e.target.value ? parseInt(e.target.value) : null)}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
           >
             <option value="">All Properties</option>
             <option value={1}>Cozy 1BR near USC Campus</option>
@@ -658,7 +687,7 @@ const LandlordInbox = ({ properties, onSelectApplicant, onSendMessage, onSchedul
             {applications.map(application => (
               <div
                 key={application.id}
-                className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors cursor-pointer"
+                className="border border-gray-200 rounded-lg p-4 hover:border-brand-300 transition-colors cursor-pointer"
                 onClick={() => {
                   setSelectedApplicant(application);
                   setViewMode('applicant-detail');
@@ -675,7 +704,7 @@ const LandlordInbox = ({ properties, onSelectApplicant, onSendMessage, onSchedul
                       <div className="flex items-center">
                         <h3 className="font-semibold">{application.applicant.name}</h3>
                         {application.applicant.verified && (
-                          <Shield size={16} className="ml-2 text-blue-500" />
+                          <Shield size={16} className="ml-2 text-brand-500" />
                         )}
                       </div>
                       <p className="text-sm text-gray-600">{application.applicant.university} • {application.applicant.year}</p>
@@ -781,12 +810,12 @@ const LandlordInbox = ({ properties, onSelectApplicant, onSendMessage, onSchedul
               <div className="flex items-center mb-2">
                 <h3 className="text-xl font-bold">{selectedApplicant.applicant.name}</h3>
                 {selectedApplicant.applicant.verified && (
-                  <Shield size={20} className="ml-2 text-blue-500" />
+                  <Shield size={20} className="ml-2 text-brand-500" />
                 )}
               </div>
               <p className="text-gray-600">{selectedApplicant.applicant.email}</p>
               <p className="text-gray-600">{selectedApplicant.applicant.phone}</p>
-              <p className="text-sm text-blue-600">{selectedApplicant.applicant.university} • {selectedApplicant.applicant.year}</p>
+              <p className="text-sm text-brand-500">{selectedApplicant.applicant.university} • {selectedApplicant.applicant.year}</p>
             </div>
             <div className="text-right">
               <div className={`px-4 py-2 rounded-full text-sm font-medium ${getStatusColor(selectedApplicant.status)}`}>
@@ -810,7 +839,7 @@ const LandlordInbox = ({ properties, onSelectApplicant, onSendMessage, onSchedul
                 <div 
                   className={`h-2 rounded-full ${
                     selectedApplicant.applicant.creditScore >= 750 ? 'bg-green-500' :
-                    selectedApplicant.applicant.creditScore >= 700 ? 'bg-blue-500' :
+                    selectedApplicant.applicant.creditScore >= 700 ? 'bg-brand-500' :
                     selectedApplicant.applicant.creditScore >= 650 ? 'bg-yellow-500' : 'bg-red-500'
                   }`}
                   style={{ width: `${(selectedApplicant.applicant.creditScore / 850) * 100}%` }}
@@ -910,7 +939,7 @@ const LandlordInbox = ({ properties, onSelectApplicant, onSendMessage, onSchedul
               <label className="block text-sm font-medium text-gray-600 mb-2">Documents Provided</label>
               <div className="flex flex-wrap gap-2">
                 {selectedApplicant.application.documents.map((doc, index) => (
-                  <span key={index} className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+                  <span key={index} className="inline-flex items-center px-3 py-1 bg-brand-100 text-blue-800 rounded-full text-xs font-medium">
                     <FileText size={12} className="mr-1" />
                     {doc}
                   </span>
@@ -925,7 +954,7 @@ const LandlordInbox = ({ properties, onSelectApplicant, onSendMessage, onSchedul
           <div className="grid grid-cols-3 gap-3 mb-6">
             <button
               onClick={() => onSendMessage(selectedApplicant)}
-              className="flex items-center justify-center py-3 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50"
+              className="flex items-center justify-center py-3 border border-brand-500 text-brand-500 rounded-lg hover:bg-brand-50"
             >
               <MessageCircle size={20} className="mr-2" />
               Message
@@ -950,7 +979,7 @@ const LandlordInbox = ({ properties, onSelectApplicant, onSendMessage, onSchedul
         {/* Schedule Tour */}
         <button
           onClick={() => onScheduleTour(selectedApplicant)}
-          className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex items-center justify-center"
+          className="w-full py-3 bg-brand-500 text-white rounded-lg hover:bg-brand-600 font-medium flex items-center justify-center"
         >
           <Calendar size={20} className="mr-2" />
           Schedule Property Tour

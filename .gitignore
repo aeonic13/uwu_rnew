@@ -10,9 +10,9 @@ dist/
 build/
 
 # Environment variables
-# .env is now encrypted with dotenvx - safe to commit!
-# Only .env.keys contains private key and must be ignored
+.env
 .env.keys
+server/.env
 .env.local
 .env.development.local
 .env.test.local
@@ -89,3 +89,5 @@ export-everything.json
 
 # Stores VSCode versions used for testing VSCode extensions
 .vscode-testserver/uploads/
+.vercel
+.env*.local

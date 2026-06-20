@@ -71,8 +71,8 @@ export default function CreateGroup() {
       <div className="bg-white rounded-lg shadow-md p-6 lg:p-8">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-            <Users size={24} className="text-blue-600" />
+          <div className="w-12 h-12 bg-brand-100 rounded-full flex items-center justify-center">
+            <Users size={24} className="text-brand-500" />
           </div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Create a Group</h1>
@@ -95,7 +95,7 @@ export default function CreateGroup() {
               value={formData.name}
               onChange={(e) => handleInputChange('name', e.target.value)}
               placeholder="e.g., USC Fall 2024 Roommates"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
@@ -109,7 +109,7 @@ export default function CreateGroup() {
               onChange={(e) => handleInputChange('description', e.target.value)}
               placeholder="Tell potential members about your group..."
               rows={3}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
             />
           </div>
 
@@ -121,7 +121,7 @@ export default function CreateGroup() {
             <select
               value={formData.maxMembers}
               onChange={(e) => handleInputChange('maxMembers', parseInt(e.target.value))}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               {[2, 3, 4, 5, 6].map((num) => (
                 <option key={num} value={num}>
@@ -148,7 +148,7 @@ export default function CreateGroup() {
                     value={email}
                     onChange={(e) => handleEmailChange(index, e.target.value)}
                     placeholder="friend@university.edu"
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                   />
                   {inviteEmails.length > 1 && (
                     <button
@@ -166,7 +166,7 @@ export default function CreateGroup() {
               <button
                 type="button"
                 onClick={handleAddEmailField}
-                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
+                className="flex items-center gap-2 text-brand-500 hover:text-brand-600 text-sm font-medium"
               >
                 <UserPlus size={16} />
                 Add another email
@@ -193,7 +193,7 @@ export default function CreateGroup() {
             <button
               type="submit"
               disabled={isSubmitting || !formData.name}
-              className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 px-6 py-3 bg-brand-500 text-white rounded-lg font-semibold hover:bg-brand-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
             >
               {isSubmitting ? 'Creating...' : 'Create Group'}
             </button>

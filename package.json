@@ -18,7 +18,7 @@
     "format:check": "prettier --check \"src/**/*.{js,jsx,css}\"",
     "server": "cd server && npm run dev",
     "dev:all": "concurrently \"npm run dev\" \"npm run server\"",
-    "prepare": "husky"
+    "prepare": "husky || true"
   },
   "lint-staged": {
     "src/**/*.{js,jsx}": [
@@ -40,6 +40,7 @@
     "prop-types": "^15.8.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-plaid-link": "^4.1.1",
     "react-router-dom": "^6.28.0"
   },
   "devDependencies": {

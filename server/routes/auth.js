@@ -11,11 +11,6 @@ import { sendVerificationEmail } from '../utils/email.js'
 
 const router = express.Router()
 
-// Validate .edu email
-function validateEduEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.edu$/i.test(email)
-}
-
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
   try {
@@ -26,16 +21,6 @@ router.post('/register', async (req, res) => {
     if (!email || !password || !userType || !firstName || !lastName) {
       return res.status(400).json({
         error: { message: 'All fields are required' },
-      })
-    }
-
-    // Validate .edu email for students
-    if (userType === 'student' && !validateEduEmail(email)) {
-      return res.status(400).json({
-        error: {
-          message:
-            'Students must register with a valid .edu email address',
-        },
       })
     }
 

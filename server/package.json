@@ -41,6 +41,7 @@
     "plaid": "^41.3.0"
   },
   "devDependencies": {
+    "@dotenvx/dotenvx": "^1.0.0",
     "@eslint/js": "^9.18.0",
     "@vitest/coverage-v8": "^3.2.4",
     "eslint": "^9.18.0",

@@ -103,7 +103,7 @@ const OwnerApprovalDashboard = ({ onBack, onApprove, onReject, onMessage }) => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'pending': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-      case 'verified': return 'text-blue-600 bg-blue-50 border-blue-200';
+      case 'verified': return 'text-brand-500 bg-brand-50 border-brand-200';
       case 'approved': return 'text-green-600 bg-green-50 border-green-200';
       case 'rejected': return 'text-red-600 bg-red-50 border-red-200';
       default: return 'text-gray-600 bg-gray-50 border-gray-200';
@@ -147,7 +147,7 @@ const OwnerApprovalDashboard = ({ onBack, onApprove, onReject, onMessage }) => {
           {/* Student Information */}
           <div className="bg-white rounded-lg shadow-sm p-4">
             <h3 className="font-semibold mb-3 flex items-center">
-              <User size={20} className="mr-2 text-blue-600" />
+              <User size={20} className="mr-2 text-brand-500" />
               Student Information
             </h3>
             <div className="space-y-2">
@@ -239,7 +239,7 @@ const OwnerApprovalDashboard = ({ onBack, onApprove, onReject, onMessage }) => {
               <div className="text-gray-600 mb-2">Amenities:</div>
               <div className="flex flex-wrap gap-2">
                 {selectedListing.propertyInfo.amenities.map((amenity, index) => (
-                  <span key={index} className="bg-blue-50 text-blue-700 px-2 py-1 rounded-full text-sm">
+                  <span key={index} className="bg-brand-50 text-brand-600 px-2 py-1 rounded-full text-sm">
                     {amenity}
                   </span>
                 ))}
@@ -300,7 +300,7 @@ const OwnerApprovalDashboard = ({ onBack, onApprove, onReject, onMessage }) => {
 
               <button
                 onClick={() => onMessage?.(selectedListing.studentInfo)}
-                className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 flex items-center justify-center"
+                className="w-full bg-brand-500 text-white py-3 rounded-lg font-medium hover:bg-brand-600 flex items-center justify-center"
               >
                 <MessageSquare size={20} className="mr-2" />
                 Message Student
@@ -354,7 +354,7 @@ const OwnerApprovalDashboard = ({ onBack, onApprove, onReject, onMessage }) => {
               onClick={() => setFilterStatus(filter.key)}
               className={`flex-1 py-3 text-sm font-medium border-b-2 ${
                 filterStatus === filter.key
-                  ? 'border-blue-500 text-blue-600'
+                  ? 'border-brand-500 text-brand-500'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -411,7 +411,7 @@ const OwnerApprovalDashboard = ({ onBack, onApprove, onReject, onMessage }) => {
                 <div className="flex space-x-2">
                   <button
                     onClick={() => setSelectedListing(listing)}
-                    className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 flex items-center justify-center"
+                    className="flex-1 bg-brand-500 text-white py-2 rounded-lg font-medium hover:bg-brand-600 flex items-center justify-center"
                   >
                     <Eye size={18} className="mr-2" />
                     Review Details

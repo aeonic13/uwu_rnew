@@ -43,10 +43,10 @@ const TourScheduleCard = ({ onSchedule, onDismiss }) => {
   const [type, setType] = useState('in-person') // 'in-person' | 'virtual'
 
   return (
-    <div className="border-2 border-blue-200 rounded-xl p-4 bg-blue-50 space-y-3">
+    <div className="border-2 border-brand-200 rounded-xl p-4 bg-brand-50 space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center">
-          <Calendar size={16} className="text-blue-600 mr-2" />
+          <Calendar size={16} className="text-brand-500 mr-2" />
           <span className="font-semibold text-blue-800 text-sm">Schedule Walkthrough</span>
         </div>
         <button onClick={onDismiss} className="text-gray-400 hover:text-gray-600">
@@ -61,7 +61,7 @@ const TourScheduleCard = ({ onSchedule, onDismiss }) => {
             type="date"
             value={date}
             onChange={e => setDate(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
           />
         </div>
         <div>
@@ -70,7 +70,7 @@ const TourScheduleCard = ({ onSchedule, onDismiss }) => {
             type="time"
             value={time}
             onChange={e => setTime(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
           />
         </div>
       </div>
@@ -82,8 +82,8 @@ const TourScheduleCard = ({ onSchedule, onDismiss }) => {
             onClick={() => setType(t)}
             className={`flex-1 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
               type === t
-                ? 'border-blue-500 bg-blue-600 text-white'
-                : 'border-gray-300 text-gray-600 hover:border-blue-300'
+                ? 'border-brand-500 bg-brand-500 text-white'
+                : 'border-gray-300 text-gray-600 hover:border-brand-300'
             }`}
           >
             {t === 'in-person' ? '🏠 In-Person' : '💻 Virtual'}
@@ -99,7 +99,7 @@ const TourScheduleCard = ({ onSchedule, onDismiss }) => {
         disabled={!date || !time}
         className={`w-full py-2 rounded-lg text-sm font-semibold transition-colors ${
           date && time
-            ? 'bg-blue-600 text-white hover:bg-blue-700'
+            ? 'bg-brand-500 text-white hover:bg-brand-600'
             : 'bg-gray-200 text-gray-400 cursor-not-allowed'
         }`}
       >
@@ -128,12 +128,12 @@ const MessageBubble = ({ msg, isLandlord }) => {
   if (msg.type === 'tour') {
     return (
       <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} mb-3`}>
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 max-w-xs">
+        <div className="bg-brand-50 border border-brand-200 rounded-xl p-3 max-w-xs">
           <div className="flex items-center mb-1">
-            <Calendar size={14} className="text-blue-600 mr-1" />
+            <Calendar size={14} className="text-brand-500 mr-1" />
             <span className="text-xs font-semibold text-blue-800">Walkthrough Scheduled</span>
           </div>
-          <p className="text-xs text-blue-700">{msg.text}</p>
+          <p className="text-xs text-brand-600">{msg.text}</p>
         </div>
       </div>
     )
@@ -148,14 +148,14 @@ const MessageBubble = ({ msg, isLandlord }) => {
       )}
       <div className={`max-w-xs rounded-2xl px-4 py-2.5 ${
         isMe
-          ? 'bg-blue-600 text-white rounded-br-sm'
+          ? 'bg-brand-500 text-white rounded-br-sm'
           : 'bg-gray-100 text-gray-900 rounded-bl-sm'
       }`}>
         {!isMe && (
           <p className="text-xs font-semibold mb-1 text-purple-700">{msg.senderName}</p>
         )}
         <p className="text-sm whitespace-pre-line">{msg.text}</p>
-        <p className={`text-xs mt-1 ${isMe ? 'text-blue-200' : 'text-gray-400'}`}>{msg.time}</p>
+        <p className={`text-xs mt-1 ${isMe ? 'text-brand-200' : 'text-gray-400'}`}>{msg.time}</p>
       </div>
     </div>
   )
@@ -184,11 +184,11 @@ const ParticipantsBar = ({ groupApplication, landlordName }) => {
         <div className="mt-2 space-y-1">
           {/* Landlord */}
           <div className="flex items-center">
-            <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center mr-2">
-              <Home size={11} className="text-blue-600" />
+            <div className="w-5 h-5 bg-brand-100 rounded-full flex items-center justify-center mr-2">
+              <Home size={11} className="text-brand-500" />
             </div>
             <span className="text-xs font-medium">{landlordName || 'Landlord'}</span>
-            <span className="ml-2 text-xs text-blue-600 bg-blue-50 px-1.5 rounded">You</span>
+            <span className="ml-2 text-xs text-brand-500 bg-brand-50 px-1.5 rounded">You</span>
           </div>
           {/* Tenants */}
           {tenants.map((m, i) => (
@@ -361,7 +361,7 @@ const LandlordApplicationChat = ({
       <div className="px-4 py-2 bg-gray-50 border-b border-gray-100 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center text-xs text-gray-600">
-            <Home size={13} className="mr-1 text-blue-500" />
+            <Home size={13} className="mr-1 text-brand-500" />
             <span className="font-medium">{listing?.title || groupApplication.propertyTitle}</span>
             {listing?.price && (
               <span className="ml-2 text-gray-400">· ${listing.price}/mo</span>
@@ -372,7 +372,7 @@ const LandlordApplicationChat = ({
             className={`flex items-center text-xs px-2 py-1 rounded-lg border transition-colors ${
               tourScheduled
                 ? 'border-green-300 text-green-600 bg-green-50'
-                : 'border-blue-300 text-blue-600 hover:bg-blue-50'
+                : 'border-brand-300 text-brand-500 hover:bg-brand-50'
             }`}
           >
             <Calendar size={12} className="mr-1" />
@@ -426,14 +426,14 @@ const LandlordApplicationChat = ({
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMessage()}
             placeholder="Message the group…"
-            className="flex-1 p-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="flex-1 p-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
           />
           <button
             onClick={sendMessage}
             disabled={!input.trim()}
             className={`p-3 rounded-xl transition-colors ${
               input.trim()
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                ? 'bg-brand-500 text-white hover:bg-brand-600'
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'
             }`}
           >

@@ -201,9 +201,9 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
         </div>
 
         <div className="space-y-6">
-          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-6">
+          <div className="bg-brand-50 p-4 rounded-lg border border-brand-200 mb-6">
             <h3 className="font-semibold text-blue-800 mb-2">{selectedPlan.name}</h3>
-            <p className="text-sm text-blue-700">
+            <p className="text-sm text-brand-600">
               Tell us more about your situation to get a personalized quote.
             </p>
           </div>
@@ -214,7 +214,7 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
               <select
                 value={quoteData.personalPropertyValue}
                 onChange={(e) => setQuoteData(prev => ({ ...prev, personalPropertyValue: e.target.value }))}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
               >
                 <option value="15000">$15,000</option>
                 <option value="25000">$25,000</option>
@@ -228,7 +228,7 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
               <select
                 value={quoteData.deductible}
                 onChange={(e) => setQuoteData(prev => ({ ...prev, deductible: e.target.value }))}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
               >
                 <option value="250">$250</option>
                 <option value="500">$500</option>
@@ -242,7 +242,7 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
             <select
               value={quoteData.creditScore}
               onChange={(e) => setQuoteData(prev => ({ ...prev, creditScore: e.target.value }))}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               <option value="excellent">Excellent (750+)</option>
               <option value="good">Good (700-749)</option>
@@ -258,7 +258,7 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
                 id="security"
                 checked={quoteData.hasSecuritySystem}
                 onChange={(e) => setQuoteData(prev => ({ ...prev, hasSecuritySystem: e.target.checked }))}
-                className="mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="mr-3 h-4 w-4 text-brand-500 focus:ring-brand-500 border-gray-300 rounded"
               />
               <label htmlFor="security" className="text-sm">
                 Property has security system (5% discount)
@@ -271,7 +271,7 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
                 id="claims"
                 checked={quoteData.previousClaims}
                 onChange={(e) => setQuoteData(prev => ({ ...prev, previousClaims: e.target.checked }))}
-                className="mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="mr-3 h-4 w-4 text-brand-500 focus:ring-brand-500 border-gray-300 rounded"
               />
               <label htmlFor="claims" className="text-sm">
                 I have filed insurance claims in the past 3 years
@@ -281,7 +281,7 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
 
           <button
             onClick={handleGetQuote}
-            className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700"
+            className="w-full bg-brand-500 text-white py-3 rounded-lg font-semibold hover:bg-brand-600"
           >
             Get My Custom Quote
           </button>
@@ -344,7 +344,7 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
                   value="annual"
                   checked={purchaseData.paymentFrequency === 'annual'}
                   onChange={(e) => setPurchaseData(prev => ({ ...prev, paymentFrequency: e.target.value }))}
-                  className="mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500"
+                  className="mr-3 h-4 w-4 text-brand-500 focus:ring-brand-500"
                 />
                 <span className="text-sm">
                   Annual Payment - ${quote.annualPrice || selectedPlan.annualPrice} 
@@ -358,7 +358,7 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
                   value="monthly"
                   checked={purchaseData.paymentFrequency === 'monthly'}
                   onChange={(e) => setPurchaseData(prev => ({ ...prev, paymentFrequency: e.target.value }))}
-                  className="mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500"
+                  className="mr-3 h-4 w-4 text-brand-500 focus:ring-brand-500"
                 />
                 <span className="text-sm">
                   Monthly Payment - ${quote.monthlyPrice || selectedPlan.monthlyPrice}/month
@@ -375,7 +375,7 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
               value={purchaseData.emergencyContact}
               onChange={(e) => setPurchaseData(prev => ({ ...prev, emergencyContact: e.target.value }))}
               placeholder="Name and phone number"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
@@ -386,7 +386,7 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
               value={purchaseData.beneficiary}
               onChange={(e) => setPurchaseData(prev => ({ ...prev, beneficiary: e.target.value }))}
               placeholder="Full name"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
@@ -396,7 +396,7 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
               id="autorenew"
               checked={purchaseData.autoRenew}
               onChange={(e) => setPurchaseData(prev => ({ ...prev, autoRenew: e.target.checked }))}
-              className="mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              className="mr-3 h-4 w-4 text-brand-500 focus:ring-brand-500 border-gray-300 rounded"
             />
             <label htmlFor="autorenew" className="text-sm">
               Enable automatic renewal to avoid coverage gaps
@@ -490,7 +490,7 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
             onClick={() => setActiveTab(tab)}
             className={`flex-1 py-2 px-1 text-sm font-medium capitalize border-b-2 ${
               activeTab === tab
-                ? 'border-blue-600 text-blue-600'
+                ? 'border-brand-500 text-brand-500'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
@@ -507,12 +507,12 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
               key={plan.id}
               className={`border-2 rounded-lg p-6 ${
                 plan.recommended 
-                  ? 'border-blue-500 bg-blue-50' 
+                  ? 'border-brand-500 bg-brand-50' 
                   : 'border-gray-200 bg-white'
               }`}
             >
               {plan.recommended && (
-                <div className="bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-medium inline-block mb-3">
+                <div className="bg-brand-500 text-white px-3 py-1 rounded-full text-xs font-medium inline-block mb-3">
                   Recommended for Students
                 </div>
               )}
@@ -568,7 +568,7 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
                 }}
                 className={`w-full py-3 rounded-lg font-semibold ${
                   plan.recommended
-                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                    ? 'bg-brand-500 text-white hover:bg-brand-600'
                     : 'bg-gray-600 text-white hover:bg-gray-700'
                 }`}
               >
@@ -582,25 +582,25 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
       {/* Why Insurance Tab */}
       {activeTab === 'why-insurance' && (
         <div className="space-y-6">
-          <div className="bg-blue-50 p-6 rounded-lg">
+          <div className="bg-brand-50 p-6 rounded-lg">
             <h3 className="text-xl font-semibold text-blue-800 mb-4">Why Do I Need Renters Insurance?</h3>
-            <div className="space-y-4 text-blue-700">
+            <div className="space-y-4 text-brand-600">
               <div className="flex items-start">
-                <Shield size={20} className="text-blue-600 mr-3 mt-1 flex-shrink-0" />
+                <Shield size={20} className="text-brand-500 mr-3 mt-1 flex-shrink-0" />
                 <div>
                   <p className="font-medium">Protect Your Belongings</p>
                   <p className="text-sm">Your landlord's insurance doesn't cover your personal property. Electronics, clothes, furniture - it all adds up quickly.</p>
                 </div>
               </div>
               <div className="flex items-start">
-                <DollarSign size={20} className="text-blue-600 mr-3 mt-1 flex-shrink-0" />
+                <DollarSign size={20} className="text-brand-500 mr-3 mt-1 flex-shrink-0" />
                 <div>
                   <p className="font-medium">Liability Protection</p>
                   <p className="text-sm">If someone gets injured in your apartment or you accidentally damage the property, liability coverage protects you.</p>
                 </div>
               </div>
               <div className="flex items-start">
-                <Home size={20} className="text-blue-600 mr-3 mt-1 flex-shrink-0" />
+                <Home size={20} className="text-brand-500 mr-3 mt-1 flex-shrink-0" />
                 <div>
                   <p className="font-medium">Temporary Living Expenses</p>
                   <p className="text-sm">If your apartment becomes unlivable due to a covered loss, we'll help pay for temporary housing.</p>
@@ -617,7 +617,7 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
                 <span>Fire or electrical damage destroys your laptop and textbooks</span>
               </div>
               <div className="flex items-center">
-                <Building2 size={16} className="text-blue-600 mr-3" />
+                <Building2 size={16} className="text-brand-500 mr-3" />
                 <span>Pipe bursts and damages your furniture and clothing</span>
               </div>
               <div className="flex items-center">
@@ -714,7 +714,7 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
             <div className="flex space-x-4">
               <button
                 onClick={() => contactInsurance('phone')}
-                className="flex items-center px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200"
+                className="flex items-center px-4 py-2 bg-brand-100 text-brand-600 rounded-lg hover:bg-brand-100"
               >
                 <Phone size={16} className="mr-2" />
                 Call Support
@@ -734,14 +734,14 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
       {/* Claims Tab */}
       {activeTab === 'claims' && currentInsurance && (
         <div className="space-y-6">
-          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+          <div className="bg-brand-50 p-4 rounded-lg border border-brand-200">
             <h3 className="font-semibold text-blue-800 mb-2">File a Claim</h3>
-            <p className="text-sm text-blue-700 mb-4">
+            <p className="text-sm text-brand-600 mb-4">
               Need to file a claim? We're here to help you through the process 24/7.
             </p>
             <button
               onClick={fileClaim}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700"
+              className="bg-brand-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-brand-600"
             >
               Start Claim Process
             </button>
@@ -760,7 +760,7 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
             <h4 className="font-semibold mb-3">Claims Process</h4>
             <div className="space-y-3 text-sm">
               <div className="flex items-start">
-                <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">
+                <div className="w-6 h-6 bg-brand-500 text-white rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">
                   1
                 </div>
                 <div>
@@ -769,7 +769,7 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
                 </div>
               </div>
               <div className="flex items-start">
-                <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">
+                <div className="w-6 h-6 bg-brand-500 text-white rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">
                   2
                 </div>
                 <div>
@@ -778,7 +778,7 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
                 </div>
               </div>
               <div className="flex items-start">
-                <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">
+                <div className="w-6 h-6 bg-brand-500 text-white rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">
                   3
                 </div>
                 <div>
@@ -797,7 +797,7 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
           <div className="bg-white border border-gray-200 rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <FileText size={20} className="text-blue-600 mr-3" />
+                <FileText size={20} className="text-brand-500 mr-3" />
                 <div>
                   <p className="font-medium">Insurance Policy</p>
                   <p className="text-sm text-gray-600">PDF • Policy #{currentInsurance.policyNumber}</p>
@@ -805,7 +805,7 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
               </div>
               <button
                 onClick={() => downloadDocument('Insurance Policy')}
-                className="flex items-center px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200"
+                className="flex items-center px-3 py-2 bg-brand-100 text-brand-600 rounded-lg hover:bg-brand-100"
               >
                 <Download size={16} className="mr-1" />
                 Download

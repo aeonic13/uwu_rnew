@@ -47,8 +47,7 @@ function LoginPage() {
       {/* Header */}
       <div className="bg-white border-b p-4">
         <div className="flex items-center justify-center">
-          <Home className="text-blue-600 mr-2" size={28} />
-          <h1 className="text-2xl font-bold text-blue-600">Rentra</h1>
+          <img src="/logo.svg" alt="Rentra" className="h-10 w-auto" />
         </div>
       </div>
 
@@ -77,7 +76,7 @@ function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 ${
                       errors.email ? 'border-red-500' : 'border-gray-300'
                     }`}
                   />
@@ -102,7 +101,7 @@ function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 ${
                       errors.password ? 'border-red-500' : 'border-gray-300'
                     }`}
                   />
@@ -123,7 +122,7 @@ function LoginPage() {
               <div className="text-right">
                 <Link
                   to="/forgot-password"
-                  className="text-sm text-blue-600 hover:underline"
+                  className="text-sm text-brand-500 hover:underline"
                 >
                   Forgot password?
                 </Link>
@@ -140,7 +139,7 @@ function LoginPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                className="w-full bg-brand-500 text-white py-3 rounded-lg font-semibold hover:bg-brand-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
                 {isLoading ? (
                   <LoadingSpinner size="sm" className="border-white border-t-transparent" />
@@ -192,7 +191,7 @@ function LoginPage() {
           {/* Sign Up Link */}
           <p className="text-center mt-6 text-gray-600">
             Don&apos;t have an account?{' '}
-            <Link to="/register" className="text-blue-600 font-semibold hover:underline">
+            <Link to="/register" className="text-brand-500 font-semibold hover:underline">
               Sign up
             </Link>
           </p>

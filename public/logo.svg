@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 60" fill="none">
+  <!-- Orange dot accent -->
+  <circle cx="12" cy="30" r="10" fill="#fc6a03"/>
+  <!-- Wordmark -->
+  <text
+    x="30"
+    y="43"
+    font-family="'Segoe UI', system-ui, -apple-system, Arial, sans-serif"
+    font-size="44"
+    font-weight="800"
+    fill="#fc6a03"
+    letter-spacing="-1">Rentra</text>
+</svg>

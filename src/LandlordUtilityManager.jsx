@@ -180,8 +180,8 @@ const LandlordUtilityManager = ({ currentTenants, onRequestPayment, onUploadBill
                   onClick={() => setSelectedUtility(utility.id)}
                   className={`p-3 border rounded-lg flex flex-col items-center transition-colors ${
                     selectedUtility === utility.id
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-gray-300 hover:border-blue-300'
+                      ? 'border-brand-500 bg-brand-50 text-brand-600'
+                      : 'border-gray-300 hover:border-brand-300'
                   }`}
                 >
                   <IconComponent size={20} className="mb-1" />
@@ -196,7 +196,7 @@ const LandlordUtilityManager = ({ currentTenants, onRequestPayment, onUploadBill
         <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
           <Upload size={40} className="mx-auto text-gray-400 mb-3" />
           <label className="cursor-pointer">
-            <span className="text-blue-600 font-medium hover:underline">
+            <span className="text-brand-500 font-medium hover:underline">
               Upload utility bill
             </span>
             <input
@@ -237,7 +237,7 @@ const LandlordUtilityManager = ({ currentTenants, onRequestPayment, onUploadBill
                         <>
                           <button
                             onClick={() => setShowRedactionPreview(bill)}
-                            className="text-blue-600 text-sm hover:underline"
+                            className="text-brand-500 text-sm hover:underline"
                           >
                             <Eye size={16} className="inline mr-1" />
                             Preview
@@ -250,8 +250,8 @@ const LandlordUtilityManager = ({ currentTenants, onRequestPayment, onUploadBill
                           </button>
                         </>
                       ) : (
-                        <div className="flex items-center text-blue-600">
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                        <div className="flex items-center text-brand-500">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-brand-500 mr-2"></div>
                           <span className="text-sm">Processing...</span>
                         </div>
                       )}
@@ -295,7 +295,7 @@ const LandlordUtilityManager = ({ currentTenants, onRequestPayment, onUploadBill
                   <div className="flex items-center space-x-4">
                     <button
                       onClick={() => setShowRedactionPreview(bill)}
-                      className="text-blue-600 text-sm hover:underline flex items-center"
+                      className="text-brand-500 text-sm hover:underline flex items-center"
                     >
                       <Eye size={14} className="mr-1" />
                       View Redacted
@@ -309,7 +309,7 @@ const LandlordUtilityManager = ({ currentTenants, onRequestPayment, onUploadBill
                     ) : (
                       <button
                         onClick={() => shareWithTenants(bill.id)}
-                        className="text-blue-600 text-sm hover:underline flex items-center"
+                        className="text-brand-500 text-sm hover:underline flex items-center"
                       >
                         <Send size={14} className="mr-1" />
                         Share with Tenants
@@ -453,7 +453,7 @@ const LandlordUtilityManager = ({ currentTenants, onRequestPayment, onUploadBill
                     shareWithTenants(showRedactionPreview.id);
                     setShowRedactionPreview(null);
                   }}
-                  className="flex-1 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="flex-1 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600"
                 >
                   Share with Tenants
                 </button>

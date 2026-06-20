@@ -99,7 +99,7 @@ const OwnerDocumentManager = ({ user, onBack, onSendToChat }) => {
 
   const getDocumentIcon = (type) => {
     switch (type) {
-      case 'lease': return <FileText className="text-blue-600" size={20} />;
+      case 'lease': return <FileText className="text-brand-500" size={20} />;
       case 'application': return <User className="text-purple-600" size={20} />;
       default: return <Folder className="text-gray-600" size={20} />;
     }
@@ -148,7 +148,7 @@ const OwnerDocumentManager = ({ user, onBack, onSendToChat }) => {
             <h1 className="text-xl font-bold">Document Manager</h1>
             <button
               onClick={() => setShowUploadModal(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center font-medium hover:bg-blue-700"
+              className="bg-brand-500 text-white px-4 py-2 rounded-lg flex items-center font-medium hover:bg-brand-600"
             >
               <Plus size={18} className="mr-1" />
               Upload
@@ -163,7 +163,7 @@ const OwnerDocumentManager = ({ user, onBack, onSendToChat }) => {
               placeholder="Search documents..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
@@ -180,7 +180,7 @@ const OwnerDocumentManager = ({ user, onBack, onSendToChat }) => {
                 onClick={() => setActiveTab(tab.id)}
                 className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
                   activeTab === tab.id
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-brand-500 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
@@ -199,7 +199,7 @@ const OwnerDocumentManager = ({ user, onBack, onSendToChat }) => {
             <p className="text-gray-500">No documents found</p>
             <button
               onClick={() => setShowUploadModal(true)}
-              className="mt-4 text-blue-600 font-medium"
+              className="mt-4 text-brand-500 font-medium"
             >
               Upload your first document
             </button>
@@ -269,7 +269,7 @@ const OwnerDocumentManager = ({ user, onBack, onSendToChat }) => {
                       onSendToChat(doc);
                     }
                   }}
-                  className="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center justify-center"
+                  className="flex-1 py-2 bg-brand-500 text-white rounded-lg text-sm font-medium hover:bg-brand-600 flex items-center justify-center"
                 >
                   <Send size={16} className="mr-1" />
                   Send in Chat
@@ -317,8 +317,8 @@ const OwnerDocumentManager = ({ user, onBack, onSendToChat }) => {
                       onClick={() => setUploadForm(prev => ({ ...prev, type: type.value }))}
                       className={`p-3 border rounded-lg flex flex-col items-center justify-center ${
                         uploadForm.type === type.value
-                          ? 'border-blue-500 bg-blue-50 text-blue-700'
-                          : 'border-gray-300 hover:border-blue-300'
+                          ? 'border-brand-500 bg-brand-50 text-brand-600'
+                          : 'border-gray-300 hover:border-brand-300'
                       }`}
                     >
                       <type.icon size={24} className="mb-1" />
@@ -331,7 +331,7 @@ const OwnerDocumentManager = ({ user, onBack, onSendToChat }) => {
               {/* File Upload */}
               <div>
                 <label className="block text-sm font-medium mb-2">Upload File</label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition-colors">
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-brand-500 transition-colors">
                   <input
                     type="file"
                     onChange={handleFileUpload}
@@ -361,7 +361,7 @@ const OwnerDocumentManager = ({ user, onBack, onSendToChat }) => {
                   value={uploadForm.name}
                   onChange={(e) => setUploadForm(prev => ({ ...prev, name: e.target.value }))}
                   placeholder="e.g., Standard Lease Agreement 2024"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
 
@@ -373,7 +373,7 @@ const OwnerDocumentManager = ({ user, onBack, onSendToChat }) => {
                   onChange={(e) => setUploadForm(prev => ({ ...prev, description: e.target.value }))}
                   placeholder="Brief description of this document..."
                   rows={3}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
 
@@ -383,7 +383,7 @@ const OwnerDocumentManager = ({ user, onBack, onSendToChat }) => {
                 <select
                   value={uploadForm.property}
                   onChange={(e) => setUploadForm(prev => ({ ...prev, property: e.target.value }))}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                 >
                   <option value="">Select property or leave for all</option>
                   <option value="all">All Properties</option>
@@ -405,7 +405,7 @@ const OwnerDocumentManager = ({ user, onBack, onSendToChat }) => {
               <button
                 onClick={handleUploadSubmit}
                 disabled={!uploadForm.file || !uploadForm.name}
-                className="flex-1 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                className="flex-1 py-3 bg-brand-500 text-white rounded-lg font-medium hover:bg-brand-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
               >
                 Upload Document
               </button>
@@ -442,7 +442,7 @@ const OwnerDocumentManager = ({ user, onBack, onSendToChat }) => {
                 <FileText size={64} className="mx-auto text-gray-400 mb-4" />
                 <p className="text-gray-600 mb-4">Document preview</p>
                 <div className="flex justify-center space-x-3">
-                  <button className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center font-medium hover:bg-blue-700">
+                  <button className="bg-brand-500 text-white px-4 py-2 rounded-lg flex items-center font-medium hover:bg-brand-600">
                     <Download size={18} className="mr-2" />
                     Download
                   </button>
@@ -466,7 +466,7 @@ const OwnerDocumentManager = ({ user, onBack, onSendToChat }) => {
                         </div>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                           recipient.status === 'signed' ? 'bg-green-100 text-green-700' :
-                          recipient.status === 'viewed' ? 'bg-blue-100 text-blue-700' :
+                          recipient.status === 'viewed' ? 'bg-brand-100 text-brand-600' :
                           'bg-yellow-100 text-yellow-700'
                         }`}>
                           {recipient.status.charAt(0).toUpperCase() + recipient.status.slice(1)}

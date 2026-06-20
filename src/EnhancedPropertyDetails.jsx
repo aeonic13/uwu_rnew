@@ -133,7 +133,7 @@ const EnhancedPropertyDetails = ({ listing, onBack, onMessage, onApply, onToggle
           {/* Lease Type Badge */}
           <div className="flex items-center space-x-2 mb-4">
             {listing.leaseType && (
-              <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+              <span className="px-3 py-1 bg-brand-100 text-blue-800 rounded-full text-sm font-medium">
                 {listing.leaseType === 'lease' && 'Lease Available'}
                 {listing.leaseType === 'roommate' && 'Roommate Wanted'}
                 {listing.leaseType === 'lease-takeover' && 'Lease Takeover'}
@@ -170,7 +170,7 @@ const EnhancedPropertyDetails = ({ listing, onBack, onMessage, onApply, onToggle
             </div>
             <div className="border-t pt-3 flex justify-between items-center">
               <div className="flex items-center">
-                <Info size={16} className="text-blue-600 mr-2" />
+                <Info size={16} className="text-brand-500 mr-2" />
                 <span className="font-medium">Total Utilities (avg)</span>
               </div>
               <span className="text-lg font-bold">${totalUtilityCost}</span>
@@ -191,7 +191,7 @@ const EnhancedPropertyDetails = ({ listing, onBack, onMessage, onApply, onToggle
             <div className="mt-4 space-y-2">
               {listing.additionalDetails.map((detail, index) => (
                 <div key={index} className="flex items-center text-sm text-gray-600">
-                  <div className="w-2 h-2 bg-blue-600 rounded-full mr-3"></div>
+                  <div className="w-2 h-2 bg-brand-500 rounded-full mr-3"></div>
                   <span>{detail}</span>
                 </div>
               ))}
@@ -262,7 +262,7 @@ const EnhancedPropertyDetails = ({ listing, onBack, onMessage, onApply, onToggle
               <div className="flex items-center mb-1">
                 <span className="font-semibold text-lg">{listing.owner.name}</span>
                 {listing.owner.verified && (
-                  <Shield size={18} className="ml-2 text-blue-500" />
+                  <Shield size={18} className="ml-2 text-brand-500" />
                 )}
               </div>
               <div className="flex items-center mb-2">
@@ -289,7 +289,7 @@ const EnhancedPropertyDetails = ({ listing, onBack, onMessage, onApply, onToggle
           <div className="space-y-3">
             <button
               onClick={() => onApply(listing)}
-              className="w-full bg-blue-600 text-white py-4 rounded-lg font-semibold flex items-center justify-center text-lg hover:bg-blue-700 transition-colors"
+              className="w-full bg-brand-500 text-white py-4 rounded-lg font-semibold flex items-center justify-center text-lg hover:bg-brand-600 transition-colors"
             >
               <DollarSign size={20} className="mr-2" />
               Apply & Pay Securely
@@ -305,12 +305,12 @@ const EnhancedPropertyDetails = ({ listing, onBack, onMessage, onApply, onToggle
           </div>
 
           {/* Safety & Trust */}
-          <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="mt-6 bg-brand-50 border border-brand-200 rounded-lg p-4">
             <div className="flex items-center mb-2">
-              <Shield size={20} className="text-blue-600 mr-2" />
+              <Shield size={20} className="text-brand-500 mr-2" />
               <span className="font-semibold text-blue-800">Safety & Trust</span>
             </div>
-            <ul className="text-sm text-blue-700 space-y-1">
+            <ul className="text-sm text-brand-600 space-y-1">
               <li>• Secure payments protected by Rentra</li>
               <li>• Verified university student owner</li>
               <li>• 24/7 customer support available</li>

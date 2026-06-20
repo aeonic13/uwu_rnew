@@ -9,7 +9,7 @@ const ReportMaintenanceView = ({ user, onBack }) => {
   const [photos, setPhotos] = useState([]);
 
   const maintenanceTypes = [
-    { value: 'plumbing', label: 'Plumbing', icon: Droplets, color: 'text-blue-600' },
+    { value: 'plumbing', label: 'Plumbing', icon: Droplets, color: 'text-brand-500' },
     { value: 'electrical', label: 'Electrical', icon: Zap, color: 'text-yellow-600' },
     { value: 'hvac', label: 'Heating/Cooling', icon: Flame, color: 'text-red-600' },
     { value: 'appliances', label: 'Appliances', icon: Building2, color: 'text-gray-600' },
@@ -76,7 +76,7 @@ const ReportMaintenanceView = ({ user, onBack }) => {
                   onClick={() => setMaintenanceType(type.value)}
                   className={`p-3 border-2 rounded-lg text-left transition-all ${
                     maintenanceType === type.value
-                      ? 'border-blue-500 bg-blue-50'
+                      ? 'border-brand-500 bg-brand-50'
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
                 >
@@ -98,7 +98,7 @@ const ReportMaintenanceView = ({ user, onBack }) => {
             value={location}
             onChange={(e) => setLocation(e.target.value)}
             placeholder="e.g., Kitchen sink, Master bedroom, Living room"
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
         </div>
 
@@ -114,7 +114,7 @@ const ReportMaintenanceView = ({ user, onBack }) => {
                   value={priorityOption.value}
                   checked={priority === priorityOption.value}
                   onChange={(e) => setPriority(e.target.value)}
-                  className="mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500"
+                  className="mr-3 h-4 w-4 text-brand-500 focus:ring-brand-500"
                 />
                 <span className={`text-sm ${priorityOption.color} font-medium`}>
                   {priorityOption.label}
@@ -132,7 +132,7 @@ const ReportMaintenanceView = ({ user, onBack }) => {
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Please describe the maintenance issue in detail. Include what's not working, when it started, and any other relevant information..."
             rows={4}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
         </div>
 
@@ -144,7 +144,7 @@ const ReportMaintenanceView = ({ user, onBack }) => {
           </p>
           
           {photos.length < 5 && (
-            <label className="block w-full p-4 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors">
+            <label className="block w-full p-4 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-brand-400 hover:bg-brand-50 transition-colors">
               <div className="text-center">
                 <Camera size={32} className="text-gray-400 mx-auto mb-2" />
                 <span className="text-sm text-gray-600">
@@ -198,9 +198,9 @@ const ReportMaintenanceView = ({ user, onBack }) => {
         )}
 
         {/* Contact Info */}
-        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+        <div className="bg-brand-50 p-4 rounded-lg border border-brand-200">
           <h4 className="font-semibold text-blue-800 mb-2">What happens next?</h4>
-          <div className="text-sm text-blue-700 space-y-1">
+          <div className="text-sm text-brand-600 space-y-1">
             <p>• Your landlord will receive immediate notification</p>
             <p>• You'll get a response within 24-48 hours</p>
             <p>• Updates will be sent via email and app notifications</p>
@@ -214,7 +214,7 @@ const ReportMaintenanceView = ({ user, onBack }) => {
           disabled={!maintenanceType || !description || !priority}
           className={`w-full py-3 rounded-lg font-semibold ${
             maintenanceType && description && priority
-              ? 'bg-blue-600 text-white hover:bg-blue-700'
+              ? 'bg-brand-500 text-white hover:bg-brand-600'
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`}
         >

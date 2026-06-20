@@ -139,13 +139,13 @@ const PaymentReminders = ({ user, currentLease, onPayRent, onReportIssue }) => {
               className={`p-4 rounded-lg border-l-4 mb-3 ${
                 notification.priority === 'high' 
                   ? 'bg-red-50 border-red-400'
-                  : 'bg-blue-50 border-blue-400'
+                  : 'bg-brand-50 border-brand-400'
               }`}
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center">
                   <Bell className={`${
-                    notification.priority === 'high' ? 'text-red-600' : 'text-blue-600'
+                    notification.priority === 'high' ? 'text-red-600' : 'text-brand-500'
                   } mr-3`} size={20} />
                   <div>
                     <h3 className={`font-semibold ${
@@ -154,7 +154,7 @@ const PaymentReminders = ({ user, currentLease, onPayRent, onReportIssue }) => {
                       {notification.title}
                     </h3>
                     <p className={`text-sm ${
-                      notification.priority === 'high' ? 'text-red-700' : 'text-blue-700'
+                      notification.priority === 'high' ? 'text-red-700' : 'text-brand-600'
                     }`}>
                       {notification.message}
                     </p>
@@ -163,7 +163,7 @@ const PaymentReminders = ({ user, currentLease, onPayRent, onReportIssue }) => {
                 {notification.type === 'payment' && (
                   <button
                     onClick={() => setShowRentPayment(true)}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700"
+                    className="bg-brand-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-brand-600"
                   >
                     Pay Now
                   </button>
@@ -203,7 +203,7 @@ const PaymentReminders = ({ user, currentLease, onPayRent, onReportIssue }) => {
       <div className="grid grid-cols-2 gap-4 mb-6">
         <button
           onClick={() => setShowRentPayment(true)}
-          className="p-4 bg-blue-600 text-white rounded-lg flex flex-col items-center hover:bg-blue-700"
+          className="p-4 bg-brand-500 text-white rounded-lg flex flex-col items-center hover:bg-brand-600"
         >
           <DollarSign size={24} className="mb-2" />
           <span className="font-medium">Pay Rent</span>
@@ -274,9 +274,9 @@ const PaymentReminders = ({ user, currentLease, onPayRent, onReportIssue }) => {
                   </div>
                 </div>
                 {issue.landlordResponse && (
-                  <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                  <div className="mt-3 p-3 bg-brand-50 rounded-lg">
                     <p className="text-sm text-blue-800 font-medium">Landlord Response:</p>
-                    <p className="text-sm text-blue-700">{issue.landlordResponse}</p>
+                    <p className="text-sm text-brand-600">{issue.landlordResponse}</p>
                   </div>
                 )}
               </div>
@@ -286,12 +286,12 @@ const PaymentReminders = ({ user, currentLease, onPayRent, onReportIssue }) => {
       </div>
 
       {/* Tenant Protection Info */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div className="bg-brand-50 border border-brand-200 rounded-lg p-4">
         <div className="flex items-center mb-2">
-          <Shield size={20} className="text-blue-600 mr-2" />
+          <Shield size={20} className="text-brand-500 mr-2" />
           <span className="font-semibold text-blue-800">Tenant Protection</span>
         </div>
-        <ul className="text-sm text-blue-700 space-y-1">
+        <ul className="text-sm text-brand-600 space-y-1">
           <li>• Payment escrow protects your rent payments</li>
           <li>• Photo documentation for security deposit disputes</li>
           <li>• Issue reporting creates a legal paper trail</li>
@@ -341,7 +341,7 @@ const PaymentReminders = ({ user, currentLease, onPayRent, onReportIssue }) => {
               </button>
               <button
                 onClick={handlePayRent}
-                className="flex-1 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700"
+                className="flex-1 py-3 bg-brand-500 text-white rounded-lg font-semibold hover:bg-brand-600"
               >
                 Pay Now
               </button>
@@ -368,7 +368,7 @@ const PaymentReminders = ({ user, currentLease, onPayRent, onReportIssue }) => {
                 <select
                   value={issueType}
                   onChange={(e) => setIssueType(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                 >
                   <option value="maintenance">Maintenance Issue</option>
                   <option value="safety">Safety Concern</option>
@@ -387,7 +387,7 @@ const PaymentReminders = ({ user, currentLease, onPayRent, onReportIssue }) => {
                   onChange={(e) => setIssueDescription(e.target.value)}
                   placeholder="Describe the issue in detail..."
                   rows={4}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
 
@@ -397,7 +397,7 @@ const PaymentReminders = ({ user, currentLease, onPayRent, onReportIssue }) => {
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
                   <Camera size={32} className="mx-auto text-gray-400 mb-2" />
                   <label className="cursor-pointer">
-                    <span className="text-blue-600 font-medium hover:underline">
+                    <span className="text-brand-500 font-medium hover:underline">
                       Add photos
                     </span>
                     <input
@@ -439,7 +439,7 @@ const PaymentReminders = ({ user, currentLease, onPayRent, onReportIssue }) => {
                 disabled={!issueDescription.trim()}
                 className={`flex-1 py-3 rounded-lg font-semibold ${
                   issueDescription.trim()
-                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                    ? 'bg-brand-500 text-white hover:bg-brand-600'
                     : 'bg-gray-300 text-gray-500'
                 }`}
               >

@@ -89,12 +89,12 @@ const PipelineStepper = ({ currentStage }) => {
           <div className="flex flex-col items-center flex-shrink-0">
             <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 ${ 
               i < idx  ? 'bg-green-500 border-green-500 text-white' :
-              i === idx ? 'bg-blue-600 border-blue-600 text-white' :
+              i === idx ? 'bg-brand-500 border-brand-500 text-white' :
                           'bg-white border-gray-300 text-gray-400'
             }`}>
               {i < idx ? '✓' : i + 1}
             </div>
-            <span className={`text-xs mt-1 ${ i === idx ? 'text-blue-600 font-semibold' : 'text-gray-400' }`}>
+            <span className={`text-xs mt-1 ${ i === idx ? 'text-brand-500 font-semibold' : 'text-gray-400' }`}>
               {stage.label}
             </span>
           </div>
@@ -185,7 +185,7 @@ const ApplicationWaitingRoom = ({
     <div className="p-4 pb-24 space-y-5">
 
       {/* Back */}
-      <button onClick={onBack} className="flex items-center text-blue-600 text-sm font-medium">
+      <button onClick={onBack} className="flex items-center text-brand-500 text-sm font-medium">
         <ArrowLeft size={16} className="mr-1" /> Back to Applications
       </button>
 
@@ -239,7 +239,7 @@ const ApplicationWaitingRoom = ({
         <h3 className="font-semibold mb-3 text-sm">Combined Income Check</h3>
         <div className="grid grid-cols-3 gap-2 text-center">
           <div>
-            <p className="text-lg font-bold text-blue-600">${combinedIncome.toLocaleString()}</p>
+            <p className="text-lg font-bold text-brand-500">${combinedIncome.toLocaleString()}</p>
             <p className="text-xs text-gray-500">Combined/mo</p>
           </div>
           <div>
@@ -265,7 +265,7 @@ const ApplicationWaitingRoom = ({
           {!allVerified && (
             <button
               onClick={handleSimulateProgress}
-              className="flex items-center text-xs text-blue-600 font-medium hover:underline"
+              className="flex items-center text-xs text-brand-500 font-medium hover:underline"
             >
               <RefreshCw size={13} className="mr-1" /> Simulate update
             </button>
@@ -281,8 +281,8 @@ const ApplicationWaitingRoom = ({
             <div key={mi} className="bg-white border border-gray-200 rounded-xl overflow-hidden">
               {/* Member header */}
               <div className="flex items-center px-4 py-3 bg-gray-50 border-b border-gray-100">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                  <User size={15} className="text-blue-600" />
+                <div className="w-8 h-8 bg-brand-100 rounded-full flex items-center justify-center mr-3">
+                  <User size={15} className="text-brand-500" />
                 </div>
                 <div className="flex-1">
                   <p className="font-semibold text-sm">{member.name}</p>
@@ -301,11 +301,11 @@ const ApplicationWaitingRoom = ({
                   <div key={item.id} className="flex items-center px-4 py-3 border-b border-gray-50 last:border-0">
                     {/* Role icon */}
                     <div className={`w-7 h-7 rounded-full flex items-center justify-center mr-3 flex-shrink-0 ${
-                      item.type === 'guarantor' ? 'bg-purple-100' : 'bg-blue-50'
+                      item.type === 'guarantor' ? 'bg-purple-100' : 'bg-brand-50'
                     }`}>
                       {item.type === 'guarantor'
                         ? <Shield size={13} className="text-purple-600" />
-                        : <User size={13} className="text-blue-500" />
+                        : <User size={13} className="text-brand-500" />
                       }
                     </div>
 

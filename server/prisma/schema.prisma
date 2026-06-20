@@ -139,14 +139,15 @@ model Favorite {
 
 // Application model
 model Application {
-  id             String            @id @default(cuid())
-  status         ApplicationStatus @default(pending)
-  message        String?
-  startDate      DateTime
-  endDate        DateTime
+  id               String            @id @default(cuid())
+  status           ApplicationStatus @default(pending)
+  message          String?
+  startDate        DateTime
+  endDate          DateTime
   emergencyContact String?
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
+  verificationData Json?             // Stores Plaid income, identity, fee results
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 
   // Relations
   listingId    String

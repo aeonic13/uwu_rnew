@@ -124,7 +124,7 @@ const ViewLeaseView = ({ user, lease, onBack }) => {
       <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center">
-            <FileText size={24} className="text-blue-600 mr-3" />
+            <FileText size={24} className="text-brand-500 mr-3" />
             <div>
               <h3 className="font-semibold">Lease Agreement</h3>
               <p className="text-sm text-gray-600">ID: {leaseDetails.id}</p>
@@ -144,7 +144,7 @@ const ViewLeaseView = ({ user, lease, onBack }) => {
           </div>
           <div>
             <p className="text-gray-600">Days Remaining</p>
-            <p className="font-semibold text-blue-600">{getDaysRemaining()} days</p>
+            <p className="font-semibold text-brand-500">{getDaysRemaining()} days</p>
           </div>
         </div>
       </div>
@@ -157,7 +157,7 @@ const ViewLeaseView = ({ user, lease, onBack }) => {
             onClick={() => setActiveTab(tab)}
             className={`flex-1 py-2 px-1 text-sm font-medium capitalize border-b-2 ${
               activeTab === tab
-                ? 'border-blue-600 text-blue-600'
+                ? 'border-brand-500 text-brand-500'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
@@ -172,7 +172,7 @@ const ViewLeaseView = ({ user, lease, onBack }) => {
           {/* Property Information */}
           <div className="bg-gray-50 p-4 rounded-lg">
             <h4 className="font-semibold mb-3 flex items-center">
-              <Home size={18} className="mr-2 text-blue-600" />
+              <Home size={18} className="mr-2 text-brand-500" />
               Property Details
             </h4>
             <div className="grid grid-cols-1 gap-3 text-sm">
@@ -207,7 +207,7 @@ const ViewLeaseView = ({ user, lease, onBack }) => {
               <div className="flex space-x-4 mt-3">
                 <button
                   onClick={() => contactLandlord('email')}
-                  className="flex items-center px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200"
+                  className="flex items-center px-3 py-2 bg-brand-100 text-brand-600 rounded-lg hover:bg-brand-100"
                 >
                   <Mail size={16} className="mr-1" />
                   Email
@@ -307,9 +307,9 @@ const ViewLeaseView = ({ user, lease, onBack }) => {
           </div>
 
           {/* Renewal Information */}
-          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+          <div className="bg-brand-50 p-4 rounded-lg border border-brand-200">
             <h4 className="font-semibold text-blue-800 mb-2">Lease Renewal</h4>
-            <p className="text-sm text-blue-700">
+            <p className="text-sm text-brand-600">
               {leaseDetails.terms.renewalOption 
                 ? 'Your lease includes an option to renew. Contact your landlord 60 days before expiration to discuss renewal terms.'
                 : 'This lease does not include an automatic renewal option. You will need to negotiate a new lease if you wish to stay beyond the current term.'
@@ -322,17 +322,17 @@ const ViewLeaseView = ({ user, lease, onBack }) => {
       {/* Payments Tab */}
       {activeTab === 'payments' && (
         <div className="space-y-4">
-          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+          <div className="bg-brand-50 p-4 rounded-lg border border-brand-200">
             <h4 className="font-semibold text-blue-800 mb-2">Payment Summary</h4>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <p className="text-blue-600">Total Paid</p>
+                <p className="text-brand-500">Total Paid</p>
                 <p className="text-xl font-bold text-blue-800">
                   ${leaseDetails.payments.filter(p => p.status === 'paid').reduce((sum, p) => sum + p.amount, 0)}
                 </p>
               </div>
               <div>
-                <p className="text-blue-600">Security Deposit</p>
+                <p className="text-brand-500">Security Deposit</p>
                 <p className="text-lg font-semibold text-blue-800">${leaseDetails.terms.securityDeposit}</p>
               </div>
             </div>
@@ -368,7 +368,7 @@ const ViewLeaseView = ({ user, lease, onBack }) => {
             <div key={index} className="bg-white border border-gray-200 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
-                  <FileText size={20} className="text-blue-600 mr-3" />
+                  <FileText size={20} className="text-brand-500 mr-3" />
                   <div>
                     <p className="font-medium">{document.name}</p>
                     <p className="text-sm text-gray-600">
@@ -378,7 +378,7 @@ const ViewLeaseView = ({ user, lease, onBack }) => {
                 </div>
                 <button
                   onClick={() => downloadDocument(document)}
-                  className="flex items-center px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200"
+                  className="flex items-center px-3 py-2 bg-brand-100 text-brand-600 rounded-lg hover:bg-brand-100"
                 >
                   <Download size={16} className="mr-1" />
                   Download

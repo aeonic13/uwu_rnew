@@ -5,7 +5,6 @@ import {
   Menu,
   X,
   Home,
-  Search,
   MessageSquare,
   User,
   PlusCircle,
@@ -16,6 +15,8 @@ import {
   Building2,
   Users,
   Sparkles,
+  LogIn,
+  ShieldCheck,
 } from 'lucide-react'
 
 export default function Header() {
@@ -34,9 +35,8 @@ export default function Header() {
   // Student navigation items
   const studentNavItems = [
     { path: '/', label: 'Browse', icon: Home },
-    { path: '/university-search', label: 'Search', icon: Search },
     { path: '/housemates', label: 'Housemates', icon: Sparkles },
-    { path: '/groups', label: 'Groups', icon: Users },
+    { path: '/pre-qualify', label: 'Pre-Qualify', icon: ShieldCheck },
     { path: '/messages', label: 'Messages', icon: MessageSquare },
     { path: '/profile', label: 'Profile', icon: User },
   ]
@@ -44,22 +44,35 @@ export default function Header() {
   // Owner navigation items
   const ownerNavItems = [
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { path: '/landlord-listing', label: 'Post Listing', icon: PlusCircle },
-    { path: '/landlord-inbox', label: 'Inbox', icon: Inbox },
+    {
+      path: '/dashboard/listings/new',
+      label: 'Post Listing',
+      icon: PlusCircle,
+    },
+    { path: '/dashboard/inbox', label: 'Inbox', icon: Inbox },
     { path: '/payments', label: 'Payments', icon: DollarSign },
     { path: '/profile', label: 'Profile', icon: User },
   ]
 
-  const navItems = user?.userType === 'owner' ? ownerNavItems : studentNavItems
+  // Guest users see Browse and List Your Property
+  const guestNavItems = [
+    { path: '/listings', label: 'Browse', icon: Home },
+    { path: '/register', label: 'List Your Property', icon: Building2 },
+  ]
+
+  const navItems = !user
+    ? guestNavItems
+    : user.userType === 'owner'
+      ? ownerNavItems
+      : studentNavItems
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
-            <Building2 className="text-blue-600" size={32} />
-            <span className="text-2xl font-bold text-gray-900">Rentra</span>
+          <Link to="/" className="flex items-center">
+            <img src="/logo.svg" alt="Rentra" className="h-10 w-auto" />
           </Link>
 
           {/* Desktop Navigation */}
@@ -72,7 +85,7 @@ export default function Header() {
                   to={item.path}
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                     isActive(item.path)
-                      ? 'bg-blue-50 text-blue-600'
+                      ? 'bg-brand-50 text-brand-500'
                       : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
                   }`}
                 >
@@ -85,7 +98,7 @@ export default function Header() {
 
           {/* Desktop User Menu */}
           <div className="hidden md:flex items-center gap-3">
-            {user && (
+            {user ? (
               <>
                 <span className="text-sm text-gray-600">
                   {user.firstName} {user.lastName}
@@ -97,6 +110,22 @@ export default function Header() {
                   <LogOut size={18} />
                   <span>Logout</span>
                 </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <LogIn size={18} />
+                  <span>Sign In</span>
+                </Link>
+                <Link
+                  to="/register"
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-brand-500 hover:bg-brand-600 rounded-lg transition-colors"
+                >
+                  <span>Get Started</span>
+                </Link>
               </>
             )}
           </div>
@@ -124,7 +153,7 @@ export default function Header() {
                   onClick={() => setMobileMenuOpen(false)}
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium transition-colors ${
                     isActive(item.path)
-                      ? 'bg-blue-50 text-blue-600'
+                      ? 'bg-brand-50 text-brand-500'
                       : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
@@ -134,7 +163,7 @@ export default function Header() {
               )
             })}
 
-            {user && (
+            {user ? (
               <button
                 onClick={() => {
                   handleLogout()
@@ -145,6 +174,24 @@ export default function Header() {
                 <LogOut size={20} />
                 <span>Logout</span>
               </button>
+            ) : (
+              <div className="flex flex-col gap-2 pt-2 border-t border-gray-100">
+                <Link
+                  to="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-gray-700 hover:bg-gray-100"
+                >
+                  <LogIn size={20} />
+                  <span>Sign In</span>
+                </Link>
+                <Link
+                  to="/register"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-white bg-brand-500 hover:bg-brand-600"
+                >
+                  <span>Get Started</span>
+                </Link>
+              </div>
             )}
           </nav>
         </div>

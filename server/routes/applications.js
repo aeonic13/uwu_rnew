@@ -10,7 +10,7 @@ const router = express.Router()
  */
 router.post('/', authenticate, async (req, res) => {
   try {
-    const { listingId, startDate, endDate, message, emergencyContact } = req.body
+    const { listingId, startDate, endDate, message, emergencyContact, verificationData } = req.body
     const userId = req.user.id
 
     // Validate required fields
@@ -80,6 +80,7 @@ router.post('/', authenticate, async (req, res) => {
         message,
         emergencyContact,
         status: 'pending',
+        ...(verificationData && { verificationData }),
       },
       include: {
         listing: {

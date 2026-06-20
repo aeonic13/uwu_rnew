@@ -109,7 +109,7 @@ const EnhancedMessaging = ({
             >
               <Video size={16} />
             </button>
-            <button className="p-2 bg-blue-100 text-blue-600 rounded-full hover:bg-blue-200">
+            <button className="p-2 bg-brand-100 text-brand-500 rounded-full hover:bg-brand-100">
               <Phone size={16} />
             </button>
           </div>
@@ -117,9 +117,9 @@ const EnhancedMessaging = ({
 
         {/* Tour Reminder */}
         {reminderSet && (
-          <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <div className="mt-3 bg-brand-50 border border-brand-200 rounded-lg p-3">
             <div className="flex items-center">
-              <Bell size={16} className="text-blue-600 mr-2" />
+              <Bell size={16} className="text-brand-500 mr-2" />
               <span className="text-sm text-blue-800 font-medium">
                 Tour reminder set! We'll notify you 1 hour before.
               </span>
@@ -135,8 +135,8 @@ const EnhancedMessaging = ({
       >
         {messages.length === 0 ? (
           <div className="text-center py-8">
-            <div className="bg-blue-50 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-              <Calendar className="text-blue-600" size={24} />
+            <div className="bg-brand-50 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <Calendar className="text-brand-500" size={24} />
             </div>
             <h3 className="font-semibold text-gray-800 mb-2">Start the conversation!</h3>
             <p className="text-gray-600 text-sm mb-4">
@@ -151,7 +151,7 @@ const EnhancedMessaging = ({
                   <button
                     key={index}
                     onClick={() => handleQuickResponse(option)}
-                    className="px-3 py-2 bg-blue-100 text-blue-700 rounded-full text-xs hover:bg-blue-200"
+                    className="px-3 py-2 bg-brand-100 text-brand-600 rounded-full text-xs hover:bg-brand-100"
                   >
                     {option}
                   </button>
@@ -168,7 +168,7 @@ const EnhancedMessaging = ({
               <div
                 className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
                   message.sender === currentUser.id
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-brand-500 text-white'
                     : 'bg-gray-200 text-gray-800'
                 }`}
               >
@@ -198,7 +198,7 @@ const EnhancedMessaging = ({
                 )}
 
                 <p className={`text-xs mt-1 ${
-                  message.sender === currentUser.id ? 'text-blue-100' : 'text-gray-500'
+                  message.sender === currentUser.id ? 'text-brand-100' : 'text-gray-500'
                 }`}>
                   {new Date(message.timestamp).toLocaleTimeString()}
                 </p>
@@ -227,7 +227,7 @@ const EnhancedMessaging = ({
 
       {/* Tour Scheduler */}
       {showScheduler && (
-        <div className="p-4 bg-blue-50 border-t">
+        <div className="p-4 bg-brand-50 border-t">
           <h4 className="font-semibold mb-3">Schedule a Tour</h4>
           
           {/* Tour Type Selection */}
@@ -237,7 +237,7 @@ const EnhancedMessaging = ({
                 onClick={() => setTourType('in-person')}
                 className={`flex-1 p-2 rounded-lg text-sm font-medium ${
                   tourType === 'in-person'
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-brand-500 text-white'
                     : 'bg-white border border-gray-300'
                 }`}
               >
@@ -248,7 +248,7 @@ const EnhancedMessaging = ({
                 onClick={() => setTourType('virtual')}
                 className={`flex-1 p-2 rounded-lg text-sm font-medium ${
                   tourType === 'virtual'
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-brand-500 text-white'
                     : 'bg-white border border-gray-300'
                 }`}
               >
@@ -297,7 +297,7 @@ const EnhancedMessaging = ({
               disabled={!tourDate || !tourTime}
               className={`flex-1 p-2 rounded-lg font-medium ${
                 tourDate && tourTime
-                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                  ? 'bg-brand-500 text-white hover:bg-brand-600'
                   : 'bg-gray-300 text-gray-500'
               }`}
             >
@@ -313,7 +313,7 @@ const EnhancedMessaging = ({
         <div className="flex flex-wrap gap-2 mb-3">
           <button
             onClick={() => setShowScheduler(!showScheduler)}
-            className="flex items-center px-3 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm hover:bg-blue-200"
+            className="flex items-center px-3 py-2 bg-brand-100 text-brand-600 rounded-lg text-sm hover:bg-brand-100"
           >
             <Calendar size={16} className="mr-1" />
             Schedule Tour
@@ -344,14 +344,14 @@ const EnhancedMessaging = ({
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
             placeholder="Type a message..."
-            className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
           <button
             onClick={handleSendMessage}
             disabled={!newMessage.trim()}
             className={`p-3 rounded-lg ${
               newMessage.trim()
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                ? 'bg-brand-500 text-white hover:bg-brand-600'
                 : 'bg-gray-300 text-gray-500'
             }`}
           >

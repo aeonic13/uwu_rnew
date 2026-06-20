@@ -187,7 +187,7 @@ const RoommateDiscovery = ({ currentUser, onBack, onMessage, onCreateGroup }) =>
     return (
       <div className="p-4 pb-20">
         <div className="flex items-center justify-between mb-6">
-          <button onClick={() => setCurrentView('discover')} className="flex items-center text-blue-600">
+          <button onClick={() => setCurrentView('discover')} className="flex items-center text-brand-500">
             <ArrowLeft size={20} className="mr-1" />
             Back
           </button>
@@ -202,7 +202,7 @@ const RoommateDiscovery = ({ currentUser, onBack, onMessage, onCreateGroup }) =>
             <p className="text-gray-500 mb-6">Keep swiping to find your perfect roommate!</p>
             <button 
               onClick={() => setCurrentView('discover')}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg"
+              className="bg-brand-500 text-white px-6 py-3 rounded-lg"
             >
               Continue Browsing
             </button>
@@ -237,7 +237,7 @@ const RoommateDiscovery = ({ currentUser, onBack, onMessage, onCreateGroup }) =>
                 <div className="flex space-x-3">
                   <button 
                     onClick={() => onMessage(match.person1 || match)}
-                    className="flex-1 bg-blue-600 text-white py-2 rounded-lg flex items-center justify-center"
+                    className="flex-1 bg-brand-500 text-white py-2 rounded-lg flex items-center justify-center"
                   >
                     <MessageCircle size={16} className="mr-1" />
                     Message
@@ -263,7 +263,7 @@ const RoommateDiscovery = ({ currentUser, onBack, onMessage, onCreateGroup }) =>
     return (
       <div className="p-4 pb-20">
         <div className="flex items-center justify-between mb-6">
-          <button onClick={() => setCurrentView('discover')} className="flex items-center text-blue-600">
+          <button onClick={() => setCurrentView('discover')} className="flex items-center text-brand-500">
             <ArrowLeft size={20} className="mr-1" />
             Back
           </button>
@@ -307,7 +307,7 @@ const RoommateDiscovery = ({ currentUser, onBack, onMessage, onCreateGroup }) =>
           </button>
           <button 
             onClick={() => setCurrentView('profile-setup')}
-            className="p-2 bg-blue-600 text-white rounded-lg"
+            className="p-2 bg-brand-500 text-white rounded-lg"
           >
             <User size={20} />
           </button>
@@ -352,7 +352,7 @@ const RoommateDiscovery = ({ currentUser, onBack, onMessage, onCreateGroup }) =>
           placeholder="Search by name, university, major..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
         />
       </div>
 
@@ -452,7 +452,7 @@ const RoommateCard = ({ roommate, onLike, onMessage, isLiked, isMatched }) => {
             <div className="flex items-center">
               <h3 className="font-semibold text-lg">{roommate.name}, {roommate.age}</h3>
               {roommate.verificationStatus === 'verified' && (
-                <CheckCircle size={16} className="ml-2 text-blue-500" />
+                <CheckCircle size={16} className="ml-2 text-brand-500" />
               )}
             </div>
             <p className="text-gray-600 text-sm">{roommate.university} • {roommate.major}</p>
@@ -469,7 +469,7 @@ const RoommateCard = ({ roommate, onLike, onMessage, isLiked, isMatched }) => {
         <div className="flex items-center mb-4">
           <div className="flex space-x-1">
             {roommate.preferences.hobbies.slice(0, 3).map((hobby, index) => (
-              <span key={index} className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+              <span key={index} className="bg-brand-100 text-blue-800 text-xs px-2 py-1 rounded-full">
                 {hobby}
               </span>
             ))}
@@ -491,7 +491,7 @@ const RoommateCard = ({ roommate, onLike, onMessage, isLiked, isMatched }) => {
           </button>
           <button 
             onClick={onMessage}
-            className="flex-1 bg-blue-600 text-white py-2 rounded-lg flex items-center justify-center"
+            className="flex-1 bg-brand-500 text-white py-2 rounded-lg flex items-center justify-center"
           >
             <MessageCircle size={16} className="mr-1" />
             Message
@@ -647,7 +647,7 @@ const RoommateProfileSetup = ({ currentUser, onComplete }) => {
               }}
               className={`p-2 text-xs rounded-lg border ${
                 profile.preferences.hobbies.includes(hobby)
-                  ? 'bg-blue-100 border-blue-300 text-blue-800'
+                  ? 'bg-brand-100 border-brand-300 text-blue-800'
                   : 'bg-gray-50 border-gray-300 text-gray-700'
               }`}
             >
@@ -683,7 +683,7 @@ const RoommateProfileSetup = ({ currentUser, onComplete }) => {
 
       <button
         type="submit"
-        className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold"
+        className="w-full bg-brand-500 text-white py-3 rounded-lg font-semibold"
       >
         Complete Profile
       </button>
@@ -709,7 +709,7 @@ const GroupsManager = ({ groups, currentUser, onMessage, onInviteFriend }) => {
         <div key={group.id} className="border border-gray-200 rounded-lg p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold">Lease Group</h3>
-            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+            <span className="text-xs bg-brand-100 text-blue-800 px-2 py-1 rounded-full">
               {group.status}
             </span>
           </div>
@@ -737,7 +737,7 @@ const GroupsManager = ({ groups, currentUser, onMessage, onInviteFriend }) => {
           
           <button 
             onClick={() => onMessage({ id: group.id, isGroup: true, members: group.members })}
-            className="w-full bg-blue-600 text-white py-2 rounded-lg flex items-center justify-center"
+            className="w-full bg-brand-500 text-white py-2 rounded-lg flex items-center justify-center"
           >
             <MessageCircle size={16} className="mr-1" />
             Group Chat

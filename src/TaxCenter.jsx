@@ -355,7 +355,7 @@ const TaxCenter = ({ user, onBack, onNavigate }) => {
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`flex-shrink-0 py-2 px-3 text-sm font-medium rounded-md transition-colors ${
-              activeTab === tab ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600'
+              activeTab === tab ? 'bg-white text-brand-500 shadow-sm' : 'text-gray-600'
             }`}
           >
             {tab.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
@@ -374,10 +374,10 @@ const TaxCenter = ({ user, onBack, onNavigate }) => {
               <div className="text-xs text-green-600 mt-1">{taxData.overview.properties} properties</div>
             </div>
             
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-              <div className="text-2xl font-bold text-blue-600">${taxData.overview.totalDeductibleExpenses.toLocaleString()}</div>
-              <div className="text-sm text-blue-700">Deductible Expenses</div>
-              <div className="text-xs text-blue-600 mt-1">{((taxData.overview.totalDeductibleExpenses / taxData.overview.totalRentalIncome) * 100).toFixed(1)}% of income</div>
+            <div className="bg-brand-50 p-4 rounded-lg border border-brand-200">
+              <div className="text-2xl font-bold text-brand-500">${taxData.overview.totalDeductibleExpenses.toLocaleString()}</div>
+              <div className="text-sm text-brand-600">Deductible Expenses</div>
+              <div className="text-xs text-brand-500 mt-1">{((taxData.overview.totalDeductibleExpenses / taxData.overview.totalRentalIncome) * 100).toFixed(1)}% of income</div>
             </div>
 
             <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
@@ -416,7 +416,7 @@ const TaxCenter = ({ user, onBack, onNavigate }) => {
                 className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 <div className="flex items-center">
-                  <Receipt size={20} className="text-blue-600 mr-3" />
+                  <Receipt size={20} className="text-brand-500 mr-3" />
                   <div className="text-left">
                     <p className="font-medium">Generate 1099-MISC Forms</p>
                     <p className="text-sm text-gray-600">{taxData.overview.form1099Count} forms ready</p>
@@ -465,7 +465,7 @@ const TaxCenter = ({ user, onBack, onNavigate }) => {
               {taxData.taxDocuments.slice(0, 3).map((doc) => (
                 <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center">
-                    <FileText size={16} className="text-blue-600 mr-3" />
+                    <FileText size={16} className="text-brand-500 mr-3" />
                     <div>
                       <p className="font-medium">{doc.name}</p>
                       <p className="text-sm text-gray-600">{doc.description}</p>
@@ -475,7 +475,7 @@ const TaxCenter = ({ user, onBack, onNavigate }) => {
                     <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(doc.status)}`}>
                       {doc.status}
                     </span>
-                    <button className="p-1 text-gray-500 hover:text-blue-600">
+                    <button className="p-1 text-gray-500 hover:text-brand-500">
                       <Download size={16} />
                     </button>
                   </div>
@@ -594,11 +594,11 @@ const TaxCenter = ({ user, onBack, onNavigate }) => {
           ))}
 
           {/* Schedule E Totals */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+          <div className="bg-brand-50 border border-brand-200 rounded-lg p-6">
             <h4 className="font-semibold mb-4">Schedule E Totals</h4>
             <div className="grid grid-cols-3 gap-4">
               <div className="text-center">
-                <div className="text-xl font-bold text-blue-600">${taxData.scheduleE.totals.totalRentalIncome.toLocaleString()}</div>
+                <div className="text-xl font-bold text-brand-500">${taxData.scheduleE.totals.totalRentalIncome.toLocaleString()}</div>
                 <div className="text-sm text-gray-600">Total Rental Income</div>
               </div>
               <div className="text-center">
@@ -623,7 +623,7 @@ const TaxCenter = ({ user, onBack, onNavigate }) => {
             <h3 className="font-semibold">1099-MISC Forms</h3>
             <button
               onClick={generate1099Forms}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 flex items-center"
+              className="bg-brand-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-brand-600 flex items-center"
             >
               <Download size={16} className="mr-2" />
               Generate All 1099s
@@ -666,7 +666,7 @@ const TaxCenter = ({ user, onBack, onNavigate }) => {
                 </div>
 
                 <div className="flex space-x-3 pt-4 border-t border-gray-200">
-                  <button className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700">
+                  <button className="flex-1 bg-brand-500 text-white py-2 rounded-lg font-medium hover:bg-brand-600">
                     Generate 1099
                   </button>
                   <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
@@ -715,16 +715,16 @@ const TaxCenter = ({ user, onBack, onNavigate }) => {
                   <div>
                     <h4 className="font-semibold">{category.name}</h4>
                     <p className="text-sm text-gray-600">{category.description}</p>
-                    <p className="text-xs text-blue-600">{category.irs_code}</p>
+                    <p className="text-xs text-brand-500">{category.irs_code}</p>
                   </div>
                   <div className="text-right">
-                    <div className="text-xl font-bold text-blue-600">${category.deductible.toLocaleString()}</div>
+                    <div className="text-xl font-bold text-brand-500">${category.deductible.toLocaleString()}</div>
                     <div className="text-sm text-gray-600">{category.percentage}% of total</div>
                   </div>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div 
-                    className="bg-blue-500 h-2 rounded-full" 
+                    className="bg-brand-500 h-2 rounded-full" 
                     style={{ width: `${category.percentage}%` }}
                   ></div>
                 </div>
@@ -753,7 +753,7 @@ const TaxCenter = ({ user, onBack, onNavigate }) => {
               <div key={doc.id} className="bg-white border border-gray-200 rounded-lg p-6">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center">
-                    <FileText size={24} className="text-blue-600 mr-4" />
+                    <FileText size={24} className="text-brand-500 mr-4" />
                     <div>
                       <h4 className="font-semibold">{doc.name}</h4>
                       <p className="text-sm text-gray-600">{doc.description}</p>
@@ -764,10 +764,10 @@ const TaxCenter = ({ user, onBack, onNavigate }) => {
                     <span className={`px-3 py-1 text-sm rounded-full ${getStatusColor(doc.status)}`}>
                       {doc.status.charAt(0).toUpperCase() + doc.status.slice(1)}
                     </span>
-                    <button className="p-2 text-gray-500 hover:text-blue-600">
+                    <button className="p-2 text-gray-500 hover:text-brand-500">
                       <Eye size={16} />
                     </button>
-                    <button className="p-2 text-gray-500 hover:text-blue-600">
+                    <button className="p-2 text-gray-500 hover:text-brand-500">
                       <Download size={16} />
                     </button>
                   </div>
@@ -776,9 +776,9 @@ const TaxCenter = ({ user, onBack, onNavigate }) => {
             ))}
           </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+          <div className="bg-brand-50 border border-brand-200 rounded-lg p-6">
             <h4 className="font-semibold text-blue-800 mb-3">Professional Tax Preparation</h4>
-            <p className="text-sm text-blue-700 mb-4">
+            <p className="text-sm text-brand-600 mb-4">
               All documents are CPA-ready and formatted for professional tax preparation software including TurboTax, H&R Block, and TaxAct.
             </p>
             <div className="grid grid-cols-2 gap-4 text-sm">
@@ -808,7 +808,7 @@ const TaxCenter = ({ user, onBack, onNavigate }) => {
         <div className="space-y-6">
           <div className="flex justify-between items-center">
             <h3 className="font-semibold">Quarterly Estimated Taxes</h3>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700">
+            <button className="bg-brand-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-brand-600">
               Calculate Next Quarter
             </button>
           </div>
@@ -834,7 +834,7 @@ const TaxCenter = ({ user, onBack, onNavigate }) => {
                     </p>
                   </div>
                   <div className="text-right">
-                    <div className="text-xl font-bold text-blue-600">${payment.amount.toLocaleString()}</div>
+                    <div className="text-xl font-bold text-brand-500">${payment.amount.toLocaleString()}</div>
                     <span className={`px-3 py-1 text-sm rounded-full ${
                       payment.paid ? 'bg-green-100 text-green-800' : 
                       payment.dueIn <= 0 ? 'bg-red-100 text-red-800' :
@@ -847,7 +847,7 @@ const TaxCenter = ({ user, onBack, onNavigate }) => {
                 </div>
                 {!payment.paid && (
                   <div className="flex space-x-3 pt-4 border-t border-gray-200">
-                    <button className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700">
+                    <button className="flex-1 bg-brand-500 text-white py-2 rounded-lg font-medium hover:bg-brand-600">
                       Make Payment
                     </button>
                     <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">

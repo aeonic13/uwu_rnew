@@ -1,6 +1,6 @@
 import express from 'express'
 import prisma from '../utils/prisma.js'
-import { authenticate, requireRole } from '../middleware/authenticate.js'
+import { authenticate, requireUserType } from '../middleware/authenticate.js'
 
 const router = express.Router()
 
@@ -12,7 +12,7 @@ const router = express.Router()
 router.get(
   '/landlord/applications/:listingId',
   authenticate,
-  requireRole('owner'),
+  requireUserType('owner'),
   async (req, res) => {
     try {
       const { listingId } = req.params
@@ -109,7 +109,7 @@ router.get(
 router.get(
   '/landlord/group-status/:listingId',
   authenticate,
-  requireRole('owner'),
+  requireUserType('owner'),
   async (req, res) => {
     try {
       const { listingId } = req.params
@@ -224,7 +224,7 @@ router.get(
 router.get(
   '/landlord/rent-roll',
   authenticate,
-  requireRole('owner'),
+  requireUserType('owner'),
   async (req, res) => {
     try {
       const ownerId = req.user.userId
@@ -353,7 +353,7 @@ router.get(
 router.get(
   '/landlord/payment-status/:applicationId',
   authenticate,
-  requireRole('owner'),
+  requireUserType('owner'),
   async (req, res) => {
     try {
       const { applicationId } = req.params

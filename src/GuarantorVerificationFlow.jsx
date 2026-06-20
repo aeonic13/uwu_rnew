@@ -30,10 +30,10 @@ const LandingScreen = ({ studentName, propertyAddress, onStart }) => (
   <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center space-y-8">
     {/* Logo / Brand */}
     <div className="space-y-1">
-      <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto">
+      <div className="w-16 h-16 bg-brand-500 rounded-2xl flex items-center justify-center mx-auto">
         <Shield size={32} className="text-white" />
       </div>
-      <p className="text-xl font-bold text-blue-600">Rentra</p>
+      <p className="text-xl font-bold text-brand-500">Rentra</p>
     </div>
 
     <div className="space-y-3 max-w-xs">
@@ -50,7 +50,7 @@ const LandingScreen = ({ studentName, propertyAddress, onStart }) => (
     {/* Trust pillars */}
     <div className="grid grid-cols-3 gap-4 w-full max-w-xs text-center">
       {[
-        { icon: <Lock size={18} className="text-blue-600" />, label: 'Bank-level\nSecurity' },
+        { icon: <Lock size={18} className="text-brand-500" />, label: 'Bank-level\nSecurity' },
         { icon: <Star size={18} className="text-yellow-500" />, label: 'Trusted by\n500k+ users' },
         { icon: <CheckCircle size={18} className="text-green-500" />, label: 'Instant\nVerification' },
       ].map((item, i) => (
@@ -63,7 +63,7 @@ const LandingScreen = ({ studentName, propertyAddress, onStart }) => (
 
     <button
       onClick={onStart}
-      className="w-full max-w-xs bg-blue-600 text-white py-4 rounded-xl font-semibold text-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
+      className="w-full max-w-xs bg-brand-500 text-white py-4 rounded-xl font-semibold text-lg hover:bg-brand-600 transition-colors flex items-center justify-center"
     >
       Start Verification
       <ArrowRight size={20} className="ml-2" />
@@ -101,8 +101,8 @@ const PlaidIDVScreen = ({ onVerified }) => {
       {/* Modal header (Plaid-style) */}
       <div className="bg-white rounded-2xl shadow-sm p-5 space-y-4">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-            <User size={20} className="text-blue-600" />
+          <div className="w-10 h-10 bg-brand-100 rounded-full flex items-center justify-center">
+            <User size={20} className="text-brand-500" />
           </div>
           <div>
             <p className="font-semibold">Verify Your Identity</p>
@@ -117,7 +117,7 @@ const PlaidIDVScreen = ({ onVerified }) => {
               key={m}
               onClick={() => setMethod(m)}
               className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
-                method === m ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'
+                method === m ? 'bg-brand-500 text-white' : 'bg-gray-100 text-gray-600'
               }`}
             >
               {m === 'instant' ? 'Phone + DOB' : 'Driver\'s License'}
@@ -136,7 +136,7 @@ const PlaidIDVScreen = ({ onVerified }) => {
                   value={phone}
                   onChange={e => setPhone(e.target.value)}
                   placeholder="(555) 000-0000"
-                  className="w-full pl-9 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-9 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
             </div>
@@ -146,7 +146,7 @@ const PlaidIDVScreen = ({ onVerified }) => {
                 type="date"
                 value={dob}
                 onChange={e => setDob(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
           </div>
@@ -156,7 +156,7 @@ const PlaidIDVScreen = ({ onVerified }) => {
               <User size={20} className="text-gray-400" />
             </div>
             <p className="text-sm text-gray-600">Tap to upload front of Driver's License</p>
-            <button className="text-sm text-blue-600 font-medium">Upload Photo</button>
+            <button className="text-sm text-brand-500 font-medium">Upload Photo</button>
           </div>
         )}
 
@@ -171,7 +171,7 @@ const PlaidIDVScreen = ({ onVerified }) => {
             disabled={verifying || (method === 'instant' && (!phone || !dob))}
             className={`w-full py-3 rounded-xl font-semibold transition-colors ${
               !verifying && (method === 'dl' || (phone && dob))
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                ? 'bg-brand-500 text-white hover:bg-brand-600'
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'
             }`}
           >
@@ -192,7 +192,7 @@ const PlaidIncomeScreen = ({ onVerified }) => {
   const [done, setDone] = useState(false)
 
   const providers = [
-    { id: 'bank', label: 'Link Bank Account', icon: <Building size={20} className="text-blue-600" /> },
+    { id: 'bank', label: 'Link Bank Account', icon: <Building size={20} className="text-brand-500" /> },
     { id: 'payroll', label: 'Connect Payroll', icon: <CreditCard size={20} className="text-green-600" /> },
   ]
 
@@ -230,14 +230,14 @@ const PlaidIncomeScreen = ({ onVerified }) => {
               key={p.id}
               onClick={() => setSelected(p.id)}
               className={`w-full flex items-center p-4 border-2 rounded-xl transition-colors ${
-                selected === p.id ? 'border-blue-400 bg-blue-50' : 'border-gray-200 hover:border-blue-200'
+                selected === p.id ? 'border-brand-400 bg-brand-50' : 'border-gray-200 hover:border-brand-200'
               }`}
             >
               <div className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center mr-3">
                 {p.icon}
               </div>
               <span className="font-medium">{p.label}</span>
-              {selected === p.id && <CheckCircle size={16} className="text-blue-600 ml-auto" />}
+              {selected === p.id && <CheckCircle size={16} className="text-brand-500 ml-auto" />}
             </button>
           ))}
         </div>
@@ -291,9 +291,9 @@ const SuccessScreen = ({ studentName, onDone }) => {
       </div>
 
       {/* What's next */}
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 max-w-xs w-full text-left space-y-2">
+      <div className="bg-brand-50 border border-brand-200 rounded-xl p-4 max-w-xs w-full text-left space-y-2">
         <p className="text-sm font-semibold text-blue-800">What happens next?</p>
-        <ul className="text-sm text-blue-700 space-y-1 list-disc list-inside">
+        <ul className="text-sm text-brand-600 space-y-1 list-disc list-inside">
           <li>Group application submitted to landlord</li>
           <li>Landlord reviews combined income</li>
           <li>If approved, you'll receive a lease to co-sign</li>
@@ -303,7 +303,7 @@ const SuccessScreen = ({ studentName, onDone }) => {
       <div className="w-full max-w-xs space-y-3">
         <button
           onClick={onDone}
-          className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors"
+          className="w-full bg-brand-500 text-white py-3 rounded-xl font-semibold hover:bg-brand-600 transition-colors"
         >
           Done
         </button>

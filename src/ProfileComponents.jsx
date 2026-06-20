@@ -67,7 +67,7 @@ export const EditProfileView = ({ user, onBack, onSave }) => {
 
         <button
           onClick={handleSave}
-          className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold"
+          className="w-full bg-brand-500 text-white py-3 rounded-lg font-semibold"
         >
           Save Changes
         </button>
@@ -131,7 +131,7 @@ export const SavedPropertiesView = ({ user, onBack, savedListings = [], onViewPr
             <p className="text-green-600 font-bold">${listing.price}/month</p>
             <button
               onClick={() => onViewProperty(listing)}
-              className="mt-2 bg-blue-600 text-white px-4 py-2 rounded-lg"
+              className="mt-2 bg-brand-500 text-white px-4 py-2 rounded-lg"
             >
               View Details
             </button>
@@ -196,7 +196,7 @@ export const NotificationSettingsView = ({ user, onBack }) => {
             <span className="font-medium capitalize">{key}</span>
             <button
               onClick={() => setSettings(prev => ({ ...prev, [key]: !value }))}
-              className={`w-12 h-6 rounded-full ${value ? 'bg-blue-600' : 'bg-gray-300'}`}
+              className={`w-12 h-6 rounded-full ${value ? 'bg-brand-500' : 'bg-gray-300'}`}
             >
               <div className={`w-5 h-5 rounded-full bg-white transition-transform ${value ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>
@@ -284,7 +284,7 @@ export const ContactSupportView = ({ user, onBack }) => (
         />
       </div>
 
-      <button className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold">
+      <button className="w-full bg-brand-500 text-white py-3 rounded-lg font-semibold">
         Send Message
       </button>
     </div>
@@ -308,7 +308,7 @@ export const BankAccountManager = ({ user, bankAccounts = [], onBack, onAddAccou
         <p className="text-gray-500 mb-6">Add a bank account for easy payments</p>
         <button 
           onClick={() => onAddAccount && onAddAccount({ name: 'Sample Bank', last4: '1234' })}
-          className="bg-blue-600 text-white px-6 py-3 rounded-lg"
+          className="bg-brand-500 text-white px-6 py-3 rounded-lg"
         >
           Add Bank Account
         </button>
@@ -448,7 +448,7 @@ export const TourRequestModal = ({ property, onRequestTour, onClose }) => {
           <button
             onClick={() => onRequestTour(date, time, '')}
             disabled={!date || !time}
-            className="flex-1 py-2 bg-blue-600 text-white rounded-lg disabled:bg-gray-300"
+            className="flex-1 py-2 bg-brand-500 text-white rounded-lg disabled:bg-gray-300"
           >
             Request Tour
           </button>
@@ -469,7 +469,7 @@ export const ApplicationFlow = ({ application, onBack }) => (
     </div>
 
     <div className="text-center py-12">
-      <FileText size={48} className="mx-auto text-blue-600 mb-4" />
+      <FileText size={48} className="mx-auto text-brand-500 mb-4" />
       <h3 className="text-lg font-semibold mb-2">Application Process</h3>
       <p className="text-gray-600">Complete your rental application here</p>
     </div>
