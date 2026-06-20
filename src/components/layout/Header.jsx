@@ -15,6 +15,7 @@ import {
   LogOut,
   Building2,
   Users,
+  Sparkles,
 } from 'lucide-react'
 
 export default function Header() {
@@ -28,12 +29,13 @@ export default function Header() {
     navigate('/login')
   }
 
-  const isActive = (path) => location.pathname === path
+  const isActive = path => location.pathname === path
 
   // Student navigation items
   const studentNavItems = [
     { path: '/', label: 'Browse', icon: Home },
     { path: '/university-search', label: 'Search', icon: Search },
+    { path: '/housemates', label: 'Housemates', icon: Sparkles },
     { path: '/groups', label: 'Groups', icon: Users },
     { path: '/messages', label: 'Messages', icon: MessageSquare },
     { path: '/profile', label: 'Profile', icon: User },
@@ -62,7 +64,7 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-6">
-            {navItems.map((item) => {
+            {navItems.map(item => {
               const Icon = item.icon
               return (
                 <Link
@@ -113,7 +115,7 @@ export default function Header() {
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-gray-200 bg-white">
           <nav className="px-4 py-4 space-y-2">
-            {navItems.map((item) => {
+            {navItems.map(item => {
               const Icon = item.icon
               return (
                 <Link

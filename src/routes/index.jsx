@@ -19,7 +19,9 @@ const ConversationView = lazy(
 )
 const ProfileView = lazy(() => import('../features/profile/ProfileView'))
 const EditProfile = lazy(() => import('../features/profile/EditProfile'))
-const StudentTenantDashboard = lazy(() => import('../features/profile/StudentTenantDashboard'))
+const StudentTenantDashboard = lazy(
+  () => import('../features/profile/StudentTenantDashboard')
+)
 const PaymentsView = lazy(() => import('../features/payments/PaymentsView'))
 const ApplicationFlow = lazy(
   () => import('../features/applications/ApplicationFlow')
@@ -27,6 +29,9 @@ const ApplicationFlow = lazy(
 const AgreementView = lazy(
   () => import('../features/applications/AgreementView')
 )
+
+// Housemates (available to all authenticated users)
+const HousematesHub = lazy(() => import('../features/housemates/HousematesHub'))
 
 // Auth pages
 const LoginPage = lazy(() => import('../features/auth/LoginPage'))
@@ -215,6 +220,18 @@ const routeConfig = [
           <Suspense fallback={<SuspenseFallback />}>
             <ConversationView />
           </Suspense>
+        ),
+      },
+
+      // Housemates route (student only)
+      {
+        path: '/housemates',
+        element: (
+          <RoleRoute allowedRoles={['student']}>
+            <Suspense fallback={<SuspenseFallback />}>
+              <HousematesHub />
+            </Suspense>
+          </RoleRoute>
         ),
       },
 
