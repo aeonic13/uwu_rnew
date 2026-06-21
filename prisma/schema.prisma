@@ -1,33 +1,209 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client"
-  output   = "../generated/prisma"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
+
+model User {
+  id    String     @id @default(uuid()) @db.Uuid
+  roles UserRole[] @default([RENTER])
+  email String     @unique
+  name  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  propManagerProfile PropManagerProfile?
+  renterProfile      RenterProfile?
+
+  @@map("users")
+}
+
+model PropManagerProfile {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @unique @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  verified Boolean @default(false)
+
+  listings Listing[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("prop_manager_profiles")
+}
+
+model RenterProfile {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @unique @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  verified Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("renter_profiles")
+}
+
+/////////////////////////////////////////////////
+// LISTINGS
+/////////////////////////////////////////////////
 
 model Listing {
-	id    Int     @id @default(autoincrement()) 
-	address String 
-	dateCreated DateTime
-	location Json
-	leaseType LeaseType
-	
+  id            String             @id @default(uuid())
+  propManagerId String             @db.Uuid
+  propManager   PropManagerProfile @relation(fields: [propManagerId], references: [id])
+  title         String
+  status        ListingStatus      @default(DRAFT)
+  publishedAt   DateTime?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  //////////////////////////////////////////////////
+  // Relations
+  //////////////////////////////////////////////////
+  photos       Photo[]
+  requirements Requirement?
+  location     Location?
+  pricing      Pricing?
+  roomInfo     RoomInfo?
+  amenities    Amenity?
+
+  @@index([propManagerId])
+  @@index([status])
+  @@map("listings")
 }
 
-enum LeaseType{
-	MTM
-	M6
-	M12
-	CUSTOM
+/////////////////////////////////////////////////
+// PHOTOS
+/////////////////////////////////////////////////
+
+model Photo {
+  id         String  @id @default(uuid())
+  listingId  String
+  listing    Listing @relation(fields: [listingId], references: [id])
+  imageUrl   String
+  orderIndex Int
+  isCover    Boolean @default(false)
 }
 
+/////////////////////////////////////////////////
+// REQUIREMENTS
+/////////////////////////////////////////////////
 
+model Requirement {
+  id                 String  @id @default(uuid())
+  listingId          String  @unique
+  listing            Listing @relation(fields: [listingId], references: [id])
+  roommatesAllowed   Boolean
+  maxOccupants       Int
+  incomeRequirement  Int?
+  creditScoreMinimum Int?
+  backgroundCheck    Boolean
+  petsAllowed        Boolean
+  smokingAllowed     Boolean
+  quietHours         String?
+}
+
+/////////////////////////////////////////////////
+// LOCATION
+/////////////////////////////////////////////////
+
+model Location {
+  id               String  @id @default(uuid())
+  listingId        String  @unique
+  listing          Listing @relation(fields: [listingId], references: [id])
+  address          String
+  apartmentUnit    String?
+  city             String
+  zip              String
+  neighborhood     String?
+  latitude         Float
+  longitude        Float
+  distanceToCampus Float?
+  hideExactAddress Boolean @default(false)
+}
+
+/////////////////////////////////////////////////
+// PRICING
+/////////////////////////////////////////////////
+
+model Pricing {
+  id                String    @id @default(uuid())
+  listingId         String    @unique
+  listing           Listing   @relation(fields: [listingId], references: [id])
+  monthlyRent       Int
+  deposit           Int?
+  applicationFee    Int?
+  utilitiesIncluded Boolean
+  leaseType         LeaseType
+  moveInDate        DateTime?
+  moveOutDate       DateTime?
+}
+
+/////////////////////////////////////////////////
+// ROOM INFO
+/////////////////////////////////////////////////
+
+model RoomInfo {
+  id            String       @id @default(uuid())
+  listingId     String       @unique
+  listing       Listing      @relation(fields: [listingId], references: [id])
+  numberOfRooms Int
+  roomType      RoomType
+  bathroomType  BathroomType
+  roommateCount Int
+}
+
+/////////////////////////////////////////////////
+// AMENITIES
+/////////////////////////////////////////////////
+
+model Amenity {
+  id            String  @id @default(uuid())
+  listingId     String  @unique
+  listing       Listing @relation(fields: [listingId], references: [id])
+  furnished     Boolean
+  laundry       Boolean
+  parking       Boolean
+  wifiIncluded  Boolean
+  gasIncluded   Boolean
+  waterIncluded Boolean
+}
+
+/////////////////////////////////////////////////
+// ENUMS
+/////////////////////////////////////////////////
+
+enum ListingStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum LeaseType {
+  MONTH_TO_MONTH
+  SIX_MONTH
+  TWELVE_MONTH
+  CUSTOM
+}
+
+enum RoomType {
+  PRIVATE
+  SHARED
+}
+
+enum BathroomType {
+  PRIVATE
+  SHARED
+}
+
+enum UserRole {
+  PROPMANAGER
+  RENTER
+}

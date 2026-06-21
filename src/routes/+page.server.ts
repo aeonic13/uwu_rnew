@@ -1,0 +1,21 @@
+import type { PageServerLoad } from "./$types";
+import prisma from "$lib/server/prisma";
+
+export const load: PageServerLoad = async () => {
+  const users = await prisma.user
+    .findMany({
+      take: 10,
+      orderBy: {
+        createdAt: "desc",
+      },
+    })
+    .then((rows) =>
+      rows.map((user) => ({
+        ...user,
+        createdAt: user.createdAt.toISOString(),
+      }))
+    )
+    .catch(() => undefined);
+
+  return { users };
+};
