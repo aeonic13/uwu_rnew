@@ -18,6 +18,8 @@ server/.env
 .env.test.local
 .env.production.local
 
+# SvelteKit
+.svelte-kit/
 
 # IDE files
 .vscode/
