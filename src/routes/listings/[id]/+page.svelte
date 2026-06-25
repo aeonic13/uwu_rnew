@@ -1,8 +1,10 @@
 <script lang="ts">
+	import { enhance } from '$app/forms';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
 	const listing = $derived(data.listing);
+	const isDraft = $derived(listing.status === 'DRAFT');
 
 	const money = (n: number | null | undefined) =>
 		n == null ? '—' : `$${n.toLocaleString()}`;
@@ -13,14 +15,26 @@
 </svelte:head>
 
 <section class="shell">
+	{#if isDraft}
+		<div class="draft-banner">
+			<div>
+				<strong>This listing is a draft.</strong>
+				<span>It's saved but hidden from renters until you publish it.</span>
+			</div>
+			<form method="POST" action="?/publish" use:enhance>
+				<button type="submit">Publish now</button>
+			</form>
+		</div>
+	{/if}
+
 	<p class="eyebrow">{listing.status}</p>
 	<h1>{listing.title}</h1>
 
-	{#if listing.location}
+	{#if listing.address && listing.city}
 		<p class="addr">
-			{listing.location.address}{listing.location.apartmentUnit
-				? `, ${listing.location.apartmentUnit}`
-				: ''} · {listing.location.city}, {listing.location.zip}
+			{listing.address}{listing.apartmentUnit ? `, ${listing.apartmentUnit}` : ''} · {listing.city}{listing.zip
+				? `, ${listing.zip}`
+				: ''}
 		</p>
 	{/if}
 
@@ -33,15 +47,21 @@
 	{/if}
 
 	<dl>
-		<div><dt>Rent</dt><dd>{money(listing.pricing?.monthlyRent)}/mo</dd></div>
-		<div><dt>Deposit</dt><dd>{money(listing.pricing?.deposit)}</dd></div>
-		<div><dt>Lease</dt><dd>{listing.pricing?.leaseType ?? '—'}</dd></div>
-		<div><dt>Rooms</dt><dd>{listing.roomInfo?.numberOfRooms ?? '—'}</dd></div>
-		<div><dt>Room type</dt><dd>{listing.roomInfo?.roomType ?? '—'}</dd></div>
-		<div><dt>Max occupants</dt><dd>{listing.requirements?.maxOccupants ?? '—'}</dd></div>
+		<div><dt>Rent</dt><dd>{money(listing.monthlyRent)}/mo</dd></div>
+		<div><dt>Deposit</dt><dd>{money(listing.deposit)}</dd></div>
+		<div><dt>Lease</dt><dd>{listing.leaseType ?? '—'}</dd></div>
+		<div><dt>Rooms</dt><dd>{listing.numberOfRooms ?? '—'}</dd></div>
+		<div><dt>Room type</dt><dd>{listing.roomType ?? '—'}</dd></div>
+		<div><dt>Max occupants</dt><dd>{listing.maxOccupants ?? '—'}</dd></div>
 	</dl>
 
-	<a href="/listings/new">+ Add another listing</a>
+	<div class="actions">
+		<a href="/listings/{listing.id}/edit">Edit</a>
+		<a href="/listings/new">+ Add another listing</a>
+		<form method="POST" action="?/delete" use:enhance>
+			<button type="submit" class="danger">Delete</button>
+		</form>
+	</div>
 </section>
 
 <style>
@@ -108,9 +128,65 @@
 		font-weight: 600;
 	}
 
+	.draft-banner {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		flex-wrap: wrap;
+		padding: 0.75rem 1rem;
+		margin-bottom: 1.5rem;
+		border: 1px solid #fde68a;
+		background: #fffbeb;
+		border-radius: 0.5rem;
+	}
+
+	.draft-banner strong {
+		display: block;
+		font-size: 0.9rem;
+	}
+
+	.draft-banner span {
+		font-size: 0.8rem;
+		color: #92723a;
+	}
+
+	.actions {
+		display: flex;
+		align-items: center;
+		gap: 1.25rem;
+		flex-wrap: wrap;
+		margin-top: 1rem;
+	}
+
 	a {
 		color: #2563eb;
 		font-weight: 600;
 		text-decoration: none;
+	}
+
+	button {
+		padding: 0.5rem 1.1rem;
+		border: none;
+		border-radius: 0.45rem;
+		background: #111;
+		color: #fff;
+		font-size: 0.85rem;
+		font-weight: 600;
+		cursor: pointer;
+	}
+
+	button:hover {
+		background: #333;
+	}
+
+	button.danger {
+		background: #fff;
+		color: #c0392b;
+		border: 1px solid #f0c0bb;
+	}
+
+	button.danger:hover {
+		background: #fdecea;
 	}
 </style>

@@ -1,22 +1,25 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import ListingFields from '$lib/components/ListingFields.svelte';
-	import type { ActionData } from './$types';
+	import type { PageProps } from './$types';
 
-	let { form }: { form: ActionData } = $props();
+	let { data, form }: PageProps = $props();
 
 	const errors = $derived((form?.errors ?? {}) as Record<string, string[] | undefined>);
-	const values = $derived((form?.values ?? {}) as Record<string, string>);
+	const values = $derived(
+		(form?.values ?? data.values) as Record<string, string>
+	);
+	const isDraft = $derived(data.status === 'DRAFT');
 </script>
 
 <svelte:head>
-	<title>Add listing · Rentra</title>
+	<title>Edit listing · Rentra</title>
 </svelte:head>
 
 <section class="shell">
 	<header>
-		<p class="eyebrow">Property manager</p>
-		<h1>Add a listing</h1>
+		<p class="eyebrow">Property manager · {data.status}</p>
+		<h1>Edit listing</h1>
 	</header>
 
 	{#if errors._form}
@@ -27,13 +30,24 @@
 		<ListingFields {values} {errors} />
 
 		<div class="form-actions">
-			<button type="submit" formaction="?/publish">Publish listing</button>
-			<button type="submit" class="secondary" formaction="?/saveDraft">Save for later</button>
-			<a href="/" class="cancel">Cancel</a>
+			{#if isDraft}
+				<button type="submit" formaction="?/publish">Publish listing</button>
+				<button type="submit" class="secondary" formaction="?/saveDraft">Save changes</button>
+				<button
+					type="submit"
+					class="cancel"
+					formaction="?/cancel"
+					onclick={(e) => {
+						if (!confirm('Delete this draft? Your changes will not be saved.')) e.preventDefault();
+					}}
+				>
+					Cancel
+				</button>
+			{:else}
+				<button type="submit" formaction="?/saveDraft">Save changes</button>
+				<a href="/listings/{data.listingId}" class="cancel">Cancel</a>
+			{/if}
 		</div>
-		<p class="hint">
-			Saving keeps the listing private until you publish it — handy while you wait on photos.
-		</p>
 	</form>
 </section>
 
@@ -106,12 +120,7 @@
 		background: #f3f3f3;
 	}
 
-	.hint {
-		margin: 0.75rem 0 0;
-		color: #888;
-		font-size: 0.8rem;
-	}
-
+	button.cancel,
 	a.cancel {
 		margin-left: auto;
 		padding: 0.65rem 1.4rem;
@@ -122,8 +131,10 @@
 		font-size: 0.9rem;
 		font-weight: 600;
 		text-decoration: none;
+		cursor: pointer;
 	}
 
+	button.cancel:hover,
 	a.cancel:hover {
 		background: #fdecea;
 	}

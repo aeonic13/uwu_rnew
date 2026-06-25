@@ -64,18 +64,56 @@ model Listing {
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
 
-  //////////////////////////////////////////////////
-  // Relations
-  //////////////////////////////////////////////////
-  photos       Photo[]
-  requirements Requirement?
-  location     Location?
-  pricing      Pricing?
-  roomInfo     RoomInfo?
-  amenities    Amenity?
+  // Location — core fields required; enrichment optional
+  address          String
+  apartmentUnit    String?
+  city             String
+  zip              String
+  neighborhood     String?
+  latitude         Float   @default(0)
+  longitude        Float   @default(0)
+  distanceToCampus Float?
+  hideExactAddress Boolean @default(false)
+
+  // Pricing
+  monthlyRent       Int
+  deposit           Int?
+  applicationFee    Int?
+  utilitiesIncluded Boolean   @default(false)
+  leaseType         LeaseType
+  moveInDate        DateTime?
+  moveOutDate       DateTime?
+
+  // Room info
+  numberOfRooms Int
+  roomType      RoomType
+  bathroomType  BathroomType
+  roommateCount Int          @default(0)
+
+  // Requirements — maxOccupants required; screening details optional
+  roommatesAllowed   Boolean @default(false)
+  maxOccupants       Int
+  incomeRequirement  Int?
+  creditScoreMinimum Int?
+  backgroundCheck    Boolean @default(false)
+  petsAllowed        Boolean @default(false)
+  smokingAllowed     Boolean @default(false)
+  quietHours         String?
+
+  // Amenities — all optional toggles, default false
+  furnished     Boolean @default(false)
+  laundry       Boolean @default(false)
+  parking       Boolean @default(false)
+  wifiIncluded  Boolean @default(false)
+  gasIncluded   Boolean @default(false)
+  waterIncluded Boolean @default(false)
+
+  photos Photo[]
 
   @@index([propManagerId])
   @@index([status])
+  @@index([city])
+  @@index([monthlyRent])
   @@map("listings")
 }
 
@@ -86,94 +124,10 @@ model Listing {
 model Photo {
   id         String  @id @default(uuid())
   listingId  String
-  listing    Listing @relation(fields: [listingId], references: [id])
+  listing    Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
   imageUrl   String
   orderIndex Int
   isCover    Boolean @default(false)
-}
-
-/////////////////////////////////////////////////
-// REQUIREMENTS
-/////////////////////////////////////////////////
-
-model Requirement {
-  id                 String  @id @default(uuid())
-  listingId          String  @unique
-  listing            Listing @relation(fields: [listingId], references: [id])
-  roommatesAllowed   Boolean
-  maxOccupants       Int
-  incomeRequirement  Int?
-  creditScoreMinimum Int?
-  backgroundCheck    Boolean
-  petsAllowed        Boolean
-  smokingAllowed     Boolean
-  quietHours         String?
-}
-
-/////////////////////////////////////////////////
-// LOCATION
-/////////////////////////////////////////////////
-
-model Location {
-  id               String  @id @default(uuid())
-  listingId        String  @unique
-  listing          Listing @relation(fields: [listingId], references: [id])
-  address          String
-  apartmentUnit    String?
-  city             String
-  zip              String
-  neighborhood     String?
-  latitude         Float
-  longitude        Float
-  distanceToCampus Float?
-  hideExactAddress Boolean @default(false)
-}
-
-/////////////////////////////////////////////////
-// PRICING
-/////////////////////////////////////////////////
-
-model Pricing {
-  id                String    @id @default(uuid())
-  listingId         String    @unique
-  listing           Listing   @relation(fields: [listingId], references: [id])
-  monthlyRent       Int
-  deposit           Int?
-  applicationFee    Int?
-  utilitiesIncluded Boolean
-  leaseType         LeaseType
-  moveInDate        DateTime?
-  moveOutDate       DateTime?
-}
-
-/////////////////////////////////////////////////
-// ROOM INFO
-/////////////////////////////////////////////////
-
-model RoomInfo {
-  id            String       @id @default(uuid())
-  listingId     String       @unique
-  listing       Listing      @relation(fields: [listingId], references: [id])
-  numberOfRooms Int
-  roomType      RoomType
-  bathroomType  BathroomType
-  roommateCount Int
-}
-
-/////////////////////////////////////////////////
-// AMENITIES
-/////////////////////////////////////////////////
-
-model Amenity {
-  id            String  @id @default(uuid())
-  listingId     String  @unique
-  listing       Listing @relation(fields: [listingId], references: [id])
-  furnished     Boolean
-  laundry       Boolean
-  parking       Boolean
-  wifiIncluded  Boolean
-  gasIncluded   Boolean
-  waterIncluded Boolean
 }
 
 /////////////////////////////////////////////////

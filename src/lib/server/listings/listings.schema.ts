@@ -26,6 +26,10 @@ const optionalDate = z.preprocess(
   z.coerce.date().optional()
 );
 
+// Single validity bar for a listing. Saving (DRAFT) and publishing
+// (PUBLISHED) both require this to pass; the only difference is status.
+// Photos and map coordinates are intentionally not required here so a
+// manager can save the core listing and add photos before going live.
 export const createListingSchema = z.object({
   title: z.string().trim().min(1, "Title is required"),
 
@@ -34,9 +38,9 @@ export const createListingSchema = z.object({
   apartmentUnit: optionalText,
   city: z.string().trim().min(1, "City is required"),
   zip: z.string().trim().min(1, "ZIP is required"),
-  neighborhood: optionalText,
-  latitude: z.coerce.number().default(0),
-  longitude: z.coerce.number().default(0),
+    neighborhood: optionalText,
+    latitude: z.coerce.number().default(0), // set by geocoding later, not the form
+    longitude: z.coerce.number().default(0),
   distanceToCampus: optionalFloat,
   hideExactAddress: checkbox,
 
@@ -75,3 +79,4 @@ export const createListingSchema = z.object({
 });
 
 export type CreateListingInput = z.infer<typeof createListingSchema>;
+
