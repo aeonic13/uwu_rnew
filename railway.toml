@@ -1,9 +1,11 @@
 [build]
 builder = "nixpacks"
-buildCommand = "cd server && npm install --include=dev && npx prisma generate && npx prisma migrate deploy"
+# Build phase: install + generate the Prisma client (no DB connection needed).
+buildCommand = "cd server && npm install --include=dev && npx prisma generate"
 
 [deploy]
-startCommand = "cd server && node index.js"
+# Run migrations at start, where DATABASE_URL is available (not during build).
+startCommand = "cd server && npx prisma migrate deploy && node index.js"
 healthcheckPath = "/health"
 healthcheckTimeout = 120
 restartPolicyType = "on_failure"
