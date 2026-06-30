@@ -47,8 +47,8 @@ export const paymentsService = {
    * @returns {Promise} List of transactions
    */
   getHistory: async (params = {}) => {
-    const response = await api.get('/payments/history', { params })
-    return response.data
+    // api's response interceptor already returns response.data (the body).
+    return api.get('/payments/history', { params })
   },
 
   /**

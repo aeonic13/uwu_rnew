@@ -1,5 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { agreementsService } from '../../services/agreementsService'
+import { paymentsService } from '../../services/payments'
 import {
   ArrowLeft,
   Home,
@@ -626,31 +628,54 @@ function MaintenanceTab({ user }) {
 /**
  * Leases Tab - View and download lease documents
  */
-function LeasesTab({ user }) {
-  const leases = [
-    {
-      id: 1,
-      property: '123 College Ave, Apt 4B',
-      startDate: '2025-09-01',
-      endDate: '2026-08-31',
-      monthlyRent: 1200,
-      status: 'active',
-      landlord: 'John Property Owner',
-      securityDeposit: 1200,
-      signedDate: '2025-08-15',
-    },
-    {
-      id: 2,
-      property: '456 University Blvd, Unit 12',
-      startDate: '2024-09-01',
-      endDate: '2025-08-31',
-      monthlyRent: 1100,
-      status: 'expired',
-      landlord: 'Sarah Johnson',
-      securityDeposit: 1100,
-      signedDate: '2024-08-10',
-    },
-  ]
+function LeasesTab() {
+  const navigate = useNavigate()
+  const [leases, setLeases] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let active = true
+    agreementsService
+      .listAgreements()
+      .then(agreements => {
+        if (!active) return
+        setLeases(
+          agreements.map(a => ({
+            id: a.id,
+            property: a.property?.description || a.property?.address || 'Lease',
+            landlord: a.landlord?.name || '—',
+            status: a.status === 'signed' ? 'active' : 'pending',
+            startDate: a.terms?.startDate,
+            endDate: a.terms?.endDate,
+            monthlyRent: a.terms?.monthlyRent,
+            securityDeposit: a.terms?.securityDeposit,
+            signedDate: a.createdAt,
+          }))
+        )
+      })
+      .catch(() => {})
+      .finally(() => active && setLoading(false))
+    return () => {
+      active = false
+    }
+  }, [])
+
+  if (loading) {
+    return <p className="text-center text-gray-500 py-8">Loading leases…</p>
+  }
+
+  if (leases.length === 0) {
+    return (
+      <div className="text-center text-gray-500 py-12">
+        <FileText size={32} className="mx-auto mb-3 text-gray-300" />
+        <p>No leases yet.</p>
+        <p className="text-sm">
+          Once a landlord approves your application, your lease appears here to
+          sign.
+        </p>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-4">
@@ -704,13 +729,12 @@ function LeasesTab({ user }) {
           </div>
 
           <div className="flex space-x-2 pt-3 border-t border-gray-200">
-            <button className="flex-1 flex items-center justify-center py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 font-medium">
+            <button
+              onClick={() => navigate(`/agreement/${lease.id}`)}
+              className="flex-1 flex items-center justify-center py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 font-medium"
+            >
               <Eye size={18} className="mr-2" />
-              View Lease
-            </button>
-            <button className="flex-1 flex items-center justify-center py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium">
-              <Download size={18} className="mr-2" />
-              Download PDF
+              {lease.status === 'active' ? 'View Lease' : 'View & Sign'}
             </button>
           </div>
 
@@ -755,65 +779,35 @@ function LeasesTab({ user }) {
 /**
  * Payment History Tab - View all past payments
  */
-function PaymentHistoryTab({ user }) {
+function PaymentHistoryTab() {
   const [filterType, setFilterType] = useState('all')
+  const [payments, setPayments] = useState([])
 
-  const payments = [
-    {
-      id: 1,
-      type: 'rent',
-      description: 'Monthly Rent - February 2026',
-      amount: 1200,
-      date: '2026-02-01',
-      status: 'completed',
-      method: 'Bank Account ****1234',
-    },
-    {
-      id: 2,
-      type: 'utility',
-      description: 'Electricity - January 2026',
-      amount: 85.5,
-      date: '2026-01-28',
-      status: 'completed',
-      method: 'Debit Card ****5678',
-    },
-    {
-      id: 3,
-      type: 'rent',
-      description: 'Monthly Rent - January 2026',
-      amount: 1200,
-      date: '2026-01-01',
-      status: 'completed',
-      method: 'Bank Account ****1234',
-    },
-    {
-      id: 4,
-      type: 'utility',
-      description: 'Water - January 2026',
-      amount: 45.0,
-      date: '2026-01-25',
-      status: 'completed',
-      method: 'Bank Account ****1234',
-    },
-    {
-      id: 5,
-      type: 'rent',
-      description: 'Monthly Rent - December 2025',
-      amount: 1200,
-      date: '2025-12-01',
-      status: 'completed',
-      method: 'Bank Account ****1234',
-    },
-    {
-      id: 6,
-      type: 'deposit',
-      description: 'Security Deposit',
-      amount: 1200,
-      date: '2025-08-15',
-      status: 'completed',
-      method: 'Bank Transfer',
-    },
-  ]
+  useEffect(() => {
+    let active = true
+    paymentsService
+      .getHistory()
+      .then(res => {
+        if (!active) return
+        setPayments(
+          (res?.payments || []).map(p => ({
+            id: p.id,
+            type: 'rent',
+            description: p.listing?.title
+              ? `Payment — ${p.listing.title}`
+              : 'Payment',
+            amount: p.total ?? p.amount ?? 0,
+            date: p.date,
+            status: p.status,
+            method: p.method || 'Bank Account',
+          }))
+        )
+      })
+      .catch(() => {})
+    return () => {
+      active = false
+    }
+  }, [])
 
   const filteredPayments =
     filterType === 'all'

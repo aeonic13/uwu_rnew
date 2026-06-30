@@ -368,41 +368,54 @@ router.post('/confirm', async (req, res) => {
 })
 
 // GET /api/payments/history
-router.get('/history', async (req, res) => {
+router.get('/history', authenticate, async (req, res) => {
   try {
-    const { page = 1, limit = 20, status, type } = req.query
+    const { page = 1, limit = 20, status } = req.query
+    const userId = req.user.id
+    const take = parseInt(limit)
+    const skip = (parseInt(page) - 1) * take
 
-    // TODO: Implement payment history
-    // - Authenticate user (req.user)
-    // - Query user's payment transactions
-    // - Filter by status (pending, succeeded, failed, refunded)
-    // - Filter by type (rent, deposit, application_fee, utility)
-    // - Include listing and recipient information
-    // - Sort by date (newest first)
-    // - Implement pagination
+    const where = { userId, ...(status && { status }) }
+
+    const [transactions, total] = await Promise.all([
+      prisma.transaction.findMany({
+        where,
+        include: {
+          application: {
+            select: { listing: { select: { id: true, title: true } } },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take,
+      }),
+      prisma.transaction.count({ where }),
+    ])
+
+    const totalPaid = await prisma.transaction.aggregate({
+      where: { userId, status: 'completed' },
+      _sum: { total: true },
+    })
 
     res.json({
-      payments: [
-        // Mock payment structure
-        // {
-        //   id: 'txn-1',
-        //   amount: 1500.00,
-        //   type: 'rent',
-        //   status: 'succeeded',
-        //   method: 'ach',
-        //   date: '2026-01-01T00:00:00Z',
-        //   listing: { id: 'listing-1', title: '2BR Apartment' },
-        //   recipient: { name: 'John Doe' }
-        // }
-      ],
+      payments: transactions.map(t => ({
+        id: t.id,
+        amount: t.amount,
+        serviceFee: t.serviceFee,
+        total: t.total,
+        status: t.status,
+        method: t.paymentMethod || 'ach',
+        date: t.createdAt,
+        listing: t.application?.listing || null,
+      })),
       pagination: {
         page: parseInt(page),
-        limit: parseInt(limit),
-        total: 0,
-        hasMore: false,
+        limit: take,
+        total,
+        hasMore: skip + transactions.length < total,
       },
       summary: {
-        totalPaid: 0,
+        totalPaid: totalPaid._sum.total || 0,
         nextPaymentDue: null,
         nextPaymentAmount: 0,
       },
