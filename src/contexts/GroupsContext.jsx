@@ -1,5 +1,6 @@
 import { createContext, useContext, useReducer, useCallback } from 'react'
 import PropTypes from 'prop-types'
+import { apiClient } from '../services/api'
 
 // Initial state
 const initialState = {
@@ -147,28 +148,14 @@ export function GroupsProvider({ children }) {
     dispatch({ type: GROUPS_ACTIONS.SET_LOADING, payload: true })
 
     try {
-      // TODO: Replace with API call
-      const newGroup = {
-        id: Date.now().toString(),
+      const res = await apiClient.post('/groups', {
         name: groupData.name,
         description: groupData.description,
-        maxMembers: groupData.maxMembers || 4,
-        createdAt: new Date().toISOString(),
-        members: [
-          {
-            userId: groupData.creatorId,
-            role: 'admin',
-            joinedAt: new Date().toISOString(),
-            status: 'active',
-          },
-        ],
-        interestedListings: [],
-        status: 'active',
-      }
-
-      dispatch({ type: GROUPS_ACTIONS.ADD_GROUP, payload: newGroup })
+        maxMembers: groupData.maxMembers,
+      })
+      dispatch({ type: GROUPS_ACTIONS.ADD_GROUP, payload: res.group })
       dispatch({ type: GROUPS_ACTIONS.SET_LOADING, payload: false })
-      return { success: true, group: newGroup }
+      return { success: true, group: res.group }
     } catch (error) {
       dispatch({ type: GROUPS_ACTIONS.SET_ERROR, payload: error.message })
       return { success: false, error: error.message }
@@ -176,50 +163,43 @@ export function GroupsProvider({ children }) {
   }, [])
 
   // Fetch user's groups
-  const fetchUserGroups = useCallback(async userId => {
+  const fetchUserGroups = useCallback(async () => {
     dispatch({ type: GROUPS_ACTIONS.SET_LOADING, payload: true })
 
     try {
-      // TODO: Replace with API call
-      const groups = []
-      dispatch({ type: GROUPS_ACTIONS.SET_USER_GROUPS, payload: groups })
+      const res = await apiClient.get('/groups/my')
+      dispatch({
+        type: GROUPS_ACTIONS.SET_USER_GROUPS,
+        payload: res.groups || [],
+      })
     } catch (error) {
       dispatch({ type: GROUPS_ACTIONS.SET_ERROR, payload: error.message })
     }
   }, [])
 
   // Get group by ID
-  const getGroupById = useCallback(
-    async groupId => {
-      try {
-        // TODO: Replace with API call
-        const group = state.userGroups.find(g => g.id === groupId)
-        if (group) {
-          dispatch({ type: GROUPS_ACTIONS.SET_SELECTED_GROUP, payload: group })
-          return group
-        }
-        return null
-      } catch (error) {
-        dispatch({ type: GROUPS_ACTIONS.SET_ERROR, payload: error.message })
-        return null
-      }
-    },
-    [state.userGroups]
-  )
+  const getGroupById = useCallback(async groupId => {
+    try {
+      const res = await apiClient.get(`/groups/${groupId}`)
+      dispatch({ type: GROUPS_ACTIONS.SET_SELECTED_GROUP, payload: res.group })
+      return res.group
+    } catch (error) {
+      dispatch({ type: GROUPS_ACTIONS.SET_ERROR, payload: error.message })
+      return null
+    }
+  }, [])
 
   // Invite member to group
   const inviteMember = useCallback(async (groupId, email) => {
     try {
-      // TODO: Replace with API call
+      const res = await apiClient.post(`/groups/${groupId}/invite`, { email })
       const invitation = {
-        id: Date.now().toString(),
+        id: res.member?.id,
         groupId,
         email,
         status: 'pending',
         invitedAt: new Date().toISOString(),
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
       }
-
       dispatch({ type: GROUPS_ACTIONS.ADD_INVITATION, payload: invitation })
       return { success: true, invitation }
     } catch (error) {
@@ -346,10 +326,10 @@ export function GroupsProvider({ children }) {
     }
   }, [])
 
-  // Delete group (admin only)
+  // Delete group (creator only)
   const deleteGroup = useCallback(async groupId => {
     try {
-      // TODO: Replace with API call
+      await apiClient.delete(`/groups/${groupId}`)
       dispatch({ type: GROUPS_ACTIONS.REMOVE_GROUP, payload: groupId })
       return { success: true }
     } catch (error) {

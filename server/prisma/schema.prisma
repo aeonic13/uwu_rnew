@@ -90,6 +90,8 @@ model User {
   cosignersForTenant  Cosigner[]          @relation("TenantUser")
   housemateProfile    HousemateProfile?
   maintenanceTickets  MaintenanceTicket[] @relation("TenantTickets")
+  createdGroups       Group[]             @relation("GroupCreator")
+  groupMemberships    GroupMember[]
 
   @@index([email])
   @@index([userType])
@@ -128,6 +130,40 @@ model Listing {
   @@index([university])
   @@index([price])
   @@index([active])
+}
+
+// Roommate group - students teaming up to apply together
+model Group {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  maxMembers  Int      @default(4)
+  status      String   @default("active") // active, archived
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdById String
+  createdBy   User          @relation("GroupCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  members     GroupMember[]
+
+  @@index([createdById])
+}
+
+// Group membership (active members + pending email invites)
+model GroupMember {
+  id          String   @id @default(cuid())
+  role        String   @default("member") // admin, member
+  status      String   @default("active") // active, invited
+  inviteEmail String?
+  joinedAt    DateTime @default(now())
+
+  groupId String
+  group   Group   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId  String?
+  user    User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([groupId])
+  @@index([userId])
 }
 
 // Maintenance ticket - tenant-reported issue for a leased property
