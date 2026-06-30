@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { dashboardService } from './services/dashboardService'
+import { applicationsService } from './services/applicationsService'
 import {
   MessageCircle,
   User,
@@ -787,14 +788,35 @@ const LandlordInbox = ({
     }
   }
 
-  const handleApproveApplication = applicationId => {
-    // Update application status and trigger lease sending
-    console.log('Approving application:', applicationId)
-    onSendLease?.(applicationId)
+  const applyStatus = (applicationId, status) => {
+    setApplications(prev =>
+      prev.map(a => (a.id === applicationId ? { ...a, status } : a))
+    )
+    setSelectedApplicant(prev =>
+      prev && prev.id === applicationId ? { ...prev, status } : prev
+    )
   }
 
-  const handleRejectApplication = applicationId => {
-    console.log('Rejecting application:', applicationId)
+  const handleApproveApplication = async applicationId => {
+    // Optimistically reflect, then persist via the real status API.
+    applyStatus(applicationId, 'approved')
+    try {
+      await applicationsService.updateStatus(applicationId, 'approved')
+      onSendLease?.(applicationId)
+    } catch (err) {
+      console.error('Approve failed:', err)
+      applyStatus(applicationId, 'pending')
+    }
+  }
+
+  const handleRejectApplication = async applicationId => {
+    applyStatus(applicationId, 'rejected')
+    try {
+      await applicationsService.updateStatus(applicationId, 'rejected')
+    } catch (err) {
+      console.error('Reject failed:', err)
+      applyStatus(applicationId, 'pending')
+    }
   }
 
   // Inbox View

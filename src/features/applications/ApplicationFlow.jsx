@@ -189,6 +189,32 @@ function InfoStep({ formData, onChange, onNext, user }) {
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
+          Employment Status (Optional)
+        </label>
+        <input
+          type="text"
+          value={formData.employmentStatus || ''}
+          onChange={e => onChange({ employmentStatus: e.target.value })}
+          placeholder="e.g. Part-time + financial aid"
+          className="w-full p-3 border border-gray-300 rounded-lg"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          References (Optional)
+        </label>
+        <textarea
+          value={formData.references || ''}
+          onChange={e => onChange({ references: e.target.value })}
+          rows={2}
+          placeholder="One per line, e.g. Prof. Johnson - USC"
+          className="w-full p-3 border border-gray-300 rounded-lg resize-none"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
           Message to Owner (Optional)
         </label>
         <textarea
@@ -893,6 +919,8 @@ function ApplicationFlow() {
     email: user?.email || '',
     phone: user?.phone || '',
     emergencyContact: '',
+    employmentStatus: '',
+    references: '',
     message: '',
     moveInDate: '',
     moveOutDate: '',
@@ -946,6 +974,11 @@ function ApplicationFlow() {
         endDate: formData.moveOutDate,
         message: formData.message,
         emergencyContact: formData.emergencyContact,
+        employmentStatus: formData.employmentStatus,
+        references: (formData.references || '')
+          .split('\n')
+          .map(r => r.trim())
+          .filter(Boolean),
         ...(verificationData && { verificationData }),
       })
       // Show the success screen (with cosigner invite) if we got an id back.
