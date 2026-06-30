@@ -55,14 +55,6 @@ const OwnerDocumentManager = lazy(() => import('../OwnerDocumentManager'))
 const DisputeResolutionCenter = lazy(() => import('../DisputeResolutionCenter'))
 const PropertyInspectionTools = lazy(() => import('../PropertyInspectionTools'))
 
-// Roommate features (student only)
-const RoommateQuestionnaire = lazy(
-  () => import('../features/roommates/RoommateQuestionnaire')
-)
-const RoommateMatching = lazy(
-  () => import('../features/roommates/RoommateMatching')
-)
-
 // Group features (student only)
 const GroupDashboard = lazy(() => import('../features/groups/GroupDashboard'))
 const CreateGroup = lazy(() => import('../features/groups/CreateGroup'))
@@ -380,30 +372,15 @@ const routeConfig = [
         ),
       },
 
-      // Roommate routes (tenant only, auth required)
+      // Legacy roommate routes — superseded by the real Housemates feature.
+      // Redirect any stray links/bookmarks there.
       {
         path: '/roommates',
-        element: (
-          <ProtectedRoute>
-            <RoleRoute allowedRoles={['student']}>
-              <Suspense fallback={<SuspenseFallback />}>
-                <RoommateQuestionnaire />
-              </Suspense>
-            </RoleRoute>
-          </ProtectedRoute>
-        ),
+        element: <Navigate to="/housemates" replace />,
       },
       {
         path: '/roommates/matching',
-        element: (
-          <ProtectedRoute>
-            <RoleRoute allowedRoles={['student']}>
-              <Suspense fallback={<SuspenseFallback />}>
-                <RoommateMatching />
-              </Suspense>
-            </RoleRoute>
-          </ProtectedRoute>
-        ),
+        element: <Navigate to="/housemates" replace />,
       },
 
       // Group routes (tenant only, auth required)
