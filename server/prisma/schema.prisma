@@ -332,7 +332,11 @@ model Cosigner {
   invitedAt        DateTime       @default(now())
   respondedAt      DateTime?
   relationshipType String?        // parent, guardian, relative, friend, etc.
-  
+
+  // Income verification (Plaid) — the guarantor's qualifying income
+  verifiedMonthlyIncome Float?
+  incomeVerifiedAt      DateTime?
+
   // Invitation details
   inviteEmail      String
   inviteToken      String         @unique

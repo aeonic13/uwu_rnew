@@ -34,6 +34,14 @@ export const cosignerService = {
   },
 
   /**
+   * Cosigner (authenticated): persist their Plaid-verified monthly income.
+   * @param {number} monthlyIncome
+   */
+  async verifyIncome(monthlyIncome) {
+    return apiClient.post('/cosigners/verify-income', { monthlyIncome })
+  },
+
+  /**
    * Tenant: invite a cosigner to one of their applications.
    * @param {{applicationId:string,cosignerEmail:string,cosignerName?:string,relationshipType:string}} payload
    */

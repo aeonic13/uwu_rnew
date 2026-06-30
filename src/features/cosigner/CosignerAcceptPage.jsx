@@ -11,6 +11,7 @@ import {
   Loader2,
 } from 'lucide-react'
 import { cosignerService } from '../../services/cosignerService'
+import CosignerIncomeStep from './CosignerIncomeStep'
 
 /**
  * Public page reached from the cosigner invitation email:
@@ -35,6 +36,7 @@ export default function CosignerAcceptPage() {
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState(null)
   const [declined, setDeclined] = useState(false)
+  const [accepted, setAccepted] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -66,11 +68,13 @@ export default function CosignerAcceptPage() {
         email: invitation.email,
         ...form,
       })
-      // Establish the session and reload into the app as the cosigner.
+      // Establish the session, then move to the income-verification step.
+      // The api client reads authToken from localStorage on each request, so
+      // the authenticated Plaid calls work without a full reload.
       if (result?.token) {
         localStorage.setItem('authToken', result.token)
       }
-      window.location.assign('/')
+      setAccepted(true)
     } catch (err) {
       setSubmitError(err.message || 'Could not accept the invitation')
       setSubmitting(false)
@@ -129,6 +133,10 @@ export default function CosignerAcceptPage() {
         </p>
       </CenteredCard>
     )
+  }
+
+  if (accepted) {
+    return <CosignerIncomeStep onDone={() => window.location.assign('/')} />
   }
 
   const { tenant, listing } = invitation

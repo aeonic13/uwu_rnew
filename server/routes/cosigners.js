@@ -643,4 +643,42 @@ router.delete('/:cosignerId', authenticate, async (req, res) => {
   }
 })
 
+/**
+ * POST /api/cosigners/verify-income
+ * Store the logged-in cosigner's Plaid-verified monthly income on their
+ * accepted cosigner record(s). The Plaid flow runs client-side via the
+ * existing /payments/plaid endpoints; this persists the result.
+ */
+router.post('/verify-income', authenticate, async (req, res) => {
+  try {
+    const { monthlyIncome } = req.body
+    const income = Number(monthlyIncome)
+
+    if (!Number.isFinite(income) || income < 0) {
+      return res.status(400).json({
+        error: { message: 'A valid monthly income is required' },
+      })
+    }
+
+    const result = await prisma.cosigner.updateMany({
+      where: { cosignerId: req.user.id, status: 'accepted' },
+      data: {
+        verifiedMonthlyIncome: income,
+        incomeVerifiedAt: new Date(),
+      },
+    })
+
+    if (result.count === 0) {
+      return res.status(404).json({
+        error: { message: 'No accepted cosigner record found for this user' },
+      })
+    }
+
+    res.json({ verifiedMonthlyIncome: income, updated: result.count })
+  } catch (error) {
+    console.error('Cosigner verify-income error:', error)
+    res.status(500).json({ error: { message: 'Failed to save income' } })
+  }
+})
+
 export default router

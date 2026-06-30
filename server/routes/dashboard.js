@@ -544,6 +544,9 @@ router.get(
           const members = listing.applications.map(app => {
             const monthlyIncome = app.verificationData?.monthlyIncome || 0
             const cosigner = app.cosigners[0]
+            const cosignerIncome = cosigner?.verifiedMonthlyIncome || 0
+            // The guarantor's income qualifies the tenant — combine them.
+            const effectiveIncome = monthlyIncome + cosignerIncome
             return {
               id: app.id,
               applicationId: app.id,
@@ -553,8 +556,9 @@ router.get(
               applicationStatus:
                 app.status === 'approved' ? 'complete' : 'pending',
               monthlyIncome,
+              effectiveIncome,
               income: assessIncome(
-                monthlyIncome,
+                effectiveIncome,
                 listing.price,
                 listing.incomeMultiplier
               ),
@@ -571,6 +575,8 @@ router.get(
                       ? `${cosigner.cosigner.firstName} ${cosigner.cosigner.lastName}`
                       : cosigner.inviteEmail,
                     email: cosigner.cosigner?.email || cosigner.inviteEmail,
+                    monthlyIncome: cosignerIncome,
+                    incomeVerified: cosignerIncome > 0,
                     verificationStatus:
                       cosigner.status === 'accepted'
                         ? 'verified'
@@ -583,7 +589,7 @@ router.get(
           })
 
           const combined = assessCombinedIncome(
-            members.map(m => m.monthlyIncome),
+            members.map(m => m.effectiveIncome),
             listing.price,
             listing.incomeMultiplier
           )
