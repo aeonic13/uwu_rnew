@@ -61,10 +61,14 @@ model User {
   phone         String?
   university    String?
   major         String?
+  year          String?
   bio           String?
   avatarUrl     String?
   instagramUrl  String?
   linkedinUrl   String?
+  creditScore   Int?
+  creditTier    String?
+  backgroundCheck String?
   verified      Boolean   @default(false)
   verifyToken   String?
   resetToken    String?
@@ -145,6 +149,11 @@ model Application {
   startDate        DateTime
   endDate          DateTime
   emergencyContact String?
+  employmentStatus String?
+  references       String[]          @default([])
+  documents        String[]          @default([])
+  tourStatus       String            @default("not-requested")
+  tourDate         DateTime?
   verificationData Json?             // Stores Plaid income, identity, fee results
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt

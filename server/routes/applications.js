@@ -16,6 +16,9 @@ router.post('/', authenticate, async (req, res) => {
       endDate,
       message,
       emergencyContact,
+      employmentStatus,
+      references,
+      documents,
       verificationData,
     } = req.body
     const userId = req.user.id
@@ -88,6 +91,9 @@ router.post('/', authenticate, async (req, res) => {
         endDate: new Date(endDate),
         message,
         emergencyContact,
+        employmentStatus,
+        ...(Array.isArray(references) && { references }),
+        ...(Array.isArray(documents) && { documents }),
         status: 'pending',
         ...(verificationData && { verificationData }),
       },

@@ -511,7 +511,14 @@ router.get(
                   firstName: true,
                   lastName: true,
                   email: true,
+                  phone: true,
                   university: true,
+                  year: true,
+                  avatarUrl: true,
+                  verified: true,
+                  creditScore: true,
+                  creditTier: true,
+                  backgroundCheck: true,
                 },
               },
               agreement: {
@@ -546,6 +553,13 @@ router.get(
                 app.status === 'approved' ? 'complete' : 'pending',
               monthlyIncome,
               income: assessIncome(monthlyIncome, listing.price),
+              verificationData: {
+                bankConnected: !!app.verificationData?.bankConnected,
+                incomeVerified: !!app.verificationData?.incomeVerified,
+                monthlyIncome: app.verificationData?.monthlyIncome || 0,
+                identityVerified: !!app.verificationData?.identityVerified,
+                applicationFeePaid: !!app.verificationData?.applicationFeePaid,
+              },
               guarantor: cosigner
                 ? {
                     name: cosigner.cosigner
@@ -594,7 +608,60 @@ router.get(
           }
         })
 
-      res.json({ groups, incomeMultiplier: DEFAULT_INCOME_MULTIPLIER })
+      // Flat individual-applications view (richer per-applicant detail).
+      const avatarFor = name =>
+        `https://ui-avatars.com/api/?background=fc6a03&color=fff&name=${encodeURIComponent(
+          name || 'Applicant'
+        )}`
+
+      const applications = listings.flatMap(listing =>
+        listing.applications.map(app => {
+          const a = app.applicant
+          const fullName = `${a.firstName} ${a.lastName}`
+          const monthlyIncome = app.verificationData?.monthlyIncome || 0
+          return {
+            id: app.id,
+            propertyId: listing.id,
+            propertyTitle: listing.title,
+            status: app.status,
+            tourStatus: app.tourStatus || 'not-requested',
+            tourDate: app.tourDate || null,
+            messages: 0,
+            lastMessage: '',
+            applicant: {
+              id: a.id,
+              name: fullName,
+              email: a.email,
+              phone: a.phone || '',
+              university: a.university || '',
+              year: a.year || '',
+              avatar: a.avatarUrl || avatarFor(fullName),
+              creditScore: a.creditScore ?? null,
+              creditTier: a.creditTier || null,
+              verified: a.verified,
+              backgroundCheck: a.backgroundCheck || null,
+            },
+            application: {
+              moveInDate: app.startDate,
+              moveOutDate: app.endDate,
+              monthlyIncome,
+              employmentStatus: app.employmentStatus || '',
+              emergencyContact: app.emergencyContact || '',
+              references: app.references || [],
+              message: app.message || '',
+              appliedAt: app.createdAt,
+              documents: app.documents || [],
+              incomeAssessment: assessIncome(monthlyIncome, listing.price),
+            },
+          }
+        })
+      )
+
+      res.json({
+        groups,
+        applications,
+        incomeMultiplier: DEFAULT_INCOME_MULTIPLIER,
+      })
     } catch (error) {
       console.error('Get landlord inbox error:', error)
       res.status(500).json({ error: { message: 'Failed to get inbox' } })
