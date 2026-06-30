@@ -51,6 +51,11 @@ export const paymentsService = {
     return api.get('/payments/history', { params })
   },
 
+  /** Pay rent for the tenant's active lease. Returns { transaction }. */
+  payRent: async (data = {}) => {
+    return api.post('/payments/rent', data)
+  },
+
   /**
    * Get user's payment methods
    * @returns {Promise} List of payment methods

@@ -367,6 +367,58 @@ router.post('/confirm', async (req, res) => {
   }
 })
 
+// POST /api/payments/rent
+// Record a rent payment for the tenant's active lease. Amount is derived
+// from the signed agreement (falls back to the listing price). Creates a
+// real Transaction that appears in /payments/history.
+router.post('/rent', authenticate, async (req, res) => {
+  try {
+    const { paymentMethod = 'ach' } = req.body
+
+    const application = await prisma.application.findFirst({
+      where: { applicantId: req.user.id, status: 'approved' },
+      orderBy: { updatedAt: 'desc' },
+      include: {
+        agreement: { select: { monthlyRent: true } },
+        listing: { select: { price: true } },
+      },
+    })
+
+    if (!application) {
+      return res.status(400).json({
+        error: { message: 'You need an approved lease to pay rent.' },
+      })
+    }
+
+    const amount =
+      application.agreement?.monthlyRent || application.listing?.price || 0
+    if (amount <= 0) {
+      return res
+        .status(400)
+        .json({ error: { message: 'No rent amount on this lease.' } })
+    }
+    const serviceFee = Math.round(amount * 0.02)
+    const total = amount + serviceFee
+
+    const transaction = await prisma.transaction.create({
+      data: {
+        userId: req.user.id,
+        applicationId: application.id,
+        amount,
+        serviceFee,
+        total,
+        status: 'completed',
+        paymentMethod,
+      },
+    })
+
+    res.status(201).json({ transaction })
+  } catch (error) {
+    console.error('Pay rent error:', error)
+    res.status(500).json({ error: { message: 'Failed to process payment' } })
+  }
+})
+
 // GET /api/payments/history
 router.get('/history', authenticate, async (req, res) => {
   try {

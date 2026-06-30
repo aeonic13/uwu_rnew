@@ -88,27 +88,74 @@ function StudentTenantDashboard() {
 /**
  * Pay Rent Tab - Handle rent payments
  */
-function PayRentTab({ user }) {
+function PayRentTab() {
   const [paymentMethod, setPaymentMethod] = useState('bank')
   const [isProcessing, setIsProcessing] = useState(false)
+  const [currentLease, setCurrentLease] = useState(null)
+  const [paid, setPaid] = useState(false)
+  const [payError, setPayError] = useState(null)
 
-  // Mock current lease data
-  const currentLease = {
-    property: '123 College Ave, Apt 4B',
-    monthlyRent: 1200,
-    dueDate: '1st of each month',
-    nextDueDate: '2026-03-01',
-    landlord: 'John Property Owner',
-    status: 'active',
+  useEffect(() => {
+    let active = true
+    agreementsService
+      .listAgreements()
+      .then(agreements => {
+        if (!active) return
+        // Prefer a fully-signed lease; otherwise the most recent one.
+        const lease =
+          agreements.find(a => a.status === 'signed') || agreements[0]
+        if (lease) {
+          setCurrentLease({
+            property: lease.property?.description || lease.property?.address,
+            monthlyRent: lease.terms?.monthlyRent || 0,
+            landlord: lease.landlord?.name,
+            endDate: lease.terms?.endDate,
+          })
+        }
+      })
+      .catch(() => {})
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const handlePayRent = async () => {
+    setIsProcessing(true)
+    setPayError(null)
+    try {
+      await paymentsService.payRent({ paymentMethod })
+      setPaid(true)
+    } catch (err) {
+      setPayError(err.message || 'Payment failed. Please try again.')
+    } finally {
+      setIsProcessing(false)
+    }
   }
 
-  const handlePayRent = () => {
-    setIsProcessing(true)
-    // Simulate payment processing
-    setTimeout(() => {
-      setIsProcessing(false)
-      alert('Rent payment submitted successfully!')
-    }, 2000)
+  if (!currentLease) {
+    return (
+      <div className="text-center text-gray-500 py-12">
+        <CreditCard size={32} className="mx-auto mb-3 text-gray-300" />
+        <p>No active lease to pay rent on yet.</p>
+        <p className="text-sm">
+          Once your application is approved and the lease is ready, you can pay
+          here.
+        </p>
+      </div>
+    )
+  }
+
+  if (paid) {
+    return (
+      <div className="text-center text-gray-700 py-12">
+        <CheckCircle size={40} className="mx-auto mb-3 text-green-500" />
+        <h3 className="text-lg font-semibold">Rent paid</h3>
+        <p className="text-sm text-gray-500">
+          Your ${currentLease.monthlyRent} payment was recorded. See it in
+          Payment History.
+        </p>
+      </div>
+    )
   }
 
   return (
@@ -127,20 +174,12 @@ function PayRentTab({ user }) {
               ${currentLease.monthlyRent}/mo
             </span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">Due Date:</span>
-            <span className="font-medium">{currentLease.dueDate}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">Next Payment:</span>
-            <span className="font-medium text-brand-500">
-              {new Date(currentLease.nextDueDate).toLocaleDateString('en-US', {
-                month: 'long',
-                day: 'numeric',
-                year: 'numeric',
-              })}
-            </span>
-          </div>
+          {currentLease.landlord && (
+            <div className="flex justify-between">
+              <span className="text-gray-600">Landlord:</span>
+              <span className="font-medium">{currentLease.landlord}</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -151,7 +190,7 @@ function PayRentTab({ user }) {
           ${currentLease.monthlyRent}
         </p>
         <p className="text-gray-500 text-sm mt-2">
-          Due by {new Date(currentLease.nextDueDate).toLocaleDateString()}
+          + 2% service fee at checkout
         </p>
       </div>
 
@@ -216,6 +255,7 @@ function PayRentTab({ user }) {
           `Pay $${currentLease.monthlyRent} Now`
         )}
       </button>
+      {payError && <p className="text-sm text-red-600">{payError}</p>}
 
       {/* Auto-pay Option */}
       <div className="bg-white rounded-lg border border-gray-200 p-4">
