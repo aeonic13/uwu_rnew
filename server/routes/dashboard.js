@@ -1,6 +1,11 @@
 import express from 'express'
 import prisma from '../utils/prisma.js'
 import { authenticate, requireUserType } from '../middleware/authenticate.js'
+import {
+  assessIncome,
+  assessCombinedIncome,
+  DEFAULT_INCOME_MULTIPLIER,
+} from '../utils/screening.js'
 
 const router = express.Router()
 
@@ -83,13 +88,24 @@ router.get(
           .reduce((sum, t) => sum + t.amount, 0),
       }
 
+      // Attach a transparent income assessment to each application using the
+      // applicant's verified monthly income (captured at pre-qualification).
+      const assessedApplications = applications.map(app => ({
+        ...app,
+        incomeAssessment: assessIncome(
+          app.verificationData?.monthlyIncome,
+          listing.price
+        ),
+      }))
+
       res.json({
         listing: {
           id: listing.id,
           title: listing.title,
           price: listing.price,
         },
-        applications,
+        applications: assessedApplications,
+        incomeMultiplier: DEFAULT_INCOME_MULTIPLIER,
         stats,
       })
     } catch (error) {
@@ -465,6 +481,123 @@ router.get(
       res.status(500).json({
         error: { message: 'Failed to get payment status' },
       })
+    }
+  }
+)
+
+/**
+ * GET /api/dashboard/landlord/inbox
+ * Real application pipeline grouped by listing (one "group" per listing's
+ * applicant pool), with per-applicant and combined income assessment.
+ * Owner only.
+ */
+router.get(
+  '/landlord/inbox',
+  authenticate,
+  requireUserType('owner'),
+  async (req, res) => {
+    try {
+      const ownerId = req.user.id
+
+      const listings = await prisma.listing.findMany({
+        where: { ownerId },
+        include: {
+          applications: {
+            where: { status: { in: ['pending', 'approved'] } },
+            include: {
+              applicant: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  email: true,
+                  university: true,
+                },
+              },
+              agreement: {
+                select: { tenantSigned: true, landlordSigned: true },
+              },
+              cosigners: {
+                include: {
+                  cosigner: {
+                    select: { firstName: true, lastName: true, email: true },
+                  },
+                },
+              },
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      })
+
+      const groups = listings
+        .filter(l => l.applications.length > 0)
+        .map(listing => {
+          const members = listing.applications.map(app => {
+            const monthlyIncome = app.verificationData?.monthlyIncome || 0
+            const cosigner = app.cosigners[0]
+            return {
+              id: app.id,
+              applicationId: app.id,
+              name: `${app.applicant.firstName} ${app.applicant.lastName}`,
+              email: app.applicant.email,
+              university: app.applicant.university || null,
+              applicationStatus:
+                app.status === 'approved' ? 'complete' : 'pending',
+              monthlyIncome,
+              income: assessIncome(monthlyIncome, listing.price),
+              guarantor: cosigner
+                ? {
+                    name: cosigner.cosigner
+                      ? `${cosigner.cosigner.firstName} ${cosigner.cosigner.lastName}`
+                      : cosigner.inviteEmail,
+                    email: cosigner.cosigner?.email || cosigner.inviteEmail,
+                    verificationStatus:
+                      cosigner.status === 'accepted'
+                        ? 'verified'
+                        : cosigner.status === 'pending'
+                          ? 'invited'
+                          : 'not_invited',
+                  }
+                : null,
+            }
+          })
+
+          const combined = assessCombinedIncome(
+            members.map(m => m.monthlyIncome),
+            listing.price
+          )
+          const allComplete = members.every(
+            m => m.applicationStatus === 'complete'
+          )
+
+          return {
+            id: listing.id,
+            propertyId: listing.id,
+            propertyTitle: listing.title,
+            groupName: `${listing.title} — ${members.length} applicant${
+              members.length === 1 ? '' : 's'
+            }`,
+            status: allComplete
+              ? 'applicants_approved'
+              : 'pending_verifications',
+            submittedAt: listing.applications.reduce(
+              (earliest, a) =>
+                a.createdAt < earliest ? a.createdAt : earliest,
+              listing.applications[0].createdAt
+            ),
+            members,
+            combinedMonthlyIncome: combined.monthlyIncome,
+            rentRequired: listing.price,
+            requiredIncome: combined.requiredIncome,
+            meetsRequirement: combined.meetsRequirement,
+          }
+        })
+
+      res.json({ groups, incomeMultiplier: DEFAULT_INCOME_MULTIPLIER })
+    } catch (error) {
+      console.error('Get landlord inbox error:', error)
+      res.status(500).json({ error: { message: 'Failed to get inbox' } })
     }
   }
 )
