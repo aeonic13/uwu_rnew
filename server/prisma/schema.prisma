@@ -92,6 +92,9 @@ model User {
   maintenanceTickets  MaintenanceTicket[] @relation("TenantTickets")
   createdGroups       Group[]             @relation("GroupCreator")
   groupMemberships    GroupMember[]
+  groupMessages       GroupMessage[]      @relation("GroupMessages")
+  utilityBills        UtilityBill[]       @relation("UtilityBills")
+  utilityShares       UtilityBillShare[]  @relation("UtilityShares")
 
   @@index([email])
   @@index([userType])
@@ -143,10 +146,28 @@ model Group {
   updatedAt   DateTime @updatedAt
 
   createdById String
-  createdBy   User          @relation("GroupCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  createdBy   User           @relation("GroupCreator", fields: [createdById], references: [id], onDelete: Cascade)
   members     GroupMember[]
+  messages    GroupMessage[]
 
   @@index([createdById])
+}
+
+// Group chat message
+model GroupMessage {
+  id        String   @id @default(cuid())
+  content   String
+  type      String   @default("text") // text, listing
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  groupId  String
+  group    Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  senderId String
+  sender   User   @relation("GroupMessages", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([groupId])
+  @@index([createdAt])
 }
 
 // Group membership (active members + pending email invites)
@@ -163,6 +184,39 @@ model GroupMember {
   user    User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([groupId])
+  @@index([userId])
+}
+
+// Utility bill split among roommates
+model UtilityBill {
+  id          String    @id @default(cuid())
+  utilityType String
+  provider    String?
+  dueDate     DateTime?
+  total       Float
+  splitMode   String    @default("equal") // equal, custom
+  createdAt   DateTime  @default(now())
+
+  createdById String
+  createdBy   User               @relation("UtilityBills", fields: [createdById], references: [id], onDelete: Cascade)
+  shares      UtilityBillShare[]
+
+  @@index([createdById])
+}
+
+// One person's share of a utility bill
+model UtilityBillShare {
+  id     String  @id @default(cuid())
+  name   String
+  amount Float
+  paid   Boolean @default(false)
+
+  billId String
+  bill   UtilityBill @relation(fields: [billId], references: [id], onDelete: Cascade)
+  userId String?
+  user   User?       @relation("UtilityShares", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([billId])
   @@index([userId])
 }
 

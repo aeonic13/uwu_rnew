@@ -44,6 +44,28 @@ async function loadGroup(id) {
   return prisma.group.findUnique({ where: { id }, include: memberInclude })
 }
 
+async function isActiveMember(groupId, userId) {
+  const m = await prisma.groupMember.findFirst({
+    where: { groupId, userId, status: 'active' },
+  })
+  return !!m
+}
+
+function shapeMessage(m) {
+  return {
+    id: m.id,
+    senderId: m.senderId,
+    senderName: m.sender
+      ? `${m.sender.firstName} ${m.sender.lastName}`
+      : 'Member',
+    senderAvatar: m.sender?.avatarUrl || null,
+    content: m.content,
+    type: m.type,
+    timestamp: m.createdAt,
+    listingData: m.metadata?.listingData || null,
+  }
+}
+
 /**
  * POST /api/groups — create a group (creator becomes admin member).
  */
@@ -234,6 +256,74 @@ router.delete('/:id', authenticate, async (req, res) => {
   } catch (error) {
     console.error('Delete group error:', error)
     res.status(500).json({ error: { message: 'Failed to delete group' } })
+  }
+})
+
+/**
+ * GET /api/groups/:id/messages — group chat history (members only).
+ */
+router.get('/:id/messages', authenticate, async (req, res) => {
+  try {
+    if (!(await isActiveMember(req.params.id, req.user.id))) {
+      return res.status(403).json({ error: { message: 'Not a group member' } })
+    }
+    const messages = await prisma.groupMessage.findMany({
+      where: { groupId: req.params.id },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'asc' },
+      take: 200,
+    })
+    res.json({ messages: messages.map(shapeMessage) })
+  } catch (error) {
+    console.error('List group messages error:', error)
+    res.status(500).json({ error: { message: 'Failed to load messages' } })
+  }
+})
+
+/**
+ * POST /api/groups/:id/messages — send a chat message (members only).
+ */
+router.post('/:id/messages', authenticate, async (req, res) => {
+  try {
+    const { content, type = 'text', metadata } = req.body
+    if (!content || !content.trim()) {
+      return res.status(400).json({ error: { message: 'Message is empty' } })
+    }
+    if (!(await isActiveMember(req.params.id, req.user.id))) {
+      return res.status(403).json({ error: { message: 'Not a group member' } })
+    }
+    const created = await prisma.groupMessage.create({
+      data: {
+        groupId: req.params.id,
+        senderId: req.user.id,
+        content: content.trim(),
+        type,
+        ...(metadata && { metadata }),
+      },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+          },
+        },
+      },
+    })
+    res.status(201).json({ message: shapeMessage(created) })
+  } catch (error) {
+    console.error('Send group message error:', error)
+    res.status(500).json({ error: { message: 'Failed to send message' } })
   }
 })
 

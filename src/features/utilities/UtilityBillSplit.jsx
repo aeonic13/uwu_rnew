@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   Upload,
   FileText,
@@ -17,6 +17,7 @@ import {
   Trash2,
   SplitSquareHorizontal,
 } from 'lucide-react'
+import { utilitiesService } from '../../services/utilitiesService'
 
 const UTILITY_TYPES = [
   {
@@ -42,12 +43,6 @@ const UTILITY_TYPES = [
 ]
 
 const STEPS = ['upload', 'confirm', 'split', 'summary']
-
-const SAMPLE_CONTACTS = [
-  { id: 'c1', name: 'Alex Johnson', role: 'Roommate', avatar: null },
-  { id: 'c2', name: 'Maria Rodriguez', role: 'Roommate', avatar: null },
-  { id: 'c3', name: 'James Lee', role: 'Roommate', avatar: null },
-]
 
 function Avatar({ name, size = 'md' }) {
   const initials = name
@@ -110,6 +105,22 @@ export default function UtilityBillSplit() {
   const [step, setStep] = useState('upload')
   const [splits, setSplits] = useState([]) // completed splits
   const [showNewSplit, setShowNewSplit] = useState(false)
+  const [contacts, setContacts] = useState([])
+
+  useEffect(() => {
+    let active = true
+    utilitiesService
+      .listBills()
+      .then(bills => active && setSplits(bills))
+      .catch(() => {})
+    utilitiesService
+      .getContacts()
+      .then(c => active && setContacts(c))
+      .catch(() => {})
+    return () => {
+      active = false
+    }
+  }, [])
 
   // Form state
   const [billFile, setBillFile] = useState(null)
@@ -203,44 +214,58 @@ export default function UtilityBillSplit() {
     participants.length > 0 &&
     (splitMode === 'equal' || Math.abs(customTotal - 100) < 0.1)
 
-  const finalizeSplit = () => {
-    const total = parseFloat(totalAmount)
-    const newSplit = {
-      id: Date.now(),
-      utilityType,
-      provider,
-      dueDate,
-      total,
-      billPreview,
-      createdAt: new Date().toISOString(),
-      splitMode,
-      participants: participants.map(p => ({
-        ...p,
-        share: getShare(p.id),
-        paid: false,
-      })),
+  const finalizeSplit = async () => {
+    try {
+      const bill = await utilitiesService.createBill({
+        utilityType,
+        provider,
+        dueDate,
+        total: parseFloat(totalAmount),
+        splitMode,
+        shares: participants.map(p => ({
+          name: p.name,
+          amount: getShare(p.id),
+          userId: p.userId || null,
+        })),
+      })
+      setSplits(prev => [bill, ...prev])
+      setStep('summary')
+    } catch (err) {
+      console.error('Failed to create split:', err)
     }
-    setSplits(prev => [newSplit, ...prev])
-    setStep('summary')
   }
 
-  const togglePaid = (splitId, participantId) => {
-    setSplits(prev =>
-      prev.map(s =>
-        s.id === splitId
-          ? {
-              ...s,
-              participants: s.participants.map(p =>
-                p.id === participantId ? { ...p, paid: !p.paid } : p
-              ),
-            }
-          : s
+  const togglePaid = async (splitId, participantId) => {
+    const split = splits.find(s => s.id === splitId)
+    const current = split?.participants.find(p => p.id === participantId)?.paid
+    const apply = paid =>
+      setSplits(prev =>
+        prev.map(s =>
+          s.id === splitId
+            ? {
+                ...s,
+                participants: s.participants.map(p =>
+                  p.id === participantId ? { ...p, paid } : p
+                ),
+              }
+            : s
+        )
       )
-    )
+    apply(!current)
+    try {
+      await utilitiesService.toggleShare(splitId, participantId, !current)
+    } catch {
+      apply(!!current) // revert on failure
+    }
   }
 
-  const deleteSplit = splitId => {
+  const deleteSplit = async splitId => {
     setSplits(prev => prev.filter(s => s.id !== splitId))
+    try {
+      await utilitiesService.deleteBill(splitId)
+    } catch (err) {
+      console.error('Failed to delete split:', err)
+    }
   }
 
   const getUtilityIcon = type => {
@@ -636,8 +661,13 @@ export default function UtilityBillSplit() {
             <p className="text-sm font-medium text-gray-700 mb-2">
               Select roommates to split with
             </p>
+            {contacts.length === 0 && (
+              <p className="text-xs text-gray-400 mb-2">
+                No group roommates found — add people by name below.
+              </p>
+            )}
             <div className="space-y-2">
-              {SAMPLE_CONTACTS.map(contact => {
+              {contacts.map(contact => {
                 const selected = !!participants.find(p => p.id === contact.id)
                 return (
                   <button

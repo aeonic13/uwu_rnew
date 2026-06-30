@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import { Send, Image, Heart, ThumbsUp, Home, Users } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useGroups } from '../../contexts/GroupsContext'
+import { groupsService } from '../../services/groupsService'
 
 export default function GroupChat({ groupId }) {
   const { user } = useAuth()
@@ -22,70 +23,30 @@ export default function GroupChat({ groupId }) {
 
   // Load group messages
   useEffect(() => {
-    if (groupId) {
-      // TODO: Replace with API call to fetch group messages
-      const sampleMessages = [
-        {
-          id: '1',
-          senderId: '1',
-          senderName: 'Sarah Chen',
-          senderAvatar:
-            'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100',
-          content: 'Hey everyone! I found a great place near campus.',
-          timestamp: new Date(Date.now() - 3600000).toISOString(),
-          type: 'text',
-        },
-        {
-          id: '2',
-          senderId: '2',
-          senderName: 'Mike Rodriguez',
-          senderAvatar:
-            'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100',
-          content: 'Nice! Can you share the listing?',
-          timestamp: new Date(Date.now() - 3500000).toISOString(),
-          type: 'text',
-        },
-        {
-          id: '3',
-          senderId: '1',
-          senderName: 'Sarah Chen',
-          senderAvatar:
-            'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100',
-          content: null,
-          timestamp: new Date(Date.now() - 3400000).toISOString(),
-          type: 'listing',
-          listingData: {
-            id: '1',
-            title: 'Cozy 4BR near USC Campus',
-            price: 3200,
-            location: 'University Park, LA',
-            image:
-              'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400',
-          },
-        },
-      ]
-      // Placeholder load of mock messages on group change (to be replaced by an API fetch).
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setMessages(sampleMessages)
+    if (!groupId) return
+    let active = true
+    groupsService
+      .getMessages(groupId)
+      .then(msgs => {
+        if (active) setMessages(msgs)
+      })
+      .catch(() => {})
+    return () => {
+      active = false
     }
   }, [groupId])
 
-  const handleSendMessage = () => {
-    if (!newMessage.trim()) return
-
-    const message = {
-      id: Date.now().toString(),
-      senderId: user.id,
-      senderName: `${user.firstName} ${user.lastName}`,
-      senderAvatar: user.avatarUrl,
-      content: newMessage,
-      timestamp: new Date().toISOString(),
-      type: 'text',
-    }
-
-    // TODO: Send message via API
-    setMessages([...messages, message])
+  const handleSendMessage = async () => {
+    const content = newMessage.trim()
+    if (!content) return
     setNewMessage('')
+    try {
+      const message = await groupsService.sendMessage(groupId, content)
+      setMessages(prev => [...prev, message])
+    } catch (err) {
+      console.error('Failed to send message:', err)
+      setNewMessage(content) // restore on failure
+    }
   }
 
   const handleKeyPress = e => {
