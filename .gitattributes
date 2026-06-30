@@ -1,0 +1,14 @@
+# Normalize all text files to LF in the repo (matches .prettierrc endOfLine: "lf").
+# Prevents core.autocrlf from re-introducing CRLF and a wall of prettier lint errors.
+* text=auto eol=lf
+
+# Binary assets — never touch line endings.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.pdf binary
+*.woff binary
+*.woff2 binary

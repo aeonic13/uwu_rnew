@@ -6,7 +6,7 @@ export const authService = {
    * @param {Object} userData - User registration data
    * @returns {Promise} Response with user and token
    */
-  register: async (userData) => {
+  register: async userData => {
     const response = await api.post('/auth/register', userData)
     return response.data
   },
@@ -16,7 +16,7 @@ export const authService = {
    * @param {Object} credentials - Email and password
    * @returns {Promise} Response with user and token
    */
-  login: async (credentials) => {
+  login: async credentials => {
     const response = await api.post('/auth/login', credentials)
     return response.data
   },
@@ -26,7 +26,7 @@ export const authService = {
    * @param {string} token - Email verification token
    * @returns {Promise} Verification response
    */
-  verifyEmail: async (token) => {
+  verifyEmail: async token => {
     const response = await api.post('/auth/verify-email', { token })
     return response.data
   },
@@ -36,7 +36,7 @@ export const authService = {
    * @param {string} email - User email
    * @returns {Promise} Response
    */
-  forgotPassword: async (email) => {
+  forgotPassword: async email => {
     const response = await api.post('/auth/forgot-password', { email })
     return response.data
   },

@@ -251,7 +251,7 @@ function PaymentsView() {
     const fetchData = async () => {
       setIsLoading(true)
       // TODO: Replace with actual API calls
-      await new Promise((resolve) => setTimeout(resolve, 500))
+      await new Promise(resolve => setTimeout(resolve, 500))
       setTransactions(sampleTransactions)
       setPaymentMethods(samplePaymentMethods)
       setIsLoading(false)
@@ -260,7 +260,7 @@ function PaymentsView() {
     fetchData()
   }, [])
 
-  const pendingPayments = transactions.filter((t) => t.status === 'pending')
+  const pendingPayments = transactions.filter(t => t.status === 'pending')
   const totalPending = pendingPayments.reduce((sum, t) => sum + t.total, 0)
 
   if (isLoading) {
@@ -315,7 +315,10 @@ function PaymentsView() {
       {pendingPayments.length > 0 && activeTab === 'transactions' && (
         <div className="mx-4 mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
           <div className="flex items-start">
-            <AlertCircle className="text-yellow-600 mr-3 flex-shrink-0 mt-0.5" size={20} />
+            <AlertCircle
+              className="text-yellow-600 mr-3 flex-shrink-0 mt-0.5"
+              size={20}
+            />
             <div>
               <h3 className="font-semibold text-yellow-800">
                 Payment Due Soon
@@ -348,7 +351,7 @@ function PaymentsView() {
             </div>
           ) : (
             <div className="bg-white">
-              {transactions.map((transaction) => (
+              {transactions.map(transaction => (
                 <TransactionCard
                   key={transaction.id}
                   transaction={transaction}
@@ -360,7 +363,7 @@ function PaymentsView() {
         </div>
       ) : (
         <div className="p-4 space-y-3">
-          {paymentMethods.map((method) => (
+          {paymentMethods.map(method => (
             <PaymentMethodCard
               key={method.id}
               method={method}
@@ -383,7 +386,7 @@ function PaymentsView() {
         >
           <div
             className="bg-white rounded-t-2xl w-full max-w-md max-h-[80vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
           >
             <div className="p-6">
               <div className="flex justify-between items-start mb-4">
@@ -406,11 +409,15 @@ function PaymentsView() {
               <div className="space-y-4">
                 <div className="flex justify-between py-2 border-b">
                   <span className="text-gray-500">Property</span>
-                  <span className="font-medium">{selectedTransaction.property}</span>
+                  <span className="font-medium">
+                    {selectedTransaction.property}
+                  </span>
                 </div>
                 <div className="flex justify-between py-2 border-b">
                   <span className="text-gray-500">Landlord</span>
-                  <span className="font-medium">{selectedTransaction.landlord}</span>
+                  <span className="font-medium">
+                    {selectedTransaction.landlord}
+                  </span>
                 </div>
                 <div className="flex justify-between py-2 border-b">
                   <span className="text-gray-500">Date</span>

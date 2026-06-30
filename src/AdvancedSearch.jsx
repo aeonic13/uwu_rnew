@@ -1,5 +1,16 @@
-import React, { useState, useMemo } from 'react';
-import { Search, Sliders, DollarSign, Calendar, Home, Users, X, Check, BedDouble, Bath } from 'lucide-react';
+import React, { useState, useMemo } from 'react'
+import {
+  Search,
+  Sliders,
+  DollarSign,
+  Calendar,
+  Home,
+  Users,
+  X,
+  Check,
+  BedDouble,
+  Bath,
+} from 'lucide-react'
 
 const AdvancedSearch = ({ onSearch, onClose, initialFilters = {} }) => {
   const [filters, setFilters] = useState({
@@ -13,14 +24,27 @@ const AdvancedSearch = ({ onSearch, onClose, initialFilters = {} }) => {
     propertyType: initialFilters.propertyType || 'any',
     bedrooms: initialFilters.bedrooms || 'any',
     bathrooms: initialFilters.bathrooms || 'any',
-    ...initialFilters
-  });
+    ...initialFilters,
+  })
 
   const availableAmenities = [
-    'WiFi', 'Laundry', 'Parking', 'Furnished', 'Kitchen', 'Garden', 
-    'Pet-friendly', 'Gym', 'AC', 'Dishwasher', 'Pool', 'Balcony',
-    'In-unit Laundry', 'Study Space', 'Security', 'Storage'
-  ];
+    'WiFi',
+    'Laundry',
+    'Parking',
+    'Furnished',
+    'Kitchen',
+    'Garden',
+    'Pet-friendly',
+    'Gym',
+    'AC',
+    'Dishwasher',
+    'Pool',
+    'Balcony',
+    'In-unit Laundry',
+    'Study Space',
+    'Security',
+    'Storage',
+  ]
 
   const termLengthOptions = [
     { value: 'any', label: 'Any Term Length' },
@@ -28,16 +52,16 @@ const AdvancedSearch = ({ onSearch, onClose, initialFilters = {} }) => {
     { value: '4-6', label: '4-6 months' },
     { value: '7-9', label: '7-9 months' },
     { value: '10-12', label: '10-12 months' },
-    { value: '12+', label: '12+ months' }
-  ];
+    { value: '12+', label: '12+ months' },
+  ]
 
   const leaseTypeOptions = [
     { value: 'any', label: 'Any Arrangement' },
     { value: 'lease', label: 'Lease (temporary)' },
     { value: 'lease-takeover', label: 'Lease takeover' },
     { value: 'roommate', label: 'Join existing lease as roommate' },
-    { value: 'private-room', label: 'Private room in shared space' }
-  ];
+    { value: 'private-room', label: 'Private room in shared space' },
+  ]
 
   const propertyTypeOptions = [
     { value: 'any', label: 'Any Type' },
@@ -46,8 +70,8 @@ const AdvancedSearch = ({ onSearch, onClose, initialFilters = {} }) => {
     { value: 'Studio', label: 'Studio' },
     { value: 'Single Room', label: 'Single Room' },
     { value: 'Condo', label: 'Condo' },
-    { value: 'Townhouse', label: 'Townhouse' }
-  ];
+    { value: 'Townhouse', label: 'Townhouse' },
+  ]
 
   const bedroomOptions = [
     { value: 'any', label: 'Any' },
@@ -56,8 +80,8 @@ const AdvancedSearch = ({ onSearch, onClose, initialFilters = {} }) => {
     { value: '2', label: '2' },
     { value: '3', label: '3' },
     { value: '4', label: '4' },
-    { value: '5+', label: '5+' }
-  ];
+    { value: '5+', label: '5+' },
+  ]
 
   const bathroomOptions = [
     { value: 'any', label: 'Any' },
@@ -66,21 +90,21 @@ const AdvancedSearch = ({ onSearch, onClose, initialFilters = {} }) => {
     { value: '2', label: '2' },
     { value: '2.5', label: '2.5' },
     { value: '3', label: '3' },
-    { value: '4+', label: '4+' }
-  ];
+    { value: '4+', label: '4+' },
+  ]
 
-  const handleAmenityToggle = (amenity) => {
+  const handleAmenityToggle = amenity => {
     setFilters(prev => ({
       ...prev,
       amenities: prev.amenities.includes(amenity)
         ? prev.amenities.filter(a => a !== amenity)
-        : [...prev.amenities, amenity]
-    }));
-  };
+        : [...prev.amenities, amenity],
+    }))
+  }
 
   const handleSearch = () => {
-    onSearch(filters);
-  };
+    onSearch(filters)
+  }
 
   const clearFilters = () => {
     setFilters({
@@ -93,23 +117,23 @@ const AdvancedSearch = ({ onSearch, onClose, initialFilters = {} }) => {
       moveInDate: '',
       propertyType: 'any',
       bedrooms: 'any',
-      bathrooms: 'any'
-    });
-  };
+      bathrooms: 'any',
+    })
+  }
 
   const activeFiltersCount = useMemo(() => {
-    let count = 0;
-    if (filters.minRent || filters.maxRent) count++;
-    if (filters.keywords) count++;
-    if (filters.amenities.length > 0) count++;
-    if (filters.termLength !== 'any') count++;
-    if (filters.leaseType !== 'any') count++;
-    if (filters.moveInDate) count++;
-    if (filters.propertyType !== 'any') count++;
-    if (filters.bedrooms !== 'any') count++;
-    if (filters.bathrooms !== 'any') count++;
-    return count;
-  }, [filters]);
+    let count = 0
+    if (filters.minRent || filters.maxRent) count++
+    if (filters.keywords) count++
+    if (filters.amenities.length > 0) count++
+    if (filters.termLength !== 'any') count++
+    if (filters.leaseType !== 'any') count++
+    if (filters.moveInDate) count++
+    if (filters.propertyType !== 'any') count++
+    if (filters.bedrooms !== 'any') count++
+    if (filters.bathrooms !== 'any') count++
+    return count
+  }, [filters])
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end">
@@ -117,7 +141,10 @@ const AdvancedSearch = ({ onSearch, onClose, initialFilters = {} }) => {
         {/* Header */}
         <div className="sticky top-0 bg-white border-b p-4 flex items-center justify-between">
           <h2 className="text-xl font-bold">Advanced Filters</h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-full"
+          >
             <X size={24} />
           </button>
         </div>
@@ -127,12 +154,17 @@ const AdvancedSearch = ({ onSearch, onClose, initialFilters = {} }) => {
           <div>
             <label className="block text-sm font-medium mb-2">Keywords</label>
             <div className="relative">
-              <Search className="absolute left-3 top-3 text-gray-400" size={20} />
+              <Search
+                className="absolute left-3 top-3 text-gray-400"
+                size={20}
+              />
               <input
                 type="text"
                 placeholder="Search by location, description, etc."
                 value={filters.keywords}
-                onChange={(e) => setFilters(prev => ({ ...prev, keywords: e.target.value }))}
+                onChange={e =>
+                  setFilters(prev => ({ ...prev, keywords: e.target.value }))
+                }
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
@@ -150,7 +182,9 @@ const AdvancedSearch = ({ onSearch, onClose, initialFilters = {} }) => {
                   type="number"
                   placeholder="Min"
                   value={filters.minRent}
-                  onChange={(e) => setFilters(prev => ({ ...prev, minRent: e.target.value }))}
+                  onChange={e =>
+                    setFilters(prev => ({ ...prev, minRent: e.target.value }))
+                  }
                   className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
                 <p className="text-xs text-gray-500 mt-1">Minimum</p>
@@ -160,7 +194,9 @@ const AdvancedSearch = ({ onSearch, onClose, initialFilters = {} }) => {
                   type="number"
                   placeholder="Max"
                   value={filters.maxRent}
-                  onChange={(e) => setFilters(prev => ({ ...prev, maxRent: e.target.value }))}
+                  onChange={e =>
+                    setFilters(prev => ({ ...prev, maxRent: e.target.value }))
+                  }
                   className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
                 <p className="text-xs text-gray-500 mt-1">Maximum</p>
@@ -177,10 +213,14 @@ const AdvancedSearch = ({ onSearch, onClose, initialFilters = {} }) => {
             <input
               type="date"
               value={filters.moveInDate}
-              onChange={(e) => setFilters(prev => ({ ...prev, moveInDate: e.target.value }))}
+              onChange={e =>
+                setFilters(prev => ({ ...prev, moveInDate: e.target.value }))
+              }
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
-            <p className="text-xs text-gray-500 mt-1">Properties available ±2 weeks from this date</p>
+            <p className="text-xs text-gray-500 mt-1">
+              Properties available ±2 weeks from this date
+            </p>
           </div>
 
           {/* Property Type */}
@@ -193,7 +233,12 @@ const AdvancedSearch = ({ onSearch, onClose, initialFilters = {} }) => {
               {propertyTypeOptions.map(option => (
                 <button
                   key={option.value}
-                  onClick={() => setFilters(prev => ({ ...prev, propertyType: option.value }))}
+                  onClick={() =>
+                    setFilters(prev => ({
+                      ...prev,
+                      propertyType: option.value,
+                    }))
+                  }
                   className={`p-3 border rounded-lg text-sm font-medium transition-colors ${
                     filters.propertyType === option.value
                       ? 'border-brand-500 bg-brand-50 text-brand-600'
@@ -216,7 +261,9 @@ const AdvancedSearch = ({ onSearch, onClose, initialFilters = {} }) => {
               {bedroomOptions.map(option => (
                 <button
                   key={option.value}
-                  onClick={() => setFilters(prev => ({ ...prev, bedrooms: option.value }))}
+                  onClick={() =>
+                    setFilters(prev => ({ ...prev, bedrooms: option.value }))
+                  }
                   className={`p-3 border rounded-lg text-sm font-medium transition-colors ${
                     filters.bedrooms === option.value
                       ? 'border-brand-500 bg-brand-50 text-brand-600'
@@ -239,7 +286,9 @@ const AdvancedSearch = ({ onSearch, onClose, initialFilters = {} }) => {
               {bathroomOptions.map(option => (
                 <button
                   key={option.value}
-                  onClick={() => setFilters(prev => ({ ...prev, bathrooms: option.value }))}
+                  onClick={() =>
+                    setFilters(prev => ({ ...prev, bathrooms: option.value }))
+                  }
                   className={`p-3 border rounded-lg text-sm font-medium transition-colors ${
                     filters.bathrooms === option.value
                       ? 'border-brand-500 bg-brand-50 text-brand-600'
@@ -262,7 +311,9 @@ const AdvancedSearch = ({ onSearch, onClose, initialFilters = {} }) => {
               {termLengthOptions.map(option => (
                 <button
                   key={option.value}
-                  onClick={() => setFilters(prev => ({ ...prev, termLength: option.value }))}
+                  onClick={() =>
+                    setFilters(prev => ({ ...prev, termLength: option.value }))
+                  }
                   className={`p-3 border rounded-lg text-sm font-medium transition-colors ${
                     filters.termLength === option.value
                       ? 'border-brand-500 bg-brand-50 text-brand-600'
@@ -285,7 +336,9 @@ const AdvancedSearch = ({ onSearch, onClose, initialFilters = {} }) => {
               {leaseTypeOptions.map(option => (
                 <button
                   key={option.value}
-                  onClick={() => setFilters(prev => ({ ...prev, leaseType: option.value }))}
+                  onClick={() =>
+                    setFilters(prev => ({ ...prev, leaseType: option.value }))
+                  }
                   className={`w-full p-3 border rounded-lg text-left font-medium transition-colors ${
                     filters.leaseType === option.value
                       ? 'border-brand-500 bg-brand-50 text-brand-600'
@@ -346,13 +399,14 @@ const AdvancedSearch = ({ onSearch, onClose, initialFilters = {} }) => {
               className="flex-1 py-3 bg-brand-500 text-white rounded-lg hover:bg-brand-600 font-medium flex items-center justify-center"
             >
               <Search size={20} className="mr-2" />
-              Search {activeFiltersCount > 0 && `(${activeFiltersCount} filters)`}
+              Search{' '}
+              {activeFiltersCount > 0 && `(${activeFiltersCount} filters)`}
             </button>
           </div>
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default AdvancedSearch;
+export default AdvancedSearch

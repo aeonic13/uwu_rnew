@@ -12,19 +12,16 @@ const router = express.Router()
  */
 router.post('/invite', authenticate, async (req, res) => {
   try {
-    const {
-      applicationId,
-      cosignerEmail,
-      cosignerName,
-      relationshipType,
-    } = req.body
+    const { applicationId, cosignerEmail, cosignerName, relationshipType } =
+      req.body
     const userId = req.user.id
 
     // Validate required fields
     if (!applicationId || !cosignerEmail || !relationshipType) {
       return res.status(400).json({
         error: {
-          message: 'Application ID, cosigner email, and relationship type are required',
+          message:
+            'Application ID, cosigner email, and relationship type are required',
         },
       })
     }
@@ -487,13 +484,11 @@ router.get('/application/:applicationId', authenticate, async (req, res) => {
       })
     }
 
-    if (
-      application.applicantId !== userId &&
-      application.ownerId !== userId
-    ) {
+    if (application.applicantId !== userId && application.ownerId !== userId) {
       return res.status(403).json({
         error: {
-          message: 'You do not have permission to view cosigners for this application',
+          message:
+            'You do not have permission to view cosigners for this application',
         },
       })
     }
@@ -577,7 +572,7 @@ router.get('/my-responsibilities', authenticate, async (req, res) => {
     })
 
     res.json({
-      responsibilities: cosignedApplications.map((cs) => ({
+      responsibilities: cosignedApplications.map(cs => ({
         id: cs.id,
         tenant: cs.tenant,
         listing: cs.application.listing,

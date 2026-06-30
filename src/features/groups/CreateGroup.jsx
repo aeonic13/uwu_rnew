@@ -27,7 +27,7 @@ export default function CreateGroup() {
     setInviteEmails([...inviteEmails, ''])
   }
 
-  const handleRemoveEmailField = (index) => {
+  const handleRemoveEmailField = index => {
     setInviteEmails(inviteEmails.filter((_, i) => i !== index))
   }
 
@@ -37,7 +37,7 @@ export default function CreateGroup() {
     setInviteEmails(newEmails)
   }
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault()
     setError(null)
     setIsSubmitting(true)
@@ -51,7 +51,7 @@ export default function CreateGroup() {
 
       if (result.success) {
         // Send invitations to emails
-        const validEmails = inviteEmails.filter((email) => email.trim())
+        const validEmails = inviteEmails.filter(email => email.trim())
         // TODO: Send invitations via API
 
         // Navigate to group page
@@ -93,7 +93,7 @@ export default function CreateGroup() {
               type="text"
               required
               value={formData.name}
-              onChange={(e) => handleInputChange('name', e.target.value)}
+              onChange={e => handleInputChange('name', e.target.value)}
               placeholder="e.g., USC Fall 2024 Roommates"
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
@@ -106,7 +106,7 @@ export default function CreateGroup() {
             </label>
             <textarea
               value={formData.description}
-              onChange={(e) => handleInputChange('description', e.target.value)}
+              onChange={e => handleInputChange('description', e.target.value)}
               placeholder="Tell potential members about your group..."
               rows={3}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
@@ -120,10 +120,12 @@ export default function CreateGroup() {
             </label>
             <select
               value={formData.maxMembers}
-              onChange={(e) => handleInputChange('maxMembers', parseInt(e.target.value))}
+              onChange={e =>
+                handleInputChange('maxMembers', parseInt(e.target.value))
+              }
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
-              {[2, 3, 4, 5, 6].map((num) => (
+              {[2, 3, 4, 5, 6].map(num => (
                 <option key={num} value={num}>
                   {num} people
                 </option>
@@ -137,7 +139,8 @@ export default function CreateGroup() {
               Invite Members (Optional)
             </label>
             <p className="text-sm text-gray-500 mb-3">
-              Invite friends via email. They'll get an invitation to join your group.
+              Invite friends via email. They'll get an invitation to join your
+              group.
             </p>
 
             <div className="space-y-2">
@@ -146,7 +149,7 @@ export default function CreateGroup() {
                   <input
                     type="email"
                     value={email}
-                    onChange={(e) => handleEmailChange(index, e.target.value)}
+                    onChange={e => handleEmailChange(index, e.target.value)}
                     placeholder="friend@university.edu"
                     className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                   />

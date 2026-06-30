@@ -1,40 +1,50 @@
-import React, { useState } from 'react';
-import { Users, Plus, ArrowLeft, CheckCircle, MessageCircle, Search } from 'lucide-react';
+import React, { useState } from 'react'
+import {
+  Users,
+  Plus,
+  ArrowLeft,
+  CheckCircle,
+  MessageCircle,
+  Search,
+} from 'lucide-react'
 
-const AddToConversation = ({ 
-  currentConversation, 
-  currentUser, 
-  availableRoommates, 
-  onAddMembers, 
-  onBack 
+const AddToConversation = ({
+  currentConversation,
+  currentUser,
+  availableRoommates,
+  onAddMembers,
+  onBack,
 }) => {
-  const [selectedMembers, setSelectedMembers] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedMembers, setSelectedMembers] = useState([])
+  const [searchQuery, setSearchQuery] = useState('')
 
   // Filter available roommates/friends (exclude current user and those already in conversation)
-  const existingMemberIds = currentConversation.members?.map(m => m.id) || [currentUser.id];
-  const filteredRoommates = availableRoommates.filter(roommate => 
-    !existingMemberIds.includes(roommate.id) &&
-    (searchQuery === '' || 
-     roommate.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-     roommate.university.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const existingMemberIds = currentConversation.members?.map(m => m.id) || [
+    currentUser.id,
+  ]
+  const filteredRoommates = availableRoommates.filter(
+    roommate =>
+      !existingMemberIds.includes(roommate.id) &&
+      (searchQuery === '' ||
+        roommate.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        roommate.university.toLowerCase().includes(searchQuery.toLowerCase()))
+  )
 
-  const handleToggleMember = (roommate) => {
+  const handleToggleMember = roommate => {
     setSelectedMembers(prev => {
-      const isSelected = prev.some(m => m.id === roommate.id);
+      const isSelected = prev.some(m => m.id === roommate.id)
       if (isSelected) {
-        return prev.filter(m => m.id !== roommate.id);
+        return prev.filter(m => m.id !== roommate.id)
       } else {
-        return [...prev, roommate];
+        return [...prev, roommate]
       }
-    });
-  };
+    })
+  }
 
   const handleAddMembers = () => {
     if (selectedMembers.length === 0) {
-      alert('Please select at least one person to add to the conversation.');
-      return;
+      alert('Please select at least one person to add to the conversation.')
+      return
     }
 
     // Create system message about new members being added
@@ -43,11 +53,11 @@ const AddToConversation = ({
       text: `${currentUser.name} added ${selectedMembers.map(m => m.name).join(', ')} to the conversation`,
       sender: 'system',
       timestamp: new Date().toISOString(),
-      type: 'system'
-    };
+      type: 'system',
+    }
 
-    onAddMembers(selectedMembers, systemMessage);
-  };
+    onAddMembers(selectedMembers, systemMessage)
+  }
 
   return (
     <div className="p-4 h-full flex flex-col">
@@ -70,29 +80,37 @@ const AddToConversation = ({
           Current Conversation
         </h3>
         <div className="flex items-center space-x-3">
-          <img 
-            src={currentConversation.property?.images?.[0] || 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=100'}
+          <img
+            src={
+              currentConversation.property?.images?.[0] ||
+              'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=100'
+            }
             alt={currentConversation.property?.title}
             className="w-12 h-12 rounded-lg object-cover"
           />
           <div>
             <p className="font-medium">{currentConversation.property?.title}</p>
-            <p className="text-sm text-gray-600">{currentConversation.property?.location}</p>
+            <p className="text-sm text-gray-600">
+              {currentConversation.property?.location}
+            </p>
             <p className="text-sm text-green-600 font-semibold">
               ${currentConversation.property?.price}/month
             </p>
           </div>
         </div>
-        
+
         <div className="mt-3">
           <p className="text-sm text-brand-600">
-            <strong>Landlord:</strong> {currentConversation.property?.owner?.name}
+            <strong>Landlord:</strong>{' '}
+            {currentConversation.property?.owner?.name}
           </p>
-          {currentConversation.members && currentConversation.members.length > 1 && (
-            <p className="text-sm text-brand-600">
-              <strong>Current members:</strong> {currentConversation.members.map(m => m.name).join(', ')}
-            </p>
-          )}
+          {currentConversation.members &&
+            currentConversation.members.length > 1 && (
+              <p className="text-sm text-brand-600">
+                <strong>Current members:</strong>{' '}
+                {currentConversation.members.map(m => m.name).join(', ')}
+              </p>
+            )}
         </div>
       </div>
 
@@ -103,7 +121,7 @@ const AddToConversation = ({
           type="text"
           placeholder="Search friends and roommates..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={e => setSearchQuery(e.target.value)}
           className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
         />
       </div>
@@ -116,14 +134,22 @@ const AddToConversation = ({
           </h3>
           <div className="flex flex-wrap gap-2">
             {selectedMembers.map(member => (
-              <div key={member.id} className="flex items-center bg-green-100 border border-green-300 rounded-full px-3 py-1">
+              <div
+                key={member.id}
+                className="flex items-center bg-green-100 border border-green-300 rounded-full px-3 py-1"
+              >
                 <img
-                  src={member.photos?.[0] || 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100'}
+                  src={
+                    member.photos?.[0] ||
+                    'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100'
+                  }
                   alt={member.name}
                   className="w-6 h-6 rounded-full mr-2"
                 />
-                <span className="text-sm font-medium text-green-800">{member.name}</span>
-                <button 
+                <span className="text-sm font-medium text-green-800">
+                  {member.name}
+                </span>
+                <button
                   onClick={() => handleToggleMember(member)}
                   className="ml-2 text-green-600 hover:text-green-800"
                 >
@@ -138,7 +164,7 @@ const AddToConversation = ({
       {/* Available Roommates/Friends */}
       <div className="flex-1 overflow-y-auto">
         <h3 className="font-semibold mb-3">Available Roommates & Friends</h3>
-        
+
         {filteredRoommates.length === 0 ? (
           <div className="text-center py-12">
             <Users size={48} className="mx-auto text-gray-300 mb-4" />
@@ -146,28 +172,30 @@ const AddToConversation = ({
               {searchQuery ? 'No matches found' : 'No available roommates'}
             </h4>
             <p className="text-gray-500">
-              {searchQuery 
-                ? 'Try adjusting your search terms' 
-                : 'Connect with roommates through the Find Roommates feature first'
-              }
+              {searchQuery
+                ? 'Try adjusting your search terms'
+                : 'Connect with roommates through the Find Roommates feature first'}
             </p>
           </div>
         ) : (
           <div className="space-y-3">
             {filteredRoommates.map(roommate => {
-              const isSelected = selectedMembers.some(m => m.id === roommate.id);
+              const isSelected = selectedMembers.some(m => m.id === roommate.id)
               return (
                 <div
                   key={roommate.id}
                   onClick={() => handleToggleMember(roommate)}
                   className={`flex items-center p-3 rounded-lg border cursor-pointer transition-colors ${
-                    isSelected 
-                      ? 'border-green-500 bg-green-50' 
+                    isSelected
+                      ? 'border-green-500 bg-green-50'
                       : 'border-gray-200 hover:bg-gray-50'
                   }`}
                 >
                   <img
-                    src={roommate.photos?.[0] || 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100'}
+                    src={
+                      roommate.photos?.[0] ||
+                      'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100'
+                    }
                     alt={roommate.name}
                     className="w-12 h-12 rounded-full mr-3 object-cover"
                   />
@@ -175,7 +203,10 @@ const AddToConversation = ({
                     <div className="flex items-center">
                       <h4 className="font-semibold">{roommate.name}</h4>
                       {roommate.verificationStatus === 'verified' && (
-                        <CheckCircle size={16} className="ml-2 text-brand-500" />
+                        <CheckCircle
+                          size={16}
+                          className="ml-2 text-brand-500"
+                        />
                       )}
                     </div>
                     <p className="text-sm text-gray-600">
@@ -205,7 +236,7 @@ const AddToConversation = ({
                     )}
                   </div>
                 </div>
-              );
+              )
             })}
           </div>
         )}
@@ -223,9 +254,10 @@ const AddToConversation = ({
           }`}
         >
           <Plus size={20} className="mr-2" />
-          Add {selectedMembers.length} {selectedMembers.length === 1 ? 'Person' : 'People'} to Conversation
+          Add {selectedMembers.length}{' '}
+          {selectedMembers.length === 1 ? 'Person' : 'People'} to Conversation
         </button>
-        
+
         {selectedMembers.length > 0 && (
           <p className="text-sm text-gray-600 text-center mt-2">
             This will create a group conversation with the landlord
@@ -233,7 +265,7 @@ const AddToConversation = ({
         )}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default AddToConversation;
+export default AddToConversation

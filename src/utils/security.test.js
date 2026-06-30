@@ -9,15 +9,21 @@ import {
 describe('Security Utils', () => {
   describe('validateInput', () => {
     it('should validate email addresses', () => {
-      expect(validateInput('test@university.edu', 'email')).toBe('test@university.edu')
-      expect(() => validateInput('invalid-email', 'email')).toThrow('Invalid email format')
+      expect(validateInput('test@university.edu', 'email')).toBe(
+        'test@university.edu'
+      )
+      expect(() => validateInput('invalid-email', 'email')).toThrow(
+        'Invalid email format'
+      )
       expect(() => validateInput('', 'email')).toThrow('Invalid email format')
     })
 
     it('should validate phone numbers', () => {
       expect(validateInput('123-456-7890', 'phone')).toBe('1234567890')
       expect(validateInput('(123) 456-7890', 'phone')).toBe('1234567890')
-      expect(() => validateInput('not-a-phone', 'phone')).toThrow('Invalid phone number format')
+      expect(() => validateInput('not-a-phone', 'phone')).toThrow(
+        'Invalid phone number format'
+      )
     })
 
     it('should validate numbers', () => {
@@ -88,25 +94,33 @@ describe('Security Utils', () => {
 
   describe('validateFileUpload', () => {
     it('should validate file size', () => {
-      const validFile = { size: 1024 * 1024, name: 'test.jpg', type: 'image/jpeg' } // 1MB
+      const validFile = {
+        size: 1024 * 1024,
+        name: 'test.jpg',
+        type: 'image/jpeg',
+      } // 1MB
       expect(validateFileUpload(validFile).valid).toBe(true)
 
-      const tooLarge = { size: 15 * 1024 * 1024, name: 'large.jpg', type: 'image/jpeg' } // 15MB
-      expect(validateFileUpload(tooLarge, { maxSize: 5 * 1024 * 1024 }).valid).toBe(
-        false
-      )
+      const tooLarge = {
+        size: 15 * 1024 * 1024,
+        name: 'large.jpg',
+        type: 'image/jpeg',
+      } // 15MB
+      expect(
+        validateFileUpload(tooLarge, { maxSize: 5 * 1024 * 1024 }).valid
+      ).toBe(false)
     })
 
     it('should validate file types', () => {
       const imageFile = { size: 1024, name: 'photo.jpg', type: 'image/jpeg' }
-      expect(validateFileUpload(imageFile, { allowedTypes: ['image/jpeg'] }).valid).toBe(
-        true
-      )
+      expect(
+        validateFileUpload(imageFile, { allowedTypes: ['image/jpeg'] }).valid
+      ).toBe(true)
 
       const textFile = { size: 1024, name: 'doc.txt', type: 'text/plain' }
-      expect(validateFileUpload(textFile, { allowedTypes: ['image/jpeg'] }).valid).toBe(
-        false
-      )
+      expect(
+        validateFileUpload(textFile, { allowedTypes: ['image/jpeg'] }).valid
+      ).toBe(false)
     })
 
     it('should validate file extensions', () => {

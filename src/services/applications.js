@@ -6,7 +6,7 @@ export const applicationsService = {
    * @param {Object} applicationData - Application details
    * @returns {Promise} Created application
    */
-  submit: async (applicationData) => {
+  submit: async applicationData => {
     const response = await api.post('/applications', applicationData)
     return response.data
   },
@@ -16,7 +16,7 @@ export const applicationsService = {
    * @param {string} id - Application ID
    * @returns {Promise} Application details
    */
-  getById: async (id) => {
+  getById: async id => {
     const response = await api.get(`/applications/${id}`)
     return response.data
   },
@@ -55,7 +55,7 @@ export const applicationsService = {
    * @param {string} id - Application ID
    * @returns {Promise} Cancellation confirmation
    */
-  cancel: async (id) => {
+  cancel: async id => {
     const response = await api.delete(`/applications/${id}`)
     return response.data
   },

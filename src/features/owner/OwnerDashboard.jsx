@@ -20,7 +20,7 @@ export default function OwnerDashboard() {
   const { user } = useAuth()
   const navigate = useNavigate()
 
-  const handleNavigate = (key) => {
+  const handleNavigate = key => {
     const path = NAV_MAP[key]
     if (path) {
       navigate(path)

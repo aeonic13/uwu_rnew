@@ -1,30 +1,42 @@
-import React, { useState, useEffect } from 'react';
-import { Send, Calendar, Clock, Check, X, Bell, Phone, Video, MapPin, AlertCircle, Users } from 'lucide-react';
+import React, { useState, useEffect } from 'react'
+import {
+  Send,
+  Calendar,
+  Clock,
+  Check,
+  X,
+  Bell,
+  Phone,
+  Video,
+  MapPin,
+  AlertCircle,
+  Users,
+} from 'lucide-react'
 
-const EnhancedMessaging = ({ 
-  property, 
-  messages, 
-  onSendMessage, 
-  onScheduleTour, 
+const EnhancedMessaging = ({
+  property,
+  messages,
+  onSendMessage,
+  onScheduleTour,
   onVideoCall,
   currentUser,
   showAddFriendsButton = false,
-  onAddFriends
+  onAddFriends,
 }) => {
-  const [newMessage, setNewMessage] = useState('');
-  const [showScheduler, setShowScheduler] = useState(false);
-  const [tourDate, setTourDate] = useState('');
-  const [tourTime, setTourTime] = useState('');
-  const [tourType, setTourType] = useState('in-person'); // 'in-person' or 'virtual'
-  const [reminderSet, setReminderSet] = useState(false);
+  const [newMessage, setNewMessage] = useState('')
+  const [showScheduler, setShowScheduler] = useState(false)
+  const [tourDate, setTourDate] = useState('')
+  const [tourTime, setTourTime] = useState('')
+  const [tourType, setTourType] = useState('in-person') // 'in-person' or 'virtual'
+  const [reminderSet, setReminderSet] = useState(false)
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    const messageContainer = document.getElementById('messages-container');
+    const messageContainer = document.getElementById('messages-container')
     if (messageContainer) {
-      messageContainer.scrollTop = messageContainer.scrollHeight;
+      messageContainer.scrollTop = messageContainer.scrollHeight
     }
-  }, [messages]);
+  }, [messages])
 
   const handleSendMessage = () => {
     if (newMessage.trim()) {
@@ -32,11 +44,11 @@ const EnhancedMessaging = ({
         text: newMessage,
         timestamp: new Date().toISOString(),
         sender: currentUser.id,
-        type: 'text'
-      });
-      setNewMessage('');
+        type: 'text',
+      })
+      setNewMessage('')
     }
-  };
+  }
 
   const handleScheduleTour = () => {
     if (tourDate && tourTime) {
@@ -49,44 +61,44 @@ const EnhancedMessaging = ({
           date: tourDate,
           time: tourTime,
           type: tourType,
-          status: 'pending'
-        }
-      };
-      
-      onSendMessage(tourMessage);
-      onScheduleTour(tourDate, tourTime, tourType);
-      setShowScheduler(false);
-      setTourDate('');
-      setTourTime('');
-      
+          status: 'pending',
+        },
+      }
+
+      onSendMessage(tourMessage)
+      onScheduleTour(tourDate, tourTime, tourType)
+      setShowScheduler(false)
+      setTourDate('')
+      setTourTime('')
+
       // Set reminder for 1 hour before tour
-      setReminderSet(true);
+      setReminderSet(true)
       setTimeout(() => {
         // This would integrate with push notifications in a real app
-        console.log(`Reminder: Tour in 1 hour at ${property.location}`);
-      }, 1000); // Simulated reminder
+        console.log(`Reminder: Tour in 1 hour at ${property.location}`)
+      }, 1000) // Simulated reminder
     }
-  };
+  }
 
   const quickResponseOptions = [
-    "Is this still available?",
-    "Can I schedule a tour?",
+    'Is this still available?',
+    'Can I schedule a tour?',
     "What's included in the rent?",
-    "When can I move in?",
-    "Are pets allowed?",
-    "Is parking included?"
-  ];
+    'When can I move in?',
+    'Are pets allowed?',
+    'Is parking included?',
+  ]
 
-  const handleQuickResponse = (response) => {
+  const handleQuickResponse = response => {
     onSendMessage({
       text: response,
       timestamp: new Date().toISOString(),
       sender: currentUser.id,
-      type: 'text'
-    });
-  };
+      type: 'text',
+    })
+  }
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString().split('T')[0]
 
   return (
     <div className="flex flex-col h-full">
@@ -100,7 +112,9 @@ const EnhancedMessaging = ({
           />
           <div className="flex-1">
             <h3 className="font-semibold text-sm">{property.title}</h3>
-            <p className="text-xs text-gray-600">${property.price}/month • {property.location}</p>
+            <p className="text-xs text-gray-600">
+              ${property.price}/month • {property.location}
+            </p>
           </div>
           <div className="flex items-center space-x-2">
             <button
@@ -129,7 +143,7 @@ const EnhancedMessaging = ({
       </div>
 
       {/* Messages */}
-      <div 
+      <div
         id="messages-container"
         className="flex-1 p-4 overflow-y-auto space-y-4"
       >
@@ -138,14 +152,18 @@ const EnhancedMessaging = ({
             <div className="bg-brand-50 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
               <Calendar className="text-brand-500" size={24} />
             </div>
-            <h3 className="font-semibold text-gray-800 mb-2">Start the conversation!</h3>
+            <h3 className="font-semibold text-gray-800 mb-2">
+              Start the conversation!
+            </h3>
             <p className="text-gray-600 text-sm mb-4">
               Ask questions about the property or schedule a tour
             </p>
-            
+
             {/* Quick Response Options */}
             <div className="space-y-2">
-              <p className="text-xs text-gray-500 font-medium">QUICK RESPONSES:</p>
+              <p className="text-xs text-gray-500 font-medium">
+                QUICK RESPONSES:
+              </p>
               <div className="flex flex-wrap gap-2 justify-center">
                 {quickResponseOptions.slice(0, 3).map((option, index) => (
                   <button
@@ -180,26 +198,30 @@ const EnhancedMessaging = ({
                       <span className="font-medium">Tour Request</span>
                     </div>
                     <p className="text-sm">{message.text}</p>
-                    <div className={`text-xs px-2 py-1 rounded-full inline-block ${
-                      message.tourDetails.status === 'pending' 
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : message.tourDetails.status === 'approved'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}>
+                    <div
+                      className={`text-xs px-2 py-1 rounded-full inline-block ${
+                        message.tourDetails.status === 'pending'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : message.tourDetails.status === 'approved'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                      }`}
+                    >
                       {message.tourDetails.status.toUpperCase()}
                     </div>
                   </div>
                 )}
 
                 {/* Regular Text Message */}
-                {message.type === 'text' && (
-                  <p>{message.text}</p>
-                )}
+                {message.type === 'text' && <p>{message.text}</p>}
 
-                <p className={`text-xs mt-1 ${
-                  message.sender === currentUser.id ? 'text-brand-100' : 'text-gray-500'
-                }`}>
+                <p
+                  className={`text-xs mt-1 ${
+                    message.sender === currentUser.id
+                      ? 'text-brand-100'
+                      : 'text-gray-500'
+                  }`}
+                >
                   {new Date(message.timestamp).toLocaleTimeString()}
                 </p>
               </div>
@@ -229,7 +251,7 @@ const EnhancedMessaging = ({
       {showScheduler && (
         <div className="p-4 bg-brand-50 border-t">
           <h4 className="font-semibold mb-3">Schedule a Tour</h4>
-          
+
           {/* Tour Type Selection */}
           <div className="mb-3">
             <div className="flex space-x-2">
@@ -263,12 +285,12 @@ const EnhancedMessaging = ({
               type="date"
               min={today}
               value={tourDate}
-              onChange={(e) => setTourDate(e.target.value)}
+              onChange={e => setTourDate(e.target.value)}
               className="p-2 border border-gray-300 rounded-lg"
             />
             <select
               value={tourTime}
-              onChange={(e) => setTourTime(e.target.value)}
+              onChange={e => setTourTime(e.target.value)}
               className="p-2 border border-gray-300 rounded-lg"
             >
               <option value="">Select time</option>
@@ -341,8 +363,8 @@ const EnhancedMessaging = ({
           <input
             type="text"
             value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+            onChange={e => setNewMessage(e.target.value)}
+            onKeyPress={e => e.key === 'Enter' && handleSendMessage()}
             placeholder="Type a message..."
             className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
@@ -363,12 +385,12 @@ const EnhancedMessaging = ({
       {/* Tour Status Notifications */}
       <TourNotifications />
     </div>
-  );
-};
+  )
+}
 
 // Component for tour status notifications
 const TourNotifications = () => {
-  const [notifications, setNotifications] = useState([]);
+  const [notifications, setNotifications] = useState([])
 
   useEffect(() => {
     // Simulate tour confirmations/updates
@@ -379,15 +401,15 @@ const TourNotifications = () => {
           type: 'tour-approved',
           message: 'Your tour has been approved for tomorrow at 2:00 PM',
           timestamp: new Date(),
-          property: 'Cozy 1BR near USC Campus'
-        }
-      ]);
-    }, 5000);
+          property: 'Cozy 1BR near USC Campus',
+        },
+      ])
+    }, 5000)
 
-    return () => clearTimeout(timer);
-  }, []);
+    return () => clearTimeout(timer)
+  }, [])
 
-  if (notifications.length === 0) return null;
+  if (notifications.length === 0) return null
 
   return (
     <div className="fixed top-4 right-4 z-50">
@@ -402,7 +424,7 @@ const TourNotifications = () => {
           </div>
           <p className="text-sm text-green-700 mb-1">{notification.message}</p>
           <p className="text-xs text-green-600">{notification.property}</p>
-          
+
           {/* Reminder Option */}
           <button className="mt-2 text-xs text-green-600 hover:underline flex items-center">
             <Bell size={12} className="mr-1" />
@@ -411,7 +433,7 @@ const TourNotifications = () => {
         </div>
       ))}
     </div>
-  );
-};
+  )
+}
 
-export default EnhancedMessaging;
+export default EnhancedMessaging

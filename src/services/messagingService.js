@@ -69,7 +69,11 @@ export const messagingService = {
    * @param {string} initialMessage - Optional first message to send
    * @returns {Promise<{conversation: object, message?: object}>}
    */
-  async startConversation(recipientId, listingId = null, initialMessage = null) {
+  async startConversation(
+    recipientId,
+    listingId = null,
+    initialMessage = null
+  ) {
     return apiClient.post('/messages/start-conversation', {
       recipientId,
       listingId,
@@ -111,7 +115,12 @@ export const messagingService = {
    * @param {string} message - Optional message
    * @returns {Promise<{message: object}>}
    */
-  async sendTourRequest(conversationId, listingId, proposedTimes, message = null) {
+  async sendTourRequest(
+    conversationId,
+    listingId,
+    proposedTimes,
+    message = null
+  ) {
     return apiClient.post('/messages/tour-request', {
       conversationId,
       listingId,

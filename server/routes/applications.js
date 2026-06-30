@@ -10,7 +10,14 @@ const router = express.Router()
  */
 router.post('/', authenticate, async (req, res) => {
   try {
-    const { listingId, startDate, endDate, message, emergencyContact, verificationData } = req.body
+    const {
+      listingId,
+      startDate,
+      endDate,
+      message,
+      emergencyContact,
+      verificationData,
+    } = req.body
     const userId = req.user.id
 
     // Validate required fields
@@ -58,7 +65,9 @@ router.post('/', authenticate, async (req, res) => {
 
     if (existingApplication) {
       return res.status(400).json({
-        error: { message: 'You already have an active application for this listing' },
+        error: {
+          message: 'You already have an active application for this listing',
+        },
       })
     }
 
@@ -283,7 +292,9 @@ router.get('/:id', authenticate, async (req, res) => {
     // Only applicant or owner can view
     if (application.applicantId !== userId && application.ownerId !== userId) {
       return res.status(403).json({
-        error: { message: 'You do not have permission to view this application' },
+        error: {
+          message: 'You do not have permission to view this application',
+        },
       })
     }
 
@@ -307,7 +318,9 @@ router.put('/:id/status', authenticate, async (req, res) => {
     const validStatuses = ['pending', 'approved', 'rejected', 'cancelled']
     if (!validStatuses.includes(status)) {
       return res.status(400).json({
-        error: { message: `Invalid status. Must be one of: ${validStatuses.join(', ')}` },
+        error: {
+          message: `Invalid status. Must be one of: ${validStatuses.join(', ')}`,
+        },
       })
     }
 
@@ -336,7 +349,9 @@ router.put('/:id/status', authenticate, async (req, res) => {
 
     if (!isOwner && !isApplicant) {
       return res.status(403).json({
-        error: { message: 'You do not have permission to update this application' },
+        error: {
+          message: 'You do not have permission to update this application',
+        },
       })
     }
 
@@ -344,7 +359,10 @@ router.put('/:id/status', authenticate, async (req, res) => {
     if (status === 'approved' || status === 'rejected') {
       if (!isOwner) {
         return res.status(403).json({
-          error: { message: 'Only the property owner can approve or reject applications' },
+          error: {
+            message:
+              'Only the property owner can approve or reject applications',
+          },
         })
       }
       if (application.status !== 'pending') {
@@ -362,7 +380,10 @@ router.put('/:id/status', authenticate, async (req, res) => {
       }
       if (application.status === 'approved') {
         return res.status(400).json({
-          error: { message: 'Cannot cancel an approved application. Please contact the owner.' },
+          error: {
+            message:
+              'Cannot cancel an approved application. Please contact the owner.',
+          },
         })
       }
     }
@@ -424,7 +445,9 @@ router.put('/:id/status', authenticate, async (req, res) => {
     })
   } catch (error) {
     console.error('Update application status error:', error)
-    res.status(500).json({ error: { message: 'Failed to update application status' } })
+    res
+      .status(500)
+      .json({ error: { message: 'Failed to update application status' } })
   }
 })
 
@@ -451,7 +474,10 @@ router.get('/listing/:listingId', authenticate, async (req, res) => {
 
     if (listing.ownerId !== userId) {
       return res.status(403).json({
-        error: { message: 'You do not have permission to view applications for this listing' },
+        error: {
+          message:
+            'You do not have permission to view applications for this listing',
+        },
       })
     }
 
@@ -544,7 +570,10 @@ router.delete('/:id', authenticate, async (req, res) => {
     // Cannot withdraw approved application
     if (application.status === 'approved') {
       return res.status(400).json({
-        error: { message: 'Cannot withdraw an approved application. Please contact the property owner.' },
+        error: {
+          message:
+            'Cannot withdraw an approved application. Please contact the property owner.',
+        },
       })
     }
 
@@ -559,7 +588,9 @@ router.delete('/:id', authenticate, async (req, res) => {
     })
   } catch (error) {
     console.error('Withdraw application error:', error)
-    res.status(500).json({ error: { message: 'Failed to withdraw application' } })
+    res
+      .status(500)
+      .json({ error: { message: 'Failed to withdraw application' } })
   }
 })
 

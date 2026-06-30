@@ -129,7 +129,9 @@ export function requireOwnership(getOwnerId) {
       const ownerId = await getOwnerId(req)
       if (ownerId !== req.user.userId) {
         return res.status(403).json({
-          error: { message: 'You do not have permission to access this resource.' },
+          error: {
+            message: 'You do not have permission to access this resource.',
+          },
         })
       }
 

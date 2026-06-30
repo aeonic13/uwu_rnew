@@ -70,7 +70,7 @@ function AgreementView() {
     const fetchAgreement = async () => {
       setIsLoading(true)
       // TODO: Replace with actual API call
-      await new Promise((resolve) => setTimeout(resolve, 500))
+      await new Promise(resolve => setTimeout(resolve, 500))
       setAgreement(sampleAgreement)
       setIsLoading(false)
     }
@@ -85,8 +85,8 @@ function AgreementView() {
 
     setIsSigning(true)
     // TODO: Submit signature via API
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-    setAgreement((prev) => ({ ...prev, status: 'signed' }))
+    await new Promise(resolve => setTimeout(resolve, 1500))
+    setAgreement(prev => ({ ...prev, status: 'signed' }))
     setShowSignModal(false)
     setIsSigning(false)
   }
@@ -221,7 +221,9 @@ function AgreementView() {
             <div>
               <p className="text-sm text-gray-500">Landlord (Sublessor)</p>
               <p className="font-medium">{agreement.landlord.name}</p>
-              <p className="text-sm text-gray-600">{agreement.landlord.email}</p>
+              <p className="text-sm text-gray-600">
+                {agreement.landlord.email}
+              </p>
             </div>
           </div>
         </div>
@@ -232,7 +234,9 @@ function AgreementView() {
           <div className="space-y-3">
             <div className="flex justify-between">
               <span className="text-gray-600">Monthly Rent</span>
-              <span className="font-medium">${agreement.terms.monthlyRent}</span>
+              <span className="font-medium">
+                ${agreement.terms.monthlyRent}
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Security Deposit</span>
@@ -316,7 +320,7 @@ function AgreementView() {
         >
           <div
             className="bg-white rounded-t-2xl w-full max-w-md p-6"
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
           >
             <h2 className="text-xl font-bold mb-4">Sign Agreement</h2>
 
@@ -327,7 +331,7 @@ function AgreementView() {
               <input
                 type="text"
                 value={signature}
-                onChange={(e) => setSignature(e.target.value)}
+                onChange={e => setSignature(e.target.value)}
                 placeholder="John Doe"
                 className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
@@ -338,7 +342,7 @@ function AgreementView() {
                 <input
                   type="checkbox"
                   checked={agreedToTerms}
-                  onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  onChange={e => setAgreedToTerms(e.target.checked)}
                   className="mt-1 mr-3"
                 />
                 <span className="text-sm text-gray-600">

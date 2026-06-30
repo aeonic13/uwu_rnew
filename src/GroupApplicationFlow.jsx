@@ -32,23 +32,36 @@ const memberStatusIcon = verificationStatus => {
 }
 
 const memberStatusLabel = (appStatus, guarantorStatus) => {
-  if (appStatus !== 'complete') return { text: 'Application Pending', color: 'text-red-500' }
-  if (guarantorStatus === 'verified') return { text: 'Guarantor Verified', color: 'text-green-600' }
-  if (guarantorStatus === 'pending') return { text: 'Guarantor Pending Verification', color: 'text-yellow-600' }
-  if (guarantorStatus === 'not_invited') return { text: 'Guarantor Not Invited Yet', color: 'text-red-500' }
+  if (appStatus !== 'complete')
+    return { text: 'Application Pending', color: 'text-red-500' }
+  if (guarantorStatus === 'verified')
+    return { text: 'Guarantor Verified', color: 'text-green-600' }
+  if (guarantorStatus === 'pending')
+    return { text: 'Guarantor Pending Verification', color: 'text-yellow-600' }
+  if (guarantorStatus === 'not_invited')
+    return { text: 'Guarantor Not Invited Yet', color: 'text-red-500' }
   return { text: 'No Guarantor Required', color: 'text-green-600' }
 }
 
 // ─── Screen 1: Kickoff & Group Selection ────────────────────────────────────
 
-const KickoffScreen = ({ listing, roommateGroups, onSolo, onSelectGroup, onCreateGroup }) => {
+const KickoffScreen = ({
+  listing,
+  roommateGroups,
+  onSolo,
+  onSelectGroup,
+  onCreateGroup,
+}) => {
   const [showCreate, setShowCreate] = useState(false)
   const [newGroupName, setNewGroupName] = useState('')
   const [newGroupEmails, setNewGroupEmails] = useState('')
 
   const handleCreate = () => {
     if (!newGroupName.trim()) return
-    const emails = newGroupEmails.split(',').map(e => e.trim()).filter(Boolean)
+    const emails = newGroupEmails
+      .split(',')
+      .map(e => e.trim())
+      .filter(Boolean)
     onCreateGroup({ name: newGroupName, inviteEmails: emails })
   }
 
@@ -62,16 +75,23 @@ const KickoffScreen = ({ listing, roommateGroups, onSolo, onSelectGroup, onCreat
         </div>
         <div className="flex items-center text-sm text-brand-600">
           <DollarSign size={14} className="mr-1" />
-          <span>${listing.price}/mo &nbsp;·&nbsp; {listing.location}</span>
+          <span>
+            ${listing.price}/mo &nbsp;·&nbsp; {listing.location}
+          </span>
         </div>
       </div>
 
       {/* Income requirement notice */}
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start">
-        <AlertTriangle size={18} className="text-yellow-600 mr-3 mt-0.5 flex-shrink-0" />
+        <AlertTriangle
+          size={18}
+          className="text-yellow-600 mr-3 mt-0.5 flex-shrink-0"
+        />
         <p className="text-sm text-yellow-800">
-          This property requires <strong>{GUARANTEE_REQUIRED_INCOME_MULTIPLE}× monthly rent</strong> in
-          verified income. Students who don't meet this individually may add a guarantor.
+          This property requires{' '}
+          <strong>{GUARANTEE_REQUIRED_INCOME_MULTIPLE}× monthly rent</strong> in
+          verified income. Students who don't meet this individually may add a
+          guarantor.
         </p>
       </div>
 
@@ -87,7 +107,9 @@ const KickoffScreen = ({ listing, roommateGroups, onSolo, onSelectGroup, onCreat
         </div>
         <div className="flex-1">
           <p className="font-semibold">Just Me (Solo)</p>
-          <p className="text-sm text-gray-500">Apply individually with your own guarantor if needed</p>
+          <p className="text-sm text-gray-500">
+            Apply individually with your own guarantor if needed
+          </p>
         </div>
         <ChevronRight size={18} className="text-gray-400" />
       </button>
@@ -95,7 +117,9 @@ const KickoffScreen = ({ listing, roommateGroups, onSolo, onSelectGroup, onCreat
       {/* Existing groups */}
       {roommateGroups.length > 0 && (
         <div className="space-y-3">
-          <p className="text-sm font-medium text-gray-600 uppercase tracking-wide">Select an Existing Group</p>
+          <p className="text-sm font-medium text-gray-600 uppercase tracking-wide">
+            Select an Existing Group
+          </p>
           {roommateGroups.map(group => (
             <button
               key={group.id}
@@ -108,7 +132,8 @@ const KickoffScreen = ({ listing, roommateGroups, onSolo, onSelectGroup, onCreat
               <div className="flex-1">
                 <p className="font-semibold">{group.name}</p>
                 <p className="text-sm text-gray-500">
-                  {group.members?.length || 0} member{(group.members?.length || 0) !== 1 ? 's' : ''}
+                  {group.members?.length || 0} member
+                  {(group.members?.length || 0) !== 1 ? 's' : ''}
                   {group.members?.length > 0 &&
                     ` · ${group.members.map(m => m.name || m.userId).join(', ')}`}
                 </p>
@@ -130,7 +155,9 @@ const KickoffScreen = ({ listing, roommateGroups, onSolo, onSelectGroup, onCreat
           </div>
           <div>
             <p className="font-semibold text-green-700">Create a New Group</p>
-            <p className="text-sm text-gray-500">Invite roommates by email — group is saved for future applications</p>
+            <p className="text-sm text-gray-500">
+              Invite roommates by email — group is saved for future applications
+            </p>
           </div>
         </button>
       ) : (
@@ -153,7 +180,10 @@ const KickoffScreen = ({ listing, roommateGroups, onSolo, onSelectGroup, onCreat
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">
-              Roommate Emails <span className="text-gray-400 font-normal">(comma-separated)</span>
+              Roommate Emails{' '}
+              <span className="text-gray-400 font-normal">
+                (comma-separated)
+              </span>
             </label>
             <input
               type="text"
@@ -204,15 +234,18 @@ const GuarantorInviteScreen = ({ member, savedGuarantors, onSave, onSkip }) => {
     <div className="p-4 pb-20 space-y-6">
       <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
         <p className="text-sm text-orange-800">
-          <strong>{member.name}</strong>, this property requires income verification. Add a guarantor
-          (parent or sponsor) to co-sign if you don't independently meet the income requirement.
+          <strong>{member.name}</strong>, this property requires income
+          verification. Add a guarantor (parent or sponsor) to co-sign if you
+          don't independently meet the income requirement.
         </p>
       </div>
 
       {/* Saved guarantors */}
       {savedGuarantors && savedGuarantors.length > 0 && (
         <div className="space-y-2">
-          <p className="text-sm font-medium text-gray-600">Previously Saved Guarantors</p>
+          <p className="text-sm font-medium text-gray-600">
+            Previously Saved Guarantors
+          </p>
           {savedGuarantors.map((g, i) => (
             <button
               key={i}
@@ -226,21 +259,27 @@ const GuarantorInviteScreen = ({ member, savedGuarantors, onSave, onSkip }) => {
               <User size={18} className="text-gray-500 mr-3 flex-shrink-0" />
               <div>
                 <p className="font-medium text-sm">{g.name}</p>
-                <p className="text-xs text-gray-500">{g.email} · {g.phone}</p>
+                <p className="text-xs text-gray-500">
+                  {g.email} · {g.phone}
+                </p>
               </div>
               {useSaved && form.email === g.email && (
                 <CheckCircle size={16} className="text-brand-500 ml-auto" />
               )}
             </button>
           ))}
-          <p className="text-xs text-gray-400 text-center">— or enter a new guarantor below —</p>
+          <p className="text-xs text-gray-400 text-center">
+            — or enter a new guarantor below —
+          </p>
         </div>
       )}
 
       {/* Manual form */}
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-1">Guarantor Full Name</label>
+          <label className="block text-sm font-medium mb-1">
+            Guarantor Full Name
+          </label>
           <input
             type="text"
             value={form.name}
@@ -252,7 +291,10 @@ const GuarantorInviteScreen = ({ member, savedGuarantors, onSave, onSkip }) => {
         <div>
           <label className="block text-sm font-medium mb-1">Phone Number</label>
           <div className="relative">
-            <Phone size={16} className="absolute left-3 top-3.5 text-gray-400" />
+            <Phone
+              size={16}
+              className="absolute left-3 top-3.5 text-gray-400"
+            />
             <input
               type="tel"
               value={form.phone}
@@ -263,7 +305,9 @@ const GuarantorInviteScreen = ({ member, savedGuarantors, onSave, onSkip }) => {
           </div>
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Email Address</label>
+          <label className="block text-sm font-medium mb-1">
+            Email Address
+          </label>
           <div className="relative">
             <Mail size={16} className="absolute left-3 top-3.5 text-gray-400" />
             <input
@@ -280,10 +324,13 @@ const GuarantorInviteScreen = ({ member, savedGuarantors, onSave, onSkip }) => {
       {/* SMS preview */}
       {form.name && (
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-          <p className="text-xs font-medium text-gray-500 mb-1">SMS Preview (sent to guarantor)</p>
+          <p className="text-xs font-medium text-gray-500 mb-1">
+            SMS Preview (sent to guarantor)
+          </p>
           <p className="text-sm text-gray-700 italic">
-            "Hi {form.name}, {member.name} is applying for a lease with their roommates. Tap here to
-            securely verify your identity and income: rentra.app/verify/[token]"
+            "Hi {form.name}, {member.name} is applying for a lease with their
+            roommates. Tap here to securely verify your identity and income:
+            rentra.app/verify/[token]"
           </p>
         </div>
       )}
@@ -313,7 +360,13 @@ const GuarantorInviteScreen = ({ member, savedGuarantors, onSave, onSkip }) => {
 
 // ─── Screen 3: Group Application Tracker ─────────────────────────────────────
 
-const GroupTrackerScreen = ({ groupApplication, listing, onRemind, onSubmit, onNavigateToVerify }) => {
+const GroupTrackerScreen = ({
+  groupApplication,
+  listing,
+  onRemind,
+  onSubmit,
+  onNavigateToVerify,
+}) => {
   const allReady = groupApplication.members.every(m => {
     if (m.applicationStatus !== 'complete') return false
     const g = m.guarantor
@@ -326,25 +379,41 @@ const GroupTrackerScreen = ({ groupApplication, listing, onRemind, onSubmit, onN
       {/* Property */}
       <div className="bg-brand-50 border border-brand-200 rounded-lg p-4">
         <p className="font-semibold text-blue-800">{listing.title}</p>
-        <p className="text-sm text-brand-600">{listing.location} · ${listing.price}/mo</p>
+        <p className="text-sm text-brand-600">
+          {listing.location} · ${listing.price}/mo
+        </p>
       </div>
 
       {/* Legend */}
       <div className="flex items-center space-x-4 text-xs text-gray-500">
-        <span className="flex items-center"><CheckCircle size={13} className="text-green-500 mr-1" /> Verified</span>
-        <span className="flex items-center"><Clock size={13} className="text-yellow-500 mr-1" /> Pending</span>
-        <span className="flex items-center"><XCircle size={13} className="text-red-400 mr-1" /> Action needed</span>
+        <span className="flex items-center">
+          <CheckCircle size={13} className="text-green-500 mr-1" /> Verified
+        </span>
+        <span className="flex items-center">
+          <Clock size={13} className="text-yellow-500 mr-1" /> Pending
+        </span>
+        <span className="flex items-center">
+          <XCircle size={13} className="text-red-400 mr-1" /> Action needed
+        </span>
       </div>
 
       {/* Members */}
       <div className="space-y-3">
         {groupApplication.members.map((member, i) => {
-          const statusInfo = memberStatusLabel(member.applicationStatus, member.guarantor?.verificationStatus || null)
+          const statusInfo = memberStatusLabel(
+            member.applicationStatus,
+            member.guarantor?.verificationStatus || null
+          )
           const appDone = member.applicationStatus === 'complete'
-          const guarDone = !member.guarantor || member.guarantor.verificationStatus === 'verified'
+          const guarDone =
+            !member.guarantor ||
+            member.guarantor.verificationStatus === 'verified'
 
           return (
-            <div key={i} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+            <div
+              key={i}
+              className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm"
+            >
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center">
                   <div className="w-9 h-9 bg-brand-100 rounded-full flex items-center justify-center mr-3">
@@ -352,7 +421,9 @@ const GroupTrackerScreen = ({ groupApplication, listing, onRemind, onSubmit, onN
                   </div>
                   <div>
                     <p className="font-semibold">{member.name}</p>
-                    <p className={`text-xs font-medium ${statusInfo.color}`}>{statusInfo.text}</p>
+                    <p className={`text-xs font-medium ${statusInfo.color}`}>
+                      {statusInfo.text}
+                    </p>
                   </div>
                 </div>
                 {/* Remind button if something pending */}
@@ -369,10 +440,14 @@ const GroupTrackerScreen = ({ groupApplication, listing, onRemind, onSubmit, onN
               {/* Status rows */}
               <div className="space-y-2 ml-12">
                 <div className="flex items-center">
-                  {appDone
-                    ? <CheckCircle size={14} className="text-green-500 mr-2" />
-                    : <Clock size={14} className="text-yellow-500 mr-2" />}
-                  <span className="text-sm text-gray-700">Application {appDone ? 'Complete' : 'Pending'}</span>
+                  {appDone ? (
+                    <CheckCircle size={14} className="text-green-500 mr-2" />
+                  ) : (
+                    <Clock size={14} className="text-yellow-500 mr-2" />
+                  )}
+                  <span className="text-sm text-gray-700">
+                    Application {appDone ? 'Complete' : 'Pending'}
+                  </span>
                 </div>
 
                 {member.guarantor ? (
@@ -383,8 +458,8 @@ const GroupTrackerScreen = ({ groupApplication, listing, onRemind, onSubmit, onN
                       {member.guarantor.verificationStatus === 'verified'
                         ? 'Verified ✓'
                         : member.guarantor.verificationStatus === 'pending'
-                        ? 'Pending Verification'
-                        : 'Not Invited Yet'}
+                          ? 'Pending Verification'
+                          : 'Not Invited Yet'}
                     </span>
                     {/* Demo: let user trigger verifier */}
                     {member.guarantor.verificationStatus === 'pending' && (
@@ -399,7 +474,9 @@ const GroupTrackerScreen = ({ groupApplication, listing, onRemind, onSubmit, onN
                 ) : (
                   <div className="flex items-center">
                     <CheckCircle size={14} className="text-green-500 mr-2" />
-                    <span className="text-sm text-gray-700">No Guarantor Required</span>
+                    <span className="text-sm text-gray-700">
+                      No Guarantor Required
+                    </span>
                   </div>
                 )}
               </div>
@@ -412,8 +489,8 @@ const GroupTrackerScreen = ({ groupApplication, listing, onRemind, onSubmit, onN
       {!allReady && (
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
           <p className="text-sm text-gray-600">
-            Application cannot be submitted until <strong>all roommates</strong> and their{' '}
-            <strong>guarantors</strong> have completed verification.
+            Application cannot be submitted until <strong>all roommates</strong>{' '}
+            and their <strong>guarantors</strong> have completed verification.
           </p>
         </div>
       )}
@@ -427,7 +504,9 @@ const GroupTrackerScreen = ({ groupApplication, listing, onRemind, onSubmit, onN
             : 'bg-gray-200 text-gray-400 cursor-not-allowed'
         }`}
       >
-        {allReady ? 'Submit Group Application to Landlord' : 'Waiting on Group Members…'}
+        {allReady
+          ? 'Submit Group Application to Landlord'
+          : 'Waiting on Group Members…'}
       </button>
     </div>
   )
@@ -492,7 +571,8 @@ const GroupApplicationFlow = ({
                   name: `${m.name || m.userId}'s Parent`,
                   phone: '(555) 000-0001',
                   email: `parent@email.com`,
-                  verificationStatus: Math.random() > 0.5 ? 'verified' : 'pending',
+                  verificationStatus:
+                    Math.random() > 0.5 ? 'verified' : 'pending',
                 }
               : null,
         })),

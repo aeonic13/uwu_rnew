@@ -67,7 +67,9 @@ const GroupChat = lazy(() => import('../features/groups/GroupChat'))
 const LandingPage = lazy(() => import('../features/landing/LandingPage'))
 
 // Pre-qualification
-const PreQualificationFlow = lazy(() => import('../features/applications/PreQualificationFlow'))
+const PreQualificationFlow = lazy(
+  () => import('../features/applications/PreQualificationFlow')
+)
 
 // Layout wrapper
 const AppLayout = lazy(() => import('../components/layout/AppLayout'))

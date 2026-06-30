@@ -6,7 +6,7 @@ export const uploadsService = {
    * @param {FormData} formData - Form data with images
    * @returns {Promise} Upload response with image URLs
    */
-  uploadPropertyImages: async (formData) => {
+  uploadPropertyImages: async formData => {
     const response = await api.post('/uploads/images', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
@@ -20,7 +20,7 @@ export const uploadsService = {
    * @param {FormData} formData - Form data with avatar image
    * @returns {Promise} Upload response with avatar URL
    */
-  uploadAvatar: async (formData) => {
+  uploadAvatar: async formData => {
     const response = await api.post('/uploads/avatar', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
@@ -34,7 +34,7 @@ export const uploadsService = {
    * @param {string} imageUrl - URL of image to delete
    * @returns {Promise} Deletion confirmation
    */
-  deleteImage: async (imageUrl) => {
+  deleteImage: async imageUrl => {
     const response = await api.delete('/uploads/images', {
       data: { imageUrl },
     })
@@ -61,7 +61,7 @@ export const uploadsService = {
    */
   createMultipleFilesFormData: (files, fieldName = 'images') => {
     const formData = new FormData()
-    Array.from(files).forEach((file) => {
+    Array.from(files).forEach(file => {
       formData.append(fieldName, file)
     })
     return formData

@@ -22,7 +22,10 @@ function normalizeMessage(apiMsg, currentUserId) {
   return {
     id: apiMsg.id,
     text: apiMsg.content || '',
-    sender: apiMsg.sender?.id === currentUserId || apiMsg.senderId === currentUserId ? 'me' : 'other',
+    sender:
+      apiMsg.sender?.id === currentUserId || apiMsg.senderId === currentUserId
+        ? 'me'
+        : 'other',
     timestamp: apiMsg.createdAt,
     read: apiMsg.read ?? true,
   }
@@ -33,14 +36,14 @@ function normalizeMessage(apiMsg, currentUserId) {
  */
 function normalizeConversationDetail(apiData, currentUserId) {
   const conv = apiData.conversation
-  const otherUserEntry = conv.users?.find((u) => u.user?.id !== currentUserId)
+  const otherUserEntry = conv.users?.find(u => u.user?.id !== currentUserId)
   const otherUser = otherUserEntry?.user
 
   // Messages come newest-first from API — reverse for chronological display
   const messages = (apiData.messages || [])
     .slice()
     .reverse()
-    .map((m) => normalizeMessage(m, currentUserId))
+    .map(m => normalizeMessage(m, currentUserId))
 
   return {
     id: conv.id,
@@ -52,7 +55,9 @@ function normalizeConversationDetail(apiData, currentUserId) {
     },
     participant: {
       id: otherUser?.id,
-      name: otherUser ? `${otherUser.firstName} ${otherUser.lastName}` : 'Unknown',
+      name: otherUser
+        ? `${otherUser.firstName} ${otherUser.lastName}`
+        : 'Unknown',
       avatar: otherUser?.avatarUrl || null,
       online: false,
     },
@@ -188,7 +193,7 @@ function ConversationView() {
     }
 
     // Optimistically add message
-    setConversation((prev) => ({
+    setConversation(prev => ({
       ...prev,
       messages: [...prev.messages, message],
     }))
@@ -200,9 +205,9 @@ function ConversationView() {
     } catch (err) {
       console.error('Failed to send message:', err)
       // Revert optimistic update on failure
-      setConversation((prev) => ({
+      setConversation(prev => ({
         ...prev,
-        messages: prev.messages.filter((m) => m.id !== message.id),
+        messages: prev.messages.filter(m => m.id !== message.id),
       }))
     }
 
@@ -210,7 +215,7 @@ function ConversationView() {
     inputRef.current?.focus()
   }
 
-  const handleKeyPress = (e) => {
+  const handleKeyPress = e => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSend()
@@ -331,7 +336,7 @@ function ConversationView() {
         {Object.entries(groupedMessages).map(([date, messages]) => (
           <div key={date}>
             <DateSeparator date={messages[0].timestamp} />
-            {messages.map((message) => (
+            {messages.map(message => (
               <MessageBubble
                 key={message.id}
                 message={message}
@@ -363,7 +368,7 @@ function ConversationView() {
             <textarea
               ref={inputRef}
               value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
+              onChange={e => setNewMessage(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Type a message..."
               rows={1}
@@ -395,7 +400,7 @@ function ConversationView() {
         >
           <div
             className="absolute top-16 right-4 bg-white rounded-lg shadow-lg border overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
           >
             <button className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center">
               <Phone size={18} className="mr-3 text-gray-500" />

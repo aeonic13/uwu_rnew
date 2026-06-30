@@ -1,13 +1,29 @@
-import React, { useState } from 'react';
-import { ArrowLeft, Shield, DollarSign, Check, AlertCircle, FileText, Download, CreditCard, Calendar, Phone, Mail, Building2, User, Home, Zap } from 'lucide-react';
+import React, { useState } from 'react'
+import {
+  ArrowLeft,
+  Shield,
+  DollarSign,
+  Check,
+  AlertCircle,
+  FileText,
+  Download,
+  CreditCard,
+  Calendar,
+  Phone,
+  Mail,
+  Building2,
+  User,
+  Home,
+  Zap,
+} from 'lucide-react'
 
 const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
-  const [activeTab, setActiveTab] = useState('plans');
-  const [selectedPlan, setSelectedPlan] = useState(null);
-  const [showQuoteForm, setShowQuoteForm] = useState(false);
-  const [showPurchaseForm, setShowPurchaseForm] = useState(false);
-  const [currentInsurance, setCurrentInsurance] = useState(null);
-  
+  const [activeTab, setActiveTab] = useState('plans')
+  const [selectedPlan, setSelectedPlan] = useState(null)
+  const [showQuoteForm, setShowQuoteForm] = useState(false)
+  const [showPurchaseForm, setShowPurchaseForm] = useState(false)
+  const [currentInsurance, setCurrentInsurance] = useState(null)
+
   const [quoteData, setQuoteData] = useState({
     propertyValue: '',
     personalPropertyValue: '25000',
@@ -16,15 +32,15 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
     hasSecuritySystem: false,
     hasSmokeDetectors: true,
     previousClaims: false,
-    creditScore: 'good'
-  });
+    creditScore: 'good',
+  })
 
   const [purchaseData, setPurchaseData] = useState({
     paymentFrequency: 'annual',
     autoRenew: true,
     emergencyContact: '',
-    beneficiary: ''
-  });
+    beneficiary: '',
+  })
 
   // Mock insurance plans
   const insurancePlans = [
@@ -38,7 +54,7 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
         personalProperty: 15000,
         liability: 100000,
         medicalPayments: 1000,
-        lossOfUse: 3000
+        lossOfUse: 3000,
       },
       features: [
         'Personal property protection',
@@ -46,9 +62,9 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
         'Medical payments coverage',
         'Loss of use coverage',
         '24/7 claims support',
-        'Online policy management'
+        'Online policy management',
       ],
-      recommended: false
+      recommended: false,
     },
     {
       id: 'standard',
@@ -60,7 +76,7 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
         personalProperty: 25000,
         liability: 300000,
         medicalPayments: 5000,
-        lossOfUse: 6000
+        lossOfUse: 6000,
       },
       features: [
         'Enhanced personal property protection',
@@ -70,9 +86,9 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
         '24/7 claims support',
         'Online policy management',
         'Identity theft protection',
-        'Replacement cost coverage'
+        'Replacement cost coverage',
       ],
-      recommended: true
+      recommended: true,
     },
     {
       id: 'premium',
@@ -84,7 +100,7 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
         personalProperty: 50000,
         liability: 500000,
         medicalPayments: 10000,
-        lossOfUse: 12000
+        lossOfUse: 12000,
       },
       features: [
         'Maximum personal property protection',
@@ -96,65 +112,82 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
         'Identity theft protection',
         'Replacement cost coverage',
         'Valuable items coverage',
-        'Water damage protection'
+        'Water damage protection',
       ],
-      recommended: false
-    }
-  ];
+      recommended: false,
+    },
+  ]
 
-  const formatCurrency = (amount) => {
+  const formatCurrency = amount => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-      minimumFractionDigits: 0
-    }).format(amount);
-  };
+      minimumFractionDigits: 0,
+    }).format(amount)
+  }
 
   const handleGetQuote = () => {
     // Simulate quote generation
-    const baseRate = selectedPlan.monthlyPrice;
+    const baseRate = selectedPlan.monthlyPrice
     const adjustments = {
-      creditScore: quoteData.creditScore === 'excellent' ? 0.9 : 
-                   quoteData.creditScore === 'good' ? 1.0 : 1.1,
+      creditScore:
+        quoteData.creditScore === 'excellent'
+          ? 0.9
+          : quoteData.creditScore === 'good'
+            ? 1.0
+            : 1.1,
       securitySystem: quoteData.hasSecuritySystem ? 0.95 : 1.0,
-      previousClaims: quoteData.previousClaims ? 1.15 : 1.0
-    };
-    
-    const adjustedRate = baseRate * adjustments.creditScore * adjustments.securitySystem * adjustments.previousClaims;
-    
+      previousClaims: quoteData.previousClaims ? 1.15 : 1.0,
+    }
+
+    const adjustedRate =
+      baseRate *
+      adjustments.creditScore *
+      adjustments.securitySystem *
+      adjustments.previousClaims
+
     setSelectedPlan(prev => ({
       ...prev,
       customQuote: {
         monthlyPrice: Math.round(adjustedRate * 100) / 100,
         annualPrice: Math.round(adjustedRate * 12 * 100) / 100,
         discounts: [
-          quoteData.hasSecuritySystem && { name: 'Security System', discount: '5%' },
-          quoteData.creditScore === 'excellent' && { name: 'Excellent Credit', discount: '10%' },
-          !quoteData.previousClaims && { name: 'Claims-Free', discount: '5%' }
-        ].filter(Boolean)
-      }
-    }));
-    
-    setShowQuoteForm(false);
-    setShowPurchaseForm(true);
-  };
+          quoteData.hasSecuritySystem && {
+            name: 'Security System',
+            discount: '5%',
+          },
+          quoteData.creditScore === 'excellent' && {
+            name: 'Excellent Credit',
+            discount: '10%',
+          },
+          !quoteData.previousClaims && { name: 'Claims-Free', discount: '5%' },
+        ].filter(Boolean),
+      },
+    }))
+
+    setShowQuoteForm(false)
+    setShowPurchaseForm(true)
+  }
 
   const handlePurchase = () => {
     const finalPlan = {
       ...selectedPlan,
       policyNumber: `RIN-${Date.now()}`,
       effectiveDate: new Date().toISOString(),
-      expirationDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+      expirationDate: new Date(
+        Date.now() + 365 * 24 * 60 * 60 * 1000
+      ).toISOString(),
       status: 'active',
       paymentFrequency: purchaseData.paymentFrequency,
       autoRenew: purchaseData.autoRenew,
       emergencyContact: purchaseData.emergencyContact,
-      beneficiary: purchaseData.beneficiary
-    };
+      beneficiary: purchaseData.beneficiary,
+    }
 
-    const paymentAmount = purchaseData.paymentFrequency === 'annual' 
-      ? (selectedPlan.customQuote?.annualPrice || selectedPlan.annualPrice)
-      : (selectedPlan.customQuote?.monthlyPrice || selectedPlan.monthlyPrice);
+    const paymentAmount =
+      purchaseData.paymentFrequency === 'annual'
+        ? selectedPlan.customQuote?.annualPrice || selectedPlan.annualPrice
+        : selectedPlan.customQuote?.monthlyPrice || selectedPlan.monthlyPrice
 
     onPurchaseInsurance({
       insuranceId: finalPlan.id,
@@ -163,38 +196,45 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
       amount: paymentAmount,
       description: `${finalPlan.name} - ${purchaseData.paymentFrequency} payment`,
       date: new Date().toISOString(),
-      frequency: purchaseData.paymentFrequency
-    });
+      frequency: purchaseData.paymentFrequency,
+    })
 
-    setCurrentInsurance(finalPlan);
-    setShowPurchaseForm(false);
-    setActiveTab('policy');
-    
-    alert('Renters insurance purchased successfully! Your policy is now active.');
-  };
+    setCurrentInsurance(finalPlan)
+    setShowPurchaseForm(false)
+    setActiveTab('policy')
 
-  const downloadDocument = (docName) => {
-    console.log('Downloading document:', docName);
-    alert(`Downloading ${docName}...`);
-  };
+    alert(
+      'Renters insurance purchased successfully! Your policy is now active.'
+    )
+  }
 
-  const contactInsurance = (method) => {
+  const downloadDocument = docName => {
+    console.log('Downloading document:', docName)
+    alert(`Downloading ${docName}...`)
+  }
+
+  const contactInsurance = method => {
     if (method === 'phone') {
-      alert('Calling (855) 555-RENT...');
+      alert('Calling (855) 555-RENT...')
     } else if (method === 'email') {
-      alert('Opening email to support@rentrainsurance.com...');
+      alert('Opening email to support@rentrainsurance.com...')
     }
-  };
+  }
 
   const fileClaim = () => {
-    alert('Starting claims process... You will be redirected to our claims portal.');
-  };
+    alert(
+      'Starting claims process... You will be redirected to our claims portal.'
+    )
+  }
 
   if (showQuoteForm) {
     return (
       <div className="p-4 pb-20">
         <div className="flex items-center mb-6">
-          <button onClick={() => setShowQuoteForm(false)} className="mr-4 p-2 hover:bg-gray-100 rounded-full">
+          <button
+            onClick={() => setShowQuoteForm(false)}
+            className="mr-4 p-2 hover:bg-gray-100 rounded-full"
+          >
             <ArrowLeft size={24} />
           </button>
           <h2 className="text-xl font-bold">Get Custom Quote</h2>
@@ -202,7 +242,9 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
 
         <div className="space-y-6">
           <div className="bg-brand-50 p-4 rounded-lg border border-brand-200 mb-6">
-            <h3 className="font-semibold text-blue-800 mb-2">{selectedPlan.name}</h3>
+            <h3 className="font-semibold text-blue-800 mb-2">
+              {selectedPlan.name}
+            </h3>
             <p className="text-sm text-brand-600">
               Tell us more about your situation to get a personalized quote.
             </p>
@@ -210,10 +252,17 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Personal Property Value</label>
+              <label className="block text-sm font-medium mb-1">
+                Personal Property Value
+              </label>
               <select
                 value={quoteData.personalPropertyValue}
-                onChange={(e) => setQuoteData(prev => ({ ...prev, personalPropertyValue: e.target.value }))}
+                onChange={e =>
+                  setQuoteData(prev => ({
+                    ...prev,
+                    personalPropertyValue: e.target.value,
+                  }))
+                }
                 className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
               >
                 <option value="15000">$15,000</option>
@@ -224,10 +273,17 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Deductible</label>
+              <label className="block text-sm font-medium mb-1">
+                Deductible
+              </label>
               <select
                 value={quoteData.deductible}
-                onChange={(e) => setQuoteData(prev => ({ ...prev, deductible: e.target.value }))}
+                onChange={e =>
+                  setQuoteData(prev => ({
+                    ...prev,
+                    deductible: e.target.value,
+                  }))
+                }
                 className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
               >
                 <option value="250">$250</option>
@@ -238,10 +294,14 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Credit Score Range</label>
+            <label className="block text-sm font-medium mb-1">
+              Credit Score Range
+            </label>
             <select
               value={quoteData.creditScore}
-              onChange={(e) => setQuoteData(prev => ({ ...prev, creditScore: e.target.value }))}
+              onChange={e =>
+                setQuoteData(prev => ({ ...prev, creditScore: e.target.value }))
+              }
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               <option value="excellent">Excellent (750+)</option>
@@ -257,7 +317,12 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
                 type="checkbox"
                 id="security"
                 checked={quoteData.hasSecuritySystem}
-                onChange={(e) => setQuoteData(prev => ({ ...prev, hasSecuritySystem: e.target.checked }))}
+                onChange={e =>
+                  setQuoteData(prev => ({
+                    ...prev,
+                    hasSecuritySystem: e.target.checked,
+                  }))
+                }
                 className="mr-3 h-4 w-4 text-brand-500 focus:ring-brand-500 border-gray-300 rounded"
               />
               <label htmlFor="security" className="text-sm">
@@ -270,7 +335,12 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
                 type="checkbox"
                 id="claims"
                 checked={quoteData.previousClaims}
-                onChange={(e) => setQuoteData(prev => ({ ...prev, previousClaims: e.target.checked }))}
+                onChange={e =>
+                  setQuoteData(prev => ({
+                    ...prev,
+                    previousClaims: e.target.checked,
+                  }))
+                }
                 className="mr-3 h-4 w-4 text-brand-500 focus:ring-brand-500 border-gray-300 rounded"
               />
               <label htmlFor="claims" className="text-sm">
@@ -287,16 +357,19 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
           </button>
         </div>
       </div>
-    );
+    )
   }
 
   if (showPurchaseForm) {
-    const quote = selectedPlan.customQuote || selectedPlan;
-    
+    const quote = selectedPlan.customQuote || selectedPlan
+
     return (
       <div className="p-4 pb-20">
         <div className="flex items-center mb-6">
-          <button onClick={() => setShowPurchaseForm(false)} className="mr-4 p-2 hover:bg-gray-100 rounded-full">
+          <button
+            onClick={() => setShowPurchaseForm(false)}
+            className="mr-4 p-2 hover:bg-gray-100 rounded-full"
+          >
             <ArrowLeft size={24} />
           </button>
           <h2 className="text-xl font-bold">Purchase Insurance</h2>
@@ -305,7 +378,9 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
         <div className="space-y-6">
           {/* Quote Summary */}
           <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-            <h3 className="font-semibold text-green-800 mb-3">Your Custom Quote</h3>
+            <h3 className="font-semibold text-green-800 mb-3">
+              Your Custom Quote
+            </h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span>Plan:</span>
@@ -313,17 +388,26 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
               </div>
               <div className="flex justify-between">
                 <span>Monthly Premium:</span>
-                <span className="font-medium">${quote.monthlyPrice || selectedPlan.monthlyPrice}</span>
+                <span className="font-medium">
+                  ${quote.monthlyPrice || selectedPlan.monthlyPrice}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>Annual Premium:</span>
-                <span className="font-medium">${quote.annualPrice || selectedPlan.annualPrice}</span>
+                <span className="font-medium">
+                  ${quote.annualPrice || selectedPlan.annualPrice}
+                </span>
               </div>
               {quote.discounts && quote.discounts.length > 0 && (
                 <div className="pt-2 border-t border-green-300">
-                  <p className="font-medium text-green-700 mb-1">Applied Discounts:</p>
+                  <p className="font-medium text-green-700 mb-1">
+                    Applied Discounts:
+                  </p>
                   {quote.discounts.map((discount, index) => (
-                    <div key={index} className="flex justify-between text-green-600">
+                    <div
+                      key={index}
+                      className="flex justify-between text-green-600"
+                    >
                       <span>• {discount.name}</span>
                       <span>{discount.discount}</span>
                     </div>
@@ -335,7 +419,9 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
 
           {/* Payment Options */}
           <div>
-            <label className="block text-sm font-medium mb-3">Payment Frequency</label>
+            <label className="block text-sm font-medium mb-3">
+              Payment Frequency
+            </label>
             <div className="space-y-2">
               <label className="flex items-center">
                 <input
@@ -343,11 +429,17 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
                   name="frequency"
                   value="annual"
                   checked={purchaseData.paymentFrequency === 'annual'}
-                  onChange={(e) => setPurchaseData(prev => ({ ...prev, paymentFrequency: e.target.value }))}
+                  onChange={e =>
+                    setPurchaseData(prev => ({
+                      ...prev,
+                      paymentFrequency: e.target.value,
+                    }))
+                  }
                   className="mr-3 h-4 w-4 text-brand-500 focus:ring-brand-500"
                 />
                 <span className="text-sm">
-                  Annual Payment - ${quote.annualPrice || selectedPlan.annualPrice} 
+                  Annual Payment - $
+                  {quote.annualPrice || selectedPlan.annualPrice}
                   <span className="text-green-600 ml-2">(Save 15%)</span>
                 </span>
               </label>
@@ -357,11 +449,17 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
                   name="frequency"
                   value="monthly"
                   checked={purchaseData.paymentFrequency === 'monthly'}
-                  onChange={(e) => setPurchaseData(prev => ({ ...prev, paymentFrequency: e.target.value }))}
+                  onChange={e =>
+                    setPurchaseData(prev => ({
+                      ...prev,
+                      paymentFrequency: e.target.value,
+                    }))
+                  }
                   className="mr-3 h-4 w-4 text-brand-500 focus:ring-brand-500"
                 />
                 <span className="text-sm">
-                  Monthly Payment - ${quote.monthlyPrice || selectedPlan.monthlyPrice}/month
+                  Monthly Payment - $
+                  {quote.monthlyPrice || selectedPlan.monthlyPrice}/month
                 </span>
               </label>
             </div>
@@ -369,22 +467,36 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
 
           {/* Additional Information */}
           <div>
-            <label className="block text-sm font-medium mb-1">Emergency Contact</label>
+            <label className="block text-sm font-medium mb-1">
+              Emergency Contact
+            </label>
             <input
               type="text"
               value={purchaseData.emergencyContact}
-              onChange={(e) => setPurchaseData(prev => ({ ...prev, emergencyContact: e.target.value }))}
+              onChange={e =>
+                setPurchaseData(prev => ({
+                  ...prev,
+                  emergencyContact: e.target.value,
+                }))
+              }
               placeholder="Name and phone number"
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Beneficiary (Optional)</label>
+            <label className="block text-sm font-medium mb-1">
+              Beneficiary (Optional)
+            </label>
             <input
               type="text"
               value={purchaseData.beneficiary}
-              onChange={(e) => setPurchaseData(prev => ({ ...prev, beneficiary: e.target.value }))}
+              onChange={e =>
+                setPurchaseData(prev => ({
+                  ...prev,
+                  beneficiary: e.target.value,
+                }))
+              }
               placeholder="Full name"
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
@@ -395,7 +507,12 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
               type="checkbox"
               id="autorenew"
               checked={purchaseData.autoRenew}
-              onChange={(e) => setPurchaseData(prev => ({ ...prev, autoRenew: e.target.checked }))}
+              onChange={e =>
+                setPurchaseData(prev => ({
+                  ...prev,
+                  autoRenew: e.target.checked,
+                }))
+              }
               className="mr-3 h-4 w-4 text-brand-500 focus:ring-brand-500 border-gray-300 rounded"
             />
             <label htmlFor="autorenew" className="text-sm">
@@ -404,14 +521,15 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
           </div>
 
           <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-            <h4 className="font-semibold text-yellow-800 mb-2">Payment Summary</h4>
+            <h4 className="font-semibold text-yellow-800 mb-2">
+              Payment Summary
+            </h4>
             <div className="text-sm text-yellow-700">
               <p>
                 <strong>Due Today:</strong> $
-                {purchaseData.paymentFrequency === 'annual' 
-                  ? (quote.annualPrice || selectedPlan.annualPrice)
-                  : (quote.monthlyPrice || selectedPlan.monthlyPrice)
-                }
+                {purchaseData.paymentFrequency === 'annual'
+                  ? quote.annualPrice || selectedPlan.annualPrice
+                  : quote.monthlyPrice || selectedPlan.monthlyPrice}
               </p>
               <p className="mt-1">
                 Coverage begins immediately upon payment confirmation.
@@ -432,13 +550,16 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
           </button>
         </div>
       </div>
-    );
+    )
   }
 
   return (
     <div className="p-4 pb-20">
       <div className="flex items-center mb-6">
-        <button onClick={onBack} className="mr-4 p-2 hover:bg-gray-100 rounded-full">
+        <button
+          onClick={onBack}
+          className="mr-4 p-2 hover:bg-gray-100 rounded-full"
+        >
           <ArrowLeft size={24} />
         </button>
         <h2 className="text-xl font-bold">Renters Insurance</h2>
@@ -450,9 +571,12 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
           <div className="flex items-center">
             <AlertCircle size={20} className="text-orange-600 mr-3" />
             <div>
-              <h3 className="font-semibold text-orange-800">Insurance Required</h3>
+              <h3 className="font-semibold text-orange-800">
+                Insurance Required
+              </h3>
               <p className="text-sm text-orange-700">
-                Your lease requires renters insurance. Get covered today to protect your belongings.
+                Your lease requires renters insurance. Get covered today to
+                protect your belongings.
               </p>
             </div>
           </div>
@@ -465,17 +589,29 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
             <div className="flex items-center">
               <Shield size={20} className="text-green-600 mr-3" />
               <div>
-                <h3 className="font-semibold text-green-800">Insurance Active</h3>
-                <p className="text-sm text-green-700">Policy #{currentInsurance.policyNumber}</p>
+                <h3 className="font-semibold text-green-800">
+                  Insurance Active
+                </h3>
+                <p className="text-sm text-green-700">
+                  Policy #{currentInsurance.policyNumber}
+                </p>
               </div>
             </div>
             <div className="text-right">
-              <p className="font-semibold text-green-800">{currentInsurance.name}</p>
+              <p className="font-semibold text-green-800">
+                {currentInsurance.name}
+              </p>
               <p className="text-sm text-green-600">
-                ${currentInsurance.paymentFrequency === 'annual' ? 
-                  (currentInsurance.customQuote?.annualPrice || currentInsurance.annualPrice) :
-                  (currentInsurance.customQuote?.monthlyPrice || currentInsurance.monthlyPrice)
-                }/{currentInsurance.paymentFrequency === 'annual' ? 'year' : 'month'}
+                $
+                {currentInsurance.paymentFrequency === 'annual'
+                  ? currentInsurance.customQuote?.annualPrice ||
+                    currentInsurance.annualPrice
+                  : currentInsurance.customQuote?.monthlyPrice ||
+                    currentInsurance.monthlyPrice}
+                /
+                {currentInsurance.paymentFrequency === 'annual'
+                  ? 'year'
+                  : 'month'}
               </p>
             </div>
           </div>
@@ -484,7 +620,10 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
 
       {/* Tab Navigation */}
       <div className="flex border-b mb-6">
-        {(currentInsurance ? ['policy', 'claims', 'documents'] : ['plans', 'why-insurance']).map((tab) => (
+        {(currentInsurance
+          ? ['policy', 'claims', 'documents']
+          : ['plans', 'why-insurance']
+        ).map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -502,12 +641,12 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
       {/* Plans Tab */}
       {activeTab === 'plans' && !currentInsurance && (
         <div className="space-y-6">
-          {insurancePlans.map((plan) => (
+          {insurancePlans.map(plan => (
             <div
               key={plan.id}
               className={`border-2 rounded-lg p-6 ${
-                plan.recommended 
-                  ? 'border-brand-500 bg-brand-50' 
+                plan.recommended
+                  ? 'border-brand-500 bg-brand-50'
                   : 'border-gray-200 bg-white'
               }`}
             >
@@ -516,15 +655,19 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
                   Recommended for Students
                 </div>
               )}
-              
+
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="text-xl font-bold">{plan.name}</h3>
                   <p className="text-gray-600">{plan.provider}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-2xl font-bold text-green-600">${plan.monthlyPrice}/mo</p>
-                  <p className="text-sm text-gray-600">${plan.annualPrice}/year (save 15%)</p>
+                  <p className="text-2xl font-bold text-green-600">
+                    ${plan.monthlyPrice}/mo
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    ${plan.annualPrice}/year (save 15%)
+                  </p>
                 </div>
               </div>
 
@@ -532,19 +675,27 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
               <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
                 <div>
                   <p className="font-medium">Personal Property</p>
-                  <p className="text-gray-600">{formatCurrency(plan.coverage.personalProperty)}</p>
+                  <p className="text-gray-600">
+                    {formatCurrency(plan.coverage.personalProperty)}
+                  </p>
                 </div>
                 <div>
                   <p className="font-medium">Liability</p>
-                  <p className="text-gray-600">{formatCurrency(plan.coverage.liability)}</p>
+                  <p className="text-gray-600">
+                    {formatCurrency(plan.coverage.liability)}
+                  </p>
                 </div>
                 <div>
                   <p className="font-medium">Medical Payments</p>
-                  <p className="text-gray-600">{formatCurrency(plan.coverage.medicalPayments)}</p>
+                  <p className="text-gray-600">
+                    {formatCurrency(plan.coverage.medicalPayments)}
+                  </p>
                 </div>
                 <div>
                   <p className="font-medium">Loss of Use</p>
-                  <p className="text-gray-600">{formatCurrency(plan.coverage.lossOfUse)}</p>
+                  <p className="text-gray-600">
+                    {formatCurrency(plan.coverage.lossOfUse)}
+                  </p>
                 </div>
               </div>
 
@@ -554,7 +705,10 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
                 <div className="grid grid-cols-1 gap-1">
                   {plan.features.map((feature, index) => (
                     <div key={index} className="flex items-center text-sm">
-                      <Check size={16} className="text-green-600 mr-2 flex-shrink-0" />
+                      <Check
+                        size={16}
+                        className="text-green-600 mr-2 flex-shrink-0"
+                      />
                       <span>{feature}</span>
                     </div>
                   ))}
@@ -563,8 +717,8 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
 
               <button
                 onClick={() => {
-                  setSelectedPlan(plan);
-                  setShowQuoteForm(true);
+                  setSelectedPlan(plan)
+                  setShowQuoteForm(true)
                 }}
                 className={`w-full py-3 rounded-lg font-semibold ${
                   plan.recommended
@@ -583,38 +737,64 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
       {activeTab === 'why-insurance' && (
         <div className="space-y-6">
           <div className="bg-brand-50 p-6 rounded-lg">
-            <h3 className="text-xl font-semibold text-blue-800 mb-4">Why Do I Need Renters Insurance?</h3>
+            <h3 className="text-xl font-semibold text-blue-800 mb-4">
+              Why Do I Need Renters Insurance?
+            </h3>
             <div className="space-y-4 text-brand-600">
               <div className="flex items-start">
-                <Shield size={20} className="text-brand-500 mr-3 mt-1 flex-shrink-0" />
+                <Shield
+                  size={20}
+                  className="text-brand-500 mr-3 mt-1 flex-shrink-0"
+                />
                 <div>
                   <p className="font-medium">Protect Your Belongings</p>
-                  <p className="text-sm">Your landlord's insurance doesn't cover your personal property. Electronics, clothes, furniture - it all adds up quickly.</p>
+                  <p className="text-sm">
+                    Your landlord's insurance doesn't cover your personal
+                    property. Electronics, clothes, furniture - it all adds up
+                    quickly.
+                  </p>
                 </div>
               </div>
               <div className="flex items-start">
-                <DollarSign size={20} className="text-brand-500 mr-3 mt-1 flex-shrink-0" />
+                <DollarSign
+                  size={20}
+                  className="text-brand-500 mr-3 mt-1 flex-shrink-0"
+                />
                 <div>
                   <p className="font-medium">Liability Protection</p>
-                  <p className="text-sm">If someone gets injured in your apartment or you accidentally damage the property, liability coverage protects you.</p>
+                  <p className="text-sm">
+                    If someone gets injured in your apartment or you
+                    accidentally damage the property, liability coverage
+                    protects you.
+                  </p>
                 </div>
               </div>
               <div className="flex items-start">
-                <Home size={20} className="text-brand-500 mr-3 mt-1 flex-shrink-0" />
+                <Home
+                  size={20}
+                  className="text-brand-500 mr-3 mt-1 flex-shrink-0"
+                />
                 <div>
                   <p className="font-medium">Temporary Living Expenses</p>
-                  <p className="text-sm">If your apartment becomes unlivable due to a covered loss, we'll help pay for temporary housing.</p>
+                  <p className="text-sm">
+                    If your apartment becomes unlivable due to a covered loss,
+                    we'll help pay for temporary housing.
+                  </p>
                 </div>
               </div>
             </div>
           </div>
 
           <div className="bg-gray-50 p-6 rounded-lg">
-            <h3 className="text-lg font-semibold mb-4">Common Scenarios We Cover</h3>
+            <h3 className="text-lg font-semibold mb-4">
+              Common Scenarios We Cover
+            </h3>
             <div className="space-y-3 text-sm">
               <div className="flex items-center">
                 <Zap size={16} className="text-yellow-600 mr-3" />
-                <span>Fire or electrical damage destroys your laptop and textbooks</span>
+                <span>
+                  Fire or electrical damage destroys your laptop and textbooks
+                </span>
               </div>
               <div className="flex items-center">
                 <Building2 size={16} className="text-brand-500 mr-3" />
@@ -632,13 +812,30 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
           </div>
 
           <div className="bg-green-50 p-6 rounded-lg border border-green-200">
-            <h3 className="text-lg font-semibold text-green-800 mb-4">Student-Friendly Benefits</h3>
+            <h3 className="text-lg font-semibold text-green-800 mb-4">
+              Student-Friendly Benefits
+            </h3>
             <div className="space-y-2 text-green-700 text-sm">
-              <p>• <strong>Worldwide Coverage:</strong> Your belongings are covered even when traveling</p>
-              <p>• <strong>Dorm to Apartment:</strong> Easy to transfer coverage when you move</p>
-              <p>• <strong>Affordable Rates:</strong> Plans starting at just $12/month</p>
-              <p>• <strong>No Lease Required:</strong> Month-to-month options available</p>
-              <p>• <strong>Digital Everything:</strong> Manage your policy entirely through the app</p>
+              <p>
+                • <strong>Worldwide Coverage:</strong> Your belongings are
+                covered even when traveling
+              </p>
+              <p>
+                • <strong>Dorm to Apartment:</strong> Easy to transfer coverage
+                when you move
+              </p>
+              <p>
+                • <strong>Affordable Rates:</strong> Plans starting at just
+                $12/month
+              </p>
+              <p>
+                • <strong>No Lease Required:</strong> Month-to-month options
+                available
+              </p>
+              <p>
+                • <strong>Digital Everything:</strong> Manage your policy
+                entirely through the app
+              </p>
             </div>
           </div>
         </div>
@@ -651,8 +848,12 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
           <div className="bg-white border border-gray-200 rounded-lg p-4">
             <div className="flex justify-between items-start mb-4">
               <div>
-                <h3 className="font-semibold text-lg">{currentInsurance.name}</h3>
-                <p className="text-gray-600">Policy #{currentInsurance.policyNumber}</p>
+                <h3 className="font-semibold text-lg">
+                  {currentInsurance.name}
+                </h3>
+                <p className="text-gray-600">
+                  Policy #{currentInsurance.policyNumber}
+                </p>
               </div>
               <div className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
                 Active
@@ -662,25 +863,40 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <p className="text-gray-600">Effective Date</p>
-                <p className="font-medium">{new Date(currentInsurance.effectiveDate).toLocaleDateString()}</p>
+                <p className="font-medium">
+                  {new Date(
+                    currentInsurance.effectiveDate
+                  ).toLocaleDateString()}
+                </p>
               </div>
               <div>
                 <p className="text-gray-600">Expiration Date</p>
-                <p className="font-medium">{new Date(currentInsurance.expirationDate).toLocaleDateString()}</p>
+                <p className="font-medium">
+                  {new Date(
+                    currentInsurance.expirationDate
+                  ).toLocaleDateString()}
+                </p>
               </div>
               <div>
                 <p className="text-gray-600">Premium</p>
                 <p className="font-medium">
-                  ${currentInsurance.paymentFrequency === 'annual' ? 
-                    (currentInsurance.customQuote?.annualPrice || currentInsurance.annualPrice) :
-                    (currentInsurance.customQuote?.monthlyPrice || currentInsurance.monthlyPrice)
-                  }
-                  /{currentInsurance.paymentFrequency === 'annual' ? 'year' : 'month'}
+                  $
+                  {currentInsurance.paymentFrequency === 'annual'
+                    ? currentInsurance.customQuote?.annualPrice ||
+                      currentInsurance.annualPrice
+                    : currentInsurance.customQuote?.monthlyPrice ||
+                      currentInsurance.monthlyPrice}
+                  /
+                  {currentInsurance.paymentFrequency === 'annual'
+                    ? 'year'
+                    : 'month'}
                 </p>
               </div>
               <div>
                 <p className="text-gray-600">Auto-Renewal</p>
-                <p className="font-medium">{currentInsurance.autoRenew ? 'Enabled' : 'Disabled'}</p>
+                <p className="font-medium">
+                  {currentInsurance.autoRenew ? 'Enabled' : 'Disabled'}
+                </p>
               </div>
             </div>
           </div>
@@ -691,19 +907,27 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div className="flex justify-between">
                 <span>Personal Property</span>
-                <span className="font-medium">{formatCurrency(currentInsurance.coverage.personalProperty)}</span>
+                <span className="font-medium">
+                  {formatCurrency(currentInsurance.coverage.personalProperty)}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>Liability</span>
-                <span className="font-medium">{formatCurrency(currentInsurance.coverage.liability)}</span>
+                <span className="font-medium">
+                  {formatCurrency(currentInsurance.coverage.liability)}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>Medical Payments</span>
-                <span className="font-medium">{formatCurrency(currentInsurance.coverage.medicalPayments)}</span>
+                <span className="font-medium">
+                  {formatCurrency(currentInsurance.coverage.medicalPayments)}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>Loss of Use</span>
-                <span className="font-medium">{formatCurrency(currentInsurance.coverage.lossOfUse)}</span>
+                <span className="font-medium">
+                  {formatCurrency(currentInsurance.coverage.lossOfUse)}
+                </span>
               </div>
             </div>
           </div>
@@ -737,7 +961,8 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
           <div className="bg-brand-50 p-4 rounded-lg border border-brand-200">
             <h3 className="font-semibold text-blue-800 mb-2">File a Claim</h3>
             <p className="text-sm text-brand-600 mb-4">
-              Need to file a claim? We're here to help you through the process 24/7.
+              Need to file a claim? We're here to help you through the process
+              24/7.
             </p>
             <button
               onClick={fileClaim}
@@ -752,7 +977,9 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
             <div className="text-center py-8 text-gray-500">
               <AlertCircle size={48} className="mx-auto mb-4 text-gray-400" />
               <p>No claims filed yet</p>
-              <p className="text-sm">When you file a claim, you'll see the status here.</p>
+              <p className="text-sm">
+                When you file a claim, you'll see the status here.
+              </p>
             </div>
           </div>
 
@@ -765,7 +992,9 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
                 </div>
                 <div>
                   <p className="font-medium">Report the Incident</p>
-                  <p className="text-gray-600">File your claim online or call our 24/7 hotline</p>
+                  <p className="text-gray-600">
+                    File your claim online or call our 24/7 hotline
+                  </p>
                 </div>
               </div>
               <div className="flex items-start">
@@ -774,7 +1003,9 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
                 </div>
                 <div>
                   <p className="font-medium">Investigation</p>
-                  <p className="text-gray-600">We'll assign a claims adjuster to review your case</p>
+                  <p className="text-gray-600">
+                    We'll assign a claims adjuster to review your case
+                  </p>
                 </div>
               </div>
               <div className="flex items-start">
@@ -783,7 +1014,9 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
                 </div>
                 <div>
                   <p className="font-medium">Settlement</p>
-                  <p className="text-gray-600">Once approved, we'll process payment quickly</p>
+                  <p className="text-gray-600">
+                    Once approved, we'll process payment quickly
+                  </p>
                 </div>
               </div>
             </div>
@@ -800,7 +1033,9 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
                 <FileText size={20} className="text-brand-500 mr-3" />
                 <div>
                   <p className="font-medium">Insurance Policy</p>
-                  <p className="text-sm text-gray-600">PDF • Policy #{currentInsurance.policyNumber}</p>
+                  <p className="text-sm text-gray-600">
+                    PDF • Policy #{currentInsurance.policyNumber}
+                  </p>
                 </div>
               </div>
               <button
@@ -819,7 +1054,9 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
                 <FileText size={20} className="text-green-600 mr-3" />
                 <div>
                   <p className="font-medium">Proof of Insurance</p>
-                  <p className="text-sm text-gray-600">PDF • For landlord verification</p>
+                  <p className="text-sm text-gray-600">
+                    PDF • For landlord verification
+                  </p>
                 </div>
               </div>
               <button
@@ -838,7 +1075,9 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
                 <FileText size={20} className="text-purple-600 mr-3" />
                 <div>
                   <p className="font-medium">Personal Property Inventory</p>
-                  <p className="text-sm text-gray-600">PDF • For your records</p>
+                  <p className="text-sm text-gray-600">
+                    PDF • For your records
+                  </p>
                 </div>
               </div>
               <button
@@ -853,7 +1092,7 @@ const RentersInsuranceView = ({ user, lease, onBack, onPurchaseInsurance }) => {
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default RentersInsuranceView;
+export default RentersInsuranceView

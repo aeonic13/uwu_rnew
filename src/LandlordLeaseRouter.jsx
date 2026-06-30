@@ -33,7 +33,8 @@ const buildSignatories = members => {
     id: `tenant-${i}-${m.name.replace(/\s/g, '')}`,
     role: 'tenant',
     name: m.name,
-    email: m.email || `${m.name.toLowerCase().replace(/\s+/g, '.')}@university.edu`,
+    email:
+      m.email || `${m.name.toLowerCase().replace(/\s+/g, '.')}@university.edu`,
     signed: false,
     signedAt: null,
   }))
@@ -64,7 +65,11 @@ const buildDistributionList = (members, landlordName, landlordEmail) => {
       })
     }
   })
-  recipients.push({ name: landlordName || 'Landlord', email: landlordEmail || 'landlord@rentra.com', role: 'Landlord' })
+  recipients.push({
+    name: landlordName || 'Landlord',
+    email: landlordEmail || 'landlord@rentra.com',
+    role: 'Landlord',
+  })
   return recipients
 }
 
@@ -83,13 +88,16 @@ const SignatureTracker = ({ signatories, highlightId }) => (
               : 'border-gray-200 bg-white'
         }`}
       >
-        <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 flex-shrink-0 ${
-          s.role === 'guarantor' ? 'bg-purple-100' : 'bg-brand-100'
-        }`}>
-          {s.role === 'guarantor'
-            ? <Shield size={14} className="text-purple-600" />
-            : <User size={14} className="text-brand-500" />
-          }
+        <div
+          className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 flex-shrink-0 ${
+            s.role === 'guarantor' ? 'bg-purple-100' : 'bg-brand-100'
+          }`}
+        >
+          {s.role === 'guarantor' ? (
+            <Shield size={14} className="text-purple-600" />
+          ) : (
+            <User size={14} className="text-brand-500" />
+          )}
         </div>
         <div className="flex-1 min-w-0">
           <p className="font-medium text-sm truncate">{s.name}</p>
@@ -101,7 +109,12 @@ const SignatureTracker = ({ signatories, highlightId }) => (
           {s.signed ? (
             <span className="flex items-center text-xs text-green-600 font-medium">
               <CheckCircle size={14} className="mr-1" />
-              {s.signedAt ? new Date(s.signedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Signed'}
+              {s.signedAt
+                ? new Date(s.signedAt).toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })
+                : 'Signed'}
             </span>
           ) : s.id === highlightId ? (
             <span className="flex items-center text-xs text-brand-500 font-medium">
@@ -120,14 +133,23 @@ const SignatureTracker = ({ signatories, highlightId }) => (
 
 // ─── Screen A: Lease Preview ───────────────────────────────────────────────────
 
-const LeasePreviewScreen = ({ groupApplication, listing, landlordUser, onSend, onBack }) => {
+const LeasePreviewScreen = ({
+  groupApplication,
+  listing,
+  landlordUser,
+  onSend,
+  onBack,
+}) => {
   const [reviewed, setReviewed] = useState(false)
   const moveInDate = new Date()
   moveInDate.setDate(moveInDate.getDate() + 14)
 
   return (
     <div className="p-4 pb-24 space-y-5">
-      <button onClick={onBack} className="flex items-center text-brand-500 text-sm font-medium">
+      <button
+        onClick={onBack}
+        className="flex items-center text-brand-500 text-sm font-medium"
+      >
         <ArrowLeft size={16} className="mr-1" /> Back to Chat
       </button>
 
@@ -135,10 +157,13 @@ const LeasePreviewScreen = ({ groupApplication, listing, landlordUser, onSend, o
       <div>
         <h2 className="text-xl font-bold">Review Lease Before Sending</h2>
         <p className="text-sm text-gray-500 mt-1">
-          Verify the auto-populated details below, then send to all {groupApplication.members.length} tenant{groupApplication.members.length !== 1 ? 's' : ''}
+          Verify the auto-populated details below, then send to all{' '}
+          {groupApplication.members.length} tenant
+          {groupApplication.members.length !== 1 ? 's' : ''}
           {groupApplication.members.filter(m => m.guarantor).length > 0
             ? ` and ${groupApplication.members.filter(m => m.guarantor).length} guarantor${groupApplication.members.filter(m => m.guarantor).length !== 1 ? 's' : ''}`
-            : ''} for signatures.
+            : ''}{' '}
+          for signatures.
         </p>
       </div>
 
@@ -156,24 +181,44 @@ const LeasePreviewScreen = ({ groupApplication, listing, landlordUser, onSend, o
         <div className="p-5 space-y-4">
           {/* Property */}
           <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Property</p>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              Property
+            </p>
             <div className="flex items-start">
-              <Home size={16} className="text-brand-500 mr-2 mt-0.5 flex-shrink-0" />
+              <Home
+                size={16}
+                className="text-brand-500 mr-2 mt-0.5 flex-shrink-0"
+              />
               <div>
-                <p className="font-semibold">{listing?.title || groupApplication.propertyTitle}</p>
-                <p className="text-sm text-gray-600">{listing?.location || 'Los Angeles, CA'}</p>
+                <p className="font-semibold">
+                  {listing?.title || groupApplication.propertyTitle}
+                </p>
+                <p className="text-sm text-gray-600">
+                  {listing?.location || 'Los Angeles, CA'}
+                </p>
               </div>
             </div>
           </div>
 
           {/* Terms */}
           <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Terms</p>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              Terms
+            </p>
             <div className="grid grid-cols-2 gap-3">
               {[
-                { label: 'Monthly Rent', value: `$${(listing?.price || 0).toLocaleString()}/mo` },
-                { label: 'Security Deposit', value: `$${((listing?.price || 0) * 2).toLocaleString()}` },
-                { label: 'Lease Start', value: moveInDate.toLocaleDateString() },
+                {
+                  label: 'Monthly Rent',
+                  value: `$${(listing?.price || 0).toLocaleString()}/mo`,
+                },
+                {
+                  label: 'Security Deposit',
+                  value: `$${((listing?.price || 0) * 2).toLocaleString()}`,
+                },
+                {
+                  label: 'Lease Start',
+                  value: moveInDate.toLocaleDateString(),
+                },
                 { label: 'Lease Term', value: '12 months' },
               ].map((item, i) => (
                 <div key={i} className="bg-gray-50 rounded-lg p-3">
@@ -190,7 +235,10 @@ const LeasePreviewScreen = ({ groupApplication, listing, landlordUser, onSend, o
               Tenants ({groupApplication.members.length})
             </p>
             {groupApplication.members.map((m, i) => (
-              <div key={i} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+              <div
+                key={i}
+                className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0"
+              >
                 <div className="flex items-center">
                   <User size={13} className="text-brand-500 mr-2" />
                   <div>
@@ -210,10 +258,14 @@ const LeasePreviewScreen = ({ groupApplication, listing, landlordUser, onSend, o
 
           {/* Landlord */}
           <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Landlord</p>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              Landlord
+            </p>
             <div className="flex items-center">
               <Building2 size={13} className="text-gray-600 mr-2" />
-              <span className="text-sm font-medium">{landlordUser?.name || 'Landlord'}</span>
+              <span className="text-sm font-medium">
+                {landlordUser?.name || 'Landlord'}
+              </span>
             </div>
           </div>
         </div>
@@ -228,7 +280,8 @@ const LeasePreviewScreen = ({ groupApplication, listing, landlordUser, onSend, o
           className="mt-1 w-4 h-4 accent-blue-600"
         />
         <span className="text-sm text-gray-700">
-          I confirm the details above are accurate and I'm ready to send this lease to all parties for signature.
+          I confirm the details above are accurate and I'm ready to send this
+          lease to all parties for signature.
         </span>
       </label>
 
@@ -250,13 +303,18 @@ const LeasePreviewScreen = ({ groupApplication, listing, landlordUser, onSend, o
 
 // ─── Screen B: Signature Progress ─────────────────────────────────────────────
 
-const SignatureProgressScreen = ({ signatories: initialSigs, groupApplication, listing, onAllSigned }) => {
-  const [signatories, setSignatories]   = useState(initialSigs)
-  const [currentIdx, setCurrentIdx]     = useState(0)  // index of next party to auto-sign
-  const [autoRunning, setAutoRunning]   = useState(false)
+const SignatureProgressScreen = ({
+  signatories: initialSigs,
+  groupApplication,
+  listing,
+  onAllSigned,
+}) => {
+  const [signatories, setSignatories] = useState(initialSigs)
+  const [currentIdx, setCurrentIdx] = useState(0) // index of next party to auto-sign
+  const [autoRunning, setAutoRunning] = useState(false)
 
-  const pending  = signatories.filter(s => !s.signed)
-  const allDone  = pending.length === 0
+  const pending = signatories.filter(s => !s.signed)
+  const allDone = pending.length === 0
   const currentSig = signatories[currentIdx] || null
 
   // Simulate sequential signing: each party signs after a delay
@@ -269,9 +327,13 @@ const SignatureProgressScreen = ({ signatories: initialSigs, groupApplication, l
     }
     setCurrentIdx(nextUnsigned)
     setTimeout(() => {
-      setSignatories(prev => prev.map((s, i) =>
-        i === nextUnsigned ? { ...s, signed: true, signedAt: new Date().toISOString() } : s
-      ))
+      setSignatories(prev =>
+        prev.map((s, i) =>
+          i === nextUnsigned
+            ? { ...s, signed: true, signedAt: new Date().toISOString() }
+            : s
+        )
+      )
       setCurrentIdx(nextUnsigned + 1)
       setAutoRunning(false)
     }, 2000)
@@ -291,7 +353,9 @@ const SignatureProgressScreen = ({ signatories: initialSigs, groupApplication, l
       <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
         <div className="flex items-center mb-1">
           <FileText size={16} className="text-purple-600 mr-2" />
-          <span className="font-semibold text-purple-800">Lease Sent — Awaiting Signatures</span>
+          <span className="font-semibold text-purple-800">
+            Lease Sent — Awaiting Signatures
+          </span>
         </div>
         <p className="text-sm text-purple-700">
           {listing?.title || groupApplication?.propertyTitle}
@@ -306,13 +370,16 @@ const SignatureProgressScreen = ({ signatories: initialSigs, groupApplication, l
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-semibold">Signature Progress</span>
           <span className="text-xs text-gray-500">
-            {signatories.filter(s => s.signed).length} / {signatories.length} signed
+            {signatories.filter(s => s.signed).length} / {signatories.length}{' '}
+            signed
           </span>
         </div>
         <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
           <div
             className="h-full bg-green-500 rounded-full transition-all duration-700"
-            style={{ width: `${(signatories.filter(s => s.signed).length / signatories.length) * 100}%` }}
+            style={{
+              width: `${(signatories.filter(s => s.signed).length / signatories.length) * 100}%`,
+            }}
           />
         </div>
       </div>
@@ -337,17 +404,26 @@ const SignatureProgressScreen = ({ signatories: initialSigs, groupApplication, l
               : 'border-brand-400 text-brand-500 hover:bg-brand-50'
           }`}
         >
-          {autoRunning
-            ? <><Clock size={16} className="mr-2 animate-spin" /> Simulating signature…</>
-            : <><ChevronRight size={16} className="mr-2" /> Simulate Next Signature</>
-          }
+          {autoRunning ? (
+            <>
+              <Clock size={16} className="mr-2 animate-spin" /> Simulating
+              signature…
+            </>
+          ) : (
+            <>
+              <ChevronRight size={16} className="mr-2" /> Simulate Next
+              Signature
+            </>
+          )}
         </button>
       )}
 
       {allDone && (
         <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center space-y-2">
           <CheckCircle size={28} className="mx-auto text-green-600" />
-          <p className="font-semibold text-green-800">All counterparties have signed!</p>
+          <p className="font-semibold text-green-800">
+            All counterparties have signed!
+          </p>
           <p className="text-sm text-green-700">Taking you to countersign…</p>
         </div>
       )}
@@ -357,10 +433,16 @@ const SignatureProgressScreen = ({ signatories: initialSigs, groupApplication, l
 
 // ─── Screen C: Landlord Countersign ───────────────────────────────────────────
 
-const LandlordCountersignScreen = ({ landlordUser, listing, groupApplication, signatories, onCountersign }) => {
+const LandlordCountersignScreen = ({
+  landlordUser,
+  listing,
+  groupApplication,
+  signatories,
+  onCountersign,
+}) => {
   const [signature, setSignature] = useState('')
-  const [reviewed, setReviewed]   = useState(false)
-  const [signing, setSigning]     = useState(false)
+  const [reviewed, setReviewed] = useState(false)
+  const [signing, setSigning] = useState(false)
 
   const handleSign = () => {
     if (!signature.trim() || !reviewed) return
@@ -375,12 +457,17 @@ const LandlordCountersignScreen = ({ landlordUser, listing, groupApplication, si
     <div className="p-4 pb-24 space-y-5">
       {/* Status banner */}
       <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-start">
-        <CheckCircle size={20} className="text-green-600 mr-3 flex-shrink-0 mt-0.5" />
+        <CheckCircle
+          size={20}
+          className="text-green-600 mr-3 flex-shrink-0 mt-0.5"
+        />
         <div>
-          <p className="font-semibold text-green-800">All counterparties have signed</p>
+          <p className="font-semibold text-green-800">
+            All counterparties have signed
+          </p>
           <p className="text-sm text-green-700 mt-0.5">
-            {signatories.length} signature{signatories.length !== 1 ? 's' : ''} collected.
-            Your countersignature will fully execute this lease.
+            {signatories.length} signature{signatories.length !== 1 ? 's' : ''}{' '}
+            collected. Your countersignature will fully execute this lease.
           </p>
         </div>
       </div>
@@ -402,15 +489,21 @@ const LandlordCountersignScreen = ({ landlordUser, listing, groupApplication, si
         <div className="grid grid-cols-2 gap-2 text-sm">
           <div className="bg-gray-50 rounded-lg p-2">
             <p className="text-xs text-gray-500">Property</p>
-            <p className="font-semibold text-xs truncate">{listing?.title || groupApplication?.propertyTitle}</p>
+            <p className="font-semibold text-xs truncate">
+              {listing?.title || groupApplication?.propertyTitle}
+            </p>
           </div>
           <div className="bg-gray-50 rounded-lg p-2">
             <p className="text-xs text-gray-500">Rent</p>
-            <p className="font-semibold text-xs">${(listing?.price || 0).toLocaleString()}/mo</p>
+            <p className="font-semibold text-xs">
+              ${(listing?.price || 0).toLocaleString()}/mo
+            </p>
           </div>
           <div className="bg-gray-50 rounded-lg p-2">
             <p className="text-xs text-gray-500">Tenants</p>
-            <p className="font-semibold text-xs">{groupApplication?.members?.length || 1}</p>
+            <p className="font-semibold text-xs">
+              {groupApplication?.members?.length || 1}
+            </p>
           </div>
           <div className="bg-gray-50 rounded-lg p-2">
             <p className="text-xs text-gray-500">Guarantors</p>
@@ -439,8 +532,9 @@ const LandlordCountersignScreen = ({ landlordUser, listing, groupApplication, si
             className="mt-1 w-4 h-4 accent-blue-600"
           />
           <span className="text-sm text-gray-700">
-            I have reviewed the fully signed lease and agree to all terms. My countersignature will
-            finalize this agreement and the property will be marked as LEASED.
+            I have reviewed the fully signed lease and agree to all terms. My
+            countersignature will finalize this agreement and the property will
+            be marked as LEASED.
           </span>
         </label>
 
@@ -501,10 +595,14 @@ const FinalDistributionScreen = ({
       {/* Hero */}
       <div className="text-center space-y-3 pt-4">
         <div className="text-6xl">🎉</div>
-        <h1 className="text-2xl font-bold text-gray-900">Lease Fully Executed!</h1>
+        <h1 className="text-2xl font-bold text-gray-900">
+          Lease Fully Executed!
+        </h1>
         <p className="text-sm text-gray-600">
-          All {signatories.length} signature{signatories.length !== 1 ? 's' : ''} + your countersignature collected.
-          The property is now officially <span className="font-semibold text-green-700">LEASED</span>.
+          All {signatories.length} signature
+          {signatories.length !== 1 ? 's' : ''} + your countersignature
+          collected. The property is now officially{' '}
+          <span className="font-semibold text-green-700">LEASED</span>.
         </p>
       </div>
 
@@ -514,10 +612,16 @@ const FinalDistributionScreen = ({
           <Home size={20} className="text-green-600" />
         </div>
         <div className="flex-1">
-          <p className="font-semibold text-green-800">{listing?.title || groupApplication?.propertyTitle}</p>
-          <p className="text-xs text-green-700 mt-0.5">Status updated → LEASED</p>
+          <p className="font-semibold text-green-800">
+            {listing?.title || groupApplication?.propertyTitle}
+          </p>
+          <p className="text-xs text-green-700 mt-0.5">
+            Status updated → LEASED
+          </p>
         </div>
-        <span className="bg-green-600 text-white text-xs font-bold px-3 py-1 rounded-full">LEASED</span>
+        <span className="bg-green-600 text-white text-xs font-bold px-3 py-1 rounded-full">
+          LEASED
+        </span>
       </div>
 
       {/* Distribution list — dynamic */}
@@ -527,20 +631,32 @@ const FinalDistributionScreen = ({
             <Mail size={15} className="text-brand-500 mr-2" />
             <span className="font-semibold text-sm">Distribution List</span>
           </div>
-          <span className="text-xs text-gray-500">{distributionList.length} recipient{distributionList.length !== 1 ? 's' : ''}</span>
+          <span className="text-xs text-gray-500">
+            {distributionList.length} recipient
+            {distributionList.length !== 1 ? 's' : ''}
+          </span>
         </div>
         {distributionList.map((r, i) => (
-          <div key={i} className="flex items-center px-4 py-3 border-b border-gray-50 last:border-0">
-            <div className={`w-7 h-7 rounded-full flex items-center justify-center mr-3 flex-shrink-0 ${
-              r.role === 'Landlord'         ? 'bg-brand-100'   :
-              r.role.startsWith('Guarantor') ? 'bg-purple-100' : 'bg-gray-100'
-            }`}>
-              {r.role === 'Landlord'
-                ? <Building2 size={13} className="text-brand-500" />
-                : r.role.startsWith('Guarantor')
-                  ? <Shield size={13} className="text-purple-600" />
-                  : <User size={13} className="text-gray-600" />
-              }
+          <div
+            key={i}
+            className="flex items-center px-4 py-3 border-b border-gray-50 last:border-0"
+          >
+            <div
+              className={`w-7 h-7 rounded-full flex items-center justify-center mr-3 flex-shrink-0 ${
+                r.role === 'Landlord'
+                  ? 'bg-brand-100'
+                  : r.role.startsWith('Guarantor')
+                    ? 'bg-purple-100'
+                    : 'bg-gray-100'
+              }`}
+            >
+              {r.role === 'Landlord' ? (
+                <Building2 size={13} className="text-brand-500" />
+              ) : r.role.startsWith('Guarantor') ? (
+                <Shield size={13} className="text-purple-600" />
+              ) : (
+                <User size={13} className="text-gray-600" />
+              )}
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-medium text-sm truncate">{r.name}</p>
@@ -565,16 +681,22 @@ const FinalDistributionScreen = ({
         }`}
       >
         {emailSent ? (
-          <><CheckCircle size={18} className="mr-2 text-green-500" /> Executed PDF Sent to All {distributionList.length} Parties</>
+          <>
+            <CheckCircle size={18} className="mr-2 text-green-500" /> Executed
+            PDF Sent to All {distributionList.length} Parties
+          </>
         ) : (
-          <><Mail size={18} className="mr-2" /> Email Fully Executed PDF to All Parties</>
+          <>
+            <Mail size={18} className="mr-2" /> Email Fully Executed PDF to All
+            Parties
+          </>
         )}
       </button>
 
       {emailSent && (
         <p className="text-center text-xs text-gray-500">
-          Each recipient will receive the fully executed lease PDF. The chat thread remains open for
-          ongoing communication.
+          Each recipient will receive the fully executed lease PDF. The chat
+          thread remains open for ongoing communication.
         </p>
       )}
 
@@ -604,12 +726,14 @@ const LandlordLeaseRouter = ({
   listing,
   landlordUser,
   onBack,
-  onLeaseExecuted,            // (groupApplication, activeLease) => void
+  onLeaseExecuted, // (groupApplication, activeLease) => void
   onNavigateToPropertyManagement,
 }) => {
   // Screens: 'preview' | 'progress' | 'countersign' | 'distribution'
   const [screen, setScreen] = useState('preview')
-  const [signatories, setSignatories] = useState(() => buildSignatories(groupApplication?.members || []))
+  const [signatories, setSignatories] = useState(() =>
+    buildSignatories(groupApplication?.members || [])
+  )
 
   if (!groupApplication) return null
 
@@ -650,10 +774,14 @@ const LandlordLeaseRouter = ({
           // Build the active lease object and notify parent
           const activeLease = {
             id: `LEASE-${Date.now()}`,
-            property: { address: listing?.location || groupApplication.propertyTitle },
+            property: {
+              address: listing?.location || groupApplication.propertyTitle,
+            },
             monthlyRent: listing?.price || 0,
             startDate: new Date().toISOString(),
-            endDate: new Date(Date.now() + 12 * 30 * 24 * 60 * 60 * 1000).toISOString(),
+            endDate: new Date(
+              Date.now() + 12 * 30 * 24 * 60 * 60 * 1000
+            ).toISOString(),
             landlord: landlordUser || {},
             tenants: groupApplication.members,
             status: 'fully_executed',

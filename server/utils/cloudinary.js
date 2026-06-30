@@ -14,12 +14,23 @@ const storage = multer.memoryStorage()
 
 // File filter for images only
 const imageFileFilter = (req, file, cb) => {
-  const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']
-  
+  const allowedMimes = [
+    'image/jpeg',
+    'image/jpg',
+    'image/png',
+    'image/webp',
+    'image/gif',
+  ]
+
   if (allowedMimes.includes(file.mimetype)) {
     cb(null, true)
   } else {
-    cb(new Error('Invalid file type. Only JPEG, PNG, WebP, and GIF images are allowed.'), false)
+    cb(
+      new Error(
+        'Invalid file type. Only JPEG, PNG, WebP, and GIF images are allowed.'
+      ),
+      false
+    )
   }
 }
 
@@ -95,7 +106,7 @@ export async function uploadPropertyImages(files, listingId) {
   )
 
   const results = await Promise.all(uploadPromises)
-  return results.map((result) => result.secure_url)
+  return results.map(result => result.secure_url)
 }
 
 /**
@@ -145,7 +156,7 @@ export async function deleteImage(imageUrl) {
  * @returns {Promise<Array>} Array of deletion results
  */
 export async function deleteMultipleImages(imageUrls) {
-  const deletePromises = imageUrls.map((url) => deleteImage(url))
+  const deletePromises = imageUrls.map(url => deleteImage(url))
   return await Promise.all(deletePromises)
 }
 

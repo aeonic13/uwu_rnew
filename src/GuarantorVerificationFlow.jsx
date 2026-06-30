@@ -41,8 +41,8 @@ const LandingScreen = ({ studentName, propertyAddress, onStart }) => (
         Help {studentName} get pre-approved
       </h1>
       <p className="text-gray-500 text-sm leading-relaxed">
-        Rentra uses banking-level encryption (Plaid) to instantly verify your identity and
-        income as a guarantor for{' '}
+        Rentra uses banking-level encryption (Plaid) to instantly verify your
+        identity and income as a guarantor for{' '}
         <span className="font-medium text-gray-700">{propertyAddress}</span>.
       </p>
     </div>
@@ -50,13 +50,27 @@ const LandingScreen = ({ studentName, propertyAddress, onStart }) => (
     {/* Trust pillars */}
     <div className="grid grid-cols-3 gap-4 w-full max-w-xs text-center">
       {[
-        { icon: <Lock size={18} className="text-brand-500" />, label: 'Bank-level\nSecurity' },
-        { icon: <Star size={18} className="text-yellow-500" />, label: 'Trusted by\n500k+ users' },
-        { icon: <CheckCircle size={18} className="text-green-500" />, label: 'Instant\nVerification' },
+        {
+          icon: <Lock size={18} className="text-brand-500" />,
+          label: 'Bank-level\nSecurity',
+        },
+        {
+          icon: <Star size={18} className="text-yellow-500" />,
+          label: 'Trusted by\n500k+ users',
+        },
+        {
+          icon: <CheckCircle size={18} className="text-green-500" />,
+          label: 'Instant\nVerification',
+        },
       ].map((item, i) => (
-        <div key={i} className="bg-gray-50 rounded-xl p-3 flex flex-col items-center">
+        <div
+          key={i}
+          className="bg-gray-50 rounded-xl p-3 flex flex-col items-center"
+        >
           {item.icon}
-          <p className="text-xs text-gray-600 mt-1 whitespace-pre-line leading-tight">{item.label}</p>
+          <p className="text-xs text-gray-600 mt-1 whitespace-pre-line leading-tight">
+            {item.label}
+          </p>
         </div>
       ))}
     </div>
@@ -70,8 +84,8 @@ const LandingScreen = ({ studentName, propertyAddress, onStart }) => (
     </button>
 
     <p className="text-xs text-gray-400 max-w-xs">
-      No app download required. Your data is never sold and is used solely for this
-      verification.
+      No app download required. Your data is never sold and is used solely for
+      this verification.
     </p>
     <PlaidBadge />
   </div>
@@ -117,10 +131,12 @@ const PlaidIDVScreen = ({ onVerified }) => {
               key={m}
               onClick={() => setMethod(m)}
               className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
-                method === m ? 'bg-brand-500 text-white' : 'bg-gray-100 text-gray-600'
+                method === m
+                  ? 'bg-brand-500 text-white'
+                  : 'bg-gray-100 text-gray-600'
               }`}
             >
-              {m === 'instant' ? 'Phone + DOB' : 'Driver\'s License'}
+              {m === 'instant' ? 'Phone + DOB' : "Driver's License"}
             </button>
           ))}
         </div>
@@ -128,9 +144,14 @@ const PlaidIDVScreen = ({ onVerified }) => {
         {method === 'instant' ? (
           <div className="space-y-3">
             <div>
-              <label className="block text-sm font-medium mb-1">Mobile Phone</label>
+              <label className="block text-sm font-medium mb-1">
+                Mobile Phone
+              </label>
               <div className="relative">
-                <Smartphone size={16} className="absolute left-3 top-3.5 text-gray-400" />
+                <Smartphone
+                  size={16}
+                  className="absolute left-3 top-3.5 text-gray-400"
+                />
                 <input
                   type="tel"
                   value={phone}
@@ -141,7 +162,9 @@ const PlaidIDVScreen = ({ onVerified }) => {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Date of Birth</label>
+              <label className="block text-sm font-medium mb-1">
+                Date of Birth
+              </label>
               <input
                 type="date"
                 value={dob}
@@ -155,15 +178,21 @@ const PlaidIDVScreen = ({ onVerified }) => {
             <div className="w-16 h-10 bg-white border-2 border-dashed border-gray-300 rounded mx-auto flex items-center justify-center">
               <User size={20} className="text-gray-400" />
             </div>
-            <p className="text-sm text-gray-600">Tap to upload front of Driver's License</p>
-            <button className="text-sm text-brand-500 font-medium">Upload Photo</button>
+            <p className="text-sm text-gray-600">
+              Tap to upload front of Driver's License
+            </p>
+            <button className="text-sm text-brand-500 font-medium">
+              Upload Photo
+            </button>
           </div>
         )}
 
         {done ? (
           <div className="flex items-center justify-center space-x-2 py-3 bg-green-50 rounded-lg">
             <CheckCircle size={20} className="text-green-600" />
-            <span className="font-semibold text-green-700">Identity Verified!</span>
+            <span className="font-semibold text-green-700">
+              Identity Verified!
+            </span>
           </div>
         ) : (
           <button
@@ -192,8 +221,16 @@ const PlaidIncomeScreen = ({ onVerified }) => {
   const [done, setDone] = useState(false)
 
   const providers = [
-    { id: 'bank', label: 'Link Bank Account', icon: <Building size={20} className="text-brand-500" /> },
-    { id: 'payroll', label: 'Connect Payroll', icon: <CreditCard size={20} className="text-green-600" /> },
+    {
+      id: 'bank',
+      label: 'Link Bank Account',
+      icon: <Building size={20} className="text-brand-500" />,
+    },
+    {
+      id: 'payroll',
+      label: 'Connect Payroll',
+      icon: <CreditCard size={20} className="text-green-600" />,
+    },
   ]
 
   const handleConnect = () => {
@@ -215,13 +252,15 @@ const PlaidIncomeScreen = ({ onVerified }) => {
           </div>
           <div>
             <p className="font-semibold">Verify Your Income</p>
-            <p className="text-xs text-gray-500">Step 2 of 2 · Income / Assets</p>
+            <p className="text-xs text-gray-500">
+              Step 2 of 2 · Income / Assets
+            </p>
           </div>
         </div>
 
         <p className="text-sm text-gray-600">
-          Link your primary bank account or payroll provider. Rentra only reads balances and
-          income — it cannot move money.
+          Link your primary bank account or payroll provider. Rentra only reads
+          balances and income — it cannot move money.
         </p>
 
         <div className="space-y-3">
@@ -230,14 +269,18 @@ const PlaidIncomeScreen = ({ onVerified }) => {
               key={p.id}
               onClick={() => setSelected(p.id)}
               className={`w-full flex items-center p-4 border-2 rounded-xl transition-colors ${
-                selected === p.id ? 'border-brand-400 bg-brand-50' : 'border-gray-200 hover:border-brand-200'
+                selected === p.id
+                  ? 'border-brand-400 bg-brand-50'
+                  : 'border-gray-200 hover:border-brand-200'
               }`}
             >
               <div className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center mr-3">
                 {p.icon}
               </div>
               <span className="font-medium">{p.label}</span>
-              {selected === p.id && <CheckCircle size={16} className="text-brand-500 ml-auto" />}
+              {selected === p.id && (
+                <CheckCircle size={16} className="text-brand-500 ml-auto" />
+              )}
             </button>
           ))}
         </div>
@@ -245,7 +288,9 @@ const PlaidIncomeScreen = ({ onVerified }) => {
         {done ? (
           <div className="flex items-center justify-center space-x-2 py-3 bg-green-50 rounded-lg">
             <CheckCircle size={20} className="text-green-600" />
-            <span className="font-semibold text-green-700">Income Verified!</span>
+            <span className="font-semibold text-green-700">
+              Income Verified!
+            </span>
           </div>
         ) : (
           <button
@@ -281,18 +326,21 @@ const SuccessScreen = ({ studentName, onDone }) => {
       <div className="space-y-2 max-w-xs">
         <h1 className="text-2xl font-bold text-gray-900">You're Verified!</h1>
         <p className="text-gray-600 text-sm leading-relaxed">
-          <strong>{studentName}'s</strong> portion of the application is complete. Once the whole
-          group finishes, the application goes to the property manager.
+          <strong>{studentName}'s</strong> portion of the application is
+          complete. Once the whole group finishes, the application goes to the
+          property manager.
         </p>
         <p className="text-gray-500 text-sm mt-3 leading-relaxed">
-          If everyone agrees to move forward, we will notify you to co-sign the official
-          lease.
+          If everyone agrees to move forward, we will notify you to co-sign the
+          official lease.
         </p>
       </div>
 
       {/* What's next */}
       <div className="bg-brand-50 border border-brand-200 rounded-xl p-4 max-w-xs w-full text-left space-y-2">
-        <p className="text-sm font-semibold text-blue-800">What happens next?</p>
+        <p className="text-sm font-semibold text-blue-800">
+          What happens next?
+        </p>
         <ul className="text-sm text-brand-600 space-y-1 list-disc list-inside">
           <li>Group application submitted to landlord</li>
           <li>Landlord reviews combined income</li>
@@ -347,10 +395,7 @@ const GuarantorVerificationFlow = ({
         <PlaidIncomeScreen onVerified={() => setStep('success')} />
       )}
       {step === 'success' && (
-        <SuccessScreen
-          studentName={studentName}
-          onDone={onComplete}
-        />
+        <SuccessScreen studentName={studentName} onDone={onComplete} />
       )}
     </div>
   )

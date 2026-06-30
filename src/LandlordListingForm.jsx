@@ -508,7 +508,9 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
                   size={48}
                   className="mx-auto text-brand-500 mb-4 animate-spin"
                 />
-                <p className="text-brand-500 font-medium">Uploading photos...</p>
+                <p className="text-brand-500 font-medium">
+                  Uploading photos...
+                </p>
               </>
             ) : (
               <>

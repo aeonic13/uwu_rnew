@@ -74,8 +74,8 @@ router.get('/conversations', authenticate, async (req, res) => {
     })
 
     // Format the response
-    const conversations = conversationUsers.map((cu) => {
-      const otherUsers = cu.conversation.users.map((u) => u.user)
+    const conversations = conversationUsers.map(cu => {
+      const otherUsers = cu.conversation.users.map(u => u.user)
       const lastMessage = cu.conversation.messages[0] || null
 
       return {
@@ -217,7 +217,7 @@ router.get('/conversation/:conversationId', authenticate, async (req, res) => {
     })
 
     // Format participants
-    const participants = conversation.users.map((u) => ({
+    const participants = conversation.users.map(u => ({
       ...u.user,
       isCurrentUser: u.user.id === userId,
     }))
@@ -426,7 +426,7 @@ router.post('/start-conversation', authenticate, async (req, res) => {
           id: existingConversation.id,
           isNew: false,
           listing,
-          participants: existingConversation.users.map((u) => u.user),
+          participants: existingConversation.users.map(u => u.user),
         },
       })
     }
@@ -494,7 +494,7 @@ router.post('/start-conversation', authenticate, async (req, res) => {
         id: conversation.id,
         isNew: true,
         listing,
-        participants: conversation.users.map((u) => u.user),
+        participants: conversation.users.map(u => u.user),
       },
       message: message
         ? {
@@ -572,7 +572,9 @@ router.put('/mark-read', authenticate, async (req, res) => {
     })
   } catch (error) {
     console.error('Mark read error:', error)
-    res.status(500).json({ error: { message: 'Failed to mark messages as read' } })
+    res
+      .status(500)
+      .json({ error: { message: 'Failed to mark messages as read' } })
   }
 })
 
@@ -658,7 +660,12 @@ router.delete('/:messageId', authenticate, async (req, res) => {
  */
 router.post('/tour-request', authenticate, async (req, res) => {
   try {
-    const { conversationId, listingId, proposedTimes, message: tourMessage } = req.body
+    const {
+      conversationId,
+      listingId,
+      proposedTimes,
+      message: tourMessage,
+    } = req.body
     const userId = req.user.id
 
     if (!conversationId || !proposedTimes || proposedTimes.length === 0) {
@@ -750,7 +757,10 @@ router.put('/:messageId/tour-response', authenticate, async (req, res) => {
 
     if (!['confirmed', 'declined', 'alternative'].includes(status)) {
       return res.status(400).json({
-        error: { message: 'Invalid status. Must be confirmed, declined, or alternative' },
+        error: {
+          message:
+            'Invalid status. Must be confirmed, declined, or alternative',
+        },
       })
     }
 
@@ -798,9 +808,11 @@ router.put('/:messageId/tour-response', authenticate, async (req, res) => {
     if (status === 'confirmed') {
       responseContent = `Tour confirmed for ${confirmedTime}`
     } else if (status === 'declined') {
-      responseContent = alternativeMessage || 'Sorry, I cannot accommodate a tour at this time'
+      responseContent =
+        alternativeMessage || 'Sorry, I cannot accommodate a tour at this time'
     } else {
-      responseContent = alternativeMessage || 'Could we schedule for a different time?'
+      responseContent =
+        alternativeMessage || 'Could we schedule for a different time?'
     }
 
     const responseMessage = await prisma.message.create({
@@ -858,7 +870,9 @@ router.put('/:messageId/tour-response', authenticate, async (req, res) => {
     })
   } catch (error) {
     console.error('Tour response error:', error)
-    res.status(500).json({ error: { message: 'Failed to respond to tour request' } })
+    res
+      .status(500)
+      .json({ error: { message: 'Failed to respond to tour request' } })
   }
 })
 

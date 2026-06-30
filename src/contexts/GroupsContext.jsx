@@ -51,10 +51,10 @@ function groupsReducer(state, action) {
     case GROUPS_ACTIONS.UPDATE_GROUP:
       return {
         ...state,
-        groups: state.groups.map((group) =>
+        groups: state.groups.map(group =>
           group.id === action.payload.id ? action.payload : group
         ),
-        userGroups: state.userGroups.map((group) =>
+        userGroups: state.userGroups.map(group =>
           group.id === action.payload.id ? action.payload : group
         ),
       }
@@ -62,9 +62,9 @@ function groupsReducer(state, action) {
     case GROUPS_ACTIONS.REMOVE_GROUP:
       return {
         ...state,
-        groups: state.groups.filter((group) => group.id !== action.payload),
+        groups: state.groups.filter(group => group.id !== action.payload),
         userGroups: state.userGroups.filter(
-          (group) => group.id !== action.payload
+          group => group.id !== action.payload
         ),
       }
 
@@ -86,7 +86,7 @@ function groupsReducer(state, action) {
           ? {
               ...state.selectedGroup,
               members: state.selectedGroup.members.filter(
-                (m) => m.userId !== action.payload
+                m => m.userId !== action.payload
               ),
             }
           : null,
@@ -98,7 +98,7 @@ function groupsReducer(state, action) {
         selectedGroup: state.selectedGroup
           ? {
               ...state.selectedGroup,
-              members: state.selectedGroup.members.map((m) =>
+              members: state.selectedGroup.members.map(m =>
                 m.userId === action.payload.userId
                   ? { ...m, role: action.payload.role }
                   : m
@@ -119,7 +119,7 @@ function groupsReducer(state, action) {
     case GROUPS_ACTIONS.UPDATE_INVITATION:
       return {
         ...state,
-        groupInvitations: state.groupInvitations.map((inv) =>
+        groupInvitations: state.groupInvitations.map(inv =>
           inv.id === action.payload.id ? action.payload : inv
         ),
       }
@@ -143,7 +143,7 @@ export function GroupsProvider({ children }) {
   const [state, dispatch] = useReducer(groupsReducer, initialState)
 
   // Create a new group
-  const createGroup = useCallback(async (groupData) => {
+  const createGroup = useCallback(async groupData => {
     dispatch({ type: GROUPS_ACTIONS.SET_LOADING, payload: true })
 
     try {
@@ -176,7 +176,7 @@ export function GroupsProvider({ children }) {
   }, [])
 
   // Fetch user's groups
-  const fetchUserGroups = useCallback(async (userId) => {
+  const fetchUserGroups = useCallback(async userId => {
     dispatch({ type: GROUPS_ACTIONS.SET_LOADING, payload: true })
 
     try {
@@ -189,20 +189,23 @@ export function GroupsProvider({ children }) {
   }, [])
 
   // Get group by ID
-  const getGroupById = useCallback(async (groupId) => {
-    try {
-      // TODO: Replace with API call
-      const group = state.userGroups.find((g) => g.id === groupId)
-      if (group) {
-        dispatch({ type: GROUPS_ACTIONS.SET_SELECTED_GROUP, payload: group })
-        return group
+  const getGroupById = useCallback(
+    async groupId => {
+      try {
+        // TODO: Replace with API call
+        const group = state.userGroups.find(g => g.id === groupId)
+        if (group) {
+          dispatch({ type: GROUPS_ACTIONS.SET_SELECTED_GROUP, payload: group })
+          return group
+        }
+        return null
+      } catch (error) {
+        dispatch({ type: GROUPS_ACTIONS.SET_ERROR, payload: error.message })
+        return null
       }
-      return null
-    } catch (error) {
-      dispatch({ type: GROUPS_ACTIONS.SET_ERROR, payload: error.message })
-      return null
-    }
-  }, [state.userGroups])
+    },
+    [state.userGroups]
+  )
 
   // Invite member to group
   const inviteMember = useCallback(async (groupId, email) => {
@@ -225,57 +228,63 @@ export function GroupsProvider({ children }) {
   }, [])
 
   // Accept group invitation
-  const acceptInvitation = useCallback(async (invitationId, userId) => {
-    try {
-      // TODO: Replace with API call
-      const invitation = state.groupInvitations.find(
-        (inv) => inv.id === invitationId
-      )
+  const acceptInvitation = useCallback(
+    async (invitationId, userId) => {
+      try {
+        // TODO: Replace with API call
+        const invitation = state.groupInvitations.find(
+          inv => inv.id === invitationId
+        )
 
-      if (!invitation) {
-        return { success: false, error: 'Invitation not found' }
+        if (!invitation) {
+          return { success: false, error: 'Invitation not found' }
+        }
+
+        const newMember = {
+          userId,
+          role: 'member',
+          joinedAt: new Date().toISOString(),
+          status: 'active',
+        }
+
+        dispatch({ type: GROUPS_ACTIONS.ADD_MEMBER, payload: newMember })
+        dispatch({
+          type: GROUPS_ACTIONS.UPDATE_INVITATION,
+          payload: { ...invitation, status: 'accepted' },
+        })
+
+        return { success: true }
+      } catch (error) {
+        return { success: false, error: error.message }
       }
-
-      const newMember = {
-        userId,
-        role: 'member',
-        joinedAt: new Date().toISOString(),
-        status: 'active',
-      }
-
-      dispatch({ type: GROUPS_ACTIONS.ADD_MEMBER, payload: newMember })
-      dispatch({
-        type: GROUPS_ACTIONS.UPDATE_INVITATION,
-        payload: { ...invitation, status: 'accepted' },
-      })
-
-      return { success: true }
-    } catch (error) {
-      return { success: false, error: error.message }
-    }
-  }, [state.groupInvitations])
+    },
+    [state.groupInvitations]
+  )
 
   // Decline group invitation
-  const declineInvitation = useCallback(async (invitationId) => {
-    try {
-      const invitation = state.groupInvitations.find(
-        (inv) => inv.id === invitationId
-      )
+  const declineInvitation = useCallback(
+    async invitationId => {
+      try {
+        const invitation = state.groupInvitations.find(
+          inv => inv.id === invitationId
+        )
 
-      if (!invitation) {
-        return { success: false, error: 'Invitation not found' }
+        if (!invitation) {
+          return { success: false, error: 'Invitation not found' }
+        }
+
+        dispatch({
+          type: GROUPS_ACTIONS.UPDATE_INVITATION,
+          payload: { ...invitation, status: 'declined' },
+        })
+
+        return { success: true }
+      } catch (error) {
+        return { success: false, error: error.message }
       }
-
-      dispatch({
-        type: GROUPS_ACTIONS.UPDATE_INVITATION,
-        payload: { ...invitation, status: 'declined' },
-      })
-
-      return { success: true }
-    } catch (error) {
-      return { success: false, error: error.message }
-    }
-  }, [state.groupInvitations])
+    },
+    [state.groupInvitations]
+  )
 
   // Remove member from group
   const removeMember = useCallback(async (groupId, userId) => {
@@ -303,25 +312,28 @@ export function GroupsProvider({ children }) {
   }, [])
 
   // Add listing to group interests
-  const addListingInterest = useCallback(async (groupId, listingId) => {
-    try {
-      // TODO: Replace with API call
-      const group = state.userGroups.find((g) => g.id === groupId)
-      if (!group) {
-        return { success: false, error: 'Group not found' }
-      }
+  const addListingInterest = useCallback(
+    async (groupId, listingId) => {
+      try {
+        // TODO: Replace with API call
+        const group = state.userGroups.find(g => g.id === groupId)
+        if (!group) {
+          return { success: false, error: 'Group not found' }
+        }
 
-      const updatedGroup = {
-        ...group,
-        interestedListings: [...group.interestedListings, listingId],
-      }
+        const updatedGroup = {
+          ...group,
+          interestedListings: [...group.interestedListings, listingId],
+        }
 
-      dispatch({ type: GROUPS_ACTIONS.UPDATE_GROUP, payload: updatedGroup })
-      return { success: true }
-    } catch (error) {
-      return { success: false, error: error.message }
-    }
-  }, [state.userGroups])
+        dispatch({ type: GROUPS_ACTIONS.UPDATE_GROUP, payload: updatedGroup })
+        return { success: true }
+      } catch (error) {
+        return { success: false, error: error.message }
+      }
+    },
+    [state.userGroups]
+  )
 
   // Leave group
   const leaveGroup = useCallback(async (groupId, userId) => {
@@ -335,7 +347,7 @@ export function GroupsProvider({ children }) {
   }, [])
 
   // Delete group (admin only)
-  const deleteGroup = useCallback(async (groupId) => {
+  const deleteGroup = useCallback(async groupId => {
     try {
       // TODO: Replace with API call
       dispatch({ type: GROUPS_ACTIONS.REMOVE_GROUP, payload: groupId })

@@ -1,36 +1,66 @@
-import React, { useState, useEffect } from 'react';
-import { Bell, DollarSign, Calendar, Shield, Camera, AlertTriangle, CheckCircle, Clock, FileText, Phone, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react'
+import {
+  Bell,
+  DollarSign,
+  Calendar,
+  Shield,
+  Camera,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  FileText,
+  Phone,
+  X,
+} from 'lucide-react'
 
 const PaymentReminders = ({ user, currentLease, onPayRent, onReportIssue }) => {
-  const [showRentPayment, setShowRentPayment] = useState(false);
-  const [showIssueReport, setShowIssueReport] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const [issuePhotos, setIssuePhotos] = useState([]);
-  const [issueDescription, setIssueDescription] = useState('');
-  const [issueType, setIssueType] = useState('maintenance');
+  const [showRentPayment, setShowRentPayment] = useState(false)
+  const [showIssueReport, setShowIssueReport] = useState(false)
+  const [notifications, setNotifications] = useState([])
+  const [issuePhotos, setIssuePhotos] = useState([])
+  const [issueDescription, setIssueDescription] = useState('')
+  const [issueType, setIssueType] = useState('maintenance')
 
   // Calculate next rent due date
   const getNextRentDate = () => {
-    const today = new Date();
-    const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
-    return nextMonth;
-  };
+    const today = new Date()
+    const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1)
+    return nextMonth
+  }
 
   const getDaysUntilRent = () => {
-    const today = new Date();
-    const nextRent = getNextRentDate();
-    const diffTime = nextRent - today;
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  };
+    const today = new Date()
+    const nextRent = getNextRentDate()
+    const diffTime = nextRent - today
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+  }
 
-  const daysUntilRent = getDaysUntilRent();
+  const daysUntilRent = getDaysUntilRent()
 
   // Mock payment history
   const paymentHistory = [
-    { month: 'December 2024', amount: currentLease?.monthlyRent || 1200, status: 'paid', date: '2024-12-01', fee: 12 },
-    { month: 'November 2024', amount: currentLease?.monthlyRent || 1200, status: 'paid', date: '2024-11-01', fee: 12 },
-    { month: 'October 2024', amount: currentLease?.monthlyRent || 1200, status: 'paid', date: '2024-10-01', fee: 12 }
-  ];
+    {
+      month: 'December 2024',
+      amount: currentLease?.monthlyRent || 1200,
+      status: 'paid',
+      date: '2024-12-01',
+      fee: 12,
+    },
+    {
+      month: 'November 2024',
+      amount: currentLease?.monthlyRent || 1200,
+      status: 'paid',
+      date: '2024-11-01',
+      fee: 12,
+    },
+    {
+      month: 'October 2024',
+      amount: currentLease?.monthlyRent || 1200,
+      status: 'paid',
+      date: '2024-10-01',
+      fee: 12,
+    },
+  ]
 
   // Mock issues/reports
   const [reportedIssues, setReportedIssues] = useState([
@@ -42,15 +72,15 @@ const PaymentReminders = ({ user, currentLease, onPayRent, onReportIssue }) => {
       status: 'in-progress',
       reportedDate: '2024-12-15',
       photos: 2,
-      landlordResponse: 'Maintenance scheduled for next week'
-    }
-  ]);
+      landlordResponse: 'Maintenance scheduled for next week',
+    },
+  ])
 
   useEffect(() => {
     // Set up payment reminders
     const createNotifications = () => {
-      const newNotifications = [];
-      
+      const newNotifications = []
+
       if (daysUntilRent <= 7) {
         newNotifications.push({
           id: 1,
@@ -58,30 +88,33 @@ const PaymentReminders = ({ user, currentLease, onPayRent, onReportIssue }) => {
           title: `Rent due in ${daysUntilRent} days`,
           message: `Your rent payment of $${currentLease?.monthlyRent || 1200} is due on ${getNextRentDate().toLocaleDateString()}`,
           priority: daysUntilRent <= 3 ? 'high' : 'medium',
-          timestamp: new Date().toISOString()
-        });
+          timestamp: new Date().toISOString(),
+        })
       }
 
-      setNotifications(newNotifications);
-    };
+      setNotifications(newNotifications)
+    }
 
-    createNotifications();
-  }, [daysUntilRent, currentLease]);
+    createNotifications()
+  }, [daysUntilRent, currentLease])
 
-  const handlePhotoUpload = (e) => {
-    const files = Array.from(e.target.files);
+  const handlePhotoUpload = e => {
+    const files = Array.from(e.target.files)
     files.forEach(file => {
-      const reader = new FileReader();
+      const reader = new FileReader()
       reader.onloadend = () => {
-        setIssuePhotos(prev => [...prev, {
-          id: Date.now() + Math.random(),
-          file,
-          preview: reader.result
-        }]);
-      };
-      reader.readAsDataURL(file);
-    });
-  };
+        setIssuePhotos(prev => [
+          ...prev,
+          {
+            id: Date.now() + Math.random(),
+            file,
+            preview: reader.result,
+          },
+        ])
+      }
+      reader.readAsDataURL(file)
+    })
+  }
 
   const handleSubmitIssue = () => {
     const newIssue = {
@@ -92,39 +125,46 @@ const PaymentReminders = ({ user, currentLease, onPayRent, onReportIssue }) => {
       status: 'reported',
       reportedDate: new Date().toLocaleDateString(),
       photos: issuePhotos.length,
-      landlordResponse: null
-    };
+      landlordResponse: null,
+    }
 
-    setReportedIssues(prev => [newIssue, ...prev]);
-    setIssuePhotos([]);
-    setIssueDescription('');
-    setShowIssueReport(false);
-    onReportIssue?.(newIssue);
-  };
+    setReportedIssues(prev => [newIssue, ...prev])
+    setIssuePhotos([])
+    setIssueDescription('')
+    setShowIssueReport(false)
+    onReportIssue?.(newIssue)
+  }
 
   const handlePayRent = () => {
     const payment = {
       amount: currentLease?.monthlyRent || 1200,
       fee: Math.round((currentLease?.monthlyRent || 1200) * 0.01), // 1% fee
-      month: getNextRentDate().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
-      date: new Date().toISOString()
-    };
-    
-    onPayRent?.(payment);
-    setShowRentPayment(false);
-    
+      month: getNextRentDate().toLocaleDateString('en-US', {
+        month: 'long',
+        year: 'numeric',
+      }),
+      date: new Date().toISOString(),
+    }
+
+    onPayRent?.(payment)
+    setShowRentPayment(false)
+
     // Remove payment notification
-    setNotifications(prev => prev.filter(n => n.type !== 'payment'));
-  };
+    setNotifications(prev => prev.filter(n => n.type !== 'payment'))
+  }
 
   if (!currentLease) {
     return (
       <div className="p-6 text-center">
         <Calendar size={48} className="mx-auto text-gray-300 mb-4" />
-        <h3 className="text-lg font-semibold text-gray-600 mb-2">No Active Lease</h3>
-        <p className="text-gray-500">You don't have an active lease to manage</p>
+        <h3 className="text-lg font-semibold text-gray-600 mb-2">
+          No Active Lease
+        </h3>
+        <p className="text-gray-500">
+          You don't have an active lease to manage
+        </p>
       </div>
-    );
+    )
   }
 
   return (
@@ -137,25 +177,38 @@ const PaymentReminders = ({ user, currentLease, onPayRent, onReportIssue }) => {
             <div
               key={notification.id}
               className={`p-4 rounded-lg border-l-4 mb-3 ${
-                notification.priority === 'high' 
+                notification.priority === 'high'
                   ? 'bg-red-50 border-red-400'
                   : 'bg-brand-50 border-brand-400'
               }`}
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center">
-                  <Bell className={`${
-                    notification.priority === 'high' ? 'text-red-600' : 'text-brand-500'
-                  } mr-3`} size={20} />
+                  <Bell
+                    className={`${
+                      notification.priority === 'high'
+                        ? 'text-red-600'
+                        : 'text-brand-500'
+                    } mr-3`}
+                    size={20}
+                  />
                   <div>
-                    <h3 className={`font-semibold ${
-                      notification.priority === 'high' ? 'text-red-800' : 'text-blue-800'
-                    }`}>
+                    <h3
+                      className={`font-semibold ${
+                        notification.priority === 'high'
+                          ? 'text-red-800'
+                          : 'text-blue-800'
+                      }`}
+                    >
                       {notification.title}
                     </h3>
-                    <p className={`text-sm ${
-                      notification.priority === 'high' ? 'text-red-700' : 'text-brand-600'
-                    }`}>
+                    <p
+                      className={`text-sm ${
+                        notification.priority === 'high'
+                          ? 'text-red-700'
+                          : 'text-brand-600'
+                      }`}
+                    >
                       {notification.message}
                     </p>
                   </div>
@@ -180,7 +233,9 @@ const PaymentReminders = ({ user, currentLease, onPayRent, onReportIssue }) => {
         <div className="space-y-2">
           <div className="flex justify-between">
             <span>Property:</span>
-            <span className="font-medium">{currentLease.property?.address}</span>
+            <span className="font-medium">
+              {currentLease.property?.address}
+            </span>
           </div>
           <div className="flex justify-between">
             <span>Monthly Rent:</span>
@@ -188,11 +243,15 @@ const PaymentReminders = ({ user, currentLease, onPayRent, onReportIssue }) => {
           </div>
           <div className="flex justify-between">
             <span>Next Payment:</span>
-            <span className="font-medium">{getNextRentDate().toLocaleDateString()}</span>
+            <span className="font-medium">
+              {getNextRentDate().toLocaleDateString()}
+            </span>
           </div>
           <div className="flex justify-between">
             <span>Days Until Due:</span>
-            <span className={`font-medium ${daysUntilRent <= 3 ? 'text-red-600' : 'text-gray-800'}`}>
+            <span
+              className={`font-medium ${daysUntilRent <= 3 ? 'text-red-600' : 'text-gray-800'}`}
+            >
               {daysUntilRent} days
             </span>
           </div>
@@ -222,14 +281,19 @@ const PaymentReminders = ({ user, currentLease, onPayRent, onReportIssue }) => {
         <h2 className="text-lg font-semibold mb-3">Payment History</h2>
         <div className="space-y-3">
           {paymentHistory.map((payment, index) => (
-            <div key={index} className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg">
+            <div
+              key={index}
+              className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg"
+            >
               <div className="flex items-center">
                 <div className="bg-green-100 rounded-full p-2 mr-3">
                   <CheckCircle size={16} className="text-green-600" />
                 </div>
                 <div>
                   <p className="font-medium">{payment.month}</p>
-                  <p className="text-sm text-gray-600">Paid on {new Date(payment.date).toLocaleDateString()}</p>
+                  <p className="text-sm text-gray-600">
+                    Paid on {new Date(payment.date).toLocaleDateString()}
+                  </p>
                 </div>
               </div>
               <div className="text-right">
@@ -252,20 +316,27 @@ const PaymentReminders = ({ user, currentLease, onPayRent, onReportIssue }) => {
         ) : (
           <div className="space-y-3">
             {reportedIssues.map(issue => (
-              <div key={issue.id} className="p-4 bg-white border border-gray-200 rounded-lg">
+              <div
+                key={issue.id}
+                className="p-4 bg-white border border-gray-200 rounded-lg"
+              >
                 <div className="flex items-start justify-between mb-2">
                   <h3 className="font-medium">{issue.title}</h3>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    issue.status === 'resolved' 
-                      ? 'bg-green-100 text-green-800'
-                      : issue.status === 'in-progress'
-                      ? 'bg-yellow-100 text-yellow-800'
-                      : 'bg-gray-100 text-gray-800'
-                  }`}>
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      issue.status === 'resolved'
+                        ? 'bg-green-100 text-green-800'
+                        : issue.status === 'in-progress'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-gray-100 text-gray-800'
+                    }`}
+                  >
                     {issue.status.replace('-', ' ').toUpperCase()}
                   </span>
                 </div>
-                <p className="text-sm text-gray-600 mb-2">{issue.description}</p>
+                <p className="text-sm text-gray-600 mb-2">
+                  {issue.description}
+                </p>
                 <div className="flex items-center justify-between text-xs text-gray-500">
                   <span>Reported: {issue.reportedDate}</span>
                   <div className="flex items-center">
@@ -275,8 +346,12 @@ const PaymentReminders = ({ user, currentLease, onPayRent, onReportIssue }) => {
                 </div>
                 {issue.landlordResponse && (
                   <div className="mt-3 p-3 bg-brand-50 rounded-lg">
-                    <p className="text-sm text-blue-800 font-medium">Landlord Response:</p>
-                    <p className="text-sm text-brand-600">{issue.landlordResponse}</p>
+                    <p className="text-sm text-blue-800 font-medium">
+                      Landlord Response:
+                    </p>
+                    <p className="text-sm text-brand-600">
+                      {issue.landlordResponse}
+                    </p>
                   </div>
                 )}
               </div>
@@ -309,12 +384,14 @@ const PaymentReminders = ({ user, currentLease, onPayRent, onReportIssue }) => {
                 <X size={24} className="text-gray-500" />
               </button>
             </div>
-            
+
             <div className="mb-6">
               <div className="bg-gray-50 rounded-lg p-4 mb-4">
                 <div className="flex justify-between mb-2">
                   <span>Monthly Rent:</span>
-                  <span className="font-semibold">${currentLease.monthlyRent}</span>
+                  <span className="font-semibold">
+                    ${currentLease.monthlyRent}
+                  </span>
                 </div>
                 <div className="flex justify-between mb-2">
                   <span>Processing Fee (1%):</span>
@@ -322,12 +399,22 @@ const PaymentReminders = ({ user, currentLease, onPayRent, onReportIssue }) => {
                 </div>
                 <div className="border-t pt-2 flex justify-between font-semibold">
                   <span>Total:</span>
-                  <span>${currentLease.monthlyRent + Math.round(currentLease.monthlyRent * 0.01)}</span>
+                  <span>
+                    $
+                    {currentLease.monthlyRent +
+                      Math.round(currentLease.monthlyRent * 0.01)}
+                  </span>
                 </div>
               </div>
-              
+
               <div className="text-sm text-gray-600 mb-4">
-                <p>Payment for: {getNextRentDate().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
+                <p>
+                  Payment for:{' '}
+                  {getNextRentDate().toLocaleDateString('en-US', {
+                    month: 'long',
+                    year: 'numeric',
+                  })}
+                </p>
                 <p>Due date: {getNextRentDate().toLocaleDateString()}</p>
               </div>
             </div>
@@ -360,14 +447,16 @@ const PaymentReminders = ({ user, currentLease, onPayRent, onReportIssue }) => {
                 <X size={24} className="text-gray-500" />
               </button>
             </div>
-            
+
             <div className="space-y-4">
               {/* Issue Type */}
               <div>
-                <label className="block text-sm font-medium mb-2">Issue Type</label>
+                <label className="block text-sm font-medium mb-2">
+                  Issue Type
+                </label>
                 <select
                   value={issueType}
-                  onChange={(e) => setIssueType(e.target.value)}
+                  onChange={e => setIssueType(e.target.value)}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                 >
                   <option value="maintenance">Maintenance Issue</option>
@@ -381,10 +470,12 @@ const PaymentReminders = ({ user, currentLease, onPayRent, onReportIssue }) => {
 
               {/* Description */}
               <div>
-                <label className="block text-sm font-medium mb-2">Description</label>
+                <label className="block text-sm font-medium mb-2">
+                  Description
+                </label>
                 <textarea
                   value={issueDescription}
-                  onChange={(e) => setIssueDescription(e.target.value)}
+                  onChange={e => setIssueDescription(e.target.value)}
                   placeholder="Describe the issue in detail..."
                   rows={4}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
@@ -393,7 +484,9 @@ const PaymentReminders = ({ user, currentLease, onPayRent, onReportIssue }) => {
 
               {/* Photo Upload */}
               <div>
-                <label className="block text-sm font-medium mb-2">Photos (Optional)</label>
+                <label className="block text-sm font-medium mb-2">
+                  Photos (Optional)
+                </label>
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
                   <Camera size={32} className="mx-auto text-gray-400 mb-2" />
                   <label className="cursor-pointer">
@@ -410,14 +503,14 @@ const PaymentReminders = ({ user, currentLease, onPayRent, onReportIssue }) => {
                     />
                   </label>
                 </div>
-                
+
                 {/* Photo Previews */}
                 {issuePhotos.length > 0 && (
                   <div className="grid grid-cols-2 gap-2 mt-3">
                     {issuePhotos.map(photo => (
-                      <img 
+                      <img
                         key={photo.id}
-                        src={photo.preview} 
+                        src={photo.preview}
                         alt="Issue documentation"
                         className="w-full h-20 object-cover rounded-lg"
                       />
@@ -450,7 +543,7 @@ const PaymentReminders = ({ user, currentLease, onPayRent, onReportIssue }) => {
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default PaymentReminders;
+export default PaymentReminders

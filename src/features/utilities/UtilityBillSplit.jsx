@@ -19,9 +19,24 @@ import {
 } from 'lucide-react'
 
 const UTILITY_TYPES = [
-  { value: 'electricity', label: 'Electricity', icon: Zap, color: 'text-yellow-500' },
-  { value: 'water', label: 'Water & Sewer', icon: Droplets, color: 'text-brand-500' },
-  { value: 'internet', label: 'Internet', icon: Wifi, color: 'text-purple-500' },
+  {
+    value: 'electricity',
+    label: 'Electricity',
+    icon: Zap,
+    color: 'text-yellow-500',
+  },
+  {
+    value: 'water',
+    label: 'Water & Sewer',
+    icon: Droplets,
+    color: 'text-brand-500',
+  },
+  {
+    value: 'internet',
+    label: 'Internet',
+    icon: Wifi,
+    color: 'text-purple-500',
+  },
   { value: 'gas', label: 'Natural Gas', icon: Flame, color: 'text-orange-500' },
   { value: 'other', label: 'Other', icon: FileText, color: 'text-gray-500' },
 ]
@@ -37,7 +52,7 @@ const SAMPLE_CONTACTS = [
 function Avatar({ name, size = 'md' }) {
   const initials = name
     .split(' ')
-    .map((n) => n[0])
+    .map(n => n[0])
     .join('')
     .toUpperCase()
     .slice(0, 2)
@@ -64,8 +79,8 @@ function StepIndicator({ currentStep }) {
                 idx < currentIdx
                   ? 'bg-brand-500 text-white'
                   : idx === currentIdx
-                  ? 'bg-brand-500 text-white ring-4 ring-blue-100'
-                  : 'bg-gray-100 text-gray-400'
+                    ? 'bg-brand-500 text-white ring-4 ring-blue-100'
+                    : 'bg-gray-100 text-gray-400'
               }`}
             >
               {idx < currentIdx ? <Check size={14} /> : idx + 1}
@@ -124,7 +139,7 @@ export default function UtilityBillSplit() {
     setShowNewSplit(false)
   }
 
-  const handleFileChange = (e) => {
+  const handleFileChange = e => {
     const file = e.target.files[0]
     if (!file) return
     setBillFile(file)
@@ -135,7 +150,7 @@ export default function UtilityBillSplit() {
     }
   }
 
-  const handleDrop = (e) => {
+  const handleDrop = e => {
     e.preventDefault()
     const file = e.dataTransfer.files[0]
     if (!file) return
@@ -147,10 +162,10 @@ export default function UtilityBillSplit() {
     }
   }
 
-  const toggleParticipant = (contact) => {
-    setParticipants((prev) =>
-      prev.find((p) => p.id === contact.id)
-        ? prev.filter((p) => p.id !== contact.id)
+  const toggleParticipant = contact => {
+    setParticipants(prev =>
+      prev.find(p => p.id === contact.id)
+        ? prev.filter(p => p.id !== contact.id)
         : [...prev, { ...contact, paid: false }]
     )
   }
@@ -163,11 +178,11 @@ export default function UtilityBillSplit() {
       role: 'Roommate',
       paid: false,
     }
-    setParticipants((prev) => [...prev, newP])
+    setParticipants(prev => [...prev, newP])
     setNewPersonName('')
   }
 
-  const getShare = (participantId) => {
+  const getShare = participantId => {
     const total = parseFloat(totalAmount) || 0
     const count = participants.length
     if (count === 0) return 0
@@ -199,23 +214,23 @@ export default function UtilityBillSplit() {
       billPreview,
       createdAt: new Date().toISOString(),
       splitMode,
-      participants: participants.map((p) => ({
+      participants: participants.map(p => ({
         ...p,
         share: getShare(p.id),
         paid: false,
       })),
     }
-    setSplits((prev) => [newSplit, ...prev])
+    setSplits(prev => [newSplit, ...prev])
     setStep('summary')
   }
 
   const togglePaid = (splitId, participantId) => {
-    setSplits((prev) =>
-      prev.map((s) =>
+    setSplits(prev =>
+      prev.map(s =>
         s.id === splitId
           ? {
               ...s,
-              participants: s.participants.map((p) =>
+              participants: s.participants.map(p =>
                 p.id === participantId ? { ...p, paid: !p.paid } : p
               ),
             }
@@ -224,12 +239,12 @@ export default function UtilityBillSplit() {
     )
   }
 
-  const deleteSplit = (splitId) => {
-    setSplits((prev) => prev.filter((s) => s.id !== splitId))
+  const deleteSplit = splitId => {
+    setSplits(prev => prev.filter(s => s.id !== splitId))
   }
 
-  const getUtilityIcon = (type) => {
-    const found = UTILITY_TYPES.find((u) => u.value === type)
+  const getUtilityIcon = type => {
+    const found = UTILITY_TYPES.find(u => u.value === type)
     const Icon = found?.icon || FileText
     return <Icon size={18} className={found?.color || 'text-gray-500'} />
   }
@@ -246,7 +261,10 @@ export default function UtilityBillSplit() {
             </p>
           </div>
           <button
-            onClick={() => { setShowNewSplit(true); setStep('upload') }}
+            onClick={() => {
+              setShowNewSplit(true)
+              setStep('upload')
+            }}
             className="flex items-center gap-2 px-4 py-2 bg-brand-500 text-white rounded-lg text-sm font-medium hover:bg-brand-600 transition-colors"
           >
             <Plus size={16} /> Split a Bill
@@ -258,13 +276,18 @@ export default function UtilityBillSplit() {
             <div className="w-14 h-14 rounded-full bg-brand-50 flex items-center justify-center mb-4">
               <SplitSquareHorizontal size={26} className="text-brand-400" />
             </div>
-            <h4 className="font-semibold text-gray-700 mb-1">No bills split yet</h4>
+            <h4 className="font-semibold text-gray-700 mb-1">
+              No bills split yet
+            </h4>
             <p className="text-gray-400 text-sm max-w-xs">
               Upload a utility bill and Rentra will automatically divide it
               among your roommates.
             </p>
             <button
-              onClick={() => { setShowNewSplit(true); setStep('upload') }}
+              onClick={() => {
+                setShowNewSplit(true)
+                setStep('upload')
+              }}
               className="mt-4 px-5 py-2 bg-brand-500 text-white rounded-lg text-sm font-medium hover:bg-brand-600"
             >
               Split your first bill
@@ -272,8 +295,8 @@ export default function UtilityBillSplit() {
           </div>
         ) : (
           <div className="space-y-4">
-            {splits.map((split) => {
-              const paidCount = split.participants.filter((p) => p.paid).length
+            {splits.map(split => {
+              const paidCount = split.participants.filter(p => p.paid).length
               const allPaid = paidCount === split.participants.length
               return (
                 <div
@@ -287,7 +310,9 @@ export default function UtilityBillSplit() {
                       </div>
                       <div>
                         <p className="font-semibold text-gray-900 capitalize">
-                          {UTILITY_TYPES.find((u) => u.value === split.utilityType)?.label || split.utilityType}
+                          {UTILITY_TYPES.find(
+                            u => u.value === split.utilityType
+                          )?.label || split.utilityType}
                         </p>
                         <p className="text-xs text-gray-400">
                           {split.provider || 'No provider'} •{' '}
@@ -305,7 +330,9 @@ export default function UtilityBillSplit() {
                             : 'bg-yellow-100 text-yellow-700'
                         }`}
                       >
-                        {allPaid ? 'Settled' : `${paidCount}/${split.participants.length} paid`}
+                        {allPaid
+                          ? 'Settled'
+                          : `${paidCount}/${split.participants.length} paid`}
                       </span>
                       <button
                         onClick={() => deleteSplit(split.id)}
@@ -321,12 +348,13 @@ export default function UtilityBillSplit() {
                       ${split.total.toFixed(2)}
                     </span>
                     <span className="text-sm text-gray-500">
-                      ${(split.total / split.participants.length).toFixed(2)} / person
+                      ${(split.total / split.participants.length).toFixed(2)} /
+                      person
                     </span>
                   </div>
 
                   <div className="space-y-2">
-                    {split.participants.map((p) => (
+                    {split.participants.map(p => (
                       <div
                         key={p.id}
                         className="flex items-center justify-between py-2 border-t border-gray-50"
@@ -350,9 +378,13 @@ export default function UtilityBillSplit() {
                             }`}
                           >
                             {p.paid ? (
-                              <><CheckCircle size={12} /> Paid</>
+                              <>
+                                <CheckCircle size={12} /> Paid
+                              </>
                             ) : (
-                              <><Clock size={12} /> Unpaid</>
+                              <>
+                                <Clock size={12} /> Unpaid
+                              </>
                             )}
                           </button>
                         </div>
@@ -390,7 +422,7 @@ export default function UtilityBillSplit() {
         <div className="space-y-5">
           <div
             onDrop={handleDrop}
-            onDragOver={(e) => e.preventDefault()}
+            onDragOver={e => e.preventDefault()}
             onClick={() => !billFile && fileInputRef.current?.click()}
             className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
               billFile
@@ -425,7 +457,7 @@ export default function UtilityBillSplit() {
                   </p>
                 </div>
                 <button
-                  onClick={(e) => {
+                  onClick={e => {
                     e.stopPropagation()
                     setBillFile(null)
                     setBillPreview(null)
@@ -478,7 +510,7 @@ export default function UtilityBillSplit() {
               Utility Type <span className="text-red-500">*</span>
             </label>
             <div className="grid grid-cols-3 gap-2">
-              {UTILITY_TYPES.map((u) => {
+              {UTILITY_TYPES.map(u => {
                 const Icon = u.icon
                 return (
                   <button
@@ -513,7 +545,7 @@ export default function UtilityBillSplit() {
                 step="0.01"
                 placeholder="0.00"
                 value={totalAmount}
-                onChange={(e) => setTotalAmount(e.target.value)}
+                onChange={e => setTotalAmount(e.target.value)}
                 className="w-full pl-9 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-brand-500 text-lg font-semibold"
               />
             </div>
@@ -528,7 +560,7 @@ export default function UtilityBillSplit() {
                 type="text"
                 placeholder="e.g. SDG&E"
                 value={provider}
-                onChange={(e) => setProvider(e.target.value)}
+                onChange={e => setProvider(e.target.value)}
                 className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-brand-500 text-sm"
               />
             </div>
@@ -539,7 +571,7 @@ export default function UtilityBillSplit() {
               <input
                 type="date"
                 value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
+                onChange={e => setDueDate(e.target.value)}
                 className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-brand-500 text-sm"
               />
             </div>
@@ -567,7 +599,9 @@ export default function UtilityBillSplit() {
       {step === 'split' && (
         <div className="space-y-5">
           <div className="bg-brand-50 border border-brand-100 rounded-xl px-4 py-3 flex items-center justify-between">
-            <span className="text-sm text-brand-600 font-medium">Total bill</span>
+            <span className="text-sm text-brand-600 font-medium">
+              Total bill
+            </span>
             <span className="text-xl font-bold text-brand-600">
               ${parseFloat(totalAmount).toFixed(2)}
             </span>
@@ -603,8 +637,8 @@ export default function UtilityBillSplit() {
               Select roommates to split with
             </p>
             <div className="space-y-2">
-              {SAMPLE_CONTACTS.map((contact) => {
-                const selected = !!participants.find((p) => p.id === contact.id)
+              {SAMPLE_CONTACTS.map(contact => {
+                const selected = !!participants.find(p => p.id === contact.id)
                 return (
                   <button
                     key={contact.id}
@@ -633,9 +667,9 @@ export default function UtilityBillSplit() {
                             max="100"
                             placeholder="0"
                             value={customShares[contact.id] || ''}
-                            onClick={(e) => e.stopPropagation()}
-                            onChange={(e) =>
-                              setCustomShares((prev) => ({
+                            onClick={e => e.stopPropagation()}
+                            onChange={e =>
+                              setCustomShares(prev => ({
                                 ...prev,
                                 [contact.id]: e.target.value,
                               }))
@@ -669,8 +703,8 @@ export default function UtilityBillSplit() {
 
               {/* Custom-added participants */}
               {participants
-                .filter((p) => p.id.startsWith('custom-'))
-                .map((p) => (
+                .filter(p => p.id.startsWith('custom-'))
+                .map(p => (
                   <div
                     key={p.id}
                     className="w-full flex items-center justify-between px-4 py-3 rounded-xl border-2 border-brand-500 bg-brand-50"
@@ -690,8 +724,8 @@ export default function UtilityBillSplit() {
                             max="100"
                             placeholder="0"
                             value={customShares[p.id] || ''}
-                            onChange={(e) =>
-                              setCustomShares((prev) => ({
+                            onChange={e =>
+                              setCustomShares(prev => ({
                                 ...prev,
                                 [p.id]: e.target.value,
                               }))
@@ -703,13 +737,16 @@ export default function UtilityBillSplit() {
                       )}
                       {splitMode === 'equal' && (
                         <span className="text-sm font-semibold text-brand-600">
-                          ${(parseFloat(totalAmount) / participants.length).toFixed(2)}
+                          $
+                          {(
+                            parseFloat(totalAmount) / participants.length
+                          ).toFixed(2)}
                         </span>
                       )}
                       <button
                         onClick={() =>
-                          setParticipants((prev) =>
-                            prev.filter((x) => x.id !== p.id)
+                          setParticipants(prev =>
+                            prev.filter(x => x.id !== p.id)
                           )
                         }
                         className="p-1 text-red-400 hover:text-red-600"
@@ -727,8 +764,8 @@ export default function UtilityBillSplit() {
                 type="text"
                 placeholder="Add person by name…"
                 value={newPersonName}
-                onChange={(e) => setNewPersonName(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && addCustomPerson()}
+                onChange={e => setNewPersonName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && addCustomPerson()}
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-brand-500"
               />
               <button

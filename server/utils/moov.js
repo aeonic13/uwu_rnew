@@ -23,7 +23,8 @@ async function getAccessToken() {
       `${MOOV_API_URL}/oauth2/token`,
       {
         grant_type: 'client_credentials',
-        scope: '/accounts.write /accounts.read /transfers.write /transfers.read /payment-methods.write /payment-methods.read',
+        scope:
+          '/accounts.write /accounts.read /transfers.write /transfers.read /payment-methods.write /payment-methods.read',
       },
       {
         auth: {
@@ -42,7 +43,10 @@ async function getAccessToken() {
 
     return cachedToken
   } catch (error) {
-    console.error('Moov authentication error:', error.response?.data || error.message)
+    console.error(
+      'Moov authentication error:',
+      error.response?.data || error.message
+    )
     throw new Error('Failed to authenticate with Moov')
   }
 }
@@ -67,7 +71,10 @@ async function moovRequest(method, endpoint, data = null) {
 
     return response.data
   } catch (error) {
-    console.error(`Moov API error (${method} ${endpoint}):`, error.response?.data || error.message)
+    console.error(
+      `Moov API error (${method} ${endpoint}):`,
+      error.response?.data || error.message
+    )
     throw error
   }
 }

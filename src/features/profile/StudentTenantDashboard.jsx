@@ -50,7 +50,7 @@ function StudentTenantDashboard() {
       {/* Tabs */}
       <div className="bg-white border-b overflow-x-auto">
         <div className="flex">
-          {tabs.map((tab) => {
+          {tabs.map(tab => {
             const Icon = tab.icon
             return (
               <button
@@ -162,7 +162,7 @@ function PayRentTab({ user }) {
               name="payment"
               value="bank"
               checked={paymentMethod === 'bank'}
-              onChange={(e) => setPaymentMethod(e.target.value)}
+              onChange={e => setPaymentMethod(e.target.value)}
               className="mr-3"
             />
             <div className="flex-1">
@@ -178,7 +178,7 @@ function PayRentTab({ user }) {
               name="payment"
               value="card"
               checked={paymentMethod === 'card'}
-              onChange={(e) => setPaymentMethod(e.target.value)}
+              onChange={e => setPaymentMethod(e.target.value)}
               className="mr-3"
             />
             <div className="flex-1">
@@ -281,18 +281,18 @@ function UtilitiesTab({ user }) {
         <p className="text-4xl font-bold mb-1">
           $
           {utilities
-            .filter((u) => u.status === 'pending')
+            .filter(u => u.status === 'pending')
             .reduce((sum, u) => sum + u.amount, 0)
             .toFixed(2)}
         </p>
         <p className="text-brand-100 text-sm">
-          {utilities.filter((u) => u.status === 'pending').length} bills pending
+          {utilities.filter(u => u.status === 'pending').length} bills pending
         </p>
       </div>
 
       {/* Utilities List */}
       <div className="space-y-3">
-        {utilities.map((utility) => (
+        {utilities.map(utility => (
           <div
             key={utility.id}
             className="bg-white rounded-lg border border-gray-200 p-4"
@@ -400,7 +400,7 @@ function MaintenanceTab({ user }) {
     },
   ]
 
-  const handleSubmit = (e) => {
+  const handleSubmit = e => {
     e.preventDefault()
     setIsSubmitting(true)
     setTimeout(() => {
@@ -411,7 +411,7 @@ function MaintenanceTab({ user }) {
     }, 1500)
   }
 
-  const getStatusColor = (status) => {
+  const getStatusColor = status => {
     switch (status) {
       case 'completed':
         return 'bg-green-100 text-green-700'
@@ -422,7 +422,7 @@ function MaintenanceTab({ user }) {
     }
   }
 
-  const getPriorityColor = (priority) => {
+  const getPriorityColor = priority => {
     switch (priority) {
       case 'high':
         return 'bg-red-100 text-red-700'
@@ -461,13 +461,11 @@ function MaintenanceTab({ user }) {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1">
-                Category
-              </label>
+              <label className="block text-sm font-medium mb-1">Category</label>
               <select
                 required
                 value={formData.category}
-                onChange={(e) =>
+                onChange={e =>
                   setFormData({ ...formData, category: e.target.value })
                 }
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none"
@@ -486,7 +484,7 @@ function MaintenanceTab({ user }) {
             <div>
               <label className="block text-sm font-medium mb-1">Priority</label>
               <div className="flex space-x-2">
-                {['low', 'medium', 'high'].map((priority) => (
+                {['low', 'medium', 'high'].map(priority => (
                   <label
                     key={priority}
                     className={`flex-1 p-3 border rounded-lg cursor-pointer text-center font-medium ${
@@ -500,7 +498,7 @@ function MaintenanceTab({ user }) {
                       name="priority"
                       value={priority}
                       checked={formData.priority === priority}
-                      onChange={(e) =>
+                      onChange={e =>
                         setFormData({ ...formData, priority: e.target.value })
                       }
                       className="sr-only"
@@ -519,7 +517,7 @@ function MaintenanceTab({ user }) {
                 required
                 rows={4}
                 value={formData.description}
-                onChange={(e) =>
+                onChange={e =>
                   setFormData({ ...formData, description: e.target.value })
                 }
                 placeholder="Please describe the issue in detail..."
@@ -569,7 +567,7 @@ function MaintenanceTab({ user }) {
       {/* Existing Requests */}
       <div className="space-y-3">
         <h3 className="font-semibold text-gray-900">Your Requests</h3>
-        {maintenanceRequests.map((request) => (
+        {maintenanceRequests.map(request => (
           <div
             key={request.id}
             className="bg-white rounded-lg border border-gray-200 p-4"
@@ -581,13 +579,17 @@ function MaintenanceTab({ user }) {
                   {request.description}
                 </p>
               </div>
-              <span className={`text-xs px-2 py-1 rounded-full ${getPriorityColor(request.priority)}`}>
+              <span
+                className={`text-xs px-2 py-1 rounded-full ${getPriorityColor(request.priority)}`}
+              >
                 {request.priority}
               </span>
             </div>
 
             <div className="flex items-center justify-between text-sm">
-              <span className={`px-2 py-1 rounded-full ${getStatusColor(request.status)}`}>
+              <span
+                className={`px-2 py-1 rounded-full ${getStatusColor(request.status)}`}
+              >
                 {request.status === 'in-progress'
                   ? 'In Progress'
                   : request.status.charAt(0).toUpperCase() +
@@ -652,7 +654,7 @@ function LeasesTab({ user }) {
 
   return (
     <div className="space-y-4">
-      {leases.map((lease) => (
+      {leases.map(lease => (
         <div
           key={lease.id}
           className="bg-white rounded-lg border border-gray-200 p-4"
@@ -717,8 +719,7 @@ function LeasesTab({ user }) {
               <AlertCircle size={16} className="inline text-brand-500 mr-2" />
               <span className="text-brand-600">
                 {Math.ceil(
-                  (new Date(lease.endDate) - new Date()) /
-                    (1000 * 60 * 60 * 24)
+                  (new Date(lease.endDate) - new Date()) / (1000 * 60 * 60 * 24)
                 )}{' '}
                 days remaining in lease
               </span>
@@ -728,7 +729,7 @@ function LeasesTab({ user }) {
       ))}
 
       {/* Lease Renewal Notice */}
-      {leases.some((l) => l.status === 'active') && (
+      {leases.some(l => l.status === 'active') && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
           <div className="flex items-start">
             <CheckCircle size={20} className="text-green-600 mr-3 mt-0.5" />
@@ -817,7 +818,7 @@ function PaymentHistoryTab({ user }) {
   const filteredPayments =
     filterType === 'all'
       ? payments
-      : payments.filter((p) => p.type === filterType)
+      : payments.filter(p => p.type === filterType)
 
   const totalPaid = filteredPayments.reduce((sum, p) => sum + p.amount, 0)
 
@@ -834,7 +835,7 @@ function PaymentHistoryTab({ user }) {
 
       {/* Filter Buttons */}
       <div className="flex space-x-2 overflow-x-auto pb-2">
-        {['all', 'rent', 'utility', 'deposit'].map((type) => (
+        {['all', 'rent', 'utility', 'deposit'].map(type => (
           <button
             key={type}
             onClick={() => setFilterType(type)}
@@ -851,7 +852,7 @@ function PaymentHistoryTab({ user }) {
 
       {/* Payment List */}
       <div className="space-y-3">
-        {filteredPayments.map((payment) => (
+        {filteredPayments.map(payment => (
           <div
             key={payment.id}
             className="bg-white rounded-lg border border-gray-200 p-4"

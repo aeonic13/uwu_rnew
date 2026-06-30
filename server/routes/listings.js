@@ -489,7 +489,7 @@ router.get('/favorites/all', authenticate, async (req, res) => {
       },
     })
 
-    const listings = favorites.map((fav) => fav.listing)
+    const listings = favorites.map(fav => fav.listing)
 
     res.json({ listings })
   } catch (error) {

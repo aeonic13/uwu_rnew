@@ -109,7 +109,8 @@ export function requireVerified(req, res, next) {
   if (!req.user.verified) {
     return res.status(403).json({
       error: {
-        message: 'Email verification required. Please verify your email address.',
+        message:
+          'Email verification required. Please verify your email address.',
       },
     })
   }

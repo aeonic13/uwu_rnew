@@ -1,14 +1,33 @@
-import React, { useState, useRef } from 'react';
-import { Camera, CheckCircle, XCircle, AlertTriangle, Plus, Trash2, Download, Upload, FileText, Clock, User, MapPin, Calendar } from 'lucide-react';
+import React, { useState, useRef } from 'react'
+import {
+  Camera,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  Plus,
+  Trash2,
+  Download,
+  Upload,
+  FileText,
+  Clock,
+  User,
+  MapPin,
+  Calendar,
+} from 'lucide-react'
 
-const PropertyInspectionTools = ({ lease, inspectionType = 'move-in', onComplete, onBack }) => {
-  const [currentRoom, setCurrentRoom] = useState('living-room');
-  const [inspectionData, setInspectionData] = useState({});
-  const [photos, setPhotos] = useState({});
-  const [notes, setNotes] = useState({});
-  const [signatures, setSignatures] = useState({});
-  const [showSummary, setShowSummary] = useState(false);
-  const fileInputRef = useRef(null);
+const PropertyInspectionTools = ({
+  lease,
+  inspectionType = 'move-in',
+  onComplete,
+  onBack,
+}) => {
+  const [currentRoom, setCurrentRoom] = useState('living-room')
+  const [inspectionData, setInspectionData] = useState({})
+  const [photos, setPhotos] = useState({})
+  const [notes, setNotes] = useState({})
+  const [signatures, setSignatures] = useState({})
+  const [showSummary, setShowSummary] = useState(false)
+  const fileInputRef = useRef(null)
 
   // Room categories for inspection
   const roomCategories = {
@@ -21,10 +40,10 @@ const PropertyInspectionTools = ({ lease, inspectionType = 'move-in', onComplete
         'Light fixtures and switches',
         'Outlets and electrical',
         'Furniture (if furnished)',
-        'Doors and door frames'
-      ]
+        'Doors and door frames',
+      ],
     },
-    'kitchen': {
+    kitchen: {
       name: 'Kitchen',
       items: [
         'Cabinets and drawers',
@@ -34,10 +53,10 @@ const PropertyInspectionTools = ({ lease, inspectionType = 'move-in', onComplete
         'Flooring',
         'Walls and backsplash',
         'Light fixtures',
-        'Outlets and switches'
-      ]
+        'Outlets and switches',
+      ],
     },
-    'bathroom': {
+    bathroom: {
       name: 'Bathroom(s)',
       items: [
         'Toilet',
@@ -48,10 +67,10 @@ const PropertyInspectionTools = ({ lease, inspectionType = 'move-in', onComplete
         'Light fixtures',
         'Ventilation fan',
         'Flooring',
-        'Towel bars and fixtures'
-      ]
+        'Towel bars and fixtures',
+      ],
     },
-    'bedroom': {
+    bedroom: {
       name: 'Bedroom(s)',
       items: [
         'Walls (paint, holes)',
@@ -60,10 +79,10 @@ const PropertyInspectionTools = ({ lease, inspectionType = 'move-in', onComplete
         'Closet and doors',
         'Light fixtures',
         'Outlets and switches',
-        'Furniture (if furnished)'
-      ]
+        'Furniture (if furnished)',
+      ],
     },
-    'exterior': {
+    exterior: {
       name: 'Exterior/Common Areas',
       items: [
         'Front/back doors',
@@ -73,59 +92,78 @@ const PropertyInspectionTools = ({ lease, inspectionType = 'move-in', onComplete
         'Storage areas',
         'HVAC system',
         'Smoke/carbon monoxide detectors',
-        'Keys provided'
-      ]
-    }
-  };
+        'Keys provided',
+      ],
+    },
+  }
 
   const conditionOptions = {
-    excellent: { label: 'Excellent', color: 'bg-green-100 text-green-800', icon: CheckCircle },
-    good: { label: 'Good', color: 'bg-brand-100 text-blue-800', icon: CheckCircle },
-    fair: { label: 'Fair', color: 'bg-yellow-100 text-yellow-800', icon: AlertTriangle },
+    excellent: {
+      label: 'Excellent',
+      color: 'bg-green-100 text-green-800',
+      icon: CheckCircle,
+    },
+    good: {
+      label: 'Good',
+      color: 'bg-brand-100 text-blue-800',
+      icon: CheckCircle,
+    },
+    fair: {
+      label: 'Fair',
+      color: 'bg-yellow-100 text-yellow-800',
+      icon: AlertTriangle,
+    },
     poor: { label: 'Poor', color: 'bg-red-100 text-red-800', icon: XCircle },
-    damaged: { label: 'Damaged', color: 'bg-red-200 text-red-900', icon: XCircle }
-  };
+    damaged: {
+      label: 'Damaged',
+      color: 'bg-red-200 text-red-900',
+      icon: XCircle,
+    },
+  }
 
   const handleItemCondition = (room, item, condition) => {
     setInspectionData(prev => ({
       ...prev,
       [room]: {
         ...prev[room],
-        [item]: condition
-      }
-    }));
-  };
+        [item]: condition,
+      },
+    }))
+  }
 
   const handlePhotoUpload = (room, item, file) => {
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
+      const reader = new FileReader()
+      reader.onload = e => {
         setPhotos(prev => ({
           ...prev,
           [room]: {
             ...prev[room],
-            [item]: [...(prev[room]?.[item] || []), {
-              id: Date.now(),
-              url: e.target.result,
-              filename: file.name,
-              timestamp: new Date().toISOString()
-            }]
-          }
-        }));
-      };
-      reader.readAsDataURL(file);
+            [item]: [
+              ...(prev[room]?.[item] || []),
+              {
+                id: Date.now(),
+                url: e.target.result,
+                filename: file.name,
+                timestamp: new Date().toISOString(),
+              },
+            ],
+          },
+        }))
+      }
+      reader.readAsDataURL(file)
     }
-  };
+  }
 
   const handleNote = (room, item, note) => {
     setNotes(prev => ({
       ...prev,
       [room]: {
         ...prev[room],
-        [item]: note
-      }
-    }));
-  };
+        [item]: note,
+      },
+    }))
+  }
 
   const generateInspectionReport = () => {
     const report = {
@@ -138,64 +176,82 @@ const PropertyInspectionTools = ({ lease, inspectionType = 'move-in', onComplete
       photos: photos,
       notes: notes,
       signatures: signatures,
-      summary: generateSummary()
-    };
-    return report;
-  };
+      summary: generateSummary(),
+    }
+    return report
+  }
 
   const generateSummary = () => {
-    let totalItems = 0;
-    let issuesFound = 0;
-    
+    let totalItems = 0
+    let issuesFound = 0
+
     Object.keys(roomCategories).forEach(room => {
       roomCategories[room].items.forEach(item => {
-        totalItems++;
-        const condition = inspectionData[room]?.[item];
-        if (condition === 'fair' || condition === 'poor' || condition === 'damaged') {
-          issuesFound++;
+        totalItems++
+        const condition = inspectionData[room]?.[item]
+        if (
+          condition === 'fair' ||
+          condition === 'poor' ||
+          condition === 'damaged'
+        ) {
+          issuesFound++
         }
-      });
-    });
+      })
+    })
 
     return {
       totalItems,
       issuesFound,
-      itemsInspected: Object.keys(inspectionData).reduce((total, room) => 
-        total + Object.keys(inspectionData[room] || {}).length, 0
+      itemsInspected: Object.keys(inspectionData).reduce(
+        (total, room) => total + Object.keys(inspectionData[room] || {}).length,
+        0
       ),
-      photosUploaded: Object.keys(photos).reduce((total, room) =>
-        total + Object.keys(photos[room] || {}).reduce((roomTotal, item) =>
-          roomTotal + (photos[room][item]?.length || 0), 0
-        ), 0
-      )
-    };
-  };
+      photosUploaded: Object.keys(photos).reduce(
+        (total, room) =>
+          total +
+          Object.keys(photos[room] || {}).reduce(
+            (roomTotal, item) => roomTotal + (photos[room][item]?.length || 0),
+            0
+          ),
+        0
+      ),
+    }
+  }
 
-  const currentRoomData = roomCategories[currentRoom];
+  const currentRoomData = roomCategories[currentRoom]
 
   if (showSummary) {
-    const summary = generateSummary();
+    const summary = generateSummary()
     return (
       <div className="p-4 pb-20">
         <div className="mb-6">
           <h2 className="text-2xl font-bold mb-2">
-            {inspectionType === 'move-in' ? 'Move-In' : 'Move-Out'} Inspection Complete
+            {inspectionType === 'move-in' ? 'Move-In' : 'Move-Out'} Inspection
+            Complete
           </h2>
-          <p className="text-gray-600">Review your inspection report and add signatures</p>
+          <p className="text-gray-600">
+            Review your inspection report and add signatures
+          </p>
         </div>
 
         {/* Summary Stats */}
         <div className="grid grid-cols-2 gap-4 mb-6">
           <div className="bg-brand-50 p-4 rounded-lg border border-brand-200">
-            <div className="text-2xl font-bold text-brand-500">{summary.itemsInspected}</div>
+            <div className="text-2xl font-bold text-brand-500">
+              {summary.itemsInspected}
+            </div>
             <div className="text-sm text-brand-600">Items Inspected</div>
           </div>
           <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-            <div className="text-2xl font-bold text-green-600">{summary.photosUploaded}</div>
+            <div className="text-2xl font-bold text-green-600">
+              {summary.photosUploaded}
+            </div>
             <div className="text-sm text-green-700">Photos Uploaded</div>
           </div>
           <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-            <div className="text-2xl font-bold text-yellow-600">{summary.issuesFound}</div>
+            <div className="text-2xl font-bold text-yellow-600">
+              {summary.issuesFound}
+            </div>
             <div className="text-sm text-yellow-700">Issues Found</div>
           </div>
           <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
@@ -209,18 +265,28 @@ const PropertyInspectionTools = ({ lease, inspectionType = 'move-in', onComplete
         {/* Digital Signatures */}
         <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
           <h3 className="font-semibold mb-4">Digital Signatures Required</h3>
-          
+
           <div className="space-y-4">
             <div className="border border-gray-200 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-semibold">Tenant: {lease.tenant?.name || 'Student Tenant'}</p>
+                  <p className="font-semibold">
+                    Tenant: {lease.tenant?.name || 'Student Tenant'}
+                  </p>
                   <p className="text-sm text-gray-600">
                     I acknowledge this inspection is accurate and complete
                   </p>
                 </div>
                 <button
-                  onClick={() => setSignatures(prev => ({ ...prev, tenant: { signed: true, timestamp: new Date().toISOString() }}))}
+                  onClick={() =>
+                    setSignatures(prev => ({
+                      ...prev,
+                      tenant: {
+                        signed: true,
+                        timestamp: new Date().toISOString(),
+                      },
+                    }))
+                  }
                   className={`px-4 py-2 rounded-lg font-medium ${
                     signatures.tenant?.signed
                       ? 'bg-green-100 text-green-700'
@@ -235,13 +301,23 @@ const PropertyInspectionTools = ({ lease, inspectionType = 'move-in', onComplete
             <div className="border border-gray-200 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-semibold">Landlord: {lease.landlord?.name || 'Property Owner'}</p>
+                  <p className="font-semibold">
+                    Landlord: {lease.landlord?.name || 'Property Owner'}
+                  </p>
                   <p className="text-sm text-gray-600">
                     I acknowledge this inspection is accurate and complete
                   </p>
                 </div>
                 <button
-                  onClick={() => setSignatures(prev => ({ ...prev, landlord: { signed: true, timestamp: new Date().toISOString() }}))}
+                  onClick={() =>
+                    setSignatures(prev => ({
+                      ...prev,
+                      landlord: {
+                        signed: true,
+                        timestamp: new Date().toISOString(),
+                      },
+                    }))
+                  }
                   className={`px-4 py-2 rounded-lg font-medium ${
                     signatures.landlord?.signed
                       ? 'bg-green-100 text-green-700'
@@ -259,10 +335,12 @@ const PropertyInspectionTools = ({ lease, inspectionType = 'move-in', onComplete
         <div className="space-y-3">
           <button
             onClick={() => {
-              const report = generateInspectionReport();
-              onComplete?.(report);
+              const report = generateInspectionReport()
+              onComplete?.(report)
             }}
-            disabled={!signatures.tenant?.signed || !signatures.landlord?.signed}
+            disabled={
+              !signatures.tenant?.signed || !signatures.landlord?.signed
+            }
             className={`w-full py-3 rounded-lg font-semibold ${
               signatures.tenant?.signed && signatures.landlord?.signed
                 ? 'bg-green-600 text-white hover:bg-green-700'
@@ -271,7 +349,7 @@ const PropertyInspectionTools = ({ lease, inspectionType = 'move-in', onComplete
           >
             Complete Inspection
           </button>
-          
+
           <button
             onClick={() => setShowSummary(false)}
             className="w-full bg-gray-100 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-200"
@@ -280,7 +358,7 @@ const PropertyInspectionTools = ({ lease, inspectionType = 'move-in', onComplete
           </button>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -306,11 +384,11 @@ const PropertyInspectionTools = ({ lease, inspectionType = 'move-in', onComplete
         <h3 className="font-semibold mb-3">Select Room to Inspect</h3>
         <div className="grid grid-cols-2 gap-2">
           {Object.entries(roomCategories).map(([key, room]) => {
-            const roomProgress = room.items.filter(item => 
-              inspectionData[key]?.[item]
-            ).length;
-            const totalItems = room.items.length;
-            
+            const roomProgress = room.items.filter(
+              item => inspectionData[key]?.[item]
+            ).length
+            const totalItems = room.items.length
+
             return (
               <button
                 key={key}
@@ -332,7 +410,7 @@ const PropertyInspectionTools = ({ lease, inspectionType = 'move-in', onComplete
                   />
                 </div>
               </button>
-            );
+            )
           })}
         </div>
       </div>
@@ -346,24 +424,31 @@ const PropertyInspectionTools = ({ lease, inspectionType = 'move-in', onComplete
 
         <div className="space-y-4">
           {currentRoomData.items.map((item, index) => {
-            const condition = inspectionData[currentRoom]?.[item];
-            const itemPhotos = photos[currentRoom]?.[item] || [];
-            const itemNote = notes[currentRoom]?.[item] || '';
+            const condition = inspectionData[currentRoom]?.[item]
+            const itemPhotos = photos[currentRoom]?.[item] || []
+            const itemNote = notes[currentRoom]?.[item] || ''
 
             return (
-              <div key={index} className="bg-white border border-gray-200 rounded-lg p-4">
+              <div
+                key={index}
+                className="bg-white border border-gray-200 rounded-lg p-4"
+              >
                 <h4 className="font-medium mb-3">{item}</h4>
-                
+
                 {/* Condition Selection */}
                 <div className="mb-3">
-                  <label className="block text-sm font-medium mb-2">Condition:</label>
+                  <label className="block text-sm font-medium mb-2">
+                    Condition:
+                  </label>
                   <div className="grid grid-cols-3 gap-2">
                     {Object.entries(conditionOptions).map(([key, option]) => {
-                      const IconComponent = option.icon;
+                      const IconComponent = option.icon
                       return (
                         <button
                           key={key}
-                          onClick={() => handleItemCondition(currentRoom, item, key)}
+                          onClick={() =>
+                            handleItemCondition(currentRoom, item, key)
+                          }
                           className={`p-2 rounded-lg text-xs font-medium transition-colors ${
                             condition === key
                               ? option.color
@@ -373,7 +458,7 @@ const PropertyInspectionTools = ({ lease, inspectionType = 'move-in', onComplete
                           <IconComponent size={14} className="inline mr-1" />
                           {option.label}
                         </button>
-                      );
+                      )
                     })}
                   </div>
                 </div>
@@ -384,7 +469,7 @@ const PropertyInspectionTools = ({ lease, inspectionType = 'move-in', onComplete
                     <label className="block text-sm font-medium">Photos:</label>
                     <button
                       onClick={() => {
-                        fileInputRef.current?.click();
+                        fileInputRef.current?.click()
                       }}
                       className="text-brand-500 hover:text-brand-600 text-sm font-medium flex items-center"
                     >
@@ -392,20 +477,20 @@ const PropertyInspectionTools = ({ lease, inspectionType = 'move-in', onComplete
                       Add Photo
                     </button>
                   </div>
-                  
+
                   <input
                     ref={fileInputRef}
                     type="file"
                     accept="image/*"
                     multiple
                     className="hidden"
-                    onChange={(e) => {
+                    onChange={e => {
                       Array.from(e.target.files || []).forEach(file => {
-                        handlePhotoUpload(currentRoom, item, file);
-                      });
+                        handlePhotoUpload(currentRoom, item, file)
+                      })
                     }}
                   />
-                  
+
                   {itemPhotos.length > 0 && (
                     <div className="grid grid-cols-3 gap-2">
                       {itemPhotos.map((photo, photoIndex) => (
@@ -421,9 +506,11 @@ const PropertyInspectionTools = ({ lease, inspectionType = 'move-in', onComplete
                                 ...prev,
                                 [currentRoom]: {
                                   ...prev[currentRoom],
-                                  [item]: itemPhotos.filter((_, i) => i !== photoIndex)
-                                }
-                              }));
+                                  [item]: itemPhotos.filter(
+                                    (_, i) => i !== photoIndex
+                                  ),
+                                },
+                              }))
                             }}
                             className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
                           >
@@ -437,17 +524,21 @@ const PropertyInspectionTools = ({ lease, inspectionType = 'move-in', onComplete
 
                 {/* Notes */}
                 <div>
-                  <label className="block text-sm font-medium mb-1">Notes:</label>
+                  <label className="block text-sm font-medium mb-1">
+                    Notes:
+                  </label>
                   <textarea
                     value={itemNote}
-                    onChange={(e) => handleNote(currentRoom, item, e.target.value)}
+                    onChange={e =>
+                      handleNote(currentRoom, item, e.target.value)
+                    }
                     placeholder="Any additional notes about this item..."
                     className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm"
                     rows={2}
                   />
                 </div>
               </div>
-            );
+            )
           })}
         </div>
       </div>
@@ -461,7 +552,7 @@ const PropertyInspectionTools = ({ lease, inspectionType = 'move-in', onComplete
           <FileText size={20} className="mr-2" />
           Review & Complete Inspection
         </button>
-        
+
         <button
           onClick={onBack}
           className="w-full bg-gray-100 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-200"
@@ -470,7 +561,7 @@ const PropertyInspectionTools = ({ lease, inspectionType = 'move-in', onComplete
         </button>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default PropertyInspectionTools;
+export default PropertyInspectionTools

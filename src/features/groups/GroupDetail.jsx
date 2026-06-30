@@ -18,7 +18,14 @@ import LoadingSpinner from '../../components/common/LoadingSpinner'
 export default function GroupDetail() {
   const { id } = useParams()
   const { user } = useAuth()
-  const { selectedGroup, getGroupById, inviteMember, removeMember, leaveGroup, deleteGroup } = useGroups()
+  const {
+    selectedGroup,
+    getGroupById,
+    inviteMember,
+    removeMember,
+    leaveGroup,
+    deleteGroup,
+  } = useGroups()
   const navigate = useNavigate()
 
   const [showInviteModal, setShowInviteModal] = useState(false)
@@ -36,7 +43,7 @@ export default function GroupDetail() {
   }, [id, getGroupById])
 
   const isAdmin = selectedGroup?.members?.some(
-    (m) => m.userId === user.id && m.role === 'admin'
+    m => m.userId === user.id && m.role === 'admin'
   )
 
   const handleInvite = async () => {
@@ -49,7 +56,7 @@ export default function GroupDetail() {
     }
   }
 
-  const handleRemoveMember = async (userId) => {
+  const handleRemoveMember = async userId => {
     if (confirm('Remove this member from the group?')) {
       await removeMember(id, userId)
     }
@@ -65,7 +72,11 @@ export default function GroupDetail() {
   }
 
   const handleDeleteGroup = async () => {
-    if (confirm('Are you sure you want to delete this group? This cannot be undone.')) {
+    if (
+      confirm(
+        'Are you sure you want to delete this group? This cannot be undone.'
+      )
+    ) {
       const result = await deleteGroup(id)
       if (result.success) {
         navigate('/groups')
@@ -107,9 +118,12 @@ export default function GroupDetail() {
               <Users size={32} className="text-brand-500" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">{selectedGroup.name}</h1>
+              <h1 className="text-2xl font-bold text-gray-900">
+                {selectedGroup.name}
+              </h1>
               <p className="text-gray-600 mt-1">
-                {selectedGroup.members?.length || 0} / {selectedGroup.maxMembers} members
+                {selectedGroup.members?.length || 0} /{' '}
+                {selectedGroup.maxMembers} members
               </p>
             </div>
           </div>
@@ -156,7 +170,7 @@ export default function GroupDetail() {
         <h2 className="text-xl font-bold text-gray-900 mb-4">Members</h2>
 
         <div className="space-y-3">
-          {selectedGroup.members?.map((member) => (
+          {selectedGroup.members?.map(member => (
             <div
               key={member.userId}
               className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
@@ -239,7 +253,7 @@ export default function GroupDetail() {
               <input
                 type="email"
                 value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
+                onChange={e => setInviteEmail(e.target.value)}
                 placeholder="friend@university.edu"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                 autoFocus

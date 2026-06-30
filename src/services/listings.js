@@ -16,7 +16,7 @@ export const listingsService = {
    * @param {string} id - Listing ID
    * @returns {Promise} Listing details
    */
-  getById: async (id) => {
+  getById: async id => {
     const response = await api.get(`/listings/${id}`)
     return response.data
   },
@@ -26,7 +26,7 @@ export const listingsService = {
    * @param {Object} listingData - Listing information
    * @returns {Promise} Created listing
    */
-  create: async (listingData) => {
+  create: async listingData => {
     const response = await api.post('/listings', listingData)
     return response.data
   },
@@ -47,7 +47,7 @@ export const listingsService = {
    * @param {string} id - Listing ID
    * @returns {Promise} Deletion confirmation
    */
-  delete: async (id) => {
+  delete: async id => {
     const response = await api.delete(`/listings/${id}`)
     return response.data
   },
@@ -57,7 +57,7 @@ export const listingsService = {
    * @param {string} id - Listing ID
    * @returns {Promise} Updated favorite status
    */
-  toggleFavorite: async (id) => {
+  toggleFavorite: async id => {
     const response = await api.post(`/listings/${id}/favorite`)
     return response.data
   },

@@ -20,7 +20,7 @@ export function usePreQualification() {
 
   const isPreQualified = !!preQualData?.completedAt
 
-  const completePreQual = useCallback((verifications) => {
+  const completePreQual = useCallback(verifications => {
     const data = {
       completedAt: new Date().toISOString(),
       verifications,

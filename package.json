@@ -26,8 +26,8 @@
       "prettier --write"
     ],
     "server/**/*.js": [
-      "cd server && eslint --fix",
-      "cd server && prettier --write"
+      "eslint --fix --config server/eslint.config.js",
+      "prettier --write"
     ],
     "*.{css,md,json}": [
       "prettier --write"

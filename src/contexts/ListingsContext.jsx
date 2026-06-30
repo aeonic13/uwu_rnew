@@ -1,4 +1,10 @@
-import { createContext, useContext, useReducer, useCallback, useEffect } from 'react'
+import {
+  createContext,
+  useContext,
+  useReducer,
+  useCallback,
+  useEffect,
+} from 'react'
 import PropTypes from 'prop-types'
 import { listingsService } from '../services/listingsService'
 
@@ -66,7 +72,7 @@ function listingsReducer(state, action) {
     case LISTINGS_ACTIONS.UPDATE_LISTING:
       return {
         ...state,
-        listings: state.listings.map((listing) =>
+        listings: state.listings.map(listing =>
           listing.id === action.payload.id ? action.payload : listing
         ),
       }
@@ -75,7 +81,7 @@ function listingsReducer(state, action) {
       return {
         ...state,
         listings: state.listings.filter(
-          (listing) => listing.id !== action.payload
+          listing => listing.id !== action.payload
         ),
       }
 
@@ -86,7 +92,7 @@ function listingsReducer(state, action) {
 
 // Filter helper function
 function applyFilters(listings, filters) {
-  return listings.filter((listing) => {
+  return listings.filter(listing => {
     // Search term filter
     if (filters.searchTerm) {
       const term = filters.searchTerm.toLowerCase()
@@ -127,7 +133,7 @@ function applyFilters(listings, filters) {
 
     // Amenities filter
     if (filters.amenities && filters.amenities.length > 0) {
-      const hasAllAmenities = filters.amenities.every((amenity) =>
+      const hasAllAmenities = filters.amenities.every(amenity =>
         listing.amenities.includes(amenity)
       )
       if (!hasAllAmenities) return false
@@ -176,12 +182,15 @@ export function ListingsProvider({ children }) {
 
   // Set filters and apply them
   const setFilters = useCallback(
-    (newFilters) => {
+    newFilters => {
       dispatch({ type: LISTINGS_ACTIONS.SET_FILTERS, payload: newFilters })
 
       const updatedFilters = { ...state.filters, ...newFilters }
       const filtered = applyFilters(state.listings, updatedFilters)
-      dispatch({ type: LISTINGS_ACTIONS.SET_FILTERED_LISTINGS, payload: filtered })
+      dispatch({
+        type: LISTINGS_ACTIONS.SET_FILTERED_LISTINGS,
+        payload: filtered,
+      })
     },
     [state.listings, state.filters]
   )
@@ -196,17 +205,20 @@ export function ListingsProvider({ children }) {
   }, [state.listings])
 
   // Select a listing
-  const selectListing = useCallback((listing) => {
+  const selectListing = useCallback(listing => {
     dispatch({ type: LISTINGS_ACTIONS.SET_SELECTED_LISTING, payload: listing })
   }, [])
 
   // Get listing by ID
   const getListingById = useCallback(
-    async (id) => {
+    async id => {
       // First check local state
-      const local = state.listings.find((l) => l.id === parseInt(id))
+      const local = state.listings.find(l => l.id === parseInt(id))
       if (local) {
-        dispatch({ type: LISTINGS_ACTIONS.SET_SELECTED_LISTING, payload: local })
+        dispatch({
+          type: LISTINGS_ACTIONS.SET_SELECTED_LISTING,
+          payload: local,
+        })
         return local
       }
 
@@ -227,7 +239,7 @@ export function ListingsProvider({ children }) {
   )
 
   // Create new listing
-  const createListing = useCallback(async (listingData) => {
+  const createListing = useCallback(async listingData => {
     dispatch({ type: LISTINGS_ACTIONS.SET_LOADING, payload: true })
 
     try {
@@ -255,7 +267,7 @@ export function ListingsProvider({ children }) {
   }, [])
 
   // Delete listing
-  const deleteListing = useCallback(async (id) => {
+  const deleteListing = useCallback(async id => {
     try {
       await listingsService.deleteListing(id)
       dispatch({ type: LISTINGS_ACTIONS.REMOVE_LISTING, payload: id })

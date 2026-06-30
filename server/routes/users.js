@@ -143,7 +143,7 @@ router.get('/:id', async (req, res) => {
     }
 
     // Calculate average rating
-    const ratings = user.receivedReviews.map((r) => r.rating)
+    const ratings = user.receivedReviews.map(r => r.rating)
     const avgRating =
       ratings.length > 0
         ? ratings.reduce((a, b) => a + b, 0) / ratings.length

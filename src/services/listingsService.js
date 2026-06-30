@@ -118,7 +118,7 @@ export const listingsService = {
    */
   async uploadImages(listingId, files) {
     const formData = new FormData()
-    files.forEach((file) => formData.append('images', file))
+    files.forEach(file => formData.append('images', file))
 
     const response = await apiClient.post(
       `/listings/${listingId}/images`,

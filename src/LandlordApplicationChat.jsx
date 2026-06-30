@@ -47,9 +47,14 @@ const TourScheduleCard = ({ onSchedule, onDismiss }) => {
       <div className="flex items-center justify-between">
         <div className="flex items-center">
           <Calendar size={16} className="text-brand-500 mr-2" />
-          <span className="font-semibold text-blue-800 text-sm">Schedule Walkthrough</span>
+          <span className="font-semibold text-blue-800 text-sm">
+            Schedule Walkthrough
+          </span>
         </div>
-        <button onClick={onDismiss} className="text-gray-400 hover:text-gray-600">
+        <button
+          onClick={onDismiss}
+          className="text-gray-400 hover:text-gray-600"
+        >
           <X size={16} />
         </button>
       </div>
@@ -119,7 +124,9 @@ const MessageBubble = ({ msg, isLandlord }) => {
     return (
       <div className="flex justify-center my-3">
         <div className="bg-gray-100 rounded-xl px-4 py-3 max-w-xs text-center">
-          <p className="text-xs text-gray-500 whitespace-pre-line">{msg.text}</p>
+          <p className="text-xs text-gray-500 whitespace-pre-line">
+            {msg.text}
+          </p>
         </div>
       </div>
     )
@@ -131,7 +138,9 @@ const MessageBubble = ({ msg, isLandlord }) => {
         <div className="bg-brand-50 border border-brand-200 rounded-xl p-3 max-w-xs">
           <div className="flex items-center mb-1">
             <Calendar size={14} className="text-brand-500 mr-1" />
-            <span className="text-xs font-semibold text-blue-800">Walkthrough Scheduled</span>
+            <span className="text-xs font-semibold text-blue-800">
+              Walkthrough Scheduled
+            </span>
           </div>
           <p className="text-xs text-brand-600">{msg.text}</p>
         </div>
@@ -146,16 +155,24 @@ const MessageBubble = ({ msg, isLandlord }) => {
           <User size={13} className="text-purple-600" />
         </div>
       )}
-      <div className={`max-w-xs rounded-2xl px-4 py-2.5 ${
-        isMe
-          ? 'bg-brand-500 text-white rounded-br-sm'
-          : 'bg-gray-100 text-gray-900 rounded-bl-sm'
-      }`}>
+      <div
+        className={`max-w-xs rounded-2xl px-4 py-2.5 ${
+          isMe
+            ? 'bg-brand-500 text-white rounded-br-sm'
+            : 'bg-gray-100 text-gray-900 rounded-bl-sm'
+        }`}
+      >
         {!isMe && (
-          <p className="text-xs font-semibold mb-1 text-purple-700">{msg.senderName}</p>
+          <p className="text-xs font-semibold mb-1 text-purple-700">
+            {msg.senderName}
+          </p>
         )}
         <p className="text-sm whitespace-pre-line">{msg.text}</p>
-        <p className={`text-xs mt-1 ${isMe ? 'text-brand-200' : 'text-gray-400'}`}>{msg.time}</p>
+        <p
+          className={`text-xs mt-1 ${isMe ? 'text-brand-200' : 'text-gray-400'}`}
+        >
+          {msg.time}
+        </p>
       </div>
     </div>
   )
@@ -166,8 +183,10 @@ const MessageBubble = ({ msg, isLandlord }) => {
 const ParticipantsBar = ({ groupApplication, landlordName }) => {
   const [expanded, setExpanded] = useState(false)
 
-  const tenants    = groupApplication.members
-  const guarantors = groupApplication.members.filter(m => m.guarantor).map(m => m.guarantor)
+  const tenants = groupApplication.members
+  const guarantors = groupApplication.members
+    .filter(m => m.guarantor)
+    .map(m => m.guarantor)
 
   return (
     <div className="bg-white border-b border-gray-200 px-4 py-2">
@@ -187,8 +206,12 @@ const ParticipantsBar = ({ groupApplication, landlordName }) => {
             <div className="w-5 h-5 bg-brand-100 rounded-full flex items-center justify-center mr-2">
               <Home size={11} className="text-brand-500" />
             </div>
-            <span className="text-xs font-medium">{landlordName || 'Landlord'}</span>
-            <span className="ml-2 text-xs text-brand-500 bg-brand-50 px-1.5 rounded">You</span>
+            <span className="text-xs font-medium">
+              {landlordName || 'Landlord'}
+            </span>
+            <span className="ml-2 text-xs text-brand-500 bg-brand-50 px-1.5 rounded">
+              You
+            </span>
           </div>
           {/* Tenants */}
           {tenants.map((m, i) => (
@@ -223,7 +246,7 @@ const LandlordApplicationChat = ({
   listing,
   landlordUser,
   onBack,
-  onSendLease,    // () => void — navigate to lease router
+  onSendLease, // () => void — navigate to lease router
 }) => {
   const landlordName = landlordUser?.name || 'Landlord'
 
@@ -249,7 +272,9 @@ const LandlordApplicationChat = ({
     groupApplication?.tourStatus === 'scheduled'
   )
   const [leaseSent, setLeaseSent] = useState(
-    ['lease_sent', 'pending_signatures', 'fully_executed'].includes(groupApplication?.status)
+    ['lease_sent', 'pending_signatures', 'fully_executed'].includes(
+      groupApplication?.status
+    )
   )
 
   const bottomRef = useRef(null)
@@ -264,7 +289,14 @@ const LandlordApplicationChat = ({
     if (!input.trim()) return
     setMessages(prev => [
       ...prev,
-      { id: Date.now(), type: 'text', sender: 'landlord', senderName: landlordName, text: input.trim(), time: now() },
+      {
+        id: Date.now(),
+        type: 'text',
+        sender: 'landlord',
+        senderName: landlordName,
+        text: input.trim(),
+        time: now(),
+      },
     ])
     setInput('')
 
@@ -273,9 +305,9 @@ const LandlordApplicationChat = ({
     if (firstTenant) {
       setTimeout(() => {
         const replies = [
-          'Thanks for reaching out! We\'re very excited about the place.',
+          "Thanks for reaching out! We're very excited about the place.",
           'Sounds great! When would be a good time for a walkthrough?',
-          'We\'re available most evenings and weekends. Just let us know!',
+          "We're available most evenings and weekends. Just let us know!",
         ]
         setMessages(prev => [
           ...prev,
@@ -298,7 +330,14 @@ const LandlordApplicationChat = ({
     const label = `${type === 'virtual' ? 'Virtual' : 'In-person'} walkthrough confirmed for ${date} at ${time}`
     setMessages(prev => [
       ...prev,
-      { id: Date.now(), type: 'tour', sender: 'landlord', senderName: landlordName, text: label, time: now() },
+      {
+        id: Date.now(),
+        type: 'tour',
+        sender: 'landlord',
+        senderName: landlordName,
+        text: label,
+        time: now(),
+      },
     ])
   }
 
@@ -322,7 +361,6 @@ const LandlordApplicationChat = ({
 
   return (
     <div className="flex flex-col h-screen max-h-screen bg-white">
-
       {/* ── Header ── */}
       <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center space-x-3 flex-shrink-0">
         <button onClick={onBack} className="p-1">
@@ -332,8 +370,12 @@ const LandlordApplicationChat = ({
           <Users size={17} className="text-purple-600" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-sm truncate">{groupApplication.groupName}</p>
-          <p className="text-xs text-gray-500 truncate">{groupApplication.propertyTitle}</p>
+          <p className="font-semibold text-sm truncate">
+            {groupApplication.groupName}
+          </p>
+          <p className="text-xs text-gray-500 truncate">
+            {groupApplication.propertyTitle}
+          </p>
         </div>
         {/* Send Lease CTA */}
         {!leaseSent ? (
@@ -362,7 +404,9 @@ const LandlordApplicationChat = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center text-xs text-gray-600">
             <Home size={13} className="mr-1 text-brand-500" />
-            <span className="font-medium">{listing?.title || groupApplication.propertyTitle}</span>
+            <span className="font-medium">
+              {listing?.title || groupApplication.propertyTitle}
+            </span>
             {listing?.price && (
               <span className="ml-2 text-gray-400">· ${listing.price}/mo</span>
             )}
@@ -405,7 +449,8 @@ const LandlordApplicationChat = ({
             <div className="flex items-center">
               <FileText size={14} className="text-green-600 mr-2" />
               <span className="text-xs text-green-800 font-medium">
-                Ready to send the lease to {groupApplication.members.length} tenant{groupApplication.members.length !== 1 ? 's' : ''}
+                Ready to send the lease to {groupApplication.members.length}{' '}
+                tenant{groupApplication.members.length !== 1 ? 's' : ''}
                 {groupApplication.members.filter(m => m.guarantor).length > 0
                   ? ` + ${groupApplication.members.filter(m => m.guarantor).length} guarantor${groupApplication.members.filter(m => m.guarantor).length !== 1 ? 's' : ''}`
                   : ''}

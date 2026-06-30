@@ -30,7 +30,7 @@ function LoginPage() {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault()
     clearError()
 
@@ -55,7 +55,9 @@ function LoginPage() {
       <div className="flex-1 flex items-center justify-center p-4">
         <div className="w-full max-w-md">
           <div className="bg-white rounded-lg shadow-sm border p-6">
-            <h2 className="text-2xl font-bold text-center mb-2">Welcome Back</h2>
+            <h2 className="text-2xl font-bold text-center mb-2">
+              Welcome Back
+            </h2>
             <p className="text-gray-600 text-center mb-6">
               Sign in to continue to Rentra
             </p>
@@ -74,7 +76,7 @@ function LoginPage() {
                   <input
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={e => setEmail(e.target.value)}
                     placeholder="you@example.com"
                     className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 ${
                       errors.email ? 'border-red-500' : 'border-gray-300'
@@ -99,7 +101,7 @@ function LoginPage() {
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={e => setPassword(e.target.value)}
                     placeholder="••••••••"
                     className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 ${
                       errors.password ? 'border-red-500' : 'border-gray-300'
@@ -142,7 +144,10 @@ function LoginPage() {
                 className="w-full bg-brand-500 text-white py-3 rounded-lg font-semibold hover:bg-brand-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
                 {isLoading ? (
-                  <LoadingSpinner size="sm" className="border-white border-t-transparent" />
+                  <LoadingSpinner
+                    size="sm"
+                    className="border-white border-t-transparent"
+                  />
                 ) : (
                   'Sign In'
                 )}
@@ -191,7 +196,10 @@ function LoginPage() {
           {/* Sign Up Link */}
           <p className="text-center mt-6 text-gray-600">
             Don&apos;t have an account?{' '}
-            <Link to="/register" className="text-brand-500 font-semibold hover:underline">
+            <Link
+              to="/register"
+              className="text-brand-500 font-semibold hover:underline"
+            >
               Sign up
             </Link>
           </p>

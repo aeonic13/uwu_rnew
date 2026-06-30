@@ -6,7 +6,7 @@ export const paymentsService = {
    * @param {Object} accountData - User account details
    * @returns {Promise} Created Moov account
    */
-  createAccount: async (accountData) => {
+  createAccount: async accountData => {
     const response = await api.post('/payments/create-account', accountData)
     return response.data
   },
@@ -16,7 +16,7 @@ export const paymentsService = {
    * @param {Object} data - Plaid public token and account ID
    * @returns {Promise} Linked bank account
    */
-  linkBankAccount: async (data) => {
+  linkBankAccount: async data => {
     const response = await api.post('/payments/link-bank', data)
     return response.data
   },
@@ -26,7 +26,7 @@ export const paymentsService = {
    * @param {Object} transferData - Payment details
    * @returns {Promise} Transfer confirmation
    */
-  createTransfer: async (transferData) => {
+  createTransfer: async transferData => {
     const response = await api.post('/payments/transfer', transferData)
     return response.data
   },
@@ -36,7 +36,7 @@ export const paymentsService = {
    * @param {string} transferId - Transfer ID
    * @returns {Promise} Transfer details
    */
-  getTransferStatus: async (transferId) => {
+  getTransferStatus: async transferId => {
     const response = await api.get(`/payments/transfer/${transferId}`)
     return response.data
   },

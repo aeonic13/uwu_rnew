@@ -5,7 +5,8 @@ import jwt from 'jsonwebtoken'
 const SALT_ROUNDS = 12
 
 // JWT configuration
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production'
+const JWT_SECRET =
+  process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production'
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d'
 const JWT_REFRESH_EXPIRES_IN = '30d'
 
@@ -125,8 +126,7 @@ export function decodeToken(token) {
  * @returns {string} Random token
  */
 export function generateSecureToken(length = 32) {
-  const chars =
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
   let result = ''
 
   // Use crypto for better randomness if available

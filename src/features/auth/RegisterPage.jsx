@@ -315,7 +315,10 @@ function RegisterPage() {
                   />
                   <span className="text-sm text-gray-600">
                     I agree to Rentra&apos;s{' '}
-                    <Link to="/terms" className="text-brand-500 hover:underline">
+                    <Link
+                      to="/terms"
+                      className="text-brand-500 hover:underline"
+                    >
                       Terms of Service
                     </Link>{' '}
                     and{' '}

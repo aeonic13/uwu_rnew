@@ -10,9 +10,9 @@ afterEach(() => {
 // Mock localStorage with proper state tracking
 const localStorageStore = new Map()
 global.localStorage = {
-  getItem: (key) => localStorageStore.get(key) ?? null,
+  getItem: key => localStorageStore.get(key) ?? null,
   setItem: (key, value) => localStorageStore.set(key, value),
-  removeItem: (key) => localStorageStore.delete(key),
+  removeItem: key => localStorageStore.delete(key),
   clear: () => localStorageStore.clear(),
 }
 

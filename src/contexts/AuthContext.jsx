@@ -79,7 +79,7 @@ export function AuthProvider({ children }) {
         // DEVELOPMENT MODE: Auto-login with test user
         const isDev = import.meta.env.DEV
         const bypassAuth = localStorage.getItem('bypassAuth') === 'true'
-        
+
         if (isDev && bypassAuth) {
           // Create mock user for testing
           const mockUser = {
@@ -138,7 +138,7 @@ export function AuthProvider({ children }) {
   }
 
   // Register function
-  const register = async (userData) => {
+  const register = async userData => {
     dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: true })
     dispatch({ type: AUTH_ACTIONS.CLEAR_ERROR })
 
@@ -169,7 +169,7 @@ export function AuthProvider({ children }) {
   }
 
   // Update user profile
-  const updateUser = async (updates) => {
+  const updateUser = async updates => {
     try {
       const updatedUser = await authService.updateProfile(updates)
       dispatch({ type: AUTH_ACTIONS.UPDATE_USER, payload: updatedUser })

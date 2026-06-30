@@ -30,11 +30,11 @@ function ImageGallery({ images }) {
   const [currentIndex, setCurrentIndex] = useState(0)
 
   const handlePrevious = () => {
-    setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1))
+    setCurrentIndex(prev => (prev === 0 ? images.length - 1 : prev - 1))
   }
 
   const handleNext = () => {
-    setCurrentIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1))
+    setCurrentIndex(prev => (prev === images.length - 1 ? 0 : prev + 1))
   }
 
   if (!images || images.length === 0) {
@@ -245,11 +245,15 @@ function PropertyDetail() {
               <button
                 onClick={() => toggleFavorite(listing.id)}
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                aria-label={favorite ? 'Remove from favorites' : 'Add to favorites'}
+                aria-label={
+                  favorite ? 'Remove from favorites' : 'Add to favorites'
+                }
               >
                 <Heart
                   size={24}
-                  className={favorite ? 'text-red-500 fill-current' : 'text-gray-600'}
+                  className={
+                    favorite ? 'text-red-500 fill-current' : 'text-gray-600'
+                  }
                 />
               </button>
               <button
@@ -268,7 +272,7 @@ function PropertyDetail() {
           {/* Left column: Image Gallery */}
           <div className="lg:sticky lg:top-24 lg:self-start">
             <ImageGallery images={listing.images} />
-            
+
             {/* Desktop action buttons */}
             <div className="hidden lg:flex gap-3 mt-4">
               <button
@@ -277,7 +281,9 @@ function PropertyDetail() {
               >
                 <Heart
                   size={20}
-                  className={favorite ? 'text-red-500 fill-current' : 'text-gray-600'}
+                  className={
+                    favorite ? 'text-red-500 fill-current' : 'text-gray-600'
+                  }
                 />
                 {favorite ? 'Saved' : 'Save'}
               </button>
@@ -293,65 +299,74 @@ function PropertyDetail() {
 
           {/* Right column: Content */}
           <div className="p-4 lg:p-0">
-        {/* Title and Price */}
-        <div className="mb-4">
-          <div className="flex justify-between items-start mb-2">
-            <h1 className="text-2xl font-bold flex-1 mr-4">{listing.title}</h1>
-            <span className="text-2xl font-bold text-green-600 whitespace-nowrap">
-              ${listing.price}/mo
-            </span>
-          </div>
+            {/* Title and Price */}
+            <div className="mb-4">
+              <div className="flex justify-between items-start mb-2">
+                <h1 className="text-2xl font-bold flex-1 mr-4">
+                  {listing.title}
+                </h1>
+                <span className="text-2xl font-bold text-green-600 whitespace-nowrap">
+                  ${listing.price}/mo
+                </span>
+              </div>
 
-          {/* Location */}
-          <div className="flex items-center text-gray-600 mb-2">
-            <MapPin size={18} className="mr-2 flex-shrink-0" />
-            <span>{listing.location}</span>
-          </div>
+              {/* Location */}
+              <div className="flex items-center text-gray-600 mb-2">
+                <MapPin size={18} className="mr-2 flex-shrink-0" />
+                <span>{listing.location}</span>
+              </div>
 
-          {/* Dates */}
-          <div className="flex items-center text-gray-600">
-            <Calendar size={18} className="mr-2 flex-shrink-0" />
-            <span>{listing.dates}</span>
-          </div>
-        </div>
-
-        {/* Property Details */}
-        <div className="flex gap-4 py-4 border-y border-gray-200 mb-4">
-          <div className="flex items-center">
-            <Bed size={20} className="text-gray-500 mr-2" />
-            <span>
-              {listing.bedrooms === 0 ? 'Studio' : `${listing.bedrooms} bed`}
-            </span>
-          </div>
-          <div className="flex items-center">
-            <Bath size={20} className="text-gray-500 mr-2" />
-            <span>{listing.bathrooms} bath</span>
-          </div>
-          {listing.propertyType && (
-            <div className="text-gray-600">{listing.propertyType}</div>
-          )}
-        </div>
-
-        {/* Description */}
-        <div className="mb-6">
-          <h2 className="text-lg font-semibold mb-2">About this place</h2>
-          <p className="text-gray-700 leading-relaxed">{listing.description}</p>
-        </div>
-
-        {/* Amenities */}
-        {listing.amenities && listing.amenities.length > 0 && (
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold mb-3">Amenities</h2>
-            <div className="grid grid-cols-2 gap-3">
-              {listing.amenities.map((amenity) => (
-                <div key={amenity} className="flex items-center text-gray-700">
-                  <Check size={18} className="text-green-500 mr-2" />
-                  <span>{amenity}</span>
-                </div>
-              ))}
+              {/* Dates */}
+              <div className="flex items-center text-gray-600">
+                <Calendar size={18} className="mr-2 flex-shrink-0" />
+                <span>{listing.dates}</span>
+              </div>
             </div>
-          </div>
-        )}
+
+            {/* Property Details */}
+            <div className="flex gap-4 py-4 border-y border-gray-200 mb-4">
+              <div className="flex items-center">
+                <Bed size={20} className="text-gray-500 mr-2" />
+                <span>
+                  {listing.bedrooms === 0
+                    ? 'Studio'
+                    : `${listing.bedrooms} bed`}
+                </span>
+              </div>
+              <div className="flex items-center">
+                <Bath size={20} className="text-gray-500 mr-2" />
+                <span>{listing.bathrooms} bath</span>
+              </div>
+              {listing.propertyType && (
+                <div className="text-gray-600">{listing.propertyType}</div>
+              )}
+            </div>
+
+            {/* Description */}
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold mb-2">About this place</h2>
+              <p className="text-gray-700 leading-relaxed">
+                {listing.description}
+              </p>
+            </div>
+
+            {/* Amenities */}
+            {listing.amenities && listing.amenities.length > 0 && (
+              <div className="mb-6">
+                <h2 className="text-lg font-semibold mb-3">Amenities</h2>
+                <div className="grid grid-cols-2 gap-3">
+                  {listing.amenities.map(amenity => (
+                    <div
+                      key={amenity}
+                      className="flex items-center text-gray-700"
+                    >
+                      <Check size={18} className="text-green-500 mr-2" />
+                      <span>{amenity}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Owner Card */}
             {listing.owner && (
@@ -366,7 +381,8 @@ function PropertyDetail() {
               <div className="hidden lg:flex flex-col gap-3 mt-6 pt-6 border-t">
                 {!isPreQualified && (
                   <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-sm text-orange-800">
-                    <strong>Pre-qualification required</strong> — Complete the one-time $50 screening to apply to this and any listing.
+                    <strong>Pre-qualification required</strong> — Complete the
+                    one-time $50 screening to apply to this and any listing.
                   </div>
                 )}
                 {isPreQualified && (

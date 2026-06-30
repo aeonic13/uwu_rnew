@@ -99,7 +99,8 @@ export default function PreQualificationFlow() {
           incomeRes.status === 'fulfilled'
             ? {
                 verified: true,
-                monthlyIncome: incomeRes.value?.income?.totalMonthlyIncome || null,
+                monthlyIncome:
+                  incomeRes.value?.income?.totalMonthlyIncome || null,
               }
             : { verified: false },
         identity:
@@ -161,7 +162,9 @@ export default function PreQualificationFlow() {
           </button>
           <div>
             <h1 className="text-lg font-bold">Get Pre-Qualified</h1>
-            <p className="text-xs text-gray-500">One-time verification — applies to all listings</p>
+            <p className="text-xs text-gray-500">
+              One-time verification — applies to all listings
+            </p>
           </div>
         </div>
       </div>
@@ -169,22 +172,32 @@ export default function PreQualificationFlow() {
       <div className="max-w-lg mx-auto px-4 py-6 space-y-5">
         {/* Intro card */}
         <div className="bg-brand-50 border border-brand-200 rounded-xl p-4 flex items-start gap-3">
-          <ShieldCheck size={22} className="text-brand-500 flex-shrink-0 mt-0.5" />
+          <ShieldCheck
+            size={22}
+            className="text-brand-500 flex-shrink-0 mt-0.5"
+          />
           <div>
-            <p className="font-semibold text-gray-900">Complete this once, apply anywhere</p>
+            <p className="font-semibold text-gray-900">
+              Complete this once, apply anywhere
+            </p>
             <p className="text-sm text-gray-600 mt-1">
-              Pre-qualify now by verifying your income and identity and paying the
-              one-time $50 screening fee. After that, you can instantly apply to any
-              listing on Rentra.
+              Pre-qualify now by verifying your income and identity and paying
+              the one-time $50 screening fee. After that, you can instantly
+              apply to any listing on Rentra.
             </p>
           </div>
         </div>
 
         {/* Fee banner */}
         <div className="bg-white border border-gray-200 rounded-xl p-4 flex items-start gap-3">
-          <DollarSign size={20} className="text-brand-500 flex-shrink-0 mt-0.5" />
+          <DollarSign
+            size={20}
+            className="text-brand-500 flex-shrink-0 mt-0.5"
+          />
           <div>
-            <p className="font-semibold text-gray-900">$50 One-Time Screening Fee</p>
+            <p className="font-semibold text-gray-900">
+              $50 One-Time Screening Fee
+            </p>
             <p className="text-sm text-gray-500 mt-0.5">
               Non-refundable. Covers bank connection, income verification, and
               identity check. Charged after a successful bank connection.
@@ -196,19 +209,29 @@ export default function PreQualificationFlow() {
         <div className="bg-white border border-gray-200 rounded-xl p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className={`w-9 h-9 rounded-full flex items-center justify-center ${bankDone ? 'bg-green-100' : 'bg-gray-100'}`}>
-                {bankDone
-                  ? <CheckCircle2 size={20} className="text-green-600" />
-                  : <Building2 size={18} className="text-gray-500" />}
+              <div
+                className={`w-9 h-9 rounded-full flex items-center justify-center ${bankDone ? 'bg-green-100' : 'bg-gray-100'}`}
+              >
+                {bankDone ? (
+                  <CheckCircle2 size={20} className="text-green-600" />
+                ) : (
+                  <Building2 size={18} className="text-gray-500" />
+                )}
               </div>
               <div>
                 <p className="font-medium text-gray-900">Bank Account</p>
-                {bankDone
-                  ? <p className="text-xs text-green-600">
-                      Connected — {verifications.bank.accountName}
-                      {verifications.bank.mask ? ` (...${verifications.bank.mask})` : ''}
-                    </p>
-                  : <p className="text-xs text-gray-400">Connect securely via Plaid</p>}
+                {bankDone ? (
+                  <p className="text-xs text-green-600">
+                    Connected — {verifications.bank.accountName}
+                    {verifications.bank.mask
+                      ? ` (...${verifications.bank.mask})`
+                      : ''}
+                  </p>
+                ) : (
+                  <p className="text-xs text-gray-400">
+                    Connect securely via Plaid
+                  </p>
+                )}
               </div>
             </div>
             {!bankDone && (
@@ -217,73 +240,114 @@ export default function PreQualificationFlow() {
                 disabled={!plaidReady || plaidStatus === 'loading'}
                 className="px-3 py-1.5 bg-brand-500 text-white text-sm font-medium rounded-lg hover:bg-brand-600 disabled:opacity-50 flex items-center gap-1.5"
               >
-                {plaidStatus === 'loading'
-                  ? <><Loader2 size={14} className="animate-spin" /> Connecting…</>
-                  : 'Connect'}
+                {plaidStatus === 'loading' ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" /> Connecting…
+                  </>
+                ) : (
+                  'Connect'
+                )}
               </button>
             )}
           </div>
         </div>
 
         {/* Step 2: Income Verification */}
-        <div className={`bg-white border rounded-xl p-4 ${!bankDone ? 'opacity-40 pointer-events-none' : 'border-gray-200'}`}>
+        <div
+          className={`bg-white border rounded-xl p-4 ${!bankDone ? 'opacity-40 pointer-events-none' : 'border-gray-200'}`}
+        >
           <div className="flex items-center gap-3">
-            <div className={`w-9 h-9 rounded-full flex items-center justify-center ${incomeDone ? 'bg-green-100' : bankDone ? 'bg-brand-50' : 'bg-gray-100'}`}>
-              {incomeDone
-                ? <CheckCircle2 size={20} className="text-green-600" />
-                : bankDone && plaidStatus === 'loading'
-                  ? <Loader2 size={18} className="text-brand-500 animate-spin" />
-                  : <TrendingUp size={18} className="text-gray-500" />}
+            <div
+              className={`w-9 h-9 rounded-full flex items-center justify-center ${incomeDone ? 'bg-green-100' : bankDone ? 'bg-brand-50' : 'bg-gray-100'}`}
+            >
+              {incomeDone ? (
+                <CheckCircle2 size={20} className="text-green-600" />
+              ) : bankDone && plaidStatus === 'loading' ? (
+                <Loader2 size={18} className="text-brand-500 animate-spin" />
+              ) : (
+                <TrendingUp size={18} className="text-gray-500" />
+              )}
             </div>
             <div>
               <p className="font-medium text-gray-900">Income Verification</p>
-              {incomeDone
-                ? <p className="text-xs text-green-600">
-                    Verified{verifications.income.monthlyIncome ? ` — $${verifications.income.monthlyIncome.toLocaleString()}/mo` : ''}
-                  </p>
-                : verifications.income?.verified === false
-                  ? <p className="text-xs text-yellow-600">Unable to verify — you may still proceed</p>
-                  : <p className="text-xs text-gray-400">Auto-run after bank connection</p>}
+              {incomeDone ? (
+                <p className="text-xs text-green-600">
+                  Verified
+                  {verifications.income.monthlyIncome
+                    ? ` — $${verifications.income.monthlyIncome.toLocaleString()}/mo`
+                    : ''}
+                </p>
+              ) : verifications.income?.verified === false ? (
+                <p className="text-xs text-yellow-600">
+                  Unable to verify — you may still proceed
+                </p>
+              ) : (
+                <p className="text-xs text-gray-400">
+                  Auto-run after bank connection
+                </p>
+              )}
             </div>
           </div>
         </div>
 
         {/* Step 3: Identity Check */}
-        <div className={`bg-white border rounded-xl p-4 ${!bankDone ? 'opacity-40 pointer-events-none' : 'border-gray-200'}`}>
+        <div
+          className={`bg-white border rounded-xl p-4 ${!bankDone ? 'opacity-40 pointer-events-none' : 'border-gray-200'}`}
+        >
           <div className="flex items-center gap-3">
-            <div className={`w-9 h-9 rounded-full flex items-center justify-center ${identityDone ? 'bg-green-100' : bankDone ? 'bg-brand-50' : 'bg-gray-100'}`}>
-              {identityDone
-                ? <CheckCircle2 size={20} className="text-green-600" />
-                : bankDone && plaidStatus === 'loading'
-                  ? <Loader2 size={18} className="text-brand-500 animate-spin" />
-                  : <Fingerprint size={18} className="text-gray-500" />}
+            <div
+              className={`w-9 h-9 rounded-full flex items-center justify-center ${identityDone ? 'bg-green-100' : bankDone ? 'bg-brand-50' : 'bg-gray-100'}`}
+            >
+              {identityDone ? (
+                <CheckCircle2 size={20} className="text-green-600" />
+              ) : bankDone && plaidStatus === 'loading' ? (
+                <Loader2 size={18} className="text-brand-500 animate-spin" />
+              ) : (
+                <Fingerprint size={18} className="text-gray-500" />
+              )}
             </div>
             <div>
               <p className="font-medium text-gray-900">Identity Check</p>
-              {identityDone
-                ? <p className="text-xs text-green-600">Identity verified</p>
-                : verifications.identity?.verified === false
-                  ? <p className="text-xs text-yellow-600">Unable to verify — you may still proceed</p>
-                  : <p className="text-xs text-gray-400">Auto-run after bank connection</p>}
+              {identityDone ? (
+                <p className="text-xs text-green-600">Identity verified</p>
+              ) : verifications.identity?.verified === false ? (
+                <p className="text-xs text-yellow-600">
+                  Unable to verify — you may still proceed
+                </p>
+              ) : (
+                <p className="text-xs text-gray-400">
+                  Auto-run after bank connection
+                </p>
+              )}
             </div>
           </div>
         </div>
 
         {/* Step 4: Pay Fee */}
         {allVerified && (
-          <div className={`bg-white border rounded-xl p-4 ${feeStatus === 'paid' ? 'border-green-200 bg-green-50' : 'border-gray-200'}`}>
+          <div
+            className={`bg-white border rounded-xl p-4 ${feeStatus === 'paid' ? 'border-green-200 bg-green-50' : 'border-gray-200'}`}
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className={`w-9 h-9 rounded-full flex items-center justify-center ${feeStatus === 'paid' ? 'bg-green-100' : 'bg-gray-100'}`}>
-                  {feeStatus === 'paid'
-                    ? <CheckCircle2 size={20} className="text-green-600" />
-                    : <DollarSign size={18} className="text-gray-500" />}
+                <div
+                  className={`w-9 h-9 rounded-full flex items-center justify-center ${feeStatus === 'paid' ? 'bg-green-100' : 'bg-gray-100'}`}
+                >
+                  {feeStatus === 'paid' ? (
+                    <CheckCircle2 size={20} className="text-green-600" />
+                  ) : (
+                    <DollarSign size={18} className="text-gray-500" />
+                  )}
                 </div>
                 <div>
                   <p className="font-medium text-gray-900">Screening Fee</p>
-                  {feeStatus === 'paid'
-                    ? <p className="text-xs text-green-600">$50 paid — you&apos;re pre-qualified!</p>
-                    : <p className="text-xs text-gray-400">$50 non-refundable</p>}
+                  {feeStatus === 'paid' ? (
+                    <p className="text-xs text-green-600">
+                      $50 paid — you&apos;re pre-qualified!
+                    </p>
+                  ) : (
+                    <p className="text-xs text-gray-400">$50 non-refundable</p>
+                  )}
                 </div>
               </div>
               {feeStatus !== 'paid' && (
@@ -292,9 +356,13 @@ export default function PreQualificationFlow() {
                   disabled={feeStatus === 'charging'}
                   className="px-3 py-1.5 bg-brand-500 text-white text-sm font-medium rounded-lg hover:bg-brand-600 disabled:opacity-50 flex items-center gap-1.5"
                 >
-                  {feeStatus === 'charging'
-                    ? <><Loader2 size={14} className="animate-spin" /> Processing…</>
-                    : 'Pay $50'}
+                  {feeStatus === 'charging' ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" /> Processing…
+                    </>
+                  ) : (
+                    'Pay $50'
+                  )}
                 </button>
               )}
             </div>
@@ -304,7 +372,10 @@ export default function PreQualificationFlow() {
         {/* Error */}
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-2">
-            <AlertCircle size={16} className="text-red-500 flex-shrink-0 mt-0.5" />
+            <AlertCircle
+              size={16}
+              className="text-red-500 flex-shrink-0 mt-0.5"
+            />
             <p className="text-sm text-red-700">{error}</p>
           </div>
         )}
@@ -312,7 +383,10 @@ export default function PreQualificationFlow() {
         {/* Plaid note */}
         <div className="flex items-start gap-2 text-xs text-gray-400">
           <Info size={13} className="flex-shrink-0 mt-0.5" />
-          <p>Your banking data is handled securely by Plaid and never stored on Rentra servers.</p>
+          <p>
+            Your banking data is handled securely by Plaid and never stored on
+            Rentra servers.
+          </p>
         </div>
 
         {/* CTA */}
@@ -321,7 +395,9 @@ export default function PreQualificationFlow() {
           disabled={!canComplete}
           className="w-full bg-brand-500 text-white py-4 rounded-xl font-bold text-lg hover:bg-brand-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          {canComplete ? '🎉 Complete Pre-Qualification' : 'Complete the steps above to continue'}
+          {canComplete
+            ? '🎉 Complete Pre-Qualification'
+            : 'Complete the steps above to continue'}
         </button>
       </div>
     </div>

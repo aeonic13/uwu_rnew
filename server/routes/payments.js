@@ -47,9 +47,8 @@ router.post('/plaid/exchange-token', authenticate, async (req, res) => {
     }
 
     // Exchange public token for access token
-    const { accessToken, itemId } = await plaidUtils.exchangePublicToken(
-      publicToken
-    )
+    const { accessToken, itemId } =
+      await plaidUtils.exchangePublicToken(publicToken)
 
     // Get account details
     const accounts = await plaidUtils.getAccounts(accessToken)
@@ -78,7 +77,9 @@ router.post('/plaid/exchange-token', authenticate, async (req, res) => {
     })
   } catch (error) {
     console.error('Exchange token error:', error)
-    res.status(400).json({ error: { message: 'Failed to connect bank account' } })
+    res
+      .status(400)
+      .json({ error: { message: 'Failed to connect bank account' } })
   }
 })
 
@@ -116,7 +117,7 @@ router.post('/plaid/verify-account', authenticate, async (req, res) => {
 
     // Get account balances
     const accounts = await plaidUtils.getBalance(accessToken)
-    const account = accounts.find((acc) => acc.account_id === accountId)
+    const account = accounts.find(acc => acc.account_id === accountId)
 
     if (!account) {
       return res.status(404).json({
@@ -192,9 +193,9 @@ router.post('/plaid/verify-identity', authenticate, async (req, res) => {
     // Extract identity information
     const identity = {
       verified: true,
-      accounts: identityData.accounts.map((acc) => ({
+      accounts: identityData.accounts.map(acc => ({
         name: acc.name,
-        owners: acc.owners.map((owner) => ({
+        owners: acc.owners.map(owner => ({
           names: owner.names,
           phoneNumbers: owner.phone_numbers,
           emails: owner.emails,
@@ -223,16 +224,21 @@ router.post('/application-fee', authenticate, async (req, res) => {
     const APPLICATION_FEE = 50
 
     // Record fee transaction in DB
-    const transaction = await prisma.transaction.create({
-      data: {
-        userId: req.user.id,
-        type: 'application_fee',
-        amount: APPLICATION_FEE,
-        status: 'completed',
-        description: `Application fee for listing ${listingId}`,
-        metadata: JSON.stringify({ listingId, plaidVerified: !!plaidAccessToken }),
-      },
-    }).catch(() => null) // Don't fail if DB write fails - fee still logically recorded
+    const transaction = await prisma.transaction
+      .create({
+        data: {
+          userId: req.user.id,
+          type: 'application_fee',
+          amount: APPLICATION_FEE,
+          status: 'completed',
+          description: `Application fee for listing ${listingId}`,
+          metadata: JSON.stringify({
+            listingId,
+            plaidVerified: !!plaidAccessToken,
+          }),
+        },
+      })
+      .catch(() => null) // Don't fail if DB write fails - fee still logically recorded
 
     res.json({
       success: true,
@@ -242,7 +248,9 @@ router.post('/application-fee', authenticate, async (req, res) => {
     })
   } catch (error) {
     console.error('Application fee error:', error)
-    res.status(400).json({ error: { message: 'Failed to process application fee' } })
+    res
+      .status(400)
+      .json({ error: { message: 'Failed to process application fee' } })
   }
 })
 
@@ -510,7 +518,9 @@ router.post('/moov/link-bank', authenticate, async (req, res) => {
 
     if (!plaidProcessorToken || !moovAccountId) {
       return res.status(400).json({
-        error: { message: 'Plaid processor token and Moov account ID required' },
+        error: {
+          message: 'Plaid processor token and Moov account ID required',
+        },
       })
     }
 

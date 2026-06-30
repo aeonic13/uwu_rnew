@@ -7,7 +7,8 @@ import LoadingSpinner from '../../components/common/LoadingSpinner'
 
 export default function GroupDashboard() {
   const { user } = useAuth()
-  const { userGroups, groupInvitations, fetchUserGroups, isLoading } = useGroups()
+  const { userGroups, groupInvitations, fetchUserGroups, isLoading } =
+    useGroups()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -20,11 +21,11 @@ export default function GroupDashboard() {
     navigate('/groups/create')
   }
 
-  const handleGroupClick = (groupId) => {
+  const handleGroupClick = groupId => {
     navigate(`/groups/${groupId}`)
   }
 
-  const handleInvitationClick = (invitationId) => {
+  const handleInvitationClick = invitationId => {
     navigate(`/groups/invitations/${invitationId}`)
   }
 
@@ -36,7 +37,9 @@ export default function GroupDashboard() {
     )
   }
 
-  const pendingInvitations = groupInvitations.filter((inv) => inv.status === 'pending')
+  const pendingInvitations = groupInvitations.filter(
+    inv => inv.status === 'pending'
+  )
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -62,7 +65,7 @@ export default function GroupDashboard() {
         <div className="mb-8">
           <h2 className="text-xl font-semibold mb-4">Pending Invitations</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {pendingInvitations.map((invitation) => (
+            {pendingInvitations.map(invitation => (
               <div
                 key={invitation.id}
                 onClick={() => handleInvitationClick(invitation.id)}
@@ -91,7 +94,8 @@ export default function GroupDashboard() {
             No groups yet
           </h3>
           <p className="text-gray-500 mb-6 max-w-md mx-auto">
-            Create a group to search for housing with friends and coordinate your rental journey together
+            Create a group to search for housing with friends and coordinate
+            your rental journey together
           </p>
           <button
             onClick={handleCreateGroup}
@@ -103,9 +107,9 @@ export default function GroupDashboard() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {userGroups.map((group) => {
+          {userGroups.map(group => {
             const isAdmin = group.members?.some(
-              (m) => m.userId === user.id && m.role === 'admin'
+              m => m.userId === user.id && m.role === 'admin'
             )
 
             return (
@@ -120,9 +124,7 @@ export default function GroupDashboard() {
                     <div className="w-12 h-12 bg-brand-100 rounded-full flex items-center justify-center">
                       <Users size={24} className="text-brand-500" />
                     </div>
-                    {isAdmin && (
-                      <Crown size={16} className="text-yellow-500" />
-                    )}
+                    {isAdmin && <Crown size={16} className="text-yellow-500" />}
                   </div>
                 </div>
 
@@ -157,7 +159,7 @@ export default function GroupDashboard() {
                 {/* Actions */}
                 <div className="flex gap-2">
                   <button
-                    onClick={(e) => {
+                    onClick={e => {
                       e.stopPropagation()
                       navigate(`/groups/${group.id}/chat`)
                     }}

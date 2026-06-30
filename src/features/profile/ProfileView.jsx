@@ -269,9 +269,7 @@ function ProfileView() {
         </MenuSection>
 
         {/* App Version */}
-        <p className="text-center text-xs text-gray-400 mt-4">
-          Rentra v1.0.0
-        </p>
+        <p className="text-center text-xs text-gray-400 mt-4">Rentra v1.0.0</p>
       </div>
     </div>
   )

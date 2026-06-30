@@ -35,10 +35,7 @@ class ErrorBoundaryClass extends Component {
   render() {
     if (this.state.hasError) {
       return (
-        <ErrorFallback
-          error={this.state.error}
-          resetError={this.handleReset}
-        />
+        <ErrorFallback error={this.state.error} resetError={this.handleReset} />
       )
     }
 

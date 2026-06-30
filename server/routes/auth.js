@@ -14,8 +14,15 @@ const router = express.Router()
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, userType, firstName, lastName, university, phone } =
-      req.body
+    const {
+      email,
+      password,
+      userType,
+      firstName,
+      lastName,
+      university,
+      phone,
+    } = req.body
 
     // Validate required fields
     if (!email || !password || !userType || !firstName || !lastName) {
@@ -90,7 +97,8 @@ router.post('/register', async (req, res) => {
     }
 
     res.status(201).json({
-      message: 'Registration successful. Please check your email to verify your account.',
+      message:
+        'Registration successful. Please check your email to verify your account.',
       token: tokens.accessToken,
       refreshToken: tokens.refreshToken,
       user,

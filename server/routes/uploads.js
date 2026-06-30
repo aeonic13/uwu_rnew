@@ -15,62 +15,72 @@ const router = express.Router()
  * Upload multiple images for a listing
  * Returns array of image URLs
  */
-router.post('/images', authenticate, upload.array('images', 10), async (req, res) => {
-  try {
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({
-        error: { message: 'No images provided' },
+router.post(
+  '/images',
+  authenticate,
+  upload.array('images', 10),
+  async (req, res) => {
+    try {
+      if (!req.files || req.files.length === 0) {
+        return res.status(400).json({
+          error: { message: 'No images provided' },
+        })
+      }
+
+      const { listingId } = req.body
+      if (!listingId) {
+        return res.status(400).json({
+          error: { message: 'Listing ID is required' },
+        })
+      }
+
+      // Upload to Cloudinary
+      const imageUrls = await uploadPropertyImages(req.files, listingId)
+
+      res.status(201).json({
+        message: 'Images uploaded successfully',
+        images: imageUrls.map(url => ({ url })),
+      })
+    } catch (error) {
+      console.error('Image upload error:', error)
+      res.status(500).json({
+        error: { message: 'Failed to upload images' },
       })
     }
-
-    const { listingId } = req.body
-    if (!listingId) {
-      return res.status(400).json({
-        error: { message: 'Listing ID is required' },
-      })
-    }
-
-    // Upload to Cloudinary
-    const imageUrls = await uploadPropertyImages(req.files, listingId)
-
-    res.status(201).json({
-      message: 'Images uploaded successfully',
-      images: imageUrls.map((url) => ({ url })),
-    })
-  } catch (error) {
-    console.error('Image upload error:', error)
-    res.status(500).json({
-      error: { message: 'Failed to upload images' },
-    })
   }
-})
+)
 
 /**
  * POST /api/uploads/avatar
  * Upload user avatar
  */
-router.post('/avatar', authenticate, upload.single('avatar'), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({
-        error: { message: 'No avatar provided' },
+router.post(
+  '/avatar',
+  authenticate,
+  upload.single('avatar'),
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          error: { message: 'No avatar provided' },
+        })
+      }
+
+      // Upload to Cloudinary
+      const avatarUrl = await uploadAvatar(req.file.buffer, req.user.id)
+
+      res.status(201).json({
+        message: 'Avatar uploaded successfully',
+        avatarUrl,
+      })
+    } catch (error) {
+      console.error('Avatar upload error:', error)
+      res.status(500).json({
+        error: { message: 'Failed to upload avatar' },
       })
     }
-
-    // Upload to Cloudinary
-    const avatarUrl = await uploadAvatar(req.file.buffer, req.user.id)
-
-    res.status(201).json({
-      message: 'Avatar uploaded successfully',
-      avatarUrl,
-    })
-  } catch (error) {
-    console.error('Avatar upload error:', error)
-    res.status(500).json({
-      error: { message: 'Failed to upload avatar' },
-    })
   }
-})
+)
 
 /**
  * DELETE /api/uploads/images

@@ -73,7 +73,9 @@ function ConversationCard({ conversation, onClick }) {
       {/* Avatar */}
       <div className="relative flex-shrink-0">
         <img
-          src={conversation.participant.avatar || 'https://via.placeholder.com/56'}
+          src={
+            conversation.participant.avatar || 'https://via.placeholder.com/56'
+          }
           alt={conversation.participant.name}
           className="w-14 h-14 rounded-full object-cover"
         />
@@ -87,7 +89,9 @@ function ConversationCard({ conversation, onClick }) {
       {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex justify-between items-start mb-1">
-          <span className={`font-semibold ${isUnread ? 'text-gray-900' : 'text-gray-700'}`}>
+          <span
+            className={`font-semibold ${isUnread ? 'text-gray-900' : 'text-gray-700'}`}
+          >
             {conversation.participant.name}
           </span>
           {lm && (
@@ -111,7 +115,9 @@ function ConversationCard({ conversation, onClick }) {
               )}
             </span>
           )}
-          <p className={`text-sm truncate ${isUnread ? 'text-gray-900 font-medium' : 'text-gray-600'}`}>
+          <p
+            className={`text-sm truncate ${isUnread ? 'text-gray-900 font-medium' : 'text-gray-600'}`}
+          >
             {lm?.text || 'No messages yet'}
           </p>
         </div>
@@ -179,7 +185,7 @@ function MessagesView() {
     if (listingId) {
       // Check if conversation already exists
       const existingConvo = conversations.find(
-        (c) => c.listingId === parseInt(listingId)
+        c => c.listingId === parseInt(listingId)
       )
       if (existingConvo) {
         navigate(`/messages/${existingConvo.id}`, { replace: true })
@@ -190,11 +196,11 @@ function MessagesView() {
     }
   }, [listingId, conversations, navigate])
 
-  const handleConversationClick = (conversationId) => {
+  const handleConversationClick = conversationId => {
     navigate(`/messages/${conversationId}`)
   }
 
-  const filteredConversations = conversations.filter((conversation) => {
+  const filteredConversations = conversations.filter(conversation => {
     if (!searchTerm) return true
     const term = searchTerm.toLowerCase()
     return (
@@ -238,7 +244,7 @@ function MessagesView() {
               type="text"
               placeholder="Search conversations..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={e => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
@@ -268,7 +274,7 @@ function MessagesView() {
         </div>
       ) : (
         <div>
-          {filteredConversations.map((conversation) => (
+          {filteredConversations.map(conversation => (
             <ConversationCard
               key={conversation.id}
               conversation={conversation}

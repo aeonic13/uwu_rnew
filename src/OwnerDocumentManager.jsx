@@ -1,23 +1,40 @@
-import React, { useState } from 'react';
-import { 
-  FileText, Upload, X, Download, Send, Eye, Trash2, 
-  Check, Clock, AlertCircle, Folder, Plus, Search, Filter,
-  Calendar, User, Building2, Edit, Copy, Share2
-} from 'lucide-react';
+import React, { useState } from 'react'
+import {
+  FileText,
+  Upload,
+  X,
+  Download,
+  Send,
+  Eye,
+  Trash2,
+  Check,
+  Clock,
+  AlertCircle,
+  Folder,
+  Plus,
+  Search,
+  Filter,
+  Calendar,
+  User,
+  Building2,
+  Edit,
+  Copy,
+  Share2,
+} from 'lucide-react'
 
 const OwnerDocumentManager = ({ user, onBack, onSendToChat }) => {
-  const [activeTab, setActiveTab] = useState('all');
-  const [showUploadModal, setShowUploadModal] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedDocument, setSelectedDocument] = useState(null);
-  
+  const [activeTab, setActiveTab] = useState('all')
+  const [showUploadModal, setShowUploadModal] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedDocument, setSelectedDocument] = useState(null)
+
   const [uploadForm, setUploadForm] = useState({
     type: 'lease', // lease, application, other
     name: '',
     description: '',
     property: '',
-    file: null
-  });
+    file: null,
+  })
 
   // Mock document data
   const [documents] = useState([
@@ -33,9 +50,9 @@ const OwnerDocumentManager = ({ user, onBack, onSendToChat }) => {
       status: 'active',
       sentTo: [
         { name: 'Sarah Kim', date: '2024-02-10', status: 'signed' },
-        { name: 'Mike Chen', date: '2024-03-05', status: 'pending' }
+        { name: 'Mike Chen', date: '2024-03-05', status: 'pending' },
       ],
-      lastModified: '2024-01-15'
+      lastModified: '2024-01-15',
     },
     {
       id: 'doc-002',
@@ -48,9 +65,9 @@ const OwnerDocumentManager = ({ user, onBack, onSendToChat }) => {
       fileType: 'PDF',
       status: 'active',
       sentTo: [
-        { name: 'Alex Johnson', date: '2024-02-20', status: 'submitted' }
+        { name: 'Alex Johnson', date: '2024-02-20', status: 'submitted' },
       ],
-      lastModified: '2024-01-10'
+      lastModified: '2024-01-10',
     },
     {
       id: 'doc-003',
@@ -63,7 +80,7 @@ const OwnerDocumentManager = ({ user, onBack, onSendToChat }) => {
       fileType: 'PDF',
       status: 'active',
       sentTo: [],
-      lastModified: '2024-02-01'
+      lastModified: '2024-02-01',
     },
     {
       id: 'doc-004',
@@ -78,66 +95,72 @@ const OwnerDocumentManager = ({ user, onBack, onSendToChat }) => {
       sentTo: [
         { name: 'Sarah Kim', date: '2024-02-10', status: 'viewed' },
         { name: 'Mike Chen', date: '2024-03-05', status: 'viewed' },
-        { name: 'Alex Johnson', date: '2024-02-20', status: 'viewed' }
+        { name: 'Alex Johnson', date: '2024-02-20', status: 'viewed' },
       ],
-      lastModified: '2024-01-05'
-    }
-  ]);
+      lastModified: '2024-01-05',
+    },
+  ])
 
   const [properties] = useState([
     { id: 'prop-1', address: '123 University Ave, Unit 3A' },
     { id: 'prop-2', address: '456 College St, Apt 2B' },
-    { id: 'prop-3', address: '789 Campus Dr, Suite 5' }
-  ]);
+    { id: 'prop-3', address: '789 Campus Dr, Suite 5' },
+  ])
 
   const filteredDocuments = documents.filter(doc => {
-    const matchesSearch = doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         doc.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesTab = activeTab === 'all' || doc.type === activeTab;
-    return matchesSearch && matchesTab;
-  });
+    const matchesSearch =
+      doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      doc.description.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesTab = activeTab === 'all' || doc.type === activeTab
+    return matchesSearch && matchesTab
+  })
 
-  const getDocumentIcon = (type) => {
+  const getDocumentIcon = type => {
     switch (type) {
-      case 'lease': return <FileText className="text-brand-500" size={20} />;
-      case 'application': return <User className="text-purple-600" size={20} />;
-      default: return <Folder className="text-gray-600" size={20} />;
+      case 'lease':
+        return <FileText className="text-brand-500" size={20} />
+      case 'application':
+        return <User className="text-purple-600" size={20} />
+      default:
+        return <Folder className="text-gray-600" size={20} />
     }
-  };
+  }
 
-  const getStatusBadge = (status) => {
+  const getStatusBadge = status => {
     const badges = {
       active: { color: 'bg-green-100 text-green-700', label: 'Active' },
       draft: { color: 'bg-gray-100 text-gray-700', label: 'Draft' },
-      archived: { color: 'bg-orange-100 text-orange-700', label: 'Archived' }
-    };
-    const badge = badges[status] || badges.active;
+      archived: { color: 'bg-orange-100 text-orange-700', label: 'Archived' },
+    }
+    const badge = badges[status] || badges.active
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${badge.color}`}>
+      <span
+        className={`px-2 py-1 rounded-full text-xs font-medium ${badge.color}`}
+      >
         {badge.label}
       </span>
-    );
-  };
+    )
+  }
 
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
+  const handleFileUpload = e => {
+    const file = e.target.files[0]
     if (file) {
-      setUploadForm(prev => ({ ...prev, file, name: file.name }));
+      setUploadForm(prev => ({ ...prev, file, name: file.name }))
     }
-  };
+  }
 
   const handleUploadSubmit = () => {
     // Mock upload - in real app, this would upload to server
-    console.log('Uploading document:', uploadForm);
-    setShowUploadModal(false);
+    console.log('Uploading document:', uploadForm)
+    setShowUploadModal(false)
     setUploadForm({
       type: 'lease',
       name: '',
       description: '',
       property: '',
-      file: null
-    });
-  };
+      file: null,
+    })
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -162,7 +185,7 @@ const OwnerDocumentManager = ({ user, onBack, onSendToChat }) => {
               type="text"
               placeholder="Search documents..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={e => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
@@ -173,7 +196,7 @@ const OwnerDocumentManager = ({ user, onBack, onSendToChat }) => {
               { id: 'all', label: 'All Documents' },
               { id: 'lease', label: 'Leases' },
               { id: 'application', label: 'Applications' },
-              { id: 'other', label: 'Other' }
+              { id: 'other', label: 'Other' },
             ].map(tab => (
               <button
                 key={tab.id}
@@ -212,12 +235,14 @@ const OwnerDocumentManager = ({ user, onBack, onSendToChat }) => {
             >
               <div className="flex items-start justify-between mb-2">
                 <div className="flex items-start flex-1">
-                  <div className="mr-3 mt-1">
-                    {getDocumentIcon(doc.type)}
-                  </div>
+                  <div className="mr-3 mt-1">{getDocumentIcon(doc.type)}</div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 mb-1">{doc.name}</h3>
-                    <p className="text-sm text-gray-600 mb-2">{doc.description}</p>
+                    <h3 className="font-semibold text-gray-900 mb-1">
+                      {doc.name}
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-2">
+                      {doc.description}
+                    </p>
                     <div className="flex items-center space-x-3 text-xs text-gray-500">
                       <span className="flex items-center">
                         <Building2 size={14} className="mr-1" />
@@ -237,17 +262,34 @@ const OwnerDocumentManager = ({ user, onBack, onSendToChat }) => {
               {/* Sent To Summary */}
               {doc.sentTo.length > 0 && (
                 <div className="mb-3 p-2 bg-gray-50 rounded">
-                  <p className="text-xs text-gray-600 mb-1">Sent to {doc.sentTo.length} recipient(s):</p>
+                  <p className="text-xs text-gray-600 mb-1">
+                    Sent to {doc.sentTo.length} recipient(s):
+                  </p>
                   <div className="flex flex-wrap gap-1">
                     {doc.sentTo.slice(0, 3).map((recipient, idx) => (
-                      <span key={idx} className="text-xs bg-white px-2 py-1 rounded border border-gray-200">
+                      <span
+                        key={idx}
+                        className="text-xs bg-white px-2 py-1 rounded border border-gray-200"
+                      >
                         {recipient.name}
-                        {recipient.status === 'signed' && <Check size={12} className="inline ml-1 text-green-600" />}
-                        {recipient.status === 'pending' && <Clock size={12} className="inline ml-1 text-yellow-600" />}
+                        {recipient.status === 'signed' && (
+                          <Check
+                            size={12}
+                            className="inline ml-1 text-green-600"
+                          />
+                        )}
+                        {recipient.status === 'pending' && (
+                          <Clock
+                            size={12}
+                            className="inline ml-1 text-yellow-600"
+                          />
+                        )}
                       </span>
                     ))}
                     {doc.sentTo.length > 3 && (
-                      <span className="text-xs text-gray-500">+{doc.sentTo.length - 3} more</span>
+                      <span className="text-xs text-gray-500">
+                        +{doc.sentTo.length - 3} more
+                      </span>
                     )}
                   </div>
                 </div>
@@ -266,7 +308,7 @@ const OwnerDocumentManager = ({ user, onBack, onSendToChat }) => {
                   onClick={() => {
                     // Mock send to chat functionality
                     if (onSendToChat) {
-                      onSendToChat(doc);
+                      onSendToChat(doc)
                     }
                   }}
                   className="flex-1 py-2 bg-brand-500 text-white rounded-lg text-sm font-medium hover:bg-brand-600 flex items-center justify-center"
@@ -305,16 +347,24 @@ const OwnerDocumentManager = ({ user, onBack, onSendToChat }) => {
             <div className="p-4 space-y-4">
               {/* Document Type */}
               <div>
-                <label className="block text-sm font-medium mb-2">Document Type</label>
+                <label className="block text-sm font-medium mb-2">
+                  Document Type
+                </label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { value: 'lease', label: 'Lease Agreement', icon: FileText },
+                    {
+                      value: 'lease',
+                      label: 'Lease Agreement',
+                      icon: FileText,
+                    },
                     { value: 'application', label: 'Application', icon: User },
-                    { value: 'other', label: 'Other', icon: Folder }
+                    { value: 'other', label: 'Other', icon: Folder },
                   ].map(type => (
                     <button
                       key={type.value}
-                      onClick={() => setUploadForm(prev => ({ ...prev, type: type.value }))}
+                      onClick={() =>
+                        setUploadForm(prev => ({ ...prev, type: type.value }))
+                      }
                       className={`p-3 border rounded-lg flex flex-col items-center justify-center ${
                         uploadForm.type === type.value
                           ? 'border-brand-500 bg-brand-50 text-brand-600'
@@ -330,7 +380,9 @@ const OwnerDocumentManager = ({ user, onBack, onSendToChat }) => {
 
               {/* File Upload */}
               <div>
-                <label className="block text-sm font-medium mb-2">Upload File</label>
+                <label className="block text-sm font-medium mb-2">
+                  Upload File
+                </label>
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-brand-500 transition-colors">
                   <input
                     type="file"
@@ -342,11 +394,17 @@ const OwnerDocumentManager = ({ user, onBack, onSendToChat }) => {
                   <label htmlFor="file-upload" className="cursor-pointer">
                     <Upload size={32} className="mx-auto text-gray-400 mb-2" />
                     {uploadForm.file ? (
-                      <p className="text-sm font-medium text-gray-900">{uploadForm.file.name}</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {uploadForm.file.name}
+                      </p>
                     ) : (
                       <>
-                        <p className="text-sm font-medium text-gray-900">Click to upload</p>
-                        <p className="text-xs text-gray-500 mt-1">PDF, DOC, or DOCX (max 10MB)</p>
+                        <p className="text-sm font-medium text-gray-900">
+                          Click to upload
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          PDF, DOC, or DOCX (max 10MB)
+                        </p>
                       </>
                     )}
                   </label>
@@ -355,11 +413,15 @@ const OwnerDocumentManager = ({ user, onBack, onSendToChat }) => {
 
               {/* Document Name */}
               <div>
-                <label className="block text-sm font-medium mb-2">Document Name</label>
+                <label className="block text-sm font-medium mb-2">
+                  Document Name
+                </label>
                 <input
                   type="text"
                   value={uploadForm.name}
-                  onChange={(e) => setUploadForm(prev => ({ ...prev, name: e.target.value }))}
+                  onChange={e =>
+                    setUploadForm(prev => ({ ...prev, name: e.target.value }))
+                  }
                   placeholder="e.g., Standard Lease Agreement 2024"
                   className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
@@ -367,10 +429,17 @@ const OwnerDocumentManager = ({ user, onBack, onSendToChat }) => {
 
               {/* Description */}
               <div>
-                <label className="block text-sm font-medium mb-2">Description (Optional)</label>
+                <label className="block text-sm font-medium mb-2">
+                  Description (Optional)
+                </label>
                 <textarea
                   value={uploadForm.description}
-                  onChange={(e) => setUploadForm(prev => ({ ...prev, description: e.target.value }))}
+                  onChange={e =>
+                    setUploadForm(prev => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
                   placeholder="Brief description of this document..."
                   rows={3}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
@@ -379,16 +448,25 @@ const OwnerDocumentManager = ({ user, onBack, onSendToChat }) => {
 
               {/* Property Selection */}
               <div>
-                <label className="block text-sm font-medium mb-2">Associated Property</label>
+                <label className="block text-sm font-medium mb-2">
+                  Associated Property
+                </label>
                 <select
                   value={uploadForm.property}
-                  onChange={(e) => setUploadForm(prev => ({ ...prev, property: e.target.value }))}
+                  onChange={e =>
+                    setUploadForm(prev => ({
+                      ...prev,
+                      property: e.target.value,
+                    }))
+                  }
                   className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                 >
                   <option value="">Select property or leave for all</option>
                   <option value="all">All Properties</option>
                   {properties.map(prop => (
-                    <option key={prop.id} value={prop.address}>{prop.address}</option>
+                    <option key={prop.id} value={prop.address}>
+                      {prop.address}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -429,14 +507,16 @@ const OwnerDocumentManager = ({ user, onBack, onSendToChat }) => {
             </div>
             <div className="p-6">
               <div className="mb-4">
-                <p className="text-gray-600 mb-2">{selectedDocument.description}</p>
+                <p className="text-gray-600 mb-2">
+                  {selectedDocument.description}
+                </p>
                 <div className="flex items-center space-x-4 text-sm text-gray-500">
                   <span>{selectedDocument.fileType}</span>
                   <span>{selectedDocument.fileSize}</span>
                   <span>Uploaded {selectedDocument.uploadDate}</span>
                 </div>
               </div>
-              
+
               {/* Document preview placeholder */}
               <div className="bg-gray-100 rounded-lg p-8 text-center">
                 <FileText size={64} className="mx-auto text-gray-400 mb-4" />
@@ -459,17 +539,27 @@ const OwnerDocumentManager = ({ user, onBack, onSendToChat }) => {
                   <h3 className="font-semibold mb-3">Sent History</h3>
                   <div className="space-y-2">
                     {selectedDocument.sentTo.map((recipient, idx) => (
-                      <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                      >
                         <div>
                           <p className="font-medium">{recipient.name}</p>
-                          <p className="text-sm text-gray-500">Sent on {recipient.date}</p>
+                          <p className="text-sm text-gray-500">
+                            Sent on {recipient.date}
+                          </p>
                         </div>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          recipient.status === 'signed' ? 'bg-green-100 text-green-700' :
-                          recipient.status === 'viewed' ? 'bg-brand-100 text-brand-600' :
-                          'bg-yellow-100 text-yellow-700'
-                        }`}>
-                          {recipient.status.charAt(0).toUpperCase() + recipient.status.slice(1)}
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            recipient.status === 'signed'
+                              ? 'bg-green-100 text-green-700'
+                              : recipient.status === 'viewed'
+                                ? 'bg-brand-100 text-brand-600'
+                                : 'bg-yellow-100 text-yellow-700'
+                          }`}
+                        >
+                          {recipient.status.charAt(0).toUpperCase() +
+                            recipient.status.slice(1)}
                         </span>
                       </div>
                     ))}
@@ -481,7 +571,7 @@ const OwnerDocumentManager = ({ user, onBack, onSendToChat }) => {
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default OwnerDocumentManager;
+export default OwnerDocumentManager

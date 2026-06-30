@@ -18,7 +18,9 @@ export const messagesService = {
    * @returns {Promise} List of messages
    */
   getMessages: async (userId, params = {}) => {
-    const response = await api.get(`/messages/conversation/${userId}`, { params })
+    const response = await api.get(`/messages/conversation/${userId}`, {
+      params,
+    })
     return response.data
   },
 
@@ -27,7 +29,7 @@ export const messagesService = {
    * @param {Object} messageData - Message content and recipient
    * @returns {Promise} Sent message
    */
-  send: async (messageData) => {
+  send: async messageData => {
     const response = await api.post('/messages', messageData)
     return response.data
   },
@@ -37,7 +39,7 @@ export const messagesService = {
    * @param {string} conversationId - Conversation ID
    * @returns {Promise} Update confirmation
    */
-  markAsRead: async (conversationId) => {
+  markAsRead: async conversationId => {
     const response = await api.put('/messages/mark-read', { conversationId })
     return response.data
   },
@@ -47,7 +49,7 @@ export const messagesService = {
    * @param {Object} data - Conversation details (recipientId, listingId, initialMessage)
    * @returns {Promise} New conversation
    */
-  startConversation: async (data) => {
+  startConversation: async data => {
     const response = await api.post('/messages/conversation', data)
     return response.data
   },

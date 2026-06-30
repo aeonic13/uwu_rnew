@@ -102,7 +102,10 @@ describe('AuthContext', () => {
 
       let loginResult
       await act(async () => {
-        loginResult = await result.current.login('test@university.edu', 'password123')
+        loginResult = await result.current.login(
+          'test@university.edu',
+          'password123'
+        )
       })
 
       expect(loginResult.success).toBe(true)

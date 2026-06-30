@@ -1,8 +1,25 @@
-import React, { useState } from 'react';
-import { Camera, Upload, FileText, DollarSign, MapPin, Calendar, Home, Plus, X, Check, AlertCircle, User, Mail, Phone, Building, Info } from 'lucide-react';
+import React, { useState } from 'react'
+import {
+  Camera,
+  Upload,
+  FileText,
+  DollarSign,
+  MapPin,
+  Calendar,
+  Home,
+  Plus,
+  X,
+  Check,
+  AlertCircle,
+  User,
+  Mail,
+  Phone,
+  Building,
+  Info,
+} from 'lucide-react'
 
 const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(1)
   const [listingData, setListingData] = useState({
     // Basic Property Info
     title: '',
@@ -17,41 +34,62 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
     bathrooms: 1,
     amenities: [],
     reasonForRentalting: '',
-    
+
     // Owner Information
     ownerName: '',
     ownerEmail: '',
     ownerPhone: '',
     ownerRelationship: 'landlord', // 'landlord', 'parent', 'roommate', 'other'
     ownerVerified: false,
-    
+
     // Student Information
     studentName: currentUser?.name || '',
     studentEmail: currentUser?.email || '',
     studentPhone: '',
     currentLease: null,
-    
+
     // Special terms
     guestPolicy: '',
     cleaningArrangement: '',
     keyAccess: '',
-    specialTerms: ''
-  });
+    specialTerms: '',
+  })
 
-  const [propertyPhotos, setPropertyPhotos] = useState([]);
-  const [documents, setDocuments] = useState([]);
-  const [ownerApprovalSent, setOwnerApprovalSent] = useState(false);
+  const [propertyPhotos, setPropertyPhotos] = useState([])
+  const [documents, setDocuments] = useState([])
+  const [ownerApprovalSent, setOwnerApprovalSent] = useState(false)
 
   const availableAmenities = [
-    'WiFi', 'Laundry', 'Parking', 'Furnished', 'Kitchen', 'Garden', 
-    'Pet-friendly', 'Gym', 'AC', 'Dishwasher', 'Pool', 'Balcony',
-    'In-unit Laundry', 'Study Space', 'Security', 'Storage'
-  ];
+    'WiFi',
+    'Laundry',
+    'Parking',
+    'Furnished',
+    'Kitchen',
+    'Garden',
+    'Pet-friendly',
+    'Gym',
+    'AC',
+    'Dishwasher',
+    'Pool',
+    'Balcony',
+    'In-unit Laundry',
+    'Study Space',
+    'Security',
+    'Storage',
+  ]
 
   const universities = [
-    'USC', 'UCLA', 'NYU', 'Stanford', 'Harvard', 'MIT', 
-    'UC Berkeley', 'Columbia', 'Yale', 'Princeton'
-  ];
+    'USC',
+    'UCLA',
+    'NYU',
+    'Stanford',
+    'Harvard',
+    'MIT',
+    'UC Berkeley',
+    'Columbia',
+    'Yale',
+    'Princeton',
+  ]
 
   const rentaltingReasons = [
     'Study Abroad',
@@ -60,60 +98,66 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
     'Graduation Early',
     'Family Emergency',
     'Job Relocation',
-    'Other'
-  ];
+    'Other',
+  ]
 
-  const handlePhotoUpload = (e) => {
-    const files = Array.from(e.target.files);
+  const handlePhotoUpload = e => {
+    const files = Array.from(e.target.files)
     files.forEach(file => {
-      const reader = new FileReader();
+      const reader = new FileReader()
       reader.onloadend = () => {
-        setPropertyPhotos(prev => [...prev, {
-          id: Date.now() + Math.random(),
-          file,
-          preview: reader.result,
-          caption: ''
-        }]);
-      };
-      reader.readAsDataURL(file);
-    });
-  };
+        setPropertyPhotos(prev => [
+          ...prev,
+          {
+            id: Date.now() + Math.random(),
+            file,
+            preview: reader.result,
+            caption: '',
+          },
+        ])
+      }
+      reader.readAsDataURL(file)
+    })
+  }
 
-  const handleDocumentUpload = (e) => {
-    const files = Array.from(e.target.files);
+  const handleDocumentUpload = e => {
+    const files = Array.from(e.target.files)
     files.forEach(file => {
-      const reader = new FileReader();
+      const reader = new FileReader()
       reader.onloadend = () => {
-        setDocuments(prev => [...prev, {
-          id: Date.now() + Math.random(),
-          file,
-          preview: reader.result,
-          name: file.name,
-          type: file.type.includes('pdf') ? 'pdf' : 'image'
-        }]);
-      };
-      reader.readAsDataURL(file);
-    });
-  };
+        setDocuments(prev => [
+          ...prev,
+          {
+            id: Date.now() + Math.random(),
+            file,
+            preview: reader.result,
+            name: file.name,
+            type: file.type.includes('pdf') ? 'pdf' : 'image',
+          },
+        ])
+      }
+      reader.readAsDataURL(file)
+    })
+  }
 
-  const toggleAmenity = (amenity) => {
+  const toggleAmenity = amenity => {
     setListingData(prev => ({
       ...prev,
       amenities: prev.amenities.includes(amenity)
         ? prev.amenities.filter(a => a !== amenity)
-        : [...prev.amenities, amenity]
-    }));
-  };
+        : [...prev.amenities, amenity],
+    }))
+  }
 
   const sendOwnerApprovalRequest = () => {
     // In a real app, this would send an email/notification to the owner
-    setOwnerApprovalSent(true);
-    
+    setOwnerApprovalSent(true)
+
     // Simulate owner response delay
     setTimeout(() => {
-      setListingData(prev => ({ ...prev, ownerVerified: true }));
-    }, 3000);
-  };
+      setListingData(prev => ({ ...prev, ownerVerified: true }))
+    }, 3000)
+  }
 
   const handleSubmit = () => {
     const completeListingData = {
@@ -125,11 +169,11 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
       listingType: 'student_initiated',
       views: 0,
       applicants: [],
-      approvalRequired: true
-    };
-    
-    onSubmit(completeListingData);
-  };
+      approvalRequired: true,
+    }
+
+    onSubmit(completeListingData)
+  }
 
   // Step 1: Basic Property Info & Reason
   if (currentStep === 1) {
@@ -138,7 +182,8 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
         <div className="mb-6">
           <h2 className="text-2xl font-bold mb-2">Rental Your Space</h2>
           <p className="text-gray-600">
-            List your room or property for rentalting. We'll get approval from your property owner first.
+            List your room or property for rentalting. We'll get approval from
+            your property owner first.
           </p>
         </div>
 
@@ -147,32 +192,44 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
           <div className="flex items-start">
             <Info size={20} className="text-brand-500 mr-3 mt-0.5" />
             <div>
-              <h3 className="font-semibold text-blue-800 mb-1">Owner Approval Required</h3>
+              <h3 className="font-semibold text-blue-800 mb-1">
+                Owner Approval Required
+              </h3>
               <p className="text-sm text-brand-600">
-                Your property owner must approve this listing before it goes live. We'll contact them directly to ensure everything is legitimate and legal.
+                Your property owner must approve this listing before it goes
+                live. We'll contact them directly to ensure everything is
+                legitimate and legal.
               </p>
             </div>
           </div>
         </div>
-        
+
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2">Listing Title</label>
+            <label className="block text-sm font-medium mb-2">
+              Listing Title
+            </label>
             <input
               type="text"
               value={listingData.title}
-              onChange={(e) => setListingData(prev => ({ ...prev, title: e.target.value }))}
+              onChange={e =>
+                setListingData(prev => ({ ...prev, title: e.target.value }))
+              }
               placeholder="e.g., My room in shared apartment near USC"
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Property Address</label>
+            <label className="block text-sm font-medium mb-2">
+              Property Address
+            </label>
             <input
               type="text"
               value={listingData.address}
-              onChange={(e) => setListingData(prev => ({ ...prev, address: e.target.value }))}
+              onChange={e =>
+                setListingData(prev => ({ ...prev, address: e.target.value }))
+              }
               placeholder="Full address of the property"
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
@@ -180,24 +237,40 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Nearest University</label>
+              <label className="block text-sm font-medium mb-2">
+                Nearest University
+              </label>
               <select
                 value={listingData.university}
-                onChange={(e) => setListingData(prev => ({ ...prev, university: e.target.value }))}
+                onChange={e =>
+                  setListingData(prev => ({
+                    ...prev,
+                    university: e.target.value,
+                  }))
+                }
                 className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
               >
                 <option value="">Select University</option>
                 {universities.map(uni => (
-                  <option key={uni} value={uni}>{uni}</option>
+                  <option key={uni} value={uni}>
+                    {uni}
+                  </option>
                 ))}
               </select>
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium mb-2">What are you rentalting?</label>
+              <label className="block text-sm font-medium mb-2">
+                What are you rentalting?
+              </label>
               <select
                 value={listingData.propertyType}
-                onChange={(e) => setListingData(prev => ({ ...prev, propertyType: e.target.value }))}
+                onChange={e =>
+                  setListingData(prev => ({
+                    ...prev,
+                    propertyType: e.target.value,
+                  }))
+                }
                 className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
               >
                 <option value="room">My room</option>
@@ -209,24 +282,40 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Why are you rentalting?</label>
+            <label className="block text-sm font-medium mb-2">
+              Why are you rentalting?
+            </label>
             <select
               value={listingData.reasonForRentalting}
-              onChange={(e) => setListingData(prev => ({ ...prev, reasonForRentalting: e.target.value }))}
+              onChange={e =>
+                setListingData(prev => ({
+                  ...prev,
+                  reasonForRentalting: e.target.value,
+                }))
+              }
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               <option value="">Select reason</option>
               {rentaltingReasons.map(reason => (
-                <option key={reason} value={reason}>{reason}</option>
+                <option key={reason} value={reason}>
+                  {reason}
+                </option>
               ))}
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Description</label>
+            <label className="block text-sm font-medium mb-2">
+              Description
+            </label>
             <textarea
               value={listingData.description}
-              onChange={(e) => setListingData(prev => ({ ...prev, description: e.target.value }))}
+              onChange={e =>
+                setListingData(prev => ({
+                  ...prev,
+                  description: e.target.value,
+                }))
+              }
               placeholder="Describe your space, what makes it special, house rules, etc."
               rows={4}
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
@@ -243,9 +332,15 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
           </button>
           <button
             onClick={() => setCurrentStep(2)}
-            disabled={!listingData.title || !listingData.address || !listingData.reasonForRentalting}
+            disabled={
+              !listingData.title ||
+              !listingData.address ||
+              !listingData.reasonForRentalting
+            }
             className={`flex-1 py-3 rounded-lg font-semibold ${
-              listingData.title && listingData.address && listingData.reasonForRentalting
+              listingData.title &&
+              listingData.address &&
+              listingData.reasonForRentalting
                 ? 'bg-brand-500 text-white hover:bg-brand-600'
                 : 'bg-gray-300 text-gray-500'
             }`}
@@ -254,7 +349,7 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
           </button>
         </div>
       </div>
-    );
+    )
   }
 
   // Step 2: Property Owner Information
@@ -262,71 +357,106 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
     return (
       <div className="p-6 pb-20">
         <h2 className="text-2xl font-bold mb-6">Property Owner Information</h2>
-        
+
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
           <div className="flex items-start">
             <AlertCircle size={20} className="text-yellow-600 mr-3 mt-0.5" />
             <div>
-              <h3 className="font-semibold text-yellow-800 mb-1">Verification Required</h3>
+              <h3 className="font-semibold text-yellow-800 mb-1">
+                Verification Required
+              </h3>
               <p className="text-sm text-yellow-700">
-                We need to verify with your property owner/landlord that you have permission to rental. This protects both you and potential renters.
+                We need to verify with your property owner/landlord that you
+                have permission to rental. This protects both you and potential
+                renters.
               </p>
             </div>
           </div>
         </div>
-        
+
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2">Property Owner Name</label>
+            <label className="block text-sm font-medium mb-2">
+              Property Owner Name
+            </label>
             <input
               type="text"
               value={listingData.ownerName}
-              onChange={(e) => setListingData(prev => ({ ...prev, ownerName: e.target.value }))}
+              onChange={e =>
+                setListingData(prev => ({ ...prev, ownerName: e.target.value }))
+              }
               placeholder="Full name of your landlord/property owner"
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Owner Email</label>
+            <label className="block text-sm font-medium mb-2">
+              Owner Email
+            </label>
             <input
               type="email"
               value={listingData.ownerEmail}
-              onChange={(e) => setListingData(prev => ({ ...prev, ownerEmail: e.target.value }))}
+              onChange={e =>
+                setListingData(prev => ({
+                  ...prev,
+                  ownerEmail: e.target.value,
+                }))
+              }
               placeholder="owner@email.com"
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Owner Phone Number</label>
+            <label className="block text-sm font-medium mb-2">
+              Owner Phone Number
+            </label>
             <input
               type="tel"
               value={listingData.ownerPhone}
-              onChange={(e) => setListingData(prev => ({ ...prev, ownerPhone: e.target.value }))}
+              onChange={e =>
+                setListingData(prev => ({
+                  ...prev,
+                  ownerPhone: e.target.value,
+                }))
+              }
               placeholder="(555) 123-4567"
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Your relationship to the owner</label>
+            <label className="block text-sm font-medium mb-2">
+              Your relationship to the owner
+            </label>
             <select
               value={listingData.ownerRelationship}
-              onChange={(e) => setListingData(prev => ({ ...prev, ownerRelationship: e.target.value }))}
+              onChange={e =>
+                setListingData(prev => ({
+                  ...prev,
+                  ownerRelationship: e.target.value,
+                }))
+              }
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               <option value="landlord">They are my landlord</option>
               <option value="parent">They are my parent/guardian</option>
-              <option value="roommate">They are my roommate (on the lease)</option>
-              <option value="property-manager">They are the property manager</option>
+              <option value="roommate">
+                They are my roommate (on the lease)
+              </option>
+              <option value="property-manager">
+                They are the property manager
+              </option>
               <option value="other">Other</option>
             </select>
           </div>
 
           {/* Upload Current Lease */}
           <div>
-            <label className="block text-sm font-medium mb-2">Upload Your Current Lease (Optional but Recommended)</label>
+            <label className="block text-sm font-medium mb-2">
+              Upload Your Current Lease (Optional but Recommended)
+            </label>
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
               <FileText size={32} className="mx-auto text-gray-400 mb-2" />
               <label className="cursor-pointer">
@@ -344,7 +474,7 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
                 This helps verify your right to rental
               </p>
             </div>
-            
+
             {documents.length > 0 && (
               <div className="mt-3">
                 <p className="text-sm font-medium text-green-600">
@@ -356,21 +486,27 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
 
           {/* Owner Approval Status */}
           {ownerApprovalSent && (
-            <div className={`p-4 rounded-lg border ${
-              listingData.ownerVerified 
-                ? 'bg-green-50 border-green-200' 
-                : 'bg-brand-50 border-brand-200'
-            }`}>
+            <div
+              className={`p-4 rounded-lg border ${
+                listingData.ownerVerified
+                  ? 'bg-green-50 border-green-200'
+                  : 'bg-brand-50 border-brand-200'
+              }`}
+            >
               <div className="flex items-center">
                 {listingData.ownerVerified ? (
                   <>
                     <Check size={20} className="text-green-600 mr-2" />
-                    <span className="text-green-800 font-medium">Owner approval received!</span>
+                    <span className="text-green-800 font-medium">
+                      Owner approval received!
+                    </span>
                   </>
                 ) : (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-brand-500 mr-2"></div>
-                    <span className="text-blue-800 font-medium">Waiting for owner approval...</span>
+                    <span className="text-blue-800 font-medium">
+                      Waiting for owner approval...
+                    </span>
                   </>
                 )}
               </div>
@@ -417,7 +553,7 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
           )}
         </div>
       </div>
-    );
+    )
   }
 
   // Step 3: Pricing & Terms
@@ -425,23 +561,34 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
     return (
       <div className="p-6 pb-20">
         <h2 className="text-2xl font-bold mb-6">Pricing & Terms</h2>
-        
+
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Suggested Monthly Rent ($)</label>
+              <label className="block text-sm font-medium mb-2">
+                Suggested Monthly Rent ($)
+              </label>
               <input
                 type="number"
                 value={listingData.suggestedRent}
-                onChange={(e) => setListingData(prev => ({ ...prev, suggestedRent: e.target.value }))}
+                onChange={e =>
+                  setListingData(prev => ({
+                    ...prev,
+                    suggestedRent: e.target.value,
+                  }))
+                }
                 placeholder="1200"
                 className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
-              <p className="text-xs text-gray-500 mt-1">Owner can adjust this amount</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Owner can adjust this amount
+              </p>
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium mb-2">Your Current Rent</label>
+              <label className="block text-sm font-medium mb-2">
+                Your Current Rent
+              </label>
               <input
                 type="number"
                 placeholder="1200"
@@ -454,21 +601,35 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Available From</label>
+              <label className="block text-sm font-medium mb-2">
+                Available From
+              </label>
               <input
                 type="date"
                 value={listingData.availableFrom}
-                onChange={(e) => setListingData(prev => ({ ...prev, availableFrom: e.target.value }))}
+                onChange={e =>
+                  setListingData(prev => ({
+                    ...prev,
+                    availableFrom: e.target.value,
+                  }))
+                }
                 className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium mb-2">Available Until</label>
+              <label className="block text-sm font-medium mb-2">
+                Available Until
+              </label>
               <input
                 type="date"
                 value={listingData.availableTo}
-                onChange={(e) => setListingData(prev => ({ ...prev, availableTo: e.target.value }))}
+                onChange={e =>
+                  setListingData(prev => ({
+                    ...prev,
+                    availableTo: e.target.value,
+                  }))
+                }
                 className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
@@ -476,43 +637,68 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
 
           {/* Special Terms */}
           <div>
-            <label className="block text-sm font-medium mb-2">Guest Policy</label>
+            <label className="block text-sm font-medium mb-2">
+              Guest Policy
+            </label>
             <input
               type="text"
               value={listingData.guestPolicy}
-              onChange={(e) => setListingData(prev => ({ ...prev, guestPolicy: e.target.value }))}
+              onChange={e =>
+                setListingData(prev => ({
+                  ...prev,
+                  guestPolicy: e.target.value,
+                }))
+              }
               placeholder="e.g., Guests welcome with 24hr notice"
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Cleaning Arrangement</label>
+            <label className="block text-sm font-medium mb-2">
+              Cleaning Arrangement
+            </label>
             <input
               type="text"
               value={listingData.cleaningArrangement}
-              onChange={(e) => setListingData(prev => ({ ...prev, cleaningArrangement: e.target.value }))}
+              onChange={e =>
+                setListingData(prev => ({
+                  ...prev,
+                  cleaningArrangement: e.target.value,
+                }))
+              }
               placeholder="e.g., Shared cleaning schedule, personal spaces only"
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Key/Access Arrangement</label>
+            <label className="block text-sm font-medium mb-2">
+              Key/Access Arrangement
+            </label>
             <input
               type="text"
               value={listingData.keyAccess}
-              onChange={(e) => setListingData(prev => ({ ...prev, keyAccess: e.target.value }))}
+              onChange={e =>
+                setListingData(prev => ({ ...prev, keyAccess: e.target.value }))
+              }
               placeholder="e.g., Spare key provided, digital lock code"
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Special Terms or Notes</label>
+            <label className="block text-sm font-medium mb-2">
+              Special Terms or Notes
+            </label>
             <textarea
               value={listingData.specialTerms}
-              onChange={(e) => setListingData(prev => ({ ...prev, specialTerms: e.target.value }))}
+              onChange={e =>
+                setListingData(prev => ({
+                  ...prev,
+                  specialTerms: e.target.value,
+                }))
+              }
               placeholder="Any other important information rentalter should know..."
               rows={3}
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
@@ -540,7 +726,7 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
           </button>
         </div>
       </div>
-    );
+    )
   }
 
   // Step 4: Photos & Amenities
@@ -548,7 +734,7 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
     return (
       <div className="p-6 pb-20">
         <h2 className="text-2xl font-bold mb-6">Photos & Amenities</h2>
-        
+
         {/* Photo Upload */}
         <div className="mb-6">
           <h3 className="font-semibold mb-3">Property Photos</h3>
@@ -575,7 +761,9 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
         {/* Photo Gallery */}
         {propertyPhotos.length > 0 && (
           <div className="mb-6">
-            <h3 className="font-semibold mb-3">Uploaded Photos ({propertyPhotos.length})</h3>
+            <h3 className="font-semibold mb-3">
+              Uploaded Photos ({propertyPhotos.length})
+            </h3>
             <div className="grid grid-cols-2 gap-4">
               {propertyPhotos.map((photo, index) => (
                 <div key={photo.id} className="relative">
@@ -585,7 +773,11 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
                     className="w-full h-32 object-cover rounded-lg"
                   />
                   <button
-                    onClick={() => setPropertyPhotos(prev => prev.filter(p => p.id !== photo.id))}
+                    onClick={() =>
+                      setPropertyPhotos(prev =>
+                        prev.filter(p => p.id !== photo.id)
+                      )
+                    }
                     className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
                   >
                     <X size={14} />
@@ -636,7 +828,7 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
           </button>
         </div>
       </div>
-    );
+    )
   }
 
   // Step 5: Review & Submit
@@ -644,15 +836,18 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
     return (
       <div className="p-6 pb-20">
         <h2 className="text-2xl font-bold mb-6">Review Your Listing</h2>
-        
+
         {/* Important Notice */}
         <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
           <div className="flex items-start">
             <Check size={20} className="text-green-600 mr-3 mt-0.5" />
             <div>
-              <h3 className="font-semibold text-green-800 mb-1">Owner Approved ✓</h3>
+              <h3 className="font-semibold text-green-800 mb-1">
+                Owner Approved ✓
+              </h3>
               <p className="text-sm text-green-700">
-                {listingData.ownerName} has approved this listing. Your property will be reviewed by our team and go live within 24 hours.
+                {listingData.ownerName} has approved this listing. Your property
+                will be reviewed by our team and go live within 24 hours.
               </p>
             </div>
           </div>
@@ -662,23 +857,28 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
         <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
           <div className="flex justify-between items-start mb-3">
             <h3 className="text-lg font-semibold">{listingData.title}</h3>
-            <span className="text-xl font-bold text-green-600">${listingData.suggestedRent}/mo</span>
+            <span className="text-xl font-bold text-green-600">
+              ${listingData.suggestedRent}/mo
+            </span>
           </div>
-          
+
           <div className="flex items-center text-gray-600 mb-2">
             <MapPin size={16} className="mr-2" />
             <span className="text-sm">{listingData.address}</span>
           </div>
-          
+
           <div className="flex items-center text-gray-600 mb-3">
             <Calendar size={16} className="mr-2" />
             <span className="text-sm">
-              {new Date(listingData.availableFrom).toLocaleDateString()} - {new Date(listingData.availableTo).toLocaleDateString()}
+              {new Date(listingData.availableFrom).toLocaleDateString()} -{' '}
+              {new Date(listingData.availableTo).toLocaleDateString()}
             </span>
           </div>
-          
-          <p className="text-gray-700 text-sm mb-3">{listingData.description}</p>
-          
+
+          <p className="text-gray-700 text-sm mb-3">
+            {listingData.description}
+          </p>
+
           {propertyPhotos.length > 0 && (
             <div className="flex space-x-2 mb-3">
               {propertyPhotos.slice(0, 3).map((photo, index) => (
@@ -696,7 +896,7 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
               )}
             </div>
           )}
-          
+
           <div className="flex items-center justify-between text-xs text-gray-500">
             <span>Listed by: {listingData.studentName}</span>
             <span>Owner: {listingData.ownerName}</span>
@@ -705,27 +905,47 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
 
         {/* Final Terms */}
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-          <h3 className="font-semibold text-yellow-800 mb-2">Important Terms</h3>
+          <h3 className="font-semibold text-yellow-800 mb-2">
+            Important Terms
+          </h3>
           <ul className="text-sm text-yellow-700 space-y-1">
-            <li>• Your property owner maintains final control over pricing and lease terms</li>
-            <li>• All applications must be approved by both you and the owner</li>
-            <li>• You are responsible for coordinating move-in/move-out with the rentalter</li>
-            <li>• Rentra will handle payments and provide protection for all parties</li>
+            <li>
+              • Your property owner maintains final control over pricing and
+              lease terms
+            </li>
+            <li>
+              • All applications must be approved by both you and the owner
+            </li>
+            <li>
+              • You are responsible for coordinating move-in/move-out with the
+              rentalter
+            </li>
+            <li>
+              • Rentra will handle payments and provide protection for all
+              parties
+            </li>
           </ul>
         </div>
 
         {/* Next Steps */}
         <div className="bg-brand-50 border border-brand-200 rounded-lg p-4 mb-6">
-          <h3 className="font-semibold text-blue-800 mb-2">Next Steps After Listing</h3>
+          <h3 className="font-semibold text-blue-800 mb-2">
+            Next Steps After Listing
+          </h3>
           <div className="text-sm text-brand-600 space-y-2">
-            <p>• Create a legally binding lease contract to protect yourself and your sublessee</p>
+            <p>
+              • Create a legally binding lease contract to protect yourself and
+              your sublessee
+            </p>
             <p>• Set up payment collection and security deposit management</p>
             <p>• Screen potential sublessees with our verification tools</p>
           </div>
           <button
             onClick={() => {
               // This would navigate to the lease contract manager
-              alert('After submitting, you can create a lease contract in your profile under "Student Features"');
+              alert(
+                'After submitting, you can create a lease contract in your profile under "Student Features"'
+              )
             }}
             className="mt-3 text-brand-500 hover:text-brand-600 text-sm font-medium flex items-center"
           >
@@ -749,8 +969,8 @@ const StudentListingForm = ({ onSubmit, onBack, currentUser }) => {
           </button>
         </div>
       </div>
-    );
+    )
   }
-};
+}
 
-export default StudentListingForm;
+export default StudentListingForm

@@ -57,7 +57,10 @@ export async function createLinkToken({
     const response = await plaidClient.linkTokenCreate(request)
     return response.data
   } catch (error) {
-    console.error('Plaid link token creation error:', error.response?.data || error)
+    console.error(
+      'Plaid link token creation error:',
+      error.response?.data || error
+    )
     throw error
   }
 }
@@ -153,7 +156,10 @@ export async function getIncomeVerification(incomeVerificationId) {
 
     return response.data
   } catch (error) {
-    console.error('Plaid income verification error:', error.response?.data || error)
+    console.error(
+      'Plaid income verification error:',
+      error.response?.data || error
+    )
     throw error
   }
 }
@@ -243,7 +249,7 @@ export async function removeItem(accessToken) {
  */
 export function summarizeIncome(incomeData) {
   const streams = incomeData.income_streams || []
-  
+
   const summary = {
     totalMonthlyIncome: 0,
     totalAnnualIncome: 0,
@@ -252,7 +258,7 @@ export function summarizeIncome(incomeData) {
     incomeStreams: [],
   }
 
-  streams.forEach((stream) => {
+  streams.forEach(stream => {
     const monthlyIncome = stream.monthly_income || 0
     summary.totalMonthlyIncome += monthlyIncome
     summary.totalAnnualIncome += monthlyIncome * 12
@@ -266,7 +272,7 @@ export function summarizeIncome(incomeData) {
   })
 
   // Determine employment status
-  if (streams.some((s) => s.confidence === 'HIGH')) {
+  if (streams.some(s => s.confidence === 'HIGH')) {
     summary.employmentStatus = 'employed'
   } else if (streams.length > 0) {
     summary.employmentStatus = 'partial_verification'

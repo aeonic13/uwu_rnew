@@ -16,7 +16,9 @@ if (SENDGRID_API_KEY) {
  */
 async function sendEmail({ to, subject, html, text }) {
   if (!SENDGRID_API_KEY) {
-    console.log(`📧 [EMAIL NOT SENT - No API Key] To: ${to}, Subject: ${subject}`)
+    console.log(
+      `📧 [EMAIL NOT SENT - No API Key] To: ${to}, Subject: ${subject}`
+    )
     return { success: false, error: 'SendGrid not configured' }
   }
 
@@ -279,7 +281,11 @@ export async function sendApplicationStatusEmail(
 /**
  * Send message notification
  */
-export async function sendMessageNotification(recipient, sender, messagePreview) {
+export async function sendMessageNotification(
+  recipient,
+  sender,
+  messagePreview
+) {
   const messagesUrl = `${process.env.CLIENT_URL}/messages`
 
   const html = `

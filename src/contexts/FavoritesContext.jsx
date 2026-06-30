@@ -1,4 +1,10 @@
-import { createContext, useContext, useState, useCallback, useEffect } from 'react'
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+} from 'react'
 import PropTypes from 'prop-types'
 
 // Create context
@@ -22,10 +28,10 @@ export function FavoritesProvider({ children }) {
   }, [favorites])
 
   // Toggle favorite status
-  const toggleFavorite = useCallback((listingId) => {
-    setFavorites((prev) => {
+  const toggleFavorite = useCallback(listingId => {
+    setFavorites(prev => {
       if (prev.includes(listingId)) {
-        return prev.filter((id) => id !== listingId)
+        return prev.filter(id => id !== listingId)
       }
       return [...prev, listingId]
     })
@@ -33,7 +39,7 @@ export function FavoritesProvider({ children }) {
 
   // Check if listing is favorited
   const isFavorite = useCallback(
-    (listingId) => favorites.includes(listingId),
+    listingId => favorites.includes(listingId),
     [favorites]
   )
 

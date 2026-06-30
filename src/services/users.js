@@ -15,7 +15,7 @@ export const usersService = {
    * @param {Object} profileData - Updated profile data
    * @returns {Promise} Updated user profile
    */
-  updateProfile: async (profileData) => {
+  updateProfile: async profileData => {
     const response = await api.put('/users/profile', profileData)
     return response.data
   },
@@ -25,7 +25,7 @@ export const usersService = {
    * @param {string} id - User ID
    * @returns {Promise} User profile
    */
-  getById: async (id) => {
+  getById: async id => {
     const response = await api.get(`/users/${id}`)
     return response.data
   },
