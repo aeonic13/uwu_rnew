@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Building2,
   DollarSign,
@@ -44,13 +44,95 @@ import {
   AlertCircle,
   Activity,
 } from 'lucide-react'
+import { dashboardService } from './services/dashboardService'
+
+// Visual-only defaults for fields the rent-roll API does not provide.
+const PLACEHOLDER_PROPERTY_IMAGE =
+  'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400'
+const PLACEHOLDER_AVATAR =
+  'https://ui-avatars.com/api/?background=fc6a03&color=fff&name='
+
+// Map the /dashboard/landlord/rent-roll response onto the shape this
+// dashboard renders, filling visual-only fields with safe defaults.
+function buildLiveData(api, base) {
+  const totals = api.totals || {}
+  const rentRoll = Array.isArray(api.rentRoll) ? api.rentRoll : []
+
+  const properties = rentRoll.map(r => {
+    const units = Number(String(r.occupancy || '').split('/')[1]) || 0
+    const occupied = r.tenants?.length || 0
+    return {
+      id: r.listing.id,
+      name: r.listing.title,
+      address: r.listing.address || '—',
+      type: 'Property',
+      units: units || occupied,
+      occupiedUnits: occupied,
+      occupancyRate: units > 0 ? Math.round((occupied / units) * 100) : 0,
+      monthlyRevenue: r.financials?.monthlyCollected || 0,
+      avgRent: occupied
+        ? Math.round((r.financials?.monthlyExpected || 0) / occupied)
+        : r.financials?.monthlyExpected || 0,
+      image: PLACEHOLDER_PROPERTY_IMAGE,
+      status: 'active',
+      amenities: [],
+      yearBuilt: '—',
+      squareFeet: '—',
+      manager: '—',
+    }
+  })
+
+  const tenants = rentRoll.flatMap(r =>
+    (r.tenants || []).map(t => ({
+      id: t.id,
+      name: t.name,
+      email: t.email,
+      avatar: PLACEHOLDER_AVATAR + encodeURIComponent(t.name || 'Tenant'),
+      unit: r.listing.title,
+      university: '—',
+      rentAmount: t.monthlyRent || 0,
+      leaseStart: t.leaseStart,
+      leaseEnd: t.leaseEnd,
+      securityDeposit: 0,
+      creditScore: '—',
+      lastPayment: t.leaseStart || new Date().toISOString(),
+      paymentHistory: '—',
+      status:
+        t.paidThisMonth >= t.monthlyRent && t.monthlyRent > 0
+          ? 'current'
+          : t.pendingThisMonth > 0
+            ? 'pending'
+            : 'overdue',
+    }))
+  )
+
+  return {
+    ...base,
+    overview: {
+      ...base.overview,
+      totalProperties: totals.properties ?? properties.length,
+      totalUnits: totals.totalUnits ?? 0,
+      occupiedUnits: totals.occupiedUnits ?? tenants.length,
+      occupancyRate: Number(totals.occupancyRate ?? 0),
+      monthlyRevenue: totals.monthlyCollected ?? 0,
+      totalRevenue: totals.monthlyCollected ?? 0,
+      overdueRent: totals.pendingCollection ?? 0,
+      // Not provided by the rent-roll endpoint yet — keep neutral.
+      maintenanceRequests: 0,
+      pendingApplications: 0,
+      securityDepositsHeld: 0,
+    },
+    properties,
+    tenants,
+  }
+}
 
 const OwnerDashboard = ({ user, onBack, onNavigate }) => {
   const [activeTab, setActiveTab] = useState('overview')
   const [selectedProperty, setSelectedProperty] = useState(null)
 
-  // Mock comprehensive data for rental management
-  const [dashboardData] = useState({
+  // Falls back to demo data until the live rent-roll API responds.
+  const [dashboardData, setDashboardData] = useState({
     overview: {
       totalProperties: 8,
       totalUnits: 24,
@@ -269,6 +351,29 @@ const OwnerDashboard = ({ user, onBack, onNavigate }) => {
     },
   })
 
+  // 'demo' until the live rent-roll API returns; 'live' once it does.
+  const [dataMode, setDataMode] = useState('demo')
+
+  useEffect(() => {
+    let active = true
+    dashboardService
+      .getRentRoll()
+      .then(api => {
+        if (!active || !api) return
+        // Only switch to live mode if the owner actually has properties.
+        if (Array.isArray(api.rentRoll) && api.rentRoll.length > 0) {
+          setDashboardData(prev => buildLiveData(api, prev))
+          setDataMode('live')
+        }
+      })
+      .catch(() => {
+        // Not an owner / not authenticated / network error — stay in demo mode.
+      })
+    return () => {
+      active = false
+    }
+  }, [])
+
   const getStatusColor = status => {
     switch (status) {
       case 'current':
@@ -320,6 +425,20 @@ const OwnerDashboard = ({ user, onBack, onNavigate }) => {
           <span>
             {dashboardData.overview.totalProperties} Properties •{' '}
             {dashboardData.overview.totalUnits} Units
+          </span>
+          <span
+            className={`ml-3 px-2 py-0.5 rounded-full text-xs font-medium ${
+              dataMode === 'live'
+                ? 'bg-green-100 text-green-800'
+                : 'bg-gray-100 text-gray-600'
+            }`}
+            title={
+              dataMode === 'live'
+                ? 'Showing your real portfolio from the live rent-roll API'
+                : 'Showing demo data — sign in as an owner with listings to see live data'
+            }
+          >
+            {dataMode === 'live' ? 'Live data' : 'Demo data'}
           </span>
         </div>
       </div>
