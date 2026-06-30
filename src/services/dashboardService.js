@@ -15,6 +15,15 @@ export const dashboardService = {
   },
 
   /**
+   * Get the landlord inbox: applications grouped by listing plus a flat
+   * individual-applications view, each with income assessment.
+   * @returns {Promise<{groups: object[], applications: object[], incomeMultiplier: number}>}
+   */
+  async getInbox() {
+    return apiClient.get('/dashboard/landlord/inbox')
+  },
+
+  /**
    * Get application + group status breakdown for a single listing.
    * @param {string} listingId
    */

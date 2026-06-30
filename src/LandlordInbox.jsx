@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { dashboardService } from './services/dashboardService'
 import {
   MessageCircle,
   User,
@@ -193,6 +194,22 @@ const GroupApplicationsTab = ({
 }) => {
   const [groups, setGroups] = useState(mockGroupApplications)
   const [selectedGroup, setSelectedGroup] = useState(null)
+
+  // Replace demo data with the landlord's real grouped applications.
+  useEffect(() => {
+    let active = true
+    dashboardService
+      .getInbox()
+      .then(data => {
+        if (active && Array.isArray(data?.groups) && data.groups.length > 0) {
+          setGroups(data.groups)
+        }
+      })
+      .catch(() => {})
+    return () => {
+      active = false
+    }
+  }, [])
 
   const guarStatus = v => {
     if (v === 'verified')
@@ -676,13 +693,36 @@ const LandlordInbox = ({
     },
   ]
 
+  const [applications, setApplications] = useState(mockApplications)
+
+  // Replace demo data with the landlord's real applications.
+  useEffect(() => {
+    let active = true
+    dashboardService
+      .getInbox()
+      .then(data => {
+        if (
+          active &&
+          Array.isArray(data?.applications) &&
+          data.applications.length > 0
+        ) {
+          setApplications(data.applications)
+        }
+      })
+      .catch(() => {})
+    return () => {
+      active = false
+    }
+  }, [])
+
   const getPropertyApplications = propertyId => {
-    return mockApplications.filter(
+    return applications.filter(
       app => !propertyId || app.propertyId === propertyId
     )
   }
 
   const getCreditScoreColor = score => {
+    if (score == null) return 'text-gray-500 bg-gray-100'
     if (score >= 750) return 'text-green-600 bg-green-100'
     if (score >= 700) return 'text-brand-500 bg-brand-100'
     if (score >= 650) return 'text-yellow-600 bg-yellow-100'
@@ -924,10 +964,10 @@ const LandlordInbox = ({
                           className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getCreditScoreColor(application.applicant.creditScore)}`}
                         >
                           <CreditCard size={12} className="mr-1" />
-                          {application.applicant.creditScore}
+                          {application.applicant.creditScore ?? 'N/A'}
                         </div>
                         <p className="text-xs text-gray-500 mt-1">
-                          {application.applicant.creditTier}
+                          {application.applicant.creditTier ?? 'Not checked'}
                         </p>
                       </div>
                       <div className="text-center">
@@ -1075,10 +1115,10 @@ const LandlordInbox = ({
               </div>
               <div className="flex items-baseline">
                 <span className="text-2xl font-bold">
-                  {selectedApplicant.applicant.creditScore}
+                  {selectedApplicant.applicant.creditScore ?? 'N/A'}
                 </span>
                 <span className="ml-2 text-sm text-gray-600">
-                  ({selectedApplicant.applicant.creditTier})
+                  ({selectedApplicant.applicant.creditTier ?? 'not checked'})
                 </span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
