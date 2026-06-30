@@ -29,6 +29,7 @@ import cosignersRoutes from './routes/cosigners.js'
 import dashboardRoutes from './routes/dashboard.js'
 import housematesRoutes from './routes/housemates.js'
 import agreementsRoutes from './routes/agreements.js'
+import maintenanceRoutes from './routes/maintenance.js'
 
 // Get __dirname equivalent in ES modules
 const __filename = fileURLToPath(import.meta.url)
@@ -114,6 +115,7 @@ app.use('/api/cosigners', cosignersRoutes)
 app.use('/api/dashboard', dashboardRoutes)
 app.use('/api/housemates', housematesRoutes)
 app.use('/api/agreements', agreementsRoutes)
+app.use('/api/maintenance', maintenanceRoutes)
 
 // Error handling middleware
 app.use((err, req, res, next) => {

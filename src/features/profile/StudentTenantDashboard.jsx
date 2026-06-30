@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { agreementsService } from '../../services/agreementsService'
 import { paymentsService } from '../../services/payments'
+import { maintenanceService } from '../../services/maintenanceService'
 import {
   ArrowLeft,
   Home,
@@ -362,55 +363,55 @@ function UtilitiesTab({ user }) {
 /**
  * Maintenance Tab - Submit and track maintenance requests
  */
-function MaintenanceTab({ user }) {
+function MaintenanceTab() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showForm, setShowForm] = useState(false)
+  const [submitError, setSubmitError] = useState(null)
   const [formData, setFormData] = useState({
     category: '',
     priority: 'medium',
     description: '',
   })
+  const [maintenanceRequests, setMaintenanceRequests] = useState([])
 
-  const maintenanceRequests = [
-    {
-      id: 1,
-      category: 'Plumbing',
-      description: 'Kitchen sink is leaking',
-      priority: 'high',
-      status: 'in-progress',
-      date: '2026-02-01',
-      assignedTo: 'Mike Plumber',
-    },
-    {
-      id: 2,
-      category: 'Electrical',
-      description: 'Living room light not working',
-      priority: 'medium',
-      status: 'pending',
-      date: '2026-01-28',
-      assignedTo: null,
-    },
-    {
-      id: 3,
-      category: 'HVAC',
-      description: 'Heater making strange noise',
-      priority: 'low',
-      status: 'completed',
-      date: '2026-01-15',
-      assignedTo: 'Sarah HVAC Tech',
-      completedDate: '2026-01-20',
-    },
-  ]
+  const mapTicket = t => ({
+    id: t.id,
+    category: t.category,
+    description: t.description,
+    priority: t.priority,
+    status: t.status,
+    date: t.createdAt,
+    assignedTo: t.assignedTo,
+    completedDate: t.completedAt,
+  })
 
-  const handleSubmit = e => {
+  useEffect(() => {
+    let active = true
+    maintenanceService
+      .list()
+      .then(tickets => {
+        if (active) setMaintenanceRequests(tickets.map(mapTicket))
+      })
+      .catch(() => {})
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const handleSubmit = async e => {
     e.preventDefault()
     setIsSubmitting(true)
-    setTimeout(() => {
-      setIsSubmitting(false)
+    setSubmitError(null)
+    try {
+      const ticket = await maintenanceService.create(formData)
+      setMaintenanceRequests(prev => [mapTicket(ticket), ...prev])
       setShowForm(false)
       setFormData({ category: '', priority: 'medium', description: '' })
-      alert('Maintenance request submitted successfully!')
-    }, 1500)
+    } catch (err) {
+      setSubmitError(err.message || 'Could not submit request')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const getStatusColor = status => {
@@ -562,6 +563,9 @@ function MaintenanceTab({ user }) {
                 {isSubmitting ? 'Submitting...' : 'Submit Request'}
               </button>
             </div>
+            {submitError && (
+              <p className="text-sm text-red-600 mt-2">{submitError}</p>
+            )}
           </form>
         </div>
       )}

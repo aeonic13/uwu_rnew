@@ -89,6 +89,7 @@ model User {
   cosignedApplications Cosigner[]         @relation("CosignerUser")
   cosignersForTenant  Cosigner[]          @relation("TenantUser")
   housemateProfile    HousemateProfile?
+  maintenanceTickets  MaintenanceTicket[] @relation("TenantTickets")
 
   @@index([email])
   @@index([userType])
@@ -121,11 +122,35 @@ model Listing {
   conversations Conversation[]
   favorites     Favorite[]
   reviews       Review[]
+  maintenanceTickets MaintenanceTicket[]
 
   @@index([ownerId])
   @@index([university])
   @@index([price])
   @@index([active])
+}
+
+// Maintenance ticket - tenant-reported issue for a leased property
+model MaintenanceTicket {
+  id          String    @id @default(cuid())
+  category    String
+  description String
+  priority    String    @default("medium") // low, medium, high
+  status      String    @default("pending") // pending, in-progress, completed
+  photos      String[]  @default([])
+  assignedTo  String?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenantId  String
+  tenant    User    @relation("TenantTickets", fields: [tenantId], references: [id], onDelete: Cascade)
+  listingId String
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([listingId])
+  @@index([status])
 }
 
 // Favorite (saved properties)
