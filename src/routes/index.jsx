@@ -36,6 +36,9 @@ const HousematesHub = lazy(() => import('../features/housemates/HousematesHub'))
 // Auth pages
 const LoginPage = lazy(() => import('../features/auth/LoginPage'))
 const RegisterPage = lazy(() => import('../features/auth/RegisterPage'))
+const CosignerAcceptPage = lazy(
+  () => import('../features/cosigner/CosignerAcceptPage')
+)
 
 // Owner-specific pages
 const OwnerDashboard = lazy(() => import('../features/owner/OwnerDashboard'))
@@ -199,6 +202,16 @@ const routeConfig = [
           <RegisterPage />
         </Suspense>
       </PublicRoute>
+    ),
+  },
+
+  // Cosigner invitation acceptance (public — reached from the email link)
+  {
+    path: '/cosigner/accept/:token',
+    element: (
+      <Suspense fallback={<SuspenseFallback />}>
+        <CosignerAcceptPage />
+      </Suspense>
     ),
   },
 

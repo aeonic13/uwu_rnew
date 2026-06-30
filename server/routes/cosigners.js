@@ -227,6 +227,7 @@ router.get('/invitation/:token', async (req, res) => {
     res.json({
       invitation: {
         id: cosigner.id,
+        email: cosigner.inviteEmail,
         tenant: cosigner.tenant,
         listing: cosigner.application.listing,
         relationshipType: cosigner.relationshipType,

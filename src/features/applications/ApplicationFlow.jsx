@@ -15,6 +15,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { usePreQualification } from '../../hooks/usePreQualification'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import api from '../../services/api'
+import InviteCosignerForm from '../cosigner/InviteCosignerForm'
 
 // Verify step removed — now handled once via /pre-qualify
 const STEPS = [
@@ -22,6 +23,37 @@ const STEPS = [
   { id: 'dates', label: 'Dates', icon: Calendar },
   { id: 'review', label: 'Review', icon: FileText },
 ]
+
+// Shown after a successful application: confirmation + optional cosigner invite.
+function ApplicationSubmitted({ applicationId, onDone }) {
+  return (
+    <div className="min-h-screen bg-white pb-20">
+      <div className="max-w-md mx-auto p-4 pt-10 space-y-6">
+        <div className="text-center">
+          <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-3">
+            <CheckCircle2 className="w-7 h-7 text-green-600" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Application submitted
+          </h1>
+          <p className="text-gray-600 mt-1">
+            The landlord will review it. Need a guarantor? Invite a co-signer
+            now to speed up approval.
+          </p>
+        </div>
+
+        <InviteCosignerForm applicationId={applicationId} />
+
+        <button
+          onClick={onDone}
+          className="w-full py-3 text-gray-600 font-medium"
+        >
+          Done — go to home
+        </button>
+      </div>
+    </div>
+  )
+}
 
 /**
  * Progress indicator
@@ -866,6 +898,7 @@ function ApplicationFlow() {
     moveOutDate: '',
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submittedAppId, setSubmittedAppId] = useState(null)
 
   useEffect(() => {
     if (listingId) {
@@ -907,7 +940,7 @@ function ApplicationFlow() {
             applicationFeePaid: true,
           }
         : null
-      await api.post('/applications', {
+      const res = await api.post('/applications', {
         listingId,
         startDate: formData.moveInDate,
         endDate: formData.moveOutDate,
@@ -915,7 +948,12 @@ function ApplicationFlow() {
         emergencyContact: formData.emergencyContact,
         ...(verificationData && { verificationData }),
       })
-      navigate('/')
+      // Show the success screen (with cosigner invite) if we got an id back.
+      if (res?.application?.id) {
+        setSubmittedAppId(res.application.id)
+      } else {
+        navigate('/')
+      }
     } catch (err) {
       console.error('Application submit error:', err)
     } finally {
@@ -928,6 +966,15 @@ function ApplicationFlow() {
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size="lg" />
       </div>
+    )
+  }
+
+  if (submittedAppId) {
+    return (
+      <ApplicationSubmitted
+        applicationId={submittedAppId}
+        onDone={() => navigate('/')}
+      />
     )
   }
 
