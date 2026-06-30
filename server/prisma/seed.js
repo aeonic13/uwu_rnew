@@ -17,6 +17,7 @@ async function main() {
   await prisma.agreement.deleteMany()
   await prisma.application.deleteMany()
   await prisma.favorite.deleteMany()
+  await prisma.housemateProfile.deleteMany()
   await prisma.listing.deleteMany()
   await prisma.user.deleteMany()
 
@@ -849,6 +850,44 @@ async function main() {
       },
     ],
   })
+
+  // ─── HOUSEMATE PROFILES (powers the Housemates tab) ──────────
+  console.log('Creating housemate profiles...')
+  await prisma.housemateProfile.createMany({
+    data: [
+      {
+        userId: tenant1.id,
+        audience: 'professional',
+        occupation: 'Working Professional',
+        location: 'San Diego, CA',
+        budgetMin: 1200,
+        budgetMax: 1800,
+        bio: 'Working professional, non-smoker. Tidy and easy-going housemate.',
+        sleepSchedule: 'night',
+        cleanliness: 'very',
+        noiseTolerance: 'quiet',
+        guestFrequency: 'rarely',
+        tags: ['Non-smoker', 'Tidy', 'Quiet weekends'],
+        lookingForRoom: true,
+      },
+      {
+        userId: tenant2.id,
+        audience: 'student',
+        occupation: 'Graduate Student',
+        location: 'San Diego, CA',
+        budgetMin: 1000,
+        budgetMax: 1500,
+        bio: 'Quiet, clean, and responsible. Looking for a long-term place.',
+        sleepSchedule: 'morning',
+        cleanliness: 'very',
+        noiseTolerance: 'quiet',
+        guestFrequency: 'rarely',
+        tags: ['Early riser', 'Very tidy', 'Studious'],
+        lookingForRoom: true,
+      },
+    ],
+  })
+  console.log('Created 2 housemate profiles')
 
   console.log('✅ Database seeded successfully!')
   console.log('')

@@ -30,6 +30,9 @@ const AgreementView = lazy(
   () => import('../features/applications/AgreementView')
 )
 
+// Housemates (available to all authenticated users)
+const HousematesHub = lazy(() => import('../features/housemates/HousematesHub'))
+
 // Auth pages
 const LoginPage = lazy(() => import('../features/auth/LoginPage'))
 const RegisterPage = lazy(() => import('../features/auth/RegisterPage'))
@@ -262,6 +265,20 @@ const routeConfig = [
             <Suspense fallback={<SuspenseFallback />}>
               <ConversationView />
             </Suspense>
+          </ProtectedRoute>
+        ),
+      },
+
+      // Housemates route (tenant only, auth required)
+      {
+        path: '/housemates',
+        element: (
+          <ProtectedRoute>
+            <RoleRoute allowedRoles={['student']}>
+              <Suspense fallback={<SuspenseFallback />}>
+                <HousematesHub />
+              </Suspense>
+            </RoleRoute>
           </ProtectedRoute>
         ),
       },
