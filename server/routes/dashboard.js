@@ -16,7 +16,7 @@ router.get(
   async (req, res) => {
     try {
       const { listingId } = req.params
-      const ownerId = req.user.userId
+      const ownerId = req.user.id
 
       // Verify listing belongs to this owner
       const listing = await prisma.listing.findFirst({
@@ -72,13 +72,14 @@ router.get(
       // Calculate group statistics
       const stats = {
         total: applications.length,
-        pending: applications.filter((app) => app.status === 'pending').length,
-        approved: applications.filter((app) => app.status === 'approved').length,
-        rejected: applications.filter((app) => app.status === 'rejected').length,
-        withCosigners: applications.filter((app) => app.cosigners.length > 0).length,
+        pending: applications.filter(app => app.status === 'pending').length,
+        approved: applications.filter(app => app.status === 'approved').length,
+        rejected: applications.filter(app => app.status === 'rejected').length,
+        withCosigners: applications.filter(app => app.cosigners.length > 0)
+          .length,
         totalRevenue: applications
-          .flatMap((app) => app.transactions)
-          .filter((t) => t.status === 'completed')
+          .flatMap(app => app.transactions)
+          .filter(t => t.status === 'completed')
           .reduce((sum, t) => sum + t.amount, 0),
       }
 
@@ -113,7 +114,7 @@ router.get(
   async (req, res) => {
     try {
       const { listingId } = req.params
-      const ownerId = req.user.userId
+      const ownerId = req.user.id
 
       // Verify ownership
       const listing = await prisma.listing.findFirst({
@@ -167,28 +168,28 @@ router.get(
       // Group applications by status and agreement state
       const breakdown = {
         readyForMove: applications.filter(
-          (app) =>
+          app =>
             app.status === 'approved' &&
             app.agreement?.tenantSigned &&
             app.agreement?.landlordSigned
         ),
         pendingTenantSignature: applications.filter(
-          (app) =>
+          app =>
             app.status === 'approved' &&
             app.agreement &&
             !app.agreement.tenantSigned
         ),
         pendingLandlordSignature: applications.filter(
-          (app) =>
+          app =>
             app.status === 'approved' &&
             app.agreement?.tenantSigned &&
             !app.agreement.landlordSigned
         ),
-        awaitingApproval: applications.filter((app) => app.status === 'pending'),
+        awaitingApproval: applications.filter(app => app.status === 'pending'),
         needsCosigner: applications.filter(
-          (app) => app.status === 'pending' && app.cosigners.length === 0
+          app => app.status === 'pending' && app.cosigners.length === 0
         ),
-        rejected: applications.filter((app) => app.status === 'rejected'),
+        rejected: applications.filter(app => app.status === 'rejected'),
       }
 
       res.json({
@@ -227,7 +228,7 @@ router.get(
   requireUserType('owner'),
   async (req, res) => {
     try {
-      const ownerId = req.user.userId
+      const ownerId = req.user.id
 
       // Get all listings with approved applications
       const listings = await prisma.listing.findMany({
@@ -254,7 +255,11 @@ router.get(
               transactions: {
                 where: {
                   createdAt: {
-                    gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1), // This month
+                    gte: new Date(
+                      new Date().getFullYear(),
+                      new Date().getMonth(),
+                      1
+                    ), // This month
                   },
                 },
               },
@@ -265,8 +270,8 @@ router.get(
       })
 
       // Calculate rent roll
-      const rentRoll = listings.map((listing) => {
-        const tenants = listing.applications.map((app) => ({
+      const rentRoll = listings.map(listing => {
+        const tenants = listing.applications.map(app => ({
           id: app.applicant.id,
           name: `${app.applicant.firstName} ${app.applicant.lastName}`,
           email: app.applicant.email,
@@ -274,10 +279,10 @@ router.get(
           leaseStart: app.agreement?.startDate,
           leaseEnd: app.agreement?.endDate,
           paidThisMonth: app.transactions
-            .filter((t) => t.status === 'completed')
+            .filter(t => t.status === 'completed')
             .reduce((sum, t) => sum + t.amount, 0),
           pendingThisMonth: app.transactions
-            .filter((t) => t.status === 'pending' || t.status === 'processing')
+            .filter(t => t.status === 'pending' || t.status === 'processing')
             .reduce((sum, t) => sum + t.amount, 0),
         }))
 
@@ -285,7 +290,10 @@ router.get(
           (sum, t) => sum + (t.monthlyRent || 0),
           0
         )
-        const monthlyCollected = tenants.reduce((sum, t) => sum + t.paidThisMonth, 0)
+        const monthlyCollected = tenants.reduce(
+          (sum, t) => sum + t.paidThisMonth,
+          0
+        )
 
         return {
           listing: {
@@ -298,7 +306,10 @@ router.get(
           financials: {
             monthlyExpected,
             monthlyCollected,
-            pendingCollection: tenants.reduce((sum, t) => sum + t.pendingThisMonth, 0),
+            pendingCollection: tenants.reduce(
+              (sum, t) => sum + t.pendingThisMonth,
+              0
+            ),
             collectionRate:
               monthlyExpected > 0
                 ? ((monthlyCollected / monthlyExpected) * 100).toFixed(1)
@@ -312,7 +323,10 @@ router.get(
         properties: listings.length,
         totalUnits: listings.reduce((sum, l) => sum + l.bedrooms, 0),
         occupiedUnits: rentRoll.reduce((sum, r) => sum + r.tenants.length, 0),
-        monthlyExpected: rentRoll.reduce((sum, r) => sum + r.financials.monthlyExpected, 0),
+        monthlyExpected: rentRoll.reduce(
+          (sum, r) => sum + r.financials.monthlyExpected,
+          0
+        ),
         monthlyCollected: rentRoll.reduce(
           (sum, r) => sum + r.financials.monthlyCollected,
           0
@@ -357,7 +371,7 @@ router.get(
   async (req, res) => {
     try {
       const { applicationId } = req.params
-      const ownerId = req.user.userId
+      const ownerId = req.user.id
 
       // Get application with payment details
       const application = await prisma.application.findFirst({
@@ -405,18 +419,20 @@ router.get(
       // Calculate payment statistics
       const stats = {
         totalPaid: application.transactions
-          .filter((t) => t.status === 'completed')
+          .filter(t => t.status === 'completed')
           .reduce((sum, t) => sum + t.amount, 0),
         totalPending: application.transactions
-          .filter((t) => t.status === 'pending' || t.status === 'processing')
+          .filter(t => t.status === 'pending' || t.status === 'processing')
           .reduce((sum, t) => sum + t.amount, 0),
         totalFailed: application.transactions
-          .filter((t) => t.status === 'failed')
+          .filter(t => t.status === 'failed')
           .reduce((sum, t) => sum + t.amount, 0),
-        paymentCount: application.transactions.filter((t) => t.status === 'completed')
-          .length,
-        lastPaymentDate: application.transactions.find((t) => t.status === 'completed')
-          ?.createdAt,
+        paymentCount: application.transactions.filter(
+          t => t.status === 'completed'
+        ).length,
+        lastPaymentDate: application.transactions.find(
+          t => t.status === 'completed'
+        )?.createdAt,
       }
 
       // Calculate expected vs actual
@@ -426,7 +442,8 @@ router.get(
             (1000 * 60 * 60 * 24 * 30)
         )
         stats.expectedTotal =
-          (application.agreement.monthlyRent || 0) * Math.max(0, monthsSinceLease)
+          (application.agreement.monthlyRent || 0) *
+          Math.max(0, monthsSinceLease)
         stats.balance = stats.expectedTotal - stats.totalPaid
       }
 

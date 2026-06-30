@@ -179,22 +179,18 @@ describe('Password Strength Validation', () => {
       )
     })
 
-    it('should require lowercase letter', () => {
-      const result = validatePasswordStrength('UPPERCASE123')
+    it('should require a letter', () => {
+      const result = validatePasswordStrength('12345678')
 
       expect(result.isValid).toBe(false)
       expect(result.errors).toContain(
-        'Password must contain at least one lowercase letter'
+        'Password must contain at least one letter'
       )
     })
 
-    it('should require uppercase letter', () => {
-      const result = validatePasswordStrength('lowercase123')
-
-      expect(result.isValid).toBe(false)
-      expect(result.errors).toContain(
-        'Password must contain at least one uppercase letter'
-      )
+    it('should accept a password with letters and numbers regardless of case', () => {
+      expect(validatePasswordStrength('UPPERCASE123').isValid).toBe(true)
+      expect(validatePasswordStrength('lowercase123').isValid).toBe(true)
     })
 
     it('should require number', () => {

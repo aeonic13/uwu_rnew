@@ -1,4 +1,4 @@
-import DOMPurify from 'dompurify';
+import DOMPurify from 'dompurify'
 
 // ============================================================================
 // SQL INJECTION PREVENTION UTILITIES
@@ -10,8 +10,8 @@ import DOMPurify from 'dompurify';
  */
 export class SecureQueryBuilder {
   constructor() {
-    this.query = '';
-    this.params = [];
+    this.query = ''
+    this.params = []
   }
 
   /**
@@ -22,14 +22,14 @@ export class SecureQueryBuilder {
    * @returns {object} Query and parameters
    */
   select(table, columns = ['*'], conditions = {}) {
-    this.query = `SELECT ${columns.join(', ')} FROM ${this.escapeIdentifier(table)}`;
-    
+    this.query = `SELECT ${columns.join(', ')} FROM ${this.escapeIdentifier(table)}`
+
     if (Object.keys(conditions).length > 0) {
-      const whereClause = this.buildWhereClause(conditions);
-      this.query += ` WHERE ${whereClause}`;
+      const whereClause = this.buildWhereClause(conditions)
+      this.query += ` WHERE ${whereClause}`
     }
 
-    return { query: this.query, params: this.params };
+    return { query: this.query, params: this.params }
   }
 
   /**
@@ -39,14 +39,14 @@ export class SecureQueryBuilder {
    * @returns {object} Query and parameters
    */
   insert(table, data) {
-    const columns = Object.keys(data);
-    const placeholders = columns.map(() => '?').join(', ');
-    const values = Object.values(data);
+    const columns = Object.keys(data)
+    const placeholders = columns.map(() => '?').join(', ')
+    const values = Object.values(data)
 
-    this.query = `INSERT INTO ${this.escapeIdentifier(table)} (${columns.map(col => this.escapeIdentifier(col)).join(', ')}) VALUES (${placeholders})`;
-    this.params = values;
+    this.query = `INSERT INTO ${this.escapeIdentifier(table)} (${columns.map(col => this.escapeIdentifier(col)).join(', ')}) VALUES (${placeholders})`
+    this.params = values
 
-    return { query: this.query, params: this.params };
+    return { query: this.query, params: this.params }
   }
 
   /**
@@ -57,18 +57,20 @@ export class SecureQueryBuilder {
    * @returns {object} Query and parameters
    */
   update(table, data, conditions) {
-    const setClause = Object.keys(data).map(key => `${this.escapeIdentifier(key)} = ?`).join(', ');
-    const setValues = Object.values(data);
+    const setClause = Object.keys(data)
+      .map(key => `${this.escapeIdentifier(key)} = ?`)
+      .join(', ')
+    const setValues = Object.values(data)
 
-    this.query = `UPDATE ${this.escapeIdentifier(table)} SET ${setClause}`;
-    this.params = [...setValues];
+    this.query = `UPDATE ${this.escapeIdentifier(table)} SET ${setClause}`
+    this.params = [...setValues]
 
     if (Object.keys(conditions).length > 0) {
-      const whereClause = this.buildWhereClause(conditions);
-      this.query += ` WHERE ${whereClause}`;
+      const whereClause = this.buildWhereClause(conditions)
+      this.query += ` WHERE ${whereClause}`
     }
 
-    return { query: this.query, params: this.params };
+    return { query: this.query, params: this.params }
   }
 
   /**
@@ -77,28 +79,28 @@ export class SecureQueryBuilder {
    * @returns {string} WHERE clause
    */
   buildWhereClause(conditions) {
-    const clauses = [];
-    
+    const clauses = []
+
     for (const [key, value] of Object.entries(conditions)) {
       if (Array.isArray(value)) {
         // Handle IN clause
-        const placeholders = value.map(() => '?').join(', ');
-        clauses.push(`${this.escapeIdentifier(key)} IN (${placeholders})`);
-        this.params.push(...value);
+        const placeholders = value.map(() => '?').join(', ')
+        clauses.push(`${this.escapeIdentifier(key)} IN (${placeholders})`)
+        this.params.push(...value)
       } else if (typeof value === 'object' && value !== null) {
         // Handle operators like { gt: 100 }, { like: '%test%' }
         for (const [op, val] of Object.entries(value)) {
-          const operator = this.getOperator(op);
-          clauses.push(`${this.escapeIdentifier(key)} ${operator} ?`);
-          this.params.push(val);
+          const operator = this.getOperator(op)
+          clauses.push(`${this.escapeIdentifier(key)} ${operator} ?`)
+          this.params.push(val)
         }
       } else {
-        clauses.push(`${this.escapeIdentifier(key)} = ?`);
-        this.params.push(value);
+        clauses.push(`${this.escapeIdentifier(key)} = ?`)
+        this.params.push(value)
       }
     }
 
-    return clauses.join(' AND ');
+    return clauses.join(' AND ')
   }
 
   /**
@@ -108,8 +110,8 @@ export class SecureQueryBuilder {
    */
   escapeIdentifier(identifier) {
     // Remove any non-alphanumeric characters except underscores
-    const cleaned = identifier.replace(/[^a-zA-Z0-9_]/g, '');
-    return `\`${cleaned}\``;
+    const cleaned = identifier.replace(/[^a-zA-Z0-9_]/g, '')
+    return `\`${cleaned}\``
   }
 
   /**
@@ -119,15 +121,15 @@ export class SecureQueryBuilder {
    */
   getOperator(op) {
     const operators = {
-      'gt': '>',
-      'gte': '>=',
-      'lt': '<',
-      'lte': '<=',
-      'ne': '!=',
-      'like': 'LIKE',
-      'ilike': 'ILIKE'
-    };
-    return operators[op] || '=';
+      gt: '>',
+      gte: '>=',
+      lt: '<',
+      lte: '<=',
+      ne: '!=',
+      like: 'LIKE',
+      ilike: 'ILIKE',
+    }
+    return operators[op] || '='
   }
 }
 
@@ -141,87 +143,88 @@ export class SecureQueryBuilder {
 export function validateInput(input, type, options = {}) {
   switch (type) {
     case 'email':
-      return validateEmail(input);
+      return validateEmail(input)
     case 'phone':
-      return validatePhone(input);
+      return validatePhone(input)
     case 'number':
-      return validateNumber(input, options);
+      return validateNumber(input, options)
     case 'string':
-      return validateString(input, options);
+      return validateString(input, options)
     case 'date':
-      return validateDate(input);
+      return validateDate(input)
     case 'uuid':
-      return validateUUID(input);
+      return validateUUID(input)
     default:
-      throw new Error(`Unsupported validation type: ${type}`);
+      throw new Error(`Unsupported validation type: ${type}`)
   }
 }
 
 function validateEmail(email) {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   if (!emailRegex.test(email)) {
-    throw new Error('Invalid email format');
+    throw new Error('Invalid email format')
   }
-  return email.toLowerCase().trim();
+  return email.toLowerCase().trim()
 }
 
 function validatePhone(phone) {
-  const phoneRegex = /^\+?[\d\s\-\(\)]{10,15}$/;
-  const cleaned = phone.replace(/[\s\-\(\)]/g, '');
+  const phoneRegex = /^\+?[\d\s\-()]{10,15}$/
+  const cleaned = phone.replace(/[\s\-()]/g, '')
   if (!phoneRegex.test(phone) || cleaned.length < 10) {
-    throw new Error('Invalid phone number format');
+    throw new Error('Invalid phone number format')
   }
-  return cleaned;
+  return cleaned
 }
 
 function validateNumber(num, options) {
-  const parsed = parseFloat(num);
+  const parsed = parseFloat(num)
   if (isNaN(parsed)) {
-    throw new Error('Invalid number');
+    throw new Error('Invalid number')
   }
   if (options.min !== undefined && parsed < options.min) {
-    throw new Error(`Number must be at least ${options.min}`);
+    throw new Error(`Number must be at least ${options.min}`)
   }
   if (options.max !== undefined && parsed > options.max) {
-    throw new Error(`Number must be at most ${options.max}`);
+    throw new Error(`Number must be at most ${options.max}`)
   }
-  return parsed;
+  return parsed
 }
 
 function validateString(str, options) {
   if (typeof str !== 'string') {
-    throw new Error('Input must be a string');
+    throw new Error('Input must be a string')
   }
-  
-  const trimmed = str.trim();
-  
+
+  const trimmed = str.trim()
+
   if (options.minLength && trimmed.length < options.minLength) {
-    throw new Error(`String must be at least ${options.minLength} characters`);
+    throw new Error(`String must be at least ${options.minLength} characters`)
   }
   if (options.maxLength && trimmed.length > options.maxLength) {
-    throw new Error(`String must be at most ${options.maxLength} characters`);
+    throw new Error(`String must be at most ${options.maxLength} characters`)
   }
   if (options.pattern && !options.pattern.test(trimmed)) {
-    throw new Error('String format is invalid');
+    throw new Error('String format is invalid')
   }
-  
-  return trimmed;
+
+  return trimmed
 }
 
 function validateDate(dateStr) {
-  const date = new Date(dateStr);
+  const date = new Date(dateStr)
   if (isNaN(date.getTime())) {
-    throw new Error('Invalid date format');
+    throw new Error('Invalid date format')
   }
-  return date.toISOString();
+  return date.toISOString()
 }
 
 function validateUUID(uuid) {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
   if (!uuidRegex.test(uuid)) {
-    throw new Error('Invalid UUID format');
+    throw new Error('Invalid UUID format')
   }
-  return uuid.toLowerCase();
+  return uuid.toLowerCase()
 }
 
 // ============================================================================
@@ -236,7 +239,7 @@ function validateUUID(uuid) {
  */
 export function sanitizeInput(input, options = {}) {
   if (typeof input !== 'string') {
-    return input;
+    return input
   }
 
   // Use DOMPurify for comprehensive XSS protection
@@ -248,10 +251,10 @@ export function sanitizeInput(input, options = {}) {
     WHOLE_DOCUMENT: false,
     RETURN_DOM: false,
     RETURN_DOM_FRAGMENT: false,
-    RETURN_TRUSTED_TYPE: false
-  };
+    RETURN_TRUSTED_TYPE: false,
+  }
 
-  return DOMPurify.sanitize(input, config);
+  return DOMPurify.sanitize(input, config)
 }
 
 /**
@@ -261,7 +264,7 @@ export function sanitizeInput(input, options = {}) {
  */
 export function escapeHtml(str) {
   if (typeof str !== 'string') {
-    return str;
+    return str
   }
 
   const htmlEscapes = {
@@ -270,10 +273,10 @@ export function escapeHtml(str) {
     '>': '&gt;',
     '"': '&quot;',
     "'": '&#39;',
-    '/': '&#x2F;'
-  };
+    '/': '&#x2F;',
+  }
 
-  return str.replace(/[&<>"'\/]/g, (match) => htmlEscapes[match]);
+  return str.replace(/[&<>"'/]/g, match => htmlEscapes[match])
 }
 
 /**
@@ -286,24 +289,24 @@ export function sanitizeUserContent(content, context = 'general') {
   const configs = {
     general: {
       allowedTags: ['p', 'br', 'strong', 'em', 'b', 'i'],
-      allowedAttributes: []
+      allowedAttributes: [],
     },
     comment: {
       allowedTags: ['p', 'br', 'strong', 'em'],
-      allowedAttributes: []
+      allowedAttributes: [],
     },
     description: {
       allowedTags: ['p', 'br', 'strong', 'em', 'ul', 'ol', 'li'],
-      allowedAttributes: []
+      allowedAttributes: [],
     },
     none: {
       allowedTags: [],
-      allowedAttributes: []
-    }
-  };
+      allowedAttributes: [],
+    },
+  }
 
-  const config = configs[context] || configs.general;
-  return sanitizeInput(content, config);
+  const config = configs[context] || configs.general
+  return sanitizeInput(content, config)
 }
 
 /**
@@ -313,33 +316,33 @@ export function sanitizeUserContent(content, context = 'general') {
  * @returns {object} Sanitized form data
  */
 export function sanitizeFormData(formData, schema) {
-  const sanitized = {};
+  const sanitized = {}
 
   for (const [field, rules] of Object.entries(schema)) {
-    if (formData.hasOwnProperty(field)) {
-      let value = formData[field];
+    if (Object.prototype.hasOwnProperty.call(formData, field)) {
+      let value = formData[field]
 
       // Apply sanitization rules
       if (rules.sanitize) {
         if (rules.sanitize === 'html') {
-          value = escapeHtml(value);
+          value = escapeHtml(value)
         } else if (rules.sanitize === 'content') {
-          value = sanitizeUserContent(value, rules.context);
+          value = sanitizeUserContent(value, rules.context)
         }
       }
 
       // Apply validation rules
       if (rules.type) {
-        value = validateInput(value, rules.type, rules.options);
+        value = validateInput(value, rules.type, rules.options)
       }
 
-      sanitized[field] = value;
+      sanitized[field] = value
     } else if (rules.required) {
-      throw new Error(`Required field missing: ${field}`);
+      throw new Error(`Required field missing: ${field}`)
     }
   }
 
-  return sanitized;
+  return sanitized
 }
 
 // ============================================================================
@@ -351,9 +354,9 @@ export function sanitizeFormData(formData, schema) {
  */
 export class RateLimiter {
   constructor() {
-    this.requests = new Map();
-    this.blockedIPs = new Map();
-    this.cleanupInterval = setInterval(() => this.cleanup(), 60000); // Cleanup every minute
+    this.requests = new Map()
+    this.blockedIPs = new Map()
+    this.cleanupInterval = setInterval(() => this.cleanup(), 60000) // Cleanup every minute
   }
 
   /**
@@ -367,39 +370,41 @@ export class RateLimiter {
       maxRequests = 5,
       windowMs = 15 * 60 * 1000, // 15 minutes
       blockDurationMs = 60 * 60 * 1000, // 1 hour
-      action = 'default'
-    } = options;
+      action = 'default',
+    } = options
 
-    const key = `${identifier}:${action}`;
-    const now = Date.now();
+    const key = `${identifier}:${action}`
+    const now = Date.now()
 
     // Check if IP is currently blocked
     if (this.blockedIPs.has(identifier)) {
-      const blockInfo = this.blockedIPs.get(identifier);
+      const blockInfo = this.blockedIPs.get(identifier)
       if (now < blockInfo.blockedUntil) {
         return {
           allowed: false,
           remaining: 0,
           resetTime: blockInfo.blockedUntil,
           blocked: true,
-          message: 'IP blocked due to too many failed attempts'
-        };
+          message: 'IP blocked due to too many failed attempts',
+        }
       } else {
         // Block expired, remove it
-        this.blockedIPs.delete(identifier);
+        this.blockedIPs.delete(identifier)
       }
     }
 
     // Get or create request history for this key
     if (!this.requests.has(key)) {
-      this.requests.set(key, []);
+      this.requests.set(key, [])
     }
 
-    const requestHistory = this.requests.get(key);
-    
+    const requestHistory = this.requests.get(key)
+
     // Remove old requests outside the window
-    const validRequests = requestHistory.filter(timestamp => now - timestamp < windowMs);
-    this.requests.set(key, validRequests);
+    const validRequests = requestHistory.filter(
+      timestamp => now - timestamp < windowMs
+    )
+    this.requests.set(key, validRequests)
 
     // Check if limit exceeded
     if (validRequests.length >= maxRequests) {
@@ -407,29 +412,29 @@ export class RateLimiter {
       this.blockedIPs.set(identifier, {
         blockedAt: now,
         blockedUntil: now + blockDurationMs,
-        reason: 'Rate limit exceeded'
-      });
+        reason: 'Rate limit exceeded',
+      })
 
       return {
         allowed: false,
         remaining: 0,
         resetTime: now + blockDurationMs,
         blocked: true,
-        message: `Too many ${action} attempts. IP blocked for ${blockDurationMs / 60000} minutes.`
-      };
+        message: `Too many ${action} attempts. IP blocked for ${blockDurationMs / 60000} minutes.`,
+      }
     }
 
     // Record this request
-    validRequests.push(now);
-    this.requests.set(key, validRequests);
+    validRequests.push(now)
+    this.requests.set(key, validRequests)
 
     return {
       allowed: true,
       remaining: maxRequests - validRequests.length,
       resetTime: now + windowMs,
       blocked: false,
-      message: 'Request allowed'
-    };
+      message: 'Request allowed',
+    }
   }
 
   /**
@@ -438,32 +443,34 @@ export class RateLimiter {
    * @param {string} action - Action type
    */
   reset(identifier, action = 'default') {
-    const key = `${identifier}:${action}`;
-    this.requests.delete(key);
-    this.blockedIPs.delete(identifier);
+    const key = `${identifier}:${action}`
+    this.requests.delete(key)
+    this.blockedIPs.delete(identifier)
   }
 
   /**
    * Cleanup old entries
    */
   cleanup() {
-    const now = Date.now();
-    const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+    const now = Date.now()
+    const maxAge = 24 * 60 * 60 * 1000 // 24 hours
 
     // Clean up old request histories
     for (const [key, history] of this.requests.entries()) {
-      const validRequests = history.filter(timestamp => now - timestamp < maxAge);
+      const validRequests = history.filter(
+        timestamp => now - timestamp < maxAge
+      )
       if (validRequests.length === 0) {
-        this.requests.delete(key);
+        this.requests.delete(key)
       } else {
-        this.requests.set(key, validRequests);
+        this.requests.set(key, validRequests)
       }
     }
 
     // Clean up expired IP blocks
     for (const [ip, blockInfo] of this.blockedIPs.entries()) {
       if (now > blockInfo.blockedUntil) {
-        this.blockedIPs.delete(ip);
+        this.blockedIPs.delete(ip)
       }
     }
   }
@@ -475,15 +482,15 @@ export class RateLimiter {
    * @returns {object} Current status
    */
   getStatus(identifier, action = 'default') {
-    const key = `${identifier}:${action}`;
-    const requestHistory = this.requests.get(key) || [];
-    const blocked = this.blockedIPs.has(identifier);
-    
+    const key = `${identifier}:${action}`
+    const requestHistory = this.requests.get(key) || []
+    const blocked = this.blockedIPs.has(identifier)
+
     return {
       requestCount: requestHistory.length,
       blocked,
-      blockInfo: blocked ? this.blockedIPs.get(identifier) : null
-    };
+      blockInfo: blocked ? this.blockedIPs.get(identifier) : null,
+    }
   }
 
   /**
@@ -491,15 +498,15 @@ export class RateLimiter {
    */
   destroy() {
     if (this.cleanupInterval) {
-      clearInterval(this.cleanupInterval);
+      clearInterval(this.cleanupInterval)
     }
-    this.requests.clear();
-    this.blockedIPs.clear();
+    this.requests.clear()
+    this.blockedIPs.clear()
   }
 }
 
 // Global rate limiter instance
-const globalRateLimiter = new RateLimiter();
+const globalRateLimiter = new RateLimiter()
 
 /**
  * Rate limiting configurations for different actions
@@ -509,33 +516,33 @@ export const RATE_LIMITS = {
     maxRequests: 5,
     windowMs: 15 * 60 * 1000, // 15 minutes
     blockDurationMs: 60 * 60 * 1000, // 1 hour
-    action: 'login'
+    action: 'login',
   },
   PASSWORD_RESET: {
     maxRequests: 3,
     windowMs: 60 * 60 * 1000, // 1 hour
     blockDurationMs: 2 * 60 * 60 * 1000, // 2 hours
-    action: 'password_reset'
+    action: 'password_reset',
   },
   MESSAGE_SEND: {
     maxRequests: 10,
     windowMs: 60 * 1000, // 1 minute
     blockDurationMs: 15 * 60 * 1000, // 15 minutes
-    action: 'message'
+    action: 'message',
   },
   APPLICATION_SUBMIT: {
     maxRequests: 3,
     windowMs: 24 * 60 * 60 * 1000, // 24 hours
     blockDurationMs: 24 * 60 * 60 * 1000, // 24 hours
-    action: 'application'
+    action: 'application',
   },
   LISTING_CREATE: {
     maxRequests: 5,
     windowMs: 60 * 60 * 1000, // 1 hour
     blockDurationMs: 2 * 60 * 60 * 1000, // 2 hours
-    action: 'listing'
-  }
-};
+    action: 'listing',
+  },
+}
 
 /**
  * Apply rate limiting to a request
@@ -544,8 +551,8 @@ export const RATE_LIMITS = {
  * @returns {object} Rate limit result
  */
 export function applyRateLimit(identifier, action) {
-  const config = RATE_LIMITS[action.toUpperCase()] || RATE_LIMITS.LOGIN;
-  return globalRateLimiter.checkLimit(identifier, config);
+  const config = RATE_LIMITS[action.toUpperCase()] || RATE_LIMITS.LOGIN
+  return globalRateLimiter.checkLimit(identifier, config)
 }
 
 /**
@@ -554,7 +561,7 @@ export function applyRateLimit(identifier, action) {
  * @param {string} action - Action type
  */
 export function resetRateLimit(identifier, action) {
-  globalRateLimiter.reset(identifier, action);
+  globalRateLimiter.reset(identifier, action)
 }
 
 // ============================================================================
@@ -567,12 +574,12 @@ export function resetRateLimit(identifier, action) {
  * @returns {string} Random token
  */
 export function generateSecureToken(length = 32) {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let result = '';
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+  let result = ''
   for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
+    result += chars.charAt(Math.floor(Math.random() * chars.length))
   }
-  return result;
+  return result
 }
 
 /**
@@ -583,11 +590,11 @@ export function generateSecureToken(length = 32) {
 export async function hashPassword(password) {
   // In a real application, use bcrypt or similar
   // This is a simplified example
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password + 'salt'); // Use proper salt generation
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  const encoder = new TextEncoder()
+  const data = encoder.encode(password + 'salt') // Use proper salt generation
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
 }
 
 /**
@@ -597,8 +604,8 @@ export async function hashPassword(password) {
  * @returns {Promise<boolean>} Whether password matches
  */
 export async function verifyPassword(password, hash) {
-  const newHash = await hashPassword(password);
-  return newHash === hash;
+  const newHash = await hashPassword(password)
+  return newHash === hash
 }
 
 /**
@@ -611,31 +618,35 @@ export function validateFileUpload(file, options = {}) {
   const {
     maxSize = 10 * 1024 * 1024, // 10MB
     allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'],
-    allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.pdf']
-  } = options;
+    allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.pdf'],
+  } = options
 
-  const errors = [];
+  const errors = []
 
   // Check file size
   if (file.size > maxSize) {
-    errors.push(`File size must be less than ${maxSize / (1024 * 1024)}MB`);
+    errors.push(`File size must be less than ${maxSize / (1024 * 1024)}MB`)
   }
 
   // Check file type
   if (!allowedTypes.includes(file.type)) {
-    errors.push(`File type not allowed. Allowed types: ${allowedTypes.join(', ')}`);
+    errors.push(
+      `File type not allowed. Allowed types: ${allowedTypes.join(', ')}`
+    )
   }
 
   // Check file extension
-  const extension = '.' + file.name.split('.').pop().toLowerCase();
+  const extension = '.' + file.name.split('.').pop().toLowerCase()
   if (!allowedExtensions.includes(extension)) {
-    errors.push(`File extension not allowed. Allowed extensions: ${allowedExtensions.join(', ')}`);
+    errors.push(
+      `File extension not allowed. Allowed extensions: ${allowedExtensions.join(', ')}`
+    )
   }
 
   return {
     valid: errors.length === 0,
-    errors
-  };
+    errors,
+  }
 }
 
 /**
@@ -650,23 +661,29 @@ export function logSecurityEvent(event, details, severity = 'info') {
     event,
     details,
     severity,
-    userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown'
-  };
+    userAgent:
+      typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
+  }
 
   // In a real application, send this to a secure logging service
-  console.log('Security Event:', logEntry);
-  
+  console.log('Security Event:', logEntry)
+
   // Store critical events locally for immediate analysis
   if (severity === 'critical' || severity === 'high') {
-    const criticalEvents = JSON.parse(localStorage.getItem('criticalSecurityEvents') || '[]');
-    criticalEvents.push(logEntry);
-    
+    const criticalEvents = JSON.parse(
+      localStorage.getItem('criticalSecurityEvents') || '[]'
+    )
+    criticalEvents.push(logEntry)
+
     // Keep only the last 100 critical events
     if (criticalEvents.length > 100) {
-      criticalEvents.splice(0, criticalEvents.length - 100);
+      criticalEvents.splice(0, criticalEvents.length - 100)
     }
-    
-    localStorage.setItem('criticalSecurityEvents', JSON.stringify(criticalEvents));
+
+    localStorage.setItem(
+      'criticalSecurityEvents',
+      JSON.stringify(criticalEvents)
+    )
   }
 }
 
@@ -685,5 +702,5 @@ export default {
   hashPassword,
   verifyPassword,
   validateFileUpload,
-  logSecurityEvent
-};
+  logSecurityEvent,
+}

@@ -1,4 +1,10 @@
-import { createContext, useContext, useReducer, useCallback, useEffect } from 'react'
+import {
+  createContext,
+  useContext,
+  useReducer,
+  useCallback,
+  useEffect,
+} from 'react'
 import PropTypes from 'prop-types'
 import { messagingService } from '../services/messagingService'
 import { useAuth } from './AuthContext'
@@ -40,7 +46,7 @@ function messagingReducer(state, action) {
         },
       }
 
-    case MESSAGING_ACTIONS.ADD_MESSAGE:
+    case MESSAGING_ACTIONS.ADD_MESSAGE: {
       const conversationId = action.payload.conversationId
       const currentMessages = state.messages[conversationId] || []
       return {
@@ -50,6 +56,7 @@ function messagingReducer(state, action) {
           [conversationId]: [...currentMessages, action.payload.message],
         },
       }
+    }
 
     case MESSAGING_ACTIONS.SET_SELECTED_CONVERSATION:
       return { ...state, selectedConversation: action.payload }
@@ -57,7 +64,7 @@ function messagingReducer(state, action) {
     case MESSAGING_ACTIONS.UPDATE_CONVERSATION:
       return {
         ...state,
-        conversations: state.conversations.map((conv) =>
+        conversations: state.conversations.map(conv =>
           conv.id === action.payload.id ? action.payload : conv
         ),
       }
@@ -65,14 +72,14 @@ function messagingReducer(state, action) {
     case MESSAGING_ACTIONS.MARK_AS_READ:
       return {
         ...state,
-        conversations: state.conversations.map((conv) =>
-          conv.id === action.payload
-            ? { ...conv, unreadCount: 0 }
-            : conv
+        conversations: state.conversations.map(conv =>
+          conv.id === action.payload ? { ...conv, unreadCount: 0 } : conv
         ),
         unreadCount: Math.max(
           0,
-          state.unreadCount - (state.conversations.find((c) => c.id === action.payload)?.unreadCount || 0)
+          state.unreadCount -
+            (state.conversations.find(c => c.id === action.payload)
+              ?.unreadCount || 0)
         ),
       }
 
@@ -102,13 +109,19 @@ export function MessagingProvider({ children }) {
     try {
       const data = await messagingService.getConversations()
       const conversations = data.conversations || []
-      
+
       // Calculate total unread count
-      const unreadCount = conversations.reduce((sum, conv) => sum + (conv.unreadCount || 0), 0)
-      
-      dispatch({ type: MESSAGING_ACTIONS.SET_CONVERSATIONS, payload: conversations })
+      const unreadCount = conversations.reduce(
+        (sum, conv) => sum + (conv.unreadCount || 0),
+        0
+      )
+
+      dispatch({
+        type: MESSAGING_ACTIONS.SET_CONVERSATIONS,
+        payload: conversations,
+      })
       dispatch({ type: MESSAGING_ACTIONS.SET_ERROR, payload: null })
-      
+
       return { success: true, conversations, unreadCount }
     } catch (error) {
       const errorMessage = error.response?.data?.error || error.message
@@ -118,17 +131,17 @@ export function MessagingProvider({ children }) {
   }, [])
 
   // Fetch messages for a conversation
-  const fetchMessages = useCallback(async (conversationId) => {
+  const fetchMessages = useCallback(async conversationId => {
     try {
       const data = await messagingService.getConversation(conversationId)
       const messages = data.messages || []
-      
+
       dispatch({
         type: MESSAGING_ACTIONS.SET_MESSAGES,
         payload: { conversationId, messages },
       })
       dispatch({ type: MESSAGING_ACTIONS.SET_ERROR, payload: null })
-      
+
       return { success: true, messages }
     } catch (error) {
       const errorMessage = error.response?.data?.error || error.message
@@ -138,77 +151,104 @@ export function MessagingProvider({ children }) {
   }, [])
 
   // Send a message
-  const sendMessage = useCallback(async (conversationId, content, type = 'text', metadata = null) => {
-    try {
-      const data = await messagingService.sendMessage(conversationId, content, type, metadata)
-      const message = data.message
+  const sendMessage = useCallback(
+    async (conversationId, content, type = 'text', metadata = null) => {
+      try {
+        const data = await messagingService.sendMessage(
+          conversationId,
+          content,
+          type,
+          metadata
+        )
+        const message = data.message
 
-      dispatch({
-        type: MESSAGING_ACTIONS.ADD_MESSAGE,
-        payload: { conversationId, message },
-      })
+        dispatch({
+          type: MESSAGING_ACTIONS.ADD_MESSAGE,
+          payload: { conversationId, message },
+        })
 
-      return { success: true, message }
-    } catch (error) {
-      const errorMessage = error.response?.data?.error || error.message
-      return { success: false, error: errorMessage }
-    }
-  }, [])
+        return { success: true, message }
+      } catch (error) {
+        const errorMessage = error.response?.data?.error || error.message
+        return { success: false, error: errorMessage }
+      }
+    },
+    []
+  )
 
   // Create a new conversation (individual or group)
-  const createConversation = useCallback(async (recipientId, listingId = null, initialMessage = null) => {
-    try {
-      const data = await messagingService.startConversation(recipientId, listingId, initialMessage)
-      const conversation = data.conversation
+  const createConversation = useCallback(
+    async (recipientId, listingId = null, initialMessage = null) => {
+      try {
+        const data = await messagingService.startConversation(
+          recipientId,
+          listingId,
+          initialMessage
+        )
+        const conversation = data.conversation
 
-      dispatch({
-        type: MESSAGING_ACTIONS.UPDATE_CONVERSATION,
-        payload: conversation,
-      })
+        dispatch({
+          type: MESSAGING_ACTIONS.UPDATE_CONVERSATION,
+          payload: conversation,
+        })
 
-      return { success: true, conversation, message: data.message }
-    } catch (error) {
-      const errorMessage = error.response?.data?.error || error.message
-      return { success: false, error: errorMessage }
-    }
-  }, [])
+        return { success: true, conversation, message: data.message }
+      } catch (error) {
+        const errorMessage = error.response?.data?.error || error.message
+        return { success: false, error: errorMessage }
+      }
+    },
+    []
+  )
 
   // Get or create conversation with user(s)
-  const getOrCreateConversation = useCallback(async (participants, listingId = null, groupId = null) => {
-    try {
-      // Check if conversation exists
-      const existing = state.conversations.find((conv) => {
-        if (groupId && conv.groupId === groupId) return true
-        if (!groupId && conv.type === 'individual') {
-          const convParticipants = conv.participants.map((p) => p.id).sort()
-          const newParticipants = participants.sort()
-          return JSON.stringify(convParticipants) === JSON.stringify(newParticipants)
+  const getOrCreateConversation = useCallback(
+    async (participants, listingId = null, groupId = null) => {
+      try {
+        // Check if conversation exists
+        const existing = state.conversations.find(conv => {
+          if (groupId && conv.groupId === groupId) return true
+          if (!groupId && conv.type === 'individual') {
+            const convParticipants = conv.participants.map(p => p.id).sort()
+            const newParticipants = participants.sort()
+            return (
+              JSON.stringify(convParticipants) ===
+              JSON.stringify(newParticipants)
+            )
+          }
+          return false
+        })
+
+        if (existing) {
+          dispatch({
+            type: MESSAGING_ACTIONS.SET_SELECTED_CONVERSATION,
+            payload: existing,
+          })
+          return { success: true, conversation: existing }
         }
-        return false
-      })
 
-      if (existing) {
-        dispatch({ type: MESSAGING_ACTIONS.SET_SELECTED_CONVERSATION, payload: existing })
-        return { success: true, conversation: existing }
+        // Create new conversation
+        return await createConversation({
+          type: groupId ? 'group' : 'individual',
+          participants,
+          listingId,
+          groupId,
+        })
+      } catch (error) {
+        return { success: false, error: error.message }
       }
-
-      // Create new conversation
-      return await createConversation({
-        type: groupId ? 'group' : 'individual',
-        participants,
-        listingId,
-        groupId,
-      })
-    } catch (error) {
-      return { success: false, error: error.message }
-    }
-  }, [state.conversations, createConversation])
+    },
+    [state.conversations, createConversation]
+  )
 
   // Mark conversation as read
-  const markAsRead = useCallback(async (conversationId) => {
+  const markAsRead = useCallback(async conversationId => {
     try {
       await messagingService.markAsRead(conversationId)
-      dispatch({ type: MESSAGING_ACTIONS.MARK_AS_READ, payload: conversationId })
+      dispatch({
+        type: MESSAGING_ACTIONS.MARK_AS_READ,
+        payload: conversationId,
+      })
       return { success: true }
     } catch (error) {
       const errorMessage = error.response?.data?.error || error.message
@@ -217,15 +257,22 @@ export function MessagingProvider({ children }) {
   }, [])
 
   // Select a conversation
-  const selectConversation = useCallback((conversation) => {
-    dispatch({ type: MESSAGING_ACTIONS.SET_SELECTED_CONVERSATION, payload: conversation })
+  const selectConversation = useCallback(conversation => {
+    dispatch({
+      type: MESSAGING_ACTIONS.SET_SELECTED_CONVERSATION,
+      payload: conversation,
+    })
   }, [])
 
   // Fetch unread count
   const fetchUnreadCount = useCallback(async () => {
     try {
       const data = await messagingService.getUnreadCount()
-      return { success: true, total: data.total, byConversation: data.byConversation }
+      return {
+        success: true,
+        total: data.total,
+        byConversation: data.byConversation,
+      }
     } catch (error) {
       const errorMessage = error.response?.data?.error || error.message
       return { success: false, error: errorMessage }
@@ -233,22 +280,30 @@ export function MessagingProvider({ children }) {
   }, [])
 
   // Send tour request
-  const sendTourRequest = useCallback(async (conversationId, listingId, proposedTimes, message = null) => {
-    try {
-      const data = await messagingService.sendTourRequest(conversationId, listingId, proposedTimes, message)
-      const tourMessage = data.message
+  const sendTourRequest = useCallback(
+    async (conversationId, listingId, proposedTimes, message = null) => {
+      try {
+        const data = await messagingService.sendTourRequest(
+          conversationId,
+          listingId,
+          proposedTimes,
+          message
+        )
+        const tourMessage = data.message
 
-      dispatch({
-        type: MESSAGING_ACTIONS.ADD_MESSAGE,
-        payload: { conversationId, message: tourMessage },
-      })
+        dispatch({
+          type: MESSAGING_ACTIONS.ADD_MESSAGE,
+          payload: { conversationId, message: tourMessage },
+        })
 
-      return { success: true, message: tourMessage }
-    } catch (error) {
-      const errorMessage = error.response?.data?.error || error.message
-      return { success: false, error: errorMessage }
-    }
-  }, [])
+        return { success: true, message: tourMessage }
+      } catch (error) {
+        const errorMessage = error.response?.data?.error || error.message
+        return { success: false, error: errorMessage }
+      }
+    },
+    []
+  )
 
   // Auto-fetch conversations when user logs in
   useEffect(() => {

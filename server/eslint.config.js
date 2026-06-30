@@ -26,6 +26,8 @@ export default [
         clearInterval: 'readonly',
         setImmediate: 'readonly',
         clearImmediate: 'readonly',
+        // Web Crypto global (Node 18+) — used by generateSecureToken()
+        crypto: 'readonly',
         // ES2022 globals
         Promise: 'readonly',
         // Test globals (for Vitest)

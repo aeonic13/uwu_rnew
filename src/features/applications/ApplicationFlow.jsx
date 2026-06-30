@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { usePlaidLink } from 'react-plaid-link'
 import {
   ArrowLeft,
   Check,
@@ -900,7 +901,8 @@ function ApplicationFlow() {
             preQualifiedAt: preQualData.completedAt,
             bankConnected: !!preQualData.verifications?.bank?.verified,
             incomeVerified: !!preQualData.verifications?.income?.verified,
-            monthlyIncome: preQualData.verifications?.income?.monthlyIncome || null,
+            monthlyIncome:
+              preQualData.verifications?.income?.monthlyIncome || null,
             identityVerified: !!preQualData.verifications?.identity?.verified,
             applicationFeePaid: true,
           }

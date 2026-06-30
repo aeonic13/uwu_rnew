@@ -1,19 +1,32 @@
-import React, { useState, useEffect } from 'react'
-import { ArrowLeft, Heart, MessageCircle, User, TrendingUp, Check, X, AlertCircle } from 'lucide-react'
+import React, { useState, useMemo } from 'react'
+import {
+  ArrowLeft,
+  Heart,
+  MessageCircle,
+  User,
+  TrendingUp,
+  Check,
+  X,
+  AlertCircle,
+} from 'lucide-react'
 import { findBestMatches } from './utils/roommateCompatibility'
 
-const RoommateMatching = ({ userAnswers, potentialRoommates, onBack, onMessageUser }) => {
-  const [matches, setMatches] = useState([])
+const RoommateMatching = ({
+  userAnswers,
+  potentialRoommates,
+  onBack,
+  onMessageUser,
+}) => {
   const [selectedMatch, setSelectedMatch] = useState(null)
   const [showDetails, setShowDetails] = useState(false)
 
-  useEffect(() => {
-    // Calculate matches when component mounts
-    const calculatedMatches = findBestMatches(userAnswers, potentialRoommates, null, 20)
-    setMatches(calculatedMatches)
-  }, [userAnswers, potentialRoommates])
+  // Derive matches during render instead of syncing via an effect
+  const matches = useMemo(
+    () => findBestMatches(userAnswers, potentialRoommates, null, 20),
+    [userAnswers, potentialRoommates]
+  )
 
-  const getCategoryName = (category) => {
+  const getCategoryName = category => {
     const names = {
       cleanliness: 'Cleanliness',
       sharing: 'Sharing & Expenses',
@@ -21,12 +34,12 @@ const RoommateMatching = ({ userAnswers, potentialRoommates, onBack, onMessageUs
       lifestyle: 'Lifestyle',
       socializing: 'Socializing',
       food: 'Food & Cooking',
-      relationship: 'Relationship'
+      relationship: 'Relationship',
     }
     return names[category] || category
   }
 
-  const getScoreColor = (score) => {
+  const getScoreColor = score => {
     if (score >= 85) return 'text-green-600 bg-green-50'
     if (score >= 70) return 'text-green-600 bg-green-50'
     if (score >= 55) return 'text-brand-500 bg-brand-50'
@@ -53,10 +66,12 @@ const RoommateMatching = ({ userAnswers, potentialRoommates, onBack, onMessageUs
             </div>
             <div>
               <h3 className="font-semibold text-gray-900">{match.name}</h3>
-              <p className="text-sm text-gray-500">{match.university || 'Student'}</p>
+              <p className="text-sm text-gray-500">
+                {match.university || 'Student'}
+              </p>
             </div>
           </div>
-          
+
           <div className={`px-3 py-1 rounded-full ${scoreColor} font-semibold`}>
             {compatibility.overallScore}%
           </div>
@@ -68,13 +83,15 @@ const RoommateMatching = ({ userAnswers, potentialRoommates, onBack, onMessageUs
 
         <div className="flex items-center justify-between">
           <div className="flex items-center text-sm">
-            <span className={`font-medium ${compatibility.interpretation.color === 'green' ? 'text-green-600' : compatibility.interpretation.color === 'blue' ? 'text-brand-500' : compatibility.interpretation.color === 'yellow' ? 'text-yellow-600' : 'text-red-600'}`}>
+            <span
+              className={`font-medium ${compatibility.interpretation.color === 'green' ? 'text-green-600' : compatibility.interpretation.color === 'blue' ? 'text-brand-500' : compatibility.interpretation.color === 'yellow' ? 'text-yellow-600' : 'text-red-600'}`}
+            >
               {compatibility.interpretation.text}
             </span>
           </div>
-          
+
           <button
-            onClick={(e) => {
+            onClick={e => {
               e.stopPropagation()
               onMessageUser(match)
             }}
@@ -86,20 +103,26 @@ const RoommateMatching = ({ userAnswers, potentialRoommates, onBack, onMessageUs
 
         {/* Category breakdown preview */}
         <div className="mt-3 pt-3 border-t grid grid-cols-3 gap-2">
-          {Object.entries(compatibility.categoryScores).slice(0, 3).map(([category, data]) => (
-            <div key={category} className="text-center">
-              <p className="text-xs text-gray-500 mb-1">{getCategoryName(category)}</p>
-              <p className={`text-sm font-semibold ${getScoreColor(data.score)}`}>
-                {data.score}%
-              </p>
-            </div>
-          ))}
+          {Object.entries(compatibility.categoryScores)
+            .slice(0, 3)
+            .map(([category, data]) => (
+              <div key={category} className="text-center">
+                <p className="text-xs text-gray-500 mb-1">
+                  {getCategoryName(category)}
+                </p>
+                <p
+                  className={`text-sm font-semibold ${getScoreColor(data.score)}`}
+                >
+                  {data.score}%
+                </p>
+              </div>
+            ))}
         </div>
       </div>
     )
   }
 
-  const MatchDetails = ({ match }) => {
+  const renderMatchDetails = match => {
     const { compatibility } = match
 
     return (
@@ -113,15 +136,19 @@ const RoommateMatching = ({ userAnswers, potentialRoommates, onBack, onMessageUs
               <ArrowLeft className="w-5 h-5 mr-2" />
               Back to matches
             </button>
-            
+
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <div className="w-16 h-16 rounded-full bg-brand-100 flex items-center justify-center mr-4">
                   <User className="w-8 h-8 text-brand-500" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">{match.name}</h2>
-                  <p className="text-gray-600">{match.university || 'Student'}</p>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    {match.name}
+                  </h2>
+                  <p className="text-gray-600">
+                    {match.university || 'Student'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -131,8 +158,12 @@ const RoommateMatching = ({ userAnswers, potentialRoommates, onBack, onMessageUs
             {/* Overall compatibility */}
             <div className="bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg p-6 text-white mb-6">
               <div className="text-center">
-                <div className="text-5xl font-bold mb-2">{compatibility.overallScore}%</div>
-                <p className="text-lg opacity-90">{compatibility.interpretation.text}</p>
+                <div className="text-5xl font-bold mb-2">
+                  {compatibility.overallScore}%
+                </div>
+                <p className="text-lg opacity-90">
+                  {compatibility.interpretation.text}
+                </p>
                 <div className="flex items-center justify-center mt-4">
                   <TrendingUp className="w-5 h-5 mr-2" />
                   <span>Compatibility Score</span>
@@ -150,26 +181,37 @@ const RoommateMatching = ({ userAnswers, potentialRoommates, onBack, onMessageUs
 
             {/* Category breakdown */}
             <div className="mb-6">
-              <h3 className="font-bold text-gray-900 mb-4">Compatibility Breakdown</h3>
+              <h3 className="font-bold text-gray-900 mb-4">
+                Compatibility Breakdown
+              </h3>
               <div className="space-y-3">
                 {Object.entries(compatibility.categoryScores)
                   .sort((a, b) => b[1].score - a[1].score)
                   .map(([category, data]) => (
-                    <div key={category} className="bg-white rounded-lg p-4 border">
+                    <div
+                      key={category}
+                      className="bg-white rounded-lg p-4 border"
+                    >
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-medium text-gray-900">
                           {getCategoryName(category)}
                         </span>
-                        <span className={`font-semibold ${getScoreColor(data.score)}`}>
+                        <span
+                          className={`font-semibold ${getScoreColor(data.score)}`}
+                        >
                           {data.score}%
                         </span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
                           className={`h-2 rounded-full ${
-                            data.score >= 70 ? 'bg-green-500' : 
-                            data.score >= 55 ? 'bg-brand-500' : 
-                            data.score >= 40 ? 'bg-yellow-500' : 'bg-red-500'
+                            data.score >= 70
+                              ? 'bg-green-500'
+                              : data.score >= 55
+                                ? 'bg-brand-500'
+                                : data.score >= 40
+                                  ? 'bg-yellow-500'
+                                  : 'bg-red-500'
                           }`}
                           style={{ width: `${data.score}%` }}
                         />
@@ -190,31 +232,43 @@ const RoommateMatching = ({ userAnswers, potentialRoommates, onBack, onMessageUs
                   .filter(item => item.score < 50)
                   .slice(0, 5)
                   .map((item, idx) => (
-                    <div key={idx} className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                    <div
+                      key={idx}
+                      className="bg-yellow-50 border border-yellow-200 rounded-lg p-3"
+                    >
                       <div className="flex items-start">
                         <AlertCircle className="w-5 h-5 text-yellow-600 mr-2 mt-0.5 flex-shrink-0" />
                         <div>
                           <p className="text-sm font-medium text-gray-900">
-                            Different preferences in {getCategoryName(item.category)}
+                            Different preferences in{' '}
+                            {getCategoryName(item.category)}
                           </p>
                           <p className="text-xs text-gray-600 mt-1">
-                            Score: {Math.round(item.score)}% - Consider discussing this
+                            Score: {Math.round(item.score)}% - Consider
+                            discussing this
                           </p>
                         </div>
                       </div>
                     </div>
                   ))}
-                
-                {compatibility.breakdown.filter(item => item.score >= 90).length > 0 && (
+
+                {compatibility.breakdown.filter(item => item.score >= 90)
+                  .length > 0 && (
                   <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                     <div className="flex items-start">
                       <Check className="w-5 h-5 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
                       <div>
                         <p className="text-sm font-medium text-gray-900">
-                          {compatibility.breakdown.filter(item => item.score >= 90).length} areas of strong alignment
+                          {
+                            compatibility.breakdown.filter(
+                              item => item.score >= 90
+                            ).length
+                          }{' '}
+                          areas of strong alignment
                         </p>
                         <p className="text-xs text-gray-600 mt-1">
-                          You have very similar preferences in multiple categories
+                          You have very similar preferences in multiple
+                          categories
                         </p>
                       </div>
                     </div>
@@ -235,7 +289,7 @@ const RoommateMatching = ({ userAnswers, potentialRoommates, onBack, onMessageUs
                 <MessageCircle className="w-5 h-5 mr-2" />
                 Send Message
               </button>
-              
+
               <button
                 onClick={() => setShowDetails(false)}
                 className="w-full bg-gray-100 text-gray-700 py-4 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
@@ -261,10 +315,11 @@ const RoommateMatching = ({ userAnswers, potentialRoommates, onBack, onMessageUs
             <ArrowLeft className="w-5 h-5 mr-2" />
             Back
           </button>
-          
+
           <h1 className="text-2xl font-bold text-gray-900">Your Matches</h1>
           <p className="text-gray-600 mt-1">
-            Found {matches.length} compatible roommate{matches.length !== 1 ? 's' : ''}
+            Found {matches.length} compatible roommate
+            {matches.length !== 1 ? 's' : ''}
           </p>
         </div>
       </div>
@@ -276,7 +331,8 @@ const RoommateMatching = ({ userAnswers, potentialRoommates, onBack, onMessageUs
             <User className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h3 className="font-semibold text-gray-900 mb-2">No matches yet</h3>
             <p className="text-gray-600">
-              Check back later as more people complete their compatibility questionnaire
+              Check back later as more people complete their compatibility
+              questionnaire
             </p>
           </div>
         ) : (
@@ -289,9 +345,7 @@ const RoommateMatching = ({ userAnswers, potentialRoommates, onBack, onMessageUs
       </div>
 
       {/* Match details modal */}
-      {showDetails && selectedMatch && (
-        <MatchDetails match={selectedMatch} />
-      )}
+      {showDetails && selectedMatch && renderMatchDetails(selectedMatch)}
     </div>
   )
 }

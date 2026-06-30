@@ -32,6 +32,8 @@ export default function AdvancedFiltersModal({
 
   useEffect(() => {
     if (isOpen) {
+      // Re-seed the editable local copy from props each time the modal opens.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLocalFilters(filters)
     }
   }, [isOpen, filters])
@@ -41,36 +43,36 @@ export default function AdvancedFiltersModal({
     setLocalFilters({ ...localFilters, [field]: numValue })
   }
 
-  const handlePropertyTypeChange = (type) => {
+  const handlePropertyTypeChange = type => {
     setLocalFilters({
       ...localFilters,
       propertyType: localFilters.propertyType === type ? null : type,
     })
   }
 
-  const handleBedroomsChange = (count) => {
+  const handleBedroomsChange = count => {
     setLocalFilters({
       ...localFilters,
       bedrooms: localFilters.bedrooms === count ? null : count,
     })
   }
 
-  const handleBathroomsChange = (count) => {
+  const handleBathroomsChange = count => {
     setLocalFilters({
       ...localFilters,
       bathrooms: localFilters.bathrooms === count ? null : count,
     })
   }
 
-  const handleAmenityToggle = (amenity) => {
+  const handleAmenityToggle = amenity => {
     const currentAmenities = localFilters.amenities || []
     const newAmenities = currentAmenities.includes(amenity)
-      ? currentAmenities.filter((a) => a !== amenity)
+      ? currentAmenities.filter(a => a !== amenity)
       : [...currentAmenities, amenity]
     setLocalFilters({ ...localFilters, amenities: newAmenities })
   }
 
-  const handleMoveInDateChange = (date) => {
+  const handleMoveInDateChange = date => {
     setLocalFilters({ ...localFilters, moveInDate: date || null })
   }
 
@@ -118,7 +120,7 @@ export default function AdvancedFiltersModal({
                   type="number"
                   placeholder="$0"
                   value={localFilters.minRent || ''}
-                  onChange={(e) => handlePriceChange('minRent', e.target.value)}
+                  onChange={e => handlePriceChange('minRent', e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
@@ -130,7 +132,7 @@ export default function AdvancedFiltersModal({
                   type="number"
                   placeholder="$5000"
                   value={localFilters.maxRent || ''}
-                  onChange={(e) => handlePriceChange('maxRent', e.target.value)}
+                  onChange={e => handlePriceChange('maxRent', e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
@@ -141,7 +143,7 @@ export default function AdvancedFiltersModal({
           <div>
             <h3 className="text-lg font-semibold mb-3">Property Type</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {PROPERTY_TYPES.map((type) => (
+              {PROPERTY_TYPES.map(type => (
                 <button
                   key={type}
                   onClick={() => handlePropertyTypeChange(type)}
@@ -161,7 +163,7 @@ export default function AdvancedFiltersModal({
           <div>
             <h3 className="text-lg font-semibold mb-3">Bedrooms</h3>
             <div className="flex gap-3">
-              {[0, 1, 2, 3, 4].map((count) => (
+              {[0, 1, 2, 3, 4].map(count => (
                 <button
                   key={count}
                   onClick={() => handleBedroomsChange(count)}
@@ -181,7 +183,7 @@ export default function AdvancedFiltersModal({
           <div>
             <h3 className="text-lg font-semibold mb-3">Bathrooms</h3>
             <div className="flex gap-3">
-              {[1, 1.5, 2, 2.5, 3].map((count) => (
+              {[1, 1.5, 2, 2.5, 3].map(count => (
                 <button
                   key={count}
                   onClick={() => handleBathroomsChange(count)}
@@ -203,7 +205,7 @@ export default function AdvancedFiltersModal({
             <input
               type="date"
               value={localFilters.moveInDate || ''}
-              onChange={(e) => handleMoveInDateChange(e.target.value)}
+              onChange={e => handleMoveInDateChange(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
             <p className="text-sm text-gray-500 mt-2">
@@ -215,7 +217,7 @@ export default function AdvancedFiltersModal({
           <div>
             <h3 className="text-lg font-semibold mb-3">Amenities</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {AMENITIES.map((amenity) => (
+              {AMENITIES.map(amenity => (
                 <button
                   key={amenity}
                   onClick={() => handleAmenityToggle(amenity)}

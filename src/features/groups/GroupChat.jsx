@@ -29,7 +29,8 @@ export default function GroupChat({ groupId }) {
           id: '1',
           senderId: '1',
           senderName: 'Sarah Chen',
-          senderAvatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100',
+          senderAvatar:
+            'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100',
           content: 'Hey everyone! I found a great place near campus.',
           timestamp: new Date(Date.now() - 3600000).toISOString(),
           type: 'text',
@@ -38,7 +39,8 @@ export default function GroupChat({ groupId }) {
           id: '2',
           senderId: '2',
           senderName: 'Mike Rodriguez',
-          senderAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100',
+          senderAvatar:
+            'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100',
           content: 'Nice! Can you share the listing?',
           timestamp: new Date(Date.now() - 3500000).toISOString(),
           type: 'text',
@@ -47,7 +49,8 @@ export default function GroupChat({ groupId }) {
           id: '3',
           senderId: '1',
           senderName: 'Sarah Chen',
-          senderAvatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100',
+          senderAvatar:
+            'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100',
           content: null,
           timestamp: new Date(Date.now() - 3400000).toISOString(),
           type: 'listing',
@@ -56,10 +59,13 @@ export default function GroupChat({ groupId }) {
             title: 'Cozy 4BR near USC Campus',
             price: 3200,
             location: 'University Park, LA',
-            image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400',
+            image:
+              'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400',
           },
         },
       ]
+      // Placeholder load of mock messages on group change (to be replaced by an API fetch).
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMessages(sampleMessages)
     }
   }, [groupId])
@@ -82,7 +88,7 @@ export default function GroupChat({ groupId }) {
     setNewMessage('')
   }
 
-  const handleKeyPress = (e) => {
+  const handleKeyPress = e => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSendMessage()
@@ -94,12 +100,12 @@ export default function GroupChat({ groupId }) {
     console.log(`Add reaction ${reaction} to message ${messageId}`)
   }
 
-  const handleShareListing = (listingId) => {
+  const handleShareListing = listingId => {
     // TODO: Share listing in chat
     console.log(`Share listing ${listingId}`)
   }
 
-  const formatTime = (timestamp) => {
+  const formatTime = timestamp => {
     const date = new Date(timestamp)
     const now = new Date()
     const diffInHours = (now - date) / (1000 * 60 * 60)
@@ -120,7 +126,9 @@ export default function GroupChat({ groupId }) {
         <div className="flex items-center gap-3">
           <Users size={24} />
           <div>
-            <h2 className="font-semibold">{selectedGroup?.name || 'Group Chat'}</h2>
+            <h2 className="font-semibold">
+              {selectedGroup?.name || 'Group Chat'}
+            </h2>
             <p className="text-sm text-brand-100">
               {selectedGroup?.members?.length || 0} members
             </p>
@@ -130,7 +138,7 @@ export default function GroupChat({ groupId }) {
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message) => {
+        {messages.map(message => {
           const isOwnMessage = message.senderId === user.id
 
           return (
@@ -147,7 +155,9 @@ export default function GroupChat({ groupId }) {
                 />
               )}
 
-              <div className={`flex-1 ${isOwnMessage ? 'items-end' : 'items-start'} flex flex-col`}>
+              <div
+                className={`flex-1 ${isOwnMessage ? 'items-end' : 'items-start'} flex flex-col`}
+              >
                 {/* Sender name */}
                 {!isOwnMessage && (
                   <span className="text-sm text-gray-600 mb-1">
@@ -181,7 +191,10 @@ export default function GroupChat({ groupId }) {
                         <h4 className="font-semibold text-sm line-clamp-2">
                           {message.listingData.title}
                         </h4>
-                        <Home size={16} className="text-brand-500 flex-shrink-0" />
+                        <Home
+                          size={16}
+                          className="text-brand-500 flex-shrink-0"
+                        />
                       </div>
                       <p className="text-xs text-gray-600 mt-1">
                         {message.listingData.location}
@@ -194,11 +207,13 @@ export default function GroupChat({ groupId }) {
                 )}
 
                 {/* Timestamp and reactions */}
-                <div className={`flex items-center gap-2 mt-1 ${isOwnMessage ? 'flex-row-reverse' : ''}`}>
+                <div
+                  className={`flex items-center gap-2 mt-1 ${isOwnMessage ? 'flex-row-reverse' : ''}`}
+                >
                   <span className="text-xs text-gray-500">
                     {formatTime(message.timestamp)}
                   </span>
-                  
+
                   {/* Quick reactions */}
                   <div className="flex gap-1">
                     <button
@@ -237,7 +252,7 @@ export default function GroupChat({ groupId }) {
           <input
             type="text"
             value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
+            onChange={e => setNewMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Type a message..."
             className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
