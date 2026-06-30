@@ -192,6 +192,7 @@ router.post('/', authenticate, async (req, res) => {
       propertyType,
       bedrooms,
       bathrooms,
+      incomeMultiplier,
       amenities,
       images,
     } = req.body
@@ -216,6 +217,9 @@ router.post('/', authenticate, async (req, res) => {
         propertyType,
         bedrooms: bedrooms ? parseInt(bedrooms) : 0,
         bathrooms: bathrooms ? parseFloat(bathrooms) : 1,
+        ...(incomeMultiplier && {
+          incomeMultiplier: parseFloat(incomeMultiplier),
+        }),
         amenities: amenities || [],
         images: images || [],
         ownerId: req.user.id,

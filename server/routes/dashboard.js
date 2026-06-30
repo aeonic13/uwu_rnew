@@ -94,7 +94,8 @@ router.get(
         ...app,
         incomeAssessment: assessIncome(
           app.verificationData?.monthlyIncome,
-          listing.price
+          listing.price,
+          listing.incomeMultiplier
         ),
       }))
 
@@ -105,7 +106,7 @@ router.get(
           price: listing.price,
         },
         applications: assessedApplications,
-        incomeMultiplier: DEFAULT_INCOME_MULTIPLIER,
+        incomeMultiplier: listing.incomeMultiplier,
         stats,
       })
     } catch (error) {
@@ -552,7 +553,11 @@ router.get(
               applicationStatus:
                 app.status === 'approved' ? 'complete' : 'pending',
               monthlyIncome,
-              income: assessIncome(monthlyIncome, listing.price),
+              income: assessIncome(
+                monthlyIncome,
+                listing.price,
+                listing.incomeMultiplier
+              ),
               verificationData: {
                 bankConnected: !!app.verificationData?.bankConnected,
                 incomeVerified: !!app.verificationData?.incomeVerified,
@@ -579,7 +584,8 @@ router.get(
 
           const combined = assessCombinedIncome(
             members.map(m => m.monthlyIncome),
-            listing.price
+            listing.price,
+            listing.incomeMultiplier
           )
           const allComplete = members.every(
             m => m.applicationStatus === 'complete'
@@ -651,7 +657,11 @@ router.get(
               message: app.message || '',
               appliedAt: app.createdAt,
               documents: app.documents || [],
-              incomeAssessment: assessIncome(monthlyIncome, listing.price),
+              incomeAssessment: assessIncome(
+                monthlyIncome,
+                listing.price,
+                listing.incomeMultiplier
+              ),
             },
           }
         })

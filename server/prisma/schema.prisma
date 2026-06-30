@@ -107,6 +107,7 @@ model Listing {
   propertyType PropertyType
   bedrooms     Int          @default(0)
   bathrooms    Float        @default(1)
+  incomeMultiplier Float    @default(3)
   amenities    String[]
   images       String[]
   active       Boolean      @default(true)
