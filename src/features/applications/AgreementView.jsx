@@ -8,37 +8,8 @@ import {
   Download,
   Pen,
 } from 'lucide-react'
-import { useAuth } from '../../contexts/AuthContext'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
-
-// Sample agreement data
-const sampleAgreement = {
-  id: 'AGR-001',
-  status: 'pending_signature',
-  property: {
-    address: '123 University Park, Los Angeles, CA 90007',
-    description: 'Cozy 1BR near USC Campus',
-  },
-  tenant: {
-    name: 'John Doe',
-    email: 'john.doe@usc.edu',
-    phone: '(555) 123-4567',
-  },
-  landlord: {
-    name: 'Sarah Chen',
-    email: 'sarah.chen@email.com',
-    phone: '(555) 987-6543',
-  },
-  terms: {
-    monthlyRent: 1200,
-    securityDeposit: 2400,
-    startDate: '2024-01-15',
-    endDate: '2024-06-30',
-    utilities: 'Tenant responsible for electricity and internet',
-    petPolicy: 'No pets allowed',
-  },
-  createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-}
+import { agreementsService } from '../../services/agreementsService'
 
 /**
  * Format date
@@ -57,7 +28,6 @@ function formatDate(dateString) {
 function AgreementView() {
   const { agreementId } = useParams()
   const navigate = useNavigate()
-  const { user } = useAuth()
 
   const [agreement, setAgreement] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -69,10 +39,15 @@ function AgreementView() {
   useEffect(() => {
     const fetchAgreement = async () => {
       setIsLoading(true)
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 500))
-      setAgreement(sampleAgreement)
-      setIsLoading(false)
+      try {
+        const data = await agreementsService.getAgreement(agreementId)
+        setAgreement(data)
+      } catch (err) {
+        console.error('Failed to load agreement:', err)
+        setAgreement(null)
+      } finally {
+        setIsLoading(false)
+      }
     }
 
     if (agreementId) {
@@ -84,11 +59,15 @@ function AgreementView() {
     if (!signature.trim() || !agreedToTerms) return
 
     setIsSigning(true)
-    // TODO: Submit signature via API
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    setAgreement(prev => ({ ...prev, status: 'signed' }))
-    setShowSignModal(false)
-    setIsSigning(false)
+    try {
+      const updated = await agreementsService.sign(agreementId)
+      setAgreement(updated)
+      setShowSignModal(false)
+    } catch (err) {
+      console.error('Failed to sign agreement:', err)
+    } finally {
+      setIsSigning(false)
+    }
   }
 
   const handleDownload = () => {
@@ -120,8 +99,9 @@ function AgreementView() {
     )
   }
 
-  const isPending = agreement.status === 'pending_signature'
   const isSigned = agreement.status === 'signed'
+  const needsMySignature = !isSigned && !agreement.viewerHasSigned
+  const awaitingOther = !isSigned && agreement.viewerHasSigned
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
@@ -151,13 +131,15 @@ function AgreementView() {
       {/* Status Banner */}
       <div
         className={`mx-4 mt-4 rounded-lg p-4 ${
-          isPending
+          needsMySignature
             ? 'bg-yellow-50 border border-yellow-200'
-            : 'bg-green-50 border border-green-200'
+            : awaitingOther
+              ? 'bg-brand-50 border border-brand-200'
+              : 'bg-green-50 border border-green-200'
         }`}
       >
         <div className="flex items-center">
-          {isPending ? (
+          {needsMySignature ? (
             <>
               <AlertCircle className="text-yellow-600 mr-3" size={24} />
               <div>
@@ -166,6 +148,18 @@ function AgreementView() {
                 </h3>
                 <p className="text-sm text-yellow-700">
                   Please review and sign this agreement
+                </p>
+              </div>
+            </>
+          ) : awaitingOther ? (
+            <>
+              <CheckCircle className="text-brand-600 mr-3" size={24} />
+              <div>
+                <h3 className="font-semibold text-brand-700">
+                  You&apos;ve signed
+                </h3>
+                <p className="text-sm text-brand-600">
+                  Awaiting signature from the other party
                 </p>
               </div>
             </>
@@ -300,7 +294,7 @@ function AgreementView() {
       </div>
 
       {/* Sign Button */}
-      {isPending && (
+      {needsMySignature && (
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4">
           <button
             onClick={() => setShowSignModal(true)}
