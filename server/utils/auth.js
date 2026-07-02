@@ -4,9 +4,17 @@ import jwt from 'jsonwebtoken'
 // Password hashing configuration
 const SALT_ROUNDS = 12
 
-// JWT configuration
+// JWT configuration — a missing secret must be fatal, never a silent
+// fallback to a public string (every token would be forgeable).
+// Tests (vitest) get an explicit test-only secret.
+const isTestEnv = process.env.NODE_ENV === 'test' || !!process.env.VITEST
 const JWT_SECRET =
-  process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production'
+  process.env.JWT_SECRET || (isTestEnv ? 'test-only-secret' : null)
+if (!JWT_SECRET) {
+  throw new Error(
+    'FATAL: JWT_SECRET environment variable is not set. Refusing to start.'
+  )
+}
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d'
 const JWT_REFRESH_EXPIRES_IN = '30d'
 

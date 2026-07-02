@@ -223,27 +223,23 @@ router.post('/application-fee', authenticate, async (req, res) => {
 
     const APPLICATION_FEE = 50
 
-    // Record fee transaction in DB
-    const transaction = await prisma.transaction
-      .create({
-        data: {
-          userId: req.user.id,
-          type: 'application_fee',
-          amount: APPLICATION_FEE,
-          status: 'completed',
-          description: `Application fee for listing ${listingId}`,
-          metadata: JSON.stringify({
-            listingId,
-            plaidVerified: !!plaidAccessToken,
-          }),
-        },
-      })
-      .catch(() => null) // Don't fail if DB write fails - fee still logically recorded
+    // Record the fee as a real Transaction. Pre-application charge, so no
+    // applicationId. If the write fails we must NOT claim success.
+    const transaction = await prisma.transaction.create({
+      data: {
+        userId: req.user.id,
+        amount: APPLICATION_FEE,
+        serviceFee: 0,
+        total: APPLICATION_FEE,
+        status: 'completed',
+        paymentMethod: plaidAccessToken ? 'ach' : 'card',
+      },
+    })
 
     res.json({
       success: true,
       amount: APPLICATION_FEE,
-      transactionId: transaction?.id || `fee-${Date.now()}`,
+      transactionId: transaction.id,
       message: '$50 application fee charged successfully',
     })
   } catch (error) {
@@ -424,8 +420,8 @@ router.get('/history', authenticate, async (req, res) => {
   try {
     const { page = 1, limit = 20, status } = req.query
     const userId = req.user.id
-    const take = parseInt(limit)
-    const skip = (parseInt(page) - 1) * take
+    const take = parseInt(limit, 10)
+    const skip = (parseInt(page, 10) - 1) * take
 
     const where = { userId, ...(status && { status }) }
 
@@ -461,7 +457,7 @@ router.get('/history', authenticate, async (req, res) => {
         listing: t.application?.listing || null,
       })),
       pagination: {
-        page: parseInt(page),
+        page: parseInt(page, 10),
         limit: take,
         total,
         hasMore: skip + transactions.length < total,

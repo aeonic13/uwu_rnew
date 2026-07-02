@@ -6,6 +6,7 @@ import {
   generateTokens,
   generateSecureToken,
   validatePasswordStrength,
+  verifyToken,
 } from '../utils/auth.js'
 import { sendVerificationEmail } from '../utils/email.js'
 
@@ -70,6 +71,8 @@ router.post('/register', async (req, res) => {
         university,
         phone,
         verifyToken,
+        // Verification links are valid for 48 hours
+        verifyTokenExp: new Date(Date.now() + 48 * 60 * 60 * 1000),
         verified: false,
       },
       select: {
@@ -180,12 +183,21 @@ router.post('/verify-email', async (req, res) => {
       })
     }
 
+    // Enforce token expiry (tokens issued before this field existed have
+    // no expiry and remain valid).
+    if (user.verifyTokenExp && new Date() > user.verifyTokenExp) {
+      return res.status(400).json({
+        error: { message: 'Invalid or expired verification token' },
+      })
+    }
+
     // Mark user as verified
     await prisma.user.update({
       where: { id: user.id },
       data: {
         verified: true,
         verifyToken: null,
+        verifyTokenExp: null,
       },
     })
 
@@ -299,6 +311,45 @@ router.post('/reset-password', async (req, res) => {
   } catch (error) {
     console.error('Reset password error:', error)
     res.status(500).json({ error: { message: 'Password reset failed' } })
+  }
+})
+
+// POST /api/auth/logout
+// JWTs are stateless; this exists so the client call succeeds cleanly.
+router.post('/logout', (req, res) => {
+  res.json({ message: 'Logged out' })
+})
+
+// POST /api/auth/refresh-token
+// Exchange a valid refresh token for a fresh access/refresh pair.
+router.post('/refresh-token', async (req, res) => {
+  try {
+    const { refreshToken } = req.body
+    if (!refreshToken) {
+      return res
+        .status(400)
+        .json({ error: { message: 'Refresh token is required' } })
+    }
+
+    const decoded = verifyToken(refreshToken)
+    if (!decoded || decoded.type !== 'refresh' || !decoded.userId) {
+      return res
+        .status(401)
+        .json({ error: { message: 'Invalid or expired refresh token' } })
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+    })
+    if (!user) {
+      return res.status(401).json({ error: { message: 'User not found' } })
+    }
+
+    const tokens = generateTokens(user)
+    res.json({ token: tokens.accessToken, refreshToken: tokens.refreshToken })
+  } catch (error) {
+    console.error('Refresh token error:', error)
+    res.status(500).json({ error: { message: 'Token refresh failed' } })
   }
 })
 

@@ -28,12 +28,12 @@ router.get('/', optionalAuth, async (req, res) => {
 
     if (minPrice || maxPrice) {
       where.price = {}
-      if (minPrice) where.price.gte = parseInt(minPrice)
-      if (maxPrice) where.price.lte = parseInt(maxPrice)
+      if (minPrice) where.price.gte = parseInt(minPrice, 10)
+      if (maxPrice) where.price.lte = parseInt(maxPrice, 10)
     }
 
     if (bedrooms) {
-      where.bedrooms = parseInt(bedrooms)
+      where.bedrooms = parseInt(bedrooms, 10)
     }
 
     if (bathrooms) {
@@ -52,14 +52,14 @@ router.get('/', optionalAuth, async (req, res) => {
     }
 
     // Calculate pagination
-    const skip = (parseInt(page) - 1) * parseInt(limit)
+    const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10)
 
     // Get listings with owner info
     const [listings, total] = await Promise.all([
       prisma.listing.findMany({
         where,
         skip,
-        take: parseInt(limit),
+        take: parseInt(limit, 10),
         include: {
           owner: {
             select: {
@@ -86,9 +86,9 @@ router.get('/', optionalAuth, async (req, res) => {
     res.json({
       listings,
       total,
-      page: parseInt(page),
-      limit: parseInt(limit),
-      totalPages: Math.ceil(total / parseInt(limit)),
+      page: parseInt(page, 10),
+      limit: parseInt(limit, 10),
+      totalPages: Math.ceil(total / parseInt(limit, 10)),
     })
   } catch (error) {
     console.error('Get listings error:', error)
@@ -209,13 +209,13 @@ router.post('/', authenticate, async (req, res) => {
       data: {
         title,
         description,
-        price: parseInt(price),
+        price: parseInt(price, 10),
         location,
         university,
         moveInDate: moveInDate ? new Date(moveInDate) : null,
         moveOutDate: moveOutDate ? new Date(moveOutDate) : null,
         propertyType,
-        bedrooms: bedrooms ? parseInt(bedrooms) : 0,
+        bedrooms: bedrooms ? parseInt(bedrooms, 10) : 0,
         bathrooms: bathrooms ? parseFloat(bathrooms) : 1,
         ...(incomeMultiplier && {
           incomeMultiplier: parseFloat(incomeMultiplier),
@@ -290,7 +290,7 @@ router.put('/:id', authenticate, async (req, res) => {
 
     if (title !== undefined) updateData.title = title
     if (description !== undefined) updateData.description = description
-    if (price !== undefined) updateData.price = parseInt(price)
+    if (price !== undefined) updateData.price = parseInt(price, 10)
     if (location !== undefined) updateData.location = location
     if (university !== undefined) updateData.university = university
     if (moveInDate !== undefined)
@@ -298,7 +298,7 @@ router.put('/:id', authenticate, async (req, res) => {
     if (moveOutDate !== undefined)
       updateData.moveOutDate = moveOutDate ? new Date(moveOutDate) : null
     if (propertyType !== undefined) updateData.propertyType = propertyType
-    if (bedrooms !== undefined) updateData.bedrooms = parseInt(bedrooms)
+    if (bedrooms !== undefined) updateData.bedrooms = parseInt(bedrooms, 10)
     if (bathrooms !== undefined) updateData.bathrooms = parseFloat(bathrooms)
     if (amenities !== undefined) updateData.amenities = amenities
     if (images !== undefined) updateData.images = images

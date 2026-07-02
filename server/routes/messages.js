@@ -12,7 +12,7 @@ router.get('/conversations', authenticate, async (req, res) => {
   try {
     const { page = 1, limit = 20 } = req.query
     const userId = req.user.id
-    const skip = (parseInt(page) - 1) * parseInt(limit)
+    const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10)
 
     // Get conversations where user is a participant
     const conversationUsers = await prisma.conversationUser.findMany({
@@ -65,7 +65,7 @@ router.get('/conversations', authenticate, async (req, res) => {
         },
       },
       skip,
-      take: parseInt(limit),
+      take: parseInt(limit, 10),
     })
 
     // Get total count
@@ -100,8 +100,8 @@ router.get('/conversations', authenticate, async (req, res) => {
     res.json({
       conversations,
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page: parseInt(page, 10),
+        limit: parseInt(limit, 10),
         total,
         hasMore: skip + conversations.length < total,
       },
@@ -121,7 +121,7 @@ router.get('/conversation/:conversationId', authenticate, async (req, res) => {
     const { conversationId } = req.params
     const { page = 1, limit = 50 } = req.query
     const userId = req.user.id
-    const skip = (parseInt(page) - 1) * parseInt(limit)
+    const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10)
 
     // Verify user is part of this conversation
     const conversationUser = await prisma.conversationUser.findUnique({
@@ -184,7 +184,7 @@ router.get('/conversation/:conversationId', authenticate, async (req, res) => {
       },
       orderBy: { createdAt: 'desc' },
       skip,
-      take: parseInt(limit),
+      take: parseInt(limit, 10),
     })
 
     // Get total message count
@@ -230,8 +230,8 @@ router.get('/conversation/:conversationId', authenticate, async (req, res) => {
       },
       messages: messages.reverse(), // Return oldest first for display
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page: parseInt(page, 10),
+        limit: parseInt(limit, 10),
         total,
         hasMore: skip + messages.length < total,
       },

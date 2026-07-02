@@ -71,6 +71,7 @@ model User {
   backgroundCheck String?
   verified      Boolean   @default(false)
   verifyToken   String?
+  verifyTokenExp DateTime?
   resetToken    String?
   resetTokenExp DateTime?
   createdAt     DateTime  @default(now())
@@ -379,8 +380,10 @@ model Transaction {
   // Relations
   userId        String
   user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  applicationId String
-  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  // Nullable: pre-application charges (e.g. the application fee at
+  // pre-qualification) have no application yet.
+  applicationId String?
+  application   Application? @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([applicationId])

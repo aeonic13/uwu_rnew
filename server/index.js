@@ -76,6 +76,21 @@ const limiter = rateLimit({
 })
 app.use('/api/', limiter)
 
+// Strict limiter for credential endpoints (brute-force protection) and the
+// public cosigner token endpoints (token guessing).
+const strictLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: 'Too many attempts. Please try again later.',
+})
+app.use('/api/auth/login', strictLimiter)
+app.use('/api/auth/register', strictLimiter)
+app.use('/api/auth/forgot-password', strictLimiter)
+app.use('/api/auth/reset-password', strictLimiter)
+app.use('/api/cosigners/invitation', strictLimiter)
+app.use('/api/cosigners/accept', strictLimiter)
+app.use('/api/cosigners/decline', strictLimiter)
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })

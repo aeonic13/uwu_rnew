@@ -374,15 +374,21 @@ router.post('/accept/:token', async (req, res) => {
       cosignerUserId = newCosigner.id
     }
 
-    // Update cosigner record with user ID and accept status
-    await prisma.cosigner.update({
-      where: { id: cosigner.id },
+    // Atomically accept: only flips if still pending, so two concurrent
+    // accepts can't both succeed (check-then-update race).
+    const accepted = await prisma.cosigner.updateMany({
+      where: { id: cosigner.id, status: 'pending' },
       data: {
         cosignerId: cosignerUserId,
         status: 'accepted',
         respondedAt: new Date(),
       },
     })
+    if (accepted.count === 0) {
+      return res.status(400).json({
+        error: { message: 'This invitation has already been responded to' },
+      })
+    }
 
     // Generate tokens for the cosigner
     const { generateTokens } = await import('../utils/auth.js')

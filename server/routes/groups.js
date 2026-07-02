@@ -79,7 +79,7 @@ router.post('/', authenticate, async (req, res) => {
       data: {
         name,
         description,
-        maxMembers: maxMembers ? parseInt(maxMembers) : 4,
+        maxMembers: maxMembers ? parseInt(maxMembers, 10) : 4,
         createdById: req.user.id,
         members: {
           create: { userId: req.user.id, role: 'admin', status: 'active' },
@@ -267,8 +267,16 @@ router.get('/:id/messages', authenticate, async (req, res) => {
     if (!(await isActiveMember(req.params.id, req.user.id))) {
       return res.status(403).json({ error: { message: 'Not a group member' } })
     }
+    // Paginated: newest `limit` messages (optionally before a timestamp),
+    // returned in chronological order for rendering.
+    const limit = Math.min(parseInt(req.query.limit, 10) || 50, 200)
+    const before = req.query.before ? new Date(req.query.before) : null
+
     const messages = await prisma.groupMessage.findMany({
-      where: { groupId: req.params.id },
+      where: {
+        groupId: req.params.id,
+        ...(before && !isNaN(before) && { createdAt: { lt: before } }),
+      },
       include: {
         sender: {
           select: {
@@ -279,10 +287,10 @@ router.get('/:id/messages', authenticate, async (req, res) => {
           },
         },
       },
-      orderBy: { createdAt: 'asc' },
-      take: 200,
+      orderBy: { createdAt: 'desc' },
+      take: limit,
     })
-    res.json({ messages: messages.map(shapeMessage) })
+    res.json({ messages: messages.reverse().map(shapeMessage) })
   } catch (error) {
     console.error('List group messages error:', error)
     res.status(500).json({ error: { message: 'Failed to load messages' } })

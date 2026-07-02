@@ -146,7 +146,7 @@ router.get('/', authenticate, async (req, res) => {
     const { status, listingId, page = 1, limit = 20 } = req.query
     const userId = req.user.id
     const userType = req.user.userType
-    const skip = (parseInt(page) - 1) * parseInt(limit)
+    const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10)
 
     // Build where clause based on user type
     const where = {}
@@ -213,7 +213,7 @@ router.get('/', authenticate, async (req, res) => {
         },
         orderBy: { createdAt: 'desc' },
         skip,
-        take: parseInt(limit),
+        take: parseInt(limit, 10),
       }),
       prisma.application.count({ where }),
     ])
@@ -221,8 +221,8 @@ router.get('/', authenticate, async (req, res) => {
     res.json({
       applications,
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page: parseInt(page, 10),
+        limit: parseInt(limit, 10),
         total,
         hasMore: skip + applications.length < total,
       },

@@ -60,16 +60,32 @@ router.put('/profile', async (req, res) => {
       linkedinUrl,
     } = req.body
 
-    // Build update object with only provided fields
+    // Validate: strings only, sane length caps.
+    const fields = [
+      ['firstName', firstName, 100],
+      ['lastName', lastName, 100],
+      ['phone', phone, 30],
+      ['university', university, 150],
+      ['major', major, 150],
+      ['bio', bio, 2000],
+      ['instagramUrl', instagramUrl, 300],
+      ['linkedinUrl', linkedinUrl, 300],
+    ]
     const updateData = {}
-    if (firstName !== undefined) updateData.firstName = firstName
-    if (lastName !== undefined) updateData.lastName = lastName
-    if (phone !== undefined) updateData.phone = phone
-    if (university !== undefined) updateData.university = university
-    if (major !== undefined) updateData.major = major
-    if (bio !== undefined) updateData.bio = bio
-    if (instagramUrl !== undefined) updateData.instagramUrl = instagramUrl
-    if (linkedinUrl !== undefined) updateData.linkedinUrl = linkedinUrl
+    for (const [key, value, maxLen] of fields) {
+      if (value === undefined) continue
+      if (value !== null && typeof value !== 'string') {
+        return res
+          .status(400)
+          .json({ error: { message: `${key} must be a string` } })
+      }
+      if (typeof value === 'string' && value.length > maxLen) {
+        return res.status(400).json({
+          error: { message: `${key} must be at most ${maxLen} characters` },
+        })
+      }
+      updateData[key] = value
+    }
 
     // Update user
     const user = await prisma.user.update({
