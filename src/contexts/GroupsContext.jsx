@@ -1,6 +1,6 @@
 import { createContext, useContext, useReducer, useCallback } from 'react'
 import PropTypes from 'prop-types'
-import { apiClient } from '../services/api'
+import { groupsService } from '../services/groupsService'
 
 // Initial state
 const initialState = {
@@ -148,14 +148,10 @@ export function GroupsProvider({ children }) {
     dispatch({ type: GROUPS_ACTIONS.SET_LOADING, payload: true })
 
     try {
-      const res = await apiClient.post('/groups', {
-        name: groupData.name,
-        description: groupData.description,
-        maxMembers: groupData.maxMembers,
-      })
-      dispatch({ type: GROUPS_ACTIONS.ADD_GROUP, payload: res.group })
+      const group = await groupsService.create(groupData)
+      dispatch({ type: GROUPS_ACTIONS.ADD_GROUP, payload: group })
       dispatch({ type: GROUPS_ACTIONS.SET_LOADING, payload: false })
-      return { success: true, group: res.group }
+      return { success: true, group }
     } catch (error) {
       dispatch({ type: GROUPS_ACTIONS.SET_ERROR, payload: error.message })
       return { success: false, error: error.message }
@@ -167,11 +163,8 @@ export function GroupsProvider({ children }) {
     dispatch({ type: GROUPS_ACTIONS.SET_LOADING, payload: true })
 
     try {
-      const res = await apiClient.get('/groups/my')
-      dispatch({
-        type: GROUPS_ACTIONS.SET_USER_GROUPS,
-        payload: res.groups || [],
-      })
+      const groups = await groupsService.listMy()
+      dispatch({ type: GROUPS_ACTIONS.SET_USER_GROUPS, payload: groups })
     } catch (error) {
       dispatch({ type: GROUPS_ACTIONS.SET_ERROR, payload: error.message })
     }
@@ -180,9 +173,9 @@ export function GroupsProvider({ children }) {
   // Get group by ID
   const getGroupById = useCallback(async groupId => {
     try {
-      const res = await apiClient.get(`/groups/${groupId}`)
-      dispatch({ type: GROUPS_ACTIONS.SET_SELECTED_GROUP, payload: res.group })
-      return res.group
+      const group = await groupsService.getById(groupId)
+      dispatch({ type: GROUPS_ACTIONS.SET_SELECTED_GROUP, payload: group })
+      return group
     } catch (error) {
       dispatch({ type: GROUPS_ACTIONS.SET_ERROR, payload: error.message })
       return null
@@ -192,9 +185,9 @@ export function GroupsProvider({ children }) {
   // Invite member to group
   const inviteMember = useCallback(async (groupId, email) => {
     try {
-      const res = await apiClient.post(`/groups/${groupId}/invite`, { email })
+      const member = await groupsService.invite(groupId, email)
       const invitation = {
-        id: res.member?.id,
+        id: member?.id,
         groupId,
         email,
         status: 'pending',
@@ -329,7 +322,7 @@ export function GroupsProvider({ children }) {
   // Delete group (creator only)
   const deleteGroup = useCallback(async groupId => {
     try {
-      await apiClient.delete(`/groups/${groupId}`)
+      await groupsService.deleteGroup(groupId)
       dispatch({ type: GROUPS_ACTIONS.REMOVE_GROUP, payload: groupId })
       return { success: true }
     } catch (error) {

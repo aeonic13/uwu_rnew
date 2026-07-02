@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import PropTypes from 'prop-types'
 import { usePlaidLink } from 'react-plaid-link'
 import { Shield, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
-import api from '../../services/api'
+import { paymentsService } from '../../services/payments'
 import { cosignerService } from '../../services/cosignerService'
 
 /**
@@ -19,10 +19,8 @@ export default function CosignerIncomeStep({ onDone }) {
 
   useEffect(() => {
     let active = true
-    api
-      .post('/payments/plaid/create-link-token', {
-        products: ['auth', 'income_verification'],
-      })
+    paymentsService
+      .createPlaidLinkToken(['auth', 'income_verification'])
       .then(data => {
         if (active) setLinkToken(data.linkToken)
       })
@@ -40,11 +38,11 @@ export default function CosignerIncomeStep({ onDone }) {
     try {
       // Exchange stores the access token server-side; verify-income looks
       // it up from the authenticated user.
-      await api.post('/payments/plaid/exchange-token', {
+      await paymentsService.exchangePlaidToken(
         publicToken,
-        accountId: metadata?.accounts?.[0]?.id,
-      })
-      const incomeRes = await api.post('/payments/plaid/verify-income', {})
+        metadata?.accounts?.[0]?.id
+      )
+      const incomeRes = await paymentsService.verifyIncome()
       const monthlyIncome = incomeRes?.income?.totalMonthlyIncome || 0
       await cosignerService.verifyIncome(monthlyIncome)
       setIncome(monthlyIncome)

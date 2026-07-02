@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import { usePlaidLink } from 'react-plaid-link'
 import { usePreQualification } from '../../hooks/usePreQualification'
-import api from '../../services/api'
+import { paymentsService } from '../../services/payments'
 
 /**
  * Standalone Pre-Qualification Flow
@@ -54,9 +54,7 @@ export default function PreQualificationFlow() {
     async function fetchLinkToken() {
       try {
         setPlaidStatus('loading')
-        const data = await api.post('/payments/plaid/create-link-token', {
-          products: ['auth', 'identity', 'income_verification'],
-        })
+        const data = await paymentsService.createPlaidLinkToken()
         setLinkToken(data.linkToken)
         setPlaidStatus('idle')
       } catch (err) {
@@ -72,10 +70,10 @@ export default function PreQualificationFlow() {
     setPlaidStatus('loading')
     setError(null)
     try {
-      const exchangeData = await api.post('/payments/plaid/exchange-token', {
+      const exchangeData = await paymentsService.exchangePlaidToken(
         publicToken,
-        accountId: metadata?.accounts?.[0]?.id,
-      })
+        metadata?.accounts?.[0]?.id
+      )
       // The access token is stored server-side; verify endpoints look it
       // up from the authenticated user.
       setVerifications(prev => ({
@@ -88,8 +86,8 @@ export default function PreQualificationFlow() {
       }))
 
       const [incomeRes, identityRes] = await Promise.allSettled([
-        api.post('/payments/plaid/verify-income', {}),
-        api.post('/payments/plaid/verify-identity', {}),
+        paymentsService.verifyIncome(),
+        paymentsService.verifyIdentity(),
       ])
 
       setVerifications(prev => ({
@@ -127,7 +125,7 @@ export default function PreQualificationFlow() {
     setFeeStatus('charging')
     setError(null)
     try {
-      await api.post('/payments/application-fee', {})
+      await paymentsService.chargeApplicationFee()
       setFeeStatus('paid')
     } catch (err) {
       setFeeStatus('error')

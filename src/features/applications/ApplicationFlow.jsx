@@ -14,7 +14,8 @@ import { useListings } from '../../contexts/ListingsContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { usePreQualification } from '../../hooks/usePreQualification'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
-import api from '../../services/api'
+import { paymentsService } from '../../services/payments'
+import { applicationsService } from '../../services/applicationsService'
 import InviteCosignerForm from '../cosigner/InviteCosignerForm'
 
 // Verify step removed — now handled once via /pre-qualify
@@ -339,9 +340,7 @@ function VerifyStep({ listingId, onNext, onBack, onVerificationComplete }) {
     async function fetchLinkToken() {
       try {
         setPlaidStatus('loading')
-        const data = await api.post('/payments/plaid/create-link-token', {
-          products: ['auth', 'identity', 'income_verification'],
-        })
+        const data = await paymentsService.createPlaidLinkToken()
         setLinkToken(data.linkToken)
         setPlaidStatus('idle')
       } catch (err) {
@@ -359,10 +358,10 @@ function VerifyStep({ listingId, onNext, onBack, onVerificationComplete }) {
       setError(null)
       try {
         // Exchange public token
-        const exchangeData = await api.post('/payments/plaid/exchange-token', {
+        const exchangeData = await paymentsService.exchangePlaidToken(
           publicToken,
-          accountId: metadata?.accounts?.[0]?.id,
-        })
+          metadata?.accounts?.[0]?.id
+        )
         // Token is stored server-side; verify endpoints look it up.
         setAccessToken(true)
         setVerifications(prev => ({
@@ -376,8 +375,8 @@ function VerifyStep({ listingId, onNext, onBack, onVerificationComplete }) {
 
         // Run income + identity in parallel
         const [incomeRes, identityRes] = await Promise.allSettled([
-          api.post('/payments/plaid/verify-income', {}),
-          api.post('/payments/plaid/verify-identity', {}),
+          paymentsService.verifyIncome(),
+          paymentsService.verifyIdentity(),
         ])
 
         setVerifications(prev => ({
@@ -424,7 +423,7 @@ function VerifyStep({ listingId, onNext, onBack, onVerificationComplete }) {
     setFeeStatus('charging')
     setError(null)
     try {
-      await api.post('/payments/application-fee', { listingId })
+      await paymentsService.chargeApplicationFee(listingId)
       setFeeStatus('paid')
     } catch (err) {
       setFeeStatus('error')
@@ -965,7 +964,7 @@ function ApplicationFlow() {
             applicationFeePaid: true,
           }
         : null
-      const res = await api.post('/applications', {
+      const res = await applicationsService.submitApplication({
         listingId,
         startDate: formData.moveInDate,
         endDate: formData.moveOutDate,

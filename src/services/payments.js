@@ -53,6 +53,39 @@ export const paymentsService = {
     return api.post('/payments/rent', data)
   },
 
+  /** Create a Plaid Link token. Returns { linkToken, expiration }. */
+  createPlaidLinkToken: async (
+    products = ['auth', 'identity', 'income_verification']
+  ) => {
+    return api.post('/payments/plaid/create-link-token', { products })
+  },
+
+  /**
+   * Exchange a Plaid public token. The access token is stored server-side;
+   * the response contains accounts/processorToken only.
+   */
+  exchangePlaidToken: async (publicToken, accountId) => {
+    return api.post('/payments/plaid/exchange-token', {
+      publicToken,
+      accountId,
+    })
+  },
+
+  /** Verify income via the server-held Plaid token. Returns { income }. */
+  verifyIncome: async () => {
+    return api.post('/payments/plaid/verify-income', {})
+  },
+
+  /** Verify identity via the server-held Plaid token. */
+  verifyIdentity: async () => {
+    return api.post('/payments/plaid/verify-identity', {})
+  },
+
+  /** Charge the one-time $50 application fee (at pre-qualification). */
+  chargeApplicationFee: async (listingId = undefined) => {
+    return api.post('/payments/application-fee', listingId ? { listingId } : {})
+  },
+
   /**
    * Get user's payment methods
    * @returns {Promise} List of payment methods
