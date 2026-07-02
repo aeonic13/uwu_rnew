@@ -1,8 +1,50 @@
 import express from 'express'
 import prisma from '../utils/prisma.js'
 import { authenticate, requireUserType } from '../middleware/authenticate.js'
+import { generateSecureToken } from '../utils/auth.js'
 
 const router = express.Router()
+
+/**
+ * Clone the tenant's floating (pre-qualification) cosigner invites onto a
+ * newly created application, so their guarantor's info and verified income
+ * show up on every application automatically. Best-effort — an application
+ * is still valid without it.
+ */
+async function attachFloatingCosigners(tenantId, applicationId) {
+  try {
+    const floating = await prisma.cosigner.findMany({
+      where: {
+        tenantId,
+        applicationId: null,
+        status: { in: ['pending', 'accepted'] },
+      },
+    })
+    for (const c of floating) {
+      await prisma.cosigner.create({
+        data: {
+          applicationId,
+          tenantId,
+          cosignerId: c.cosignerId,
+          inviteEmail: c.inviteEmail,
+          relationshipType: c.relationshipType,
+          status: c.status,
+          respondedAt: c.respondedAt,
+          verifiedMonthlyIncome: c.verifiedMonthlyIncome,
+          incomeVerifiedAt: c.incomeVerifiedAt,
+          // Clones are never accepted via token; a fresh token satisfies
+          // the unique constraint (accept cascades from the floating row).
+          inviteToken: generateSecureToken(48),
+          tokenExpires: c.tokenExpires,
+        },
+      })
+    }
+    return floating.length
+  } catch (err) {
+    console.error('attachFloatingCosigners error:', err)
+    return 0
+  }
+}
 
 /**
  * POST /api/applications
@@ -127,6 +169,10 @@ router.post('/', authenticate, async (req, res) => {
       },
     })
 
+    // Attach any floating pre-qual cosigner so the landlord sees the
+    // guarantor immediately.
+    await attachFloatingCosigners(userId, application.id)
+
     res.status(201).json({
       message: 'Application submitted successfully',
       application,
@@ -249,6 +295,11 @@ router.post('/group', authenticate, async (req, res) => {
         })
       })
     )
+
+    // Attach each member's floating pre-qual cosigner to their application.
+    for (const app of created) {
+      await attachFloatingCosigners(app.applicantId, app.id)
+    }
 
     res.status(201).json({
       message: `Group application submitted for ${created.length} member${created.length === 1 ? '' : 's'}`,

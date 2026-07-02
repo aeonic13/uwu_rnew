@@ -16,7 +16,9 @@ import {
 import { usePlaidLink } from 'react-plaid-link'
 import { usePreQualification } from '../../hooks/usePreQualification'
 import { paymentsService } from '../../services/payments'
+import { cosignerService } from '../../services/cosignerService'
 import RentalProfileForm from './RentalProfileForm'
+import InviteCosignerForm from '../cosigner/InviteCosignerForm'
 
 /**
  * Standalone Pre-Qualification Flow
@@ -54,6 +56,23 @@ export default function PreQualificationFlow() {
   // disclosures) — saved once here, reused to prefill every application.
   const [profileDone, setProfileDone] = useState(false)
   const [profileOpen, setProfileOpen] = useState(true)
+  // Optional floating cosigner (auto-attaches to every future application).
+  const [myCosigner, setMyCosigner] = useState(null)
+  const [cosignerOpen, setCosignerOpen] = useState(false)
+
+  useEffect(() => {
+    let active = true
+    cosignerService
+      .mine()
+      .then(list => {
+        if (active)
+          setMyCosigner(list.find(c => c.status !== 'declined') || null)
+      })
+      .catch(() => {})
+    return () => {
+      active = false
+    }
+  }, [])
 
   // Fetch Plaid link token
   useEffect(() => {
@@ -244,6 +263,61 @@ export default function PreQualificationFlow() {
                 onSaved={() => {
                   setProfileDone(true)
                   setProfileOpen(false)
+                }}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Optional: invite a co-signer once — attaches to every application */}
+        <div className="bg-white border border-gray-200 rounded-xl p-4">
+          <button
+            onClick={() => setCosignerOpen(open => !open)}
+            className="w-full flex items-center justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <div
+                className={`w-9 h-9 rounded-full flex items-center justify-center ${myCosigner ? 'bg-green-100' : 'bg-gray-100'}`}
+              >
+                {myCosigner ? (
+                  <CheckCircle2 size={20} className="text-green-600" />
+                ) : (
+                  <ShieldCheck size={18} className="text-gray-500" />
+                )}
+              </div>
+              <div className="text-left">
+                <p className="font-medium text-gray-900">
+                  Co-signer{' '}
+                  <span className="text-xs text-gray-400 font-normal">
+                    (optional)
+                  </span>
+                </p>
+                {myCosigner ? (
+                  <p className="text-xs text-green-600">
+                    {myCosigner.name || myCosigner.email} —{' '}
+                    {myCosigner.status === 'accepted'
+                      ? myCosigner.verifiedMonthlyIncome
+                        ? `accepted, $${Math.round(myCosigner.verifiedMonthlyIncome).toLocaleString()}/mo verified`
+                        : 'accepted'
+                      : 'invited'}{' '}
+                    · attaches to every application
+                  </p>
+                ) : (
+                  <p className="text-xs text-gray-400">
+                    Invite a guarantor once — they attach to every application
+                  </p>
+                )}
+              </div>
+            </div>
+            <span className="text-xs text-brand-500 font-medium">
+              {cosignerOpen ? 'Hide' : myCosigner ? 'View' : 'Invite'}
+            </span>
+          </button>
+          {cosignerOpen && !myCosigner && (
+            <div className="mt-4 border-t pt-4">
+              <InviteCosignerForm
+                onInvited={email => {
+                  setMyCosigner({ email, status: 'pending' })
                 }}
               />
             </div>

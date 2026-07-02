@@ -27,7 +27,12 @@ export default function InviteCosignerForm({ applicationId, onInvited }) {
     setSubmitting(true)
     setError(null)
     try {
-      await cosignerService.invite({ applicationId, ...form })
+      // Without an applicationId this is a floating pre-qual invite that
+      // auto-attaches to every application the tenant submits.
+      await cosignerService.invite({
+        ...(applicationId && { applicationId }),
+        ...form,
+      })
       setSentTo(form.cosignerEmail)
       onInvited?.(form.cosignerEmail)
     } catch (err) {
@@ -148,6 +153,6 @@ export default function InviteCosignerForm({ applicationId, onInvited }) {
 }
 
 InviteCosignerForm.propTypes = {
-  applicationId: PropTypes.string.isRequired,
+  applicationId: PropTypes.string,
   onInvited: PropTypes.func,
 }

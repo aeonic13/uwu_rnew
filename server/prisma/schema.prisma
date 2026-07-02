@@ -483,8 +483,10 @@ model Cosigner {
   tokenExpires     DateTime
   
   // Relations
-  applicationId    String
-  application      Application    @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  // Nullable: a "floating" cosigner invited at pre-qualification has no
+  // application yet — it is cloned onto each application the tenant submits.
+  applicationId    String?
+  application      Application?   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   
   tenantId         String
   tenant           User           @relation("TenantUser", fields: [tenantId], references: [id], onDelete: Cascade)

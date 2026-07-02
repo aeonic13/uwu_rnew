@@ -18,6 +18,7 @@ import { paymentsService } from '../../services/payments'
 import { applicationsService } from '../../services/applicationsService'
 import { rentalProfileService } from '../../services/rentalProfileService'
 import { groupsService } from '../../services/groupsService'
+import { cosignerService } from '../../services/cosignerService'
 import InviteCosignerForm from '../cosigner/InviteCosignerForm'
 
 // Verify step removed — now handled once via /pre-qualify
@@ -27,8 +28,28 @@ const STEPS = [
   { id: 'review', label: 'Review', icon: FileText },
 ]
 
-// Shown after a successful application: confirmation + optional cosigner invite.
+// Shown after a successful application: confirmation + cosigner status.
+// If a floating pre-qual cosigner exists it was auto-attached — show that
+// instead of asking the tenant to invite again.
 function ApplicationSubmitted({ applicationId, onDone }) {
+  const [attachedCosigner, setAttachedCosigner] = useState(null)
+  const [checked, setChecked] = useState(false)
+
+  useEffect(() => {
+    let active = true
+    cosignerService
+      .mine()
+      .then(list => {
+        if (active)
+          setAttachedCosigner(list.find(c => c.status !== 'declined') || null)
+      })
+      .catch(() => {})
+      .finally(() => active && setChecked(true))
+    return () => {
+      active = false
+    }
+  }, [])
+
   return (
     <div className="min-h-screen bg-white pb-20">
       <div className="max-w-md mx-auto p-4 pt-10 space-y-6">
@@ -40,12 +61,32 @@ function ApplicationSubmitted({ applicationId, onDone }) {
             Application submitted
           </h1>
           <p className="text-gray-600 mt-1">
-            The landlord will review it. Need a guarantor? Invite a co-signer
-            now to speed up approval.
+            {attachedCosigner
+              ? 'The landlord will review it — your co-signer is attached.'
+              : 'The landlord will review it. Need a guarantor? Invite a co-signer now to speed up approval.'}
           </p>
         </div>
 
-        <InviteCosignerForm applicationId={applicationId} />
+        {attachedCosigner ? (
+          <div className="rounded-xl border bg-green-50 p-4 flex items-start gap-3">
+            <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 shrink-0" />
+            <div>
+              <p className="font-medium text-green-900">
+                Co-signer attached:{' '}
+                {attachedCosigner.name || attachedCosigner.email}
+              </p>
+              <p className="text-sm text-green-700">
+                {attachedCosigner.status === 'accepted'
+                  ? attachedCosigner.verifiedMonthlyIncome
+                    ? `Accepted — $${Math.round(attachedCosigner.verifiedMonthlyIncome).toLocaleString()}/mo verified income shows on this application.`
+                    : 'Accepted — their details show on this application.'
+                  : 'Invitation pending — once they accept, their info appears on this application automatically.'}
+              </p>
+            </div>
+          </div>
+        ) : (
+          checked && <InviteCosignerForm applicationId={applicationId} />
+        )}
 
         <button
           onClick={onDone}

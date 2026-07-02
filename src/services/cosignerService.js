@@ -42,11 +42,19 @@ export const cosignerService = {
   },
 
   /**
-   * Tenant: invite a cosigner to one of their applications.
-   * @param {{applicationId:string,cosignerEmail:string,cosignerName?:string,relationshipType:string}} payload
+   * Tenant: invite a cosigner. With applicationId it binds to that
+   * application; without, it's a floating pre-qualification invite that
+   * auto-attaches to every application they submit.
+   * @param {{applicationId?:string,cosignerEmail:string,cosignerName?:string,relationshipType:string}} payload
    */
   async invite(payload) {
     return apiClient.post('/cosigners/invite', payload)
+  },
+
+  /** Tenant: their floating (pre-qualification) cosigner invites. */
+  async mine() {
+    const res = await apiClient.get('/cosigners/mine')
+    return res.cosigners || []
   },
 
   /**

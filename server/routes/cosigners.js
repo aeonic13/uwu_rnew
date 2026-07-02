@@ -16,12 +16,13 @@ router.post('/invite', authenticate, async (req, res) => {
       req.body
     const userId = req.user.id
 
-    // Validate required fields
-    if (!applicationId || !cosignerEmail || !relationshipType) {
+    // applicationId is OPTIONAL: without one this is a "floating" invite
+    // made at pre-qualification, automatically attached to every
+    // application the tenant later submits.
+    if (!cosignerEmail || !relationshipType) {
       return res.status(400).json({
         error: {
-          message:
-            'Application ID, cosigner email, and relationship type are required',
+          message: 'Cosigner email and relationship type are required',
         },
       })
     }
@@ -34,47 +35,40 @@ router.post('/invite', authenticate, async (req, res) => {
       })
     }
 
-    // Verify application exists and user is the applicant
-    const application = await prisma.application.findUnique({
-      where: { id: applicationId },
-      include: {
-        listing: {
-          select: {
-            id: true,
-            title: true,
-            location: true,
-            price: true,
+    let application = null
+    if (applicationId) {
+      // Verify application exists and user is the applicant
+      application = await prisma.application.findUnique({
+        where: { id: applicationId },
+        include: {
+          listing: {
+            select: { id: true, title: true, location: true, price: true },
+          },
+          applicant: {
+            select: { id: true, firstName: true, lastName: true, email: true },
           },
         },
-        applicant: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
+      })
+
+      if (!application) {
+        return res.status(404).json({
+          error: { message: 'Application not found' },
+        })
+      }
+      if (application.applicantId !== userId) {
+        return res.status(403).json({
+          error: {
+            message: 'You can only invite cosigners for your own applications',
           },
-        },
-      },
-    })
-
-    if (!application) {
-      return res.status(404).json({
-        error: { message: 'Application not found' },
-      })
+        })
+      }
     }
 
-    if (application.applicantId !== userId) {
-      return res.status(403).json({
-        error: {
-          message: 'You can only invite cosigners for your own applications',
-        },
-      })
-    }
-
-    // Check if application already has a cosigner
+    // One active cosigner per application / per floating pre-qual slot.
     const existingCosigner = await prisma.cosigner.findFirst({
       where: {
-        applicationId,
+        applicationId: applicationId || null,
+        ...(applicationId ? {} : { tenantId: userId }),
         status: { in: ['pending', 'accepted'] },
       },
     })
@@ -82,7 +76,9 @@ router.post('/invite', authenticate, async (req, res) => {
     if (existingCosigner) {
       return res.status(400).json({
         error: {
-          message: 'This application already has a cosigner invitation',
+          message: applicationId
+            ? 'This application already has a cosigner invitation'
+            : 'You already have an active cosigner invitation',
         },
       })
     }
@@ -94,7 +90,7 @@ router.post('/invite', authenticate, async (req, res) => {
     // Create cosigner invitation
     const cosigner = await prisma.cosigner.create({
       data: {
-        applicationId,
+        applicationId: applicationId || null,
         tenantId: userId,
         inviteEmail: cosignerEmail.toLowerCase(),
         inviteToken,
@@ -130,10 +126,11 @@ router.post('/invite', authenticate, async (req, res) => {
       await sendCosignerInvitation({
         cosignerEmail,
         cosignerName: cosignerName || 'there',
-        tenantName: `${application.applicant.firstName} ${application.applicant.lastName}`,
-        listingTitle: application.listing.title,
-        listingLocation: application.listing.location,
-        monthlyRent: application.listing.price,
+        tenantName: `${req.user.firstName} ${req.user.lastName}`,
+        listingTitle:
+          application?.listing.title || 'their upcoming rental applications',
+        listingLocation: application?.listing.location || 'Rentra',
+        monthlyRent: application?.listing.price || null,
         inviteToken,
         inviteUrl: `${process.env.CLIENT_URL}/cosigner/accept/${inviteToken}`,
       })
@@ -159,6 +156,41 @@ router.post('/invite', authenticate, async (req, res) => {
     res.status(500).json({
       error: { message: 'Failed to invite cosigner' },
     })
+  }
+})
+
+/**
+ * GET /api/cosigners/mine
+ * The tenant's floating (pre-qualification) cosigner invites — the ones
+ * that auto-attach to every application they submit.
+ */
+router.get('/mine', authenticate, async (req, res) => {
+  try {
+    const cosigners = await prisma.cosigner.findMany({
+      where: { tenantId: req.user.id, applicationId: null },
+      orderBy: { invitedAt: 'desc' },
+      include: {
+        cosigner: {
+          select: { firstName: true, lastName: true, email: true },
+        },
+      },
+    })
+    res.json({
+      cosigners: cosigners.map(c => ({
+        id: c.id,
+        email: c.inviteEmail,
+        name: c.cosigner
+          ? `${c.cosigner.firstName} ${c.cosigner.lastName}`
+          : null,
+        relationshipType: c.relationshipType,
+        status: c.status,
+        verifiedMonthlyIncome: c.verifiedMonthlyIncome,
+        invitedAt: c.invitedAt,
+      })),
+    })
+  } catch (error) {
+    console.error('Get my cosigners error:', error)
+    res.status(500).json({ error: { message: 'Failed to get cosigners' } })
   }
 })
 
@@ -229,11 +261,12 @@ router.get('/invitation/:token', async (req, res) => {
         id: cosigner.id,
         email: cosigner.inviteEmail,
         tenant: cosigner.tenant,
-        listing: cosigner.application.listing,
+        // Floating (pre-qualification) invites have no application yet.
+        listing: cosigner.application?.listing || null,
         relationshipType: cosigner.relationshipType,
-        monthlyRent: cosigner.application.listing.price,
-        leaseStart: cosigner.application.startDate,
-        leaseEnd: cosigner.application.endDate,
+        monthlyRent: cosigner.application?.listing?.price || null,
+        leaseStart: cosigner.application?.startDate || null,
+        leaseEnd: cosigner.application?.endDate || null,
         invitedAt: cosigner.invitedAt,
         expiresAt: cosigner.tokenExpires,
       },
@@ -390,6 +423,22 @@ router.post('/accept/:token', async (req, res) => {
       })
     }
 
+    // Cascade: also accept any application-bound clones of this invite
+    // (floating pre-qual cosigners are cloned onto each application the
+    // tenant submits — same tenant + same invited email).
+    await prisma.cosigner.updateMany({
+      where: {
+        tenantId: cosigner.tenantId,
+        inviteEmail: cosigner.inviteEmail,
+        status: 'pending',
+      },
+      data: {
+        cosignerId: cosignerUserId,
+        status: 'accepted',
+        respondedAt: new Date(),
+      },
+    })
+
     // Generate tokens for the cosigner
     const { generateTokens } = await import('../utils/auth.js')
     const user = await prisma.user.findUnique({
@@ -412,7 +461,7 @@ router.post('/accept/:token', async (req, res) => {
         firstName: cosigner.tenant.firstName,
         lastName: cosigner.tenant.lastName,
       },
-      applicationId: cosigner.application.id,
+      applicationId: cosigner.application?.id || null,
     })
   } catch (error) {
     console.error('Accept cosigner invitation error:', error)

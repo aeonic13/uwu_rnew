@@ -157,26 +157,39 @@ export default function CosignerAcceptPage() {
       </div>
 
       <div className="bg-gray-50 rounded-xl p-4 mb-6 space-y-2 text-sm">
-        <div className="flex items-center text-gray-700">
-          <Home className="w-4 h-4 mr-2 text-gray-400" />
-          <span className="font-medium">{listing.title}</span>
-        </div>
-        <div className="flex items-center text-gray-600">
-          <DollarSign className="w-4 h-4 mr-2 text-gray-400" />$
-          {listing.price?.toLocaleString()}/mo
-          {invitation.relationshipType ? (
-            <span className="ml-2 text-gray-400">
-              · {invitation.relationshipType}
+        {listing ? (
+          <>
+            <div className="flex items-center text-gray-700">
+              <Home className="w-4 h-4 mr-2 text-gray-400" />
+              <span className="font-medium">{listing.title}</span>
+            </div>
+            <div className="flex items-center text-gray-600">
+              <DollarSign className="w-4 h-4 mr-2 text-gray-400" />$
+              {listing.price?.toLocaleString()}/mo
+              {invitation.relationshipType ? (
+                <span className="ml-2 text-gray-400">
+                  · {invitation.relationshipType}
+                </span>
+              ) : null}
+            </div>
+            {invitation.leaseStart && (
+              <div className="flex items-center text-gray-600">
+                <Calendar className="w-4 h-4 mr-2 text-gray-400" />
+                {new Date(invitation.leaseStart).toLocaleDateString()} –{' '}
+                {invitation.leaseEnd
+                  ? new Date(invitation.leaseEnd).toLocaleDateString()
+                  : 'TBD'}
+              </div>
+            )}
+          </>
+        ) : (
+          // Floating pre-qualification invite: no specific property yet.
+          <div className="flex items-center text-gray-700">
+            <Home className="w-4 h-4 mr-2 text-gray-400" />
+            <span>
+              You&apos;ll back {tenant.firstName}&apos;s rental applications on
+              Rentra — your verified income attaches to each one they submit.
             </span>
-          ) : null}
-        </div>
-        {invitation.leaseStart && (
-          <div className="flex items-center text-gray-600">
-            <Calendar className="w-4 h-4 mr-2 text-gray-400" />
-            {new Date(invitation.leaseStart).toLocaleDateString()} –{' '}
-            {invitation.leaseEnd
-              ? new Date(invitation.leaseEnd).toLocaleDateString()
-              : 'TBD'}
           </div>
         )}
       </div>
