@@ -17,6 +17,7 @@ import LoadingSpinner from '../../components/common/LoadingSpinner'
 import { paymentsService } from '../../services/payments'
 import { applicationsService } from '../../services/applicationsService'
 import { rentalProfileService } from '../../services/rentalProfileService'
+import { groupsService } from '../../services/groupsService'
 import InviteCosignerForm from '../cosigner/InviteCosignerForm'
 
 // Verify step removed — now handled once via /pre-qualify
@@ -804,7 +805,16 @@ function PaymentStep({ formData, onChange, onNext, onBack, listing }) {
 /**
  * Step 4: Review
  */
-function ReviewStep({ formData, onBack, onSubmit, listing, isSubmitting }) {
+function ReviewStep({
+  formData,
+  onBack,
+  onSubmit,
+  listing,
+  isSubmitting,
+  groups = [],
+  selectedGroupId = null,
+  onSelectGroup,
+}) {
   const serviceFee = Math.round((listing?.price || 0) * 0.03)
   const total = (listing?.price || 0) + serviceFee
 
@@ -864,6 +874,46 @@ function ReviewStep({ formData, onBack, onSubmit, listing, isSubmitting }) {
           </div>
         </div>
       </div>
+
+      {/* Apply solo or as a roommate group */}
+      {groups.length > 0 && (
+        <div className="bg-white rounded-lg border p-4">
+          <h3 className="font-semibold mb-1">Apply as</h3>
+          <p className="text-xs text-gray-500 mb-3">
+            Applying as a group submits an application for every member, so the
+            landlord reviews you together.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => onSelectGroup?.(null)}
+              className={`px-4 py-2 rounded-full text-sm font-medium border-2 transition-colors ${
+                selectedGroupId === null
+                  ? 'border-brand-500 bg-brand-50 text-brand-600'
+                  : 'border-gray-200 text-gray-600 hover:border-gray-300'
+              }`}
+            >
+              Just me
+            </button>
+            {groups.map(g => (
+              <button
+                key={g.id}
+                type="button"
+                onClick={() => onSelectGroup?.(g.id)}
+                className={`px-4 py-2 rounded-full text-sm font-medium border-2 transition-colors ${
+                  selectedGroupId === g.id
+                    ? 'border-brand-500 bg-brand-50 text-brand-600'
+                    : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                }`}
+              >
+                {g.name} (
+                {(g.members || []).filter(m => m.status === 'active').length}{' '}
+                members)
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Terms */}
       <div className="text-sm text-gray-500">
@@ -925,6 +975,23 @@ function ApplicationFlow() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submittedAppId, setSubmittedAppId] = useState(null)
   const [rentalProfile, setRentalProfile] = useState(null)
+  // Roommate groups the tenant belongs to — enables "apply as a group"
+  // (one application per member, reviewed together by the landlord).
+  const [myGroups, setMyGroups] = useState([])
+  const [selectedGroupId, setSelectedGroupId] = useState(null)
+
+  useEffect(() => {
+    let active = true
+    groupsService
+      .listMy()
+      .then(groups => {
+        if (active) setMyGroups(groups)
+      })
+      .catch(() => {})
+    return () => {
+      active = false
+    }
+  }, [])
 
   // Prefill from the universal rental application saved at pre-qualification
   // (the whole point: answer once, apply anywhere). Never overwrites what the
@@ -995,6 +1062,25 @@ function ApplicationFlow() {
   const handleSubmit = async () => {
     setIsSubmitting(true)
     try {
+      // Group application: one application per member, linked by groupId.
+      if (selectedGroupId) {
+        const res = await applicationsService.submitGroupApplication({
+          groupId: selectedGroupId,
+          listingId,
+          startDate: formData.moveInDate,
+          endDate: formData.moveOutDate,
+          message: formData.message,
+        })
+        const mine = (res?.applications || []).find(
+          a => a.applicantId === user?.id
+        )
+        if (mine?.id) {
+          setSubmittedAppId(mine.id)
+        } else {
+          navigate('/')
+        }
+        return
+      }
       // Attach pre-qualification data so landlords can see it was verified,
       // plus the universal rental application answers (residence history,
       // employment, disclosures) filled once at pre-qualification.
@@ -1098,6 +1184,9 @@ function ApplicationFlow() {
           formData={formData}
           onBack={handleBack}
           onSubmit={handleSubmit}
+          groups={myGroups}
+          selectedGroupId={selectedGroupId}
+          onSelectGroup={setSelectedGroupId}
           listing={selectedListing}
           isSubmitting={isSubmitting}
         />

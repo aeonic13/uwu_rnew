@@ -495,6 +495,43 @@ const GroupApplicationsTab = ({
                   </span>
                 )}
               </div>
+
+              {/* Per-member screening snapshot: credit, rental history,
+                  and standard disclosures from the rental application. */}
+              <div className="flex flex-wrap gap-1.5 mt-2 text-xs">
+                <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">
+                  <CreditCard size={11} />
+                  Credit: {m.creditScore ?? 'N/A'}
+                </span>
+                {m.rentalProfile?.currentAddress && (
+                  <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">
+                    Renting at {m.rentalProfile.currentAddress}
+                    {m.rentalProfile.currentRent
+                      ? ` (${m.rentalProfile.currentRent})`
+                      : ''}
+                  </span>
+                )}
+                {m.rentalProfile &&
+                  [
+                    ['everEvicted', 'Evicted'],
+                    ['brokenLease', 'Broke lease'],
+                    ['felony', 'Felony'],
+                    ['smoker', 'Smoker'],
+                  ].map(([key, label]) =>
+                    typeof m.rentalProfile[key] === 'boolean' ? (
+                      <span
+                        key={key}
+                        className={`px-2 py-0.5 rounded-full ${
+                          m.rentalProfile[key]
+                            ? 'bg-amber-100 text-amber-800'
+                            : 'bg-green-100 text-green-700'
+                        }`}
+                      >
+                        {label}: {m.rentalProfile[key] ? 'Yes' : 'No'}
+                      </span>
+                    ) : null
+                  )}
+              </div>
             </div>
           ))}
         </div>

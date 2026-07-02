@@ -19,6 +19,15 @@ export const applicationsService = {
   },
 
   /**
+   * Apply to a listing as a roommate group — one application per member.
+   * @param {{groupId:string,listingId:string,startDate:string,endDate:string,message?:string}} data
+   * @returns {Promise<{message:string, applications:object[]}>}
+   */
+  async submitGroupApplication(data) {
+    return apiClient.post('/applications/group', data)
+  },
+
+  /**
    * Get all applications for the current user
    * Students see their own applications, owners see applications for their listings
    * @param {object} params - Query parameters

@@ -138,6 +138,132 @@ router.post('/', authenticate, async (req, res) => {
 })
 
 /**
+ * POST /api/applications/group
+ * Apply to a listing as a roommate group: creates one Application per
+ * active group member (linked by groupId), each carrying that member's
+ * own universal rental profile so the landlord sees every individual's
+ * income, rental history, and disclosures.
+ */
+router.post('/group', authenticate, async (req, res) => {
+  try {
+    const { groupId, listingId, startDate, endDate, message } = req.body
+    if (!groupId || !listingId || !startDate || !endDate) {
+      return res.status(400).json({
+        error: {
+          message: 'Group ID, listing ID, start date, and end date required',
+        },
+      })
+    }
+
+    // Requester must be an active member of the group.
+    const group = await prisma.group.findUnique({
+      where: { id: groupId },
+      include: {
+        members: {
+          where: { status: 'active', userId: { not: null } },
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                rentalProfile: true,
+              },
+            },
+          },
+        },
+      },
+    })
+    if (!group) {
+      return res.status(404).json({ error: { message: 'Group not found' } })
+    }
+    if (!group.members.some(m => m.userId === req.user.id)) {
+      return res.status(403).json({
+        error: { message: 'Only group members can apply for the group' },
+      })
+    }
+
+    const listing = await prisma.listing.findUnique({
+      where: { id: listingId },
+      select: { id: true, ownerId: true, active: true },
+    })
+    if (!listing || !listing.active) {
+      return res
+        .status(listing ? 400 : 404)
+        .json({ error: { message: 'Listing not available' } })
+    }
+
+    // Members who already have an active application here are skipped, and
+    // the listing owner can never be an applicant on their own listing.
+    const memberIds = group.members
+      .map(m => m.userId)
+      .filter(id => id !== listing.ownerId)
+    const existing = await prisma.application.findMany({
+      where: {
+        listingId,
+        applicantId: { in: memberIds },
+        status: { in: ['pending', 'approved'] },
+      },
+      select: { applicantId: true },
+    })
+    const alreadyApplied = new Set(existing.map(a => a.applicantId))
+
+    const parseIncome = raw => {
+      const n = parseInt(String(raw || '').replace(/[^0-9]/g, ''), 10)
+      return Number.isFinite(n) && n > 0 ? n : null
+    }
+
+    const toCreate = group.members.filter(
+      m => m.userId !== listing.ownerId && !alreadyApplied.has(m.userId)
+    )
+    if (toCreate.length === 0) {
+      return res.status(400).json({
+        error: {
+          message: 'Every group member already has an active application here',
+        },
+      })
+    }
+
+    const created = await prisma.$transaction(
+      toCreate.map(m => {
+        const rp = m.user.rentalProfile || null
+        return prisma.application.create({
+          data: {
+            listingId,
+            applicantId: m.userId,
+            ownerId: listing.ownerId,
+            groupId,
+            startDate: new Date(startDate),
+            endDate: new Date(endDate),
+            message: message || `Applying as part of group "${group.name}"`,
+            status: 'pending',
+            verificationData: {
+              groupApplication: true,
+              submittedBy: req.user.id,
+              ...(rp && {
+                rentalProfile: rp,
+                monthlyIncome: parseIncome(rp.monthlyIncome),
+              }),
+            },
+          },
+        })
+      })
+    )
+
+    res.status(201).json({
+      message: `Group application submitted for ${created.length} member${created.length === 1 ? '' : 's'}`,
+      applications: created,
+      skipped: alreadyApplied.size,
+    })
+  } catch (error) {
+    console.error('Group application error:', error)
+    res
+      .status(500)
+      .json({ error: { message: 'Failed to submit group application' } })
+  }
+})
+
+/**
  * GET /api/applications
  * Get applications - students see their own, owners see applications for their listings
  */

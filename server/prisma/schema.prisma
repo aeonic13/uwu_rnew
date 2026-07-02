@@ -157,6 +157,7 @@ model Group {
   createdBy   User           @relation("GroupCreator", fields: [createdById], references: [id], onDelete: Cascade)
   members     GroupMember[]
   messages    GroupMessage[]
+  applications Application[]
 
   @@index([createdById])
 }
@@ -292,11 +293,16 @@ model Application {
   transactions Transaction[]
   agreement    Agreement?
   cosigners    Cosigner[]
+  // Set when this application was submitted as part of a roommate group —
+  // one Application row per member, linked by the shared groupId.
+  groupId String?
+  group   Group?  @relation(fields: [groupId], references: [id], onDelete: SetNull)
 
   @@index([listingId])
   @@index([applicantId])
   @@index([ownerId])
   @@index([status])
+  @@index([groupId])
 }
 
 // Agreement/Contract model

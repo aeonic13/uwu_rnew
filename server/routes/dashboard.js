@@ -525,6 +525,7 @@ router.get(
               agreement: {
                 select: { tenantSigned: true, landlordSigned: true },
               },
+              group: { select: { id: true, name: true } },
               cosigners: {
                 include: {
                   cosigner: {
@@ -538,87 +539,110 @@ router.get(
         orderBy: { createdAt: 'desc' },
       })
 
+      // Partition each listing's applications into real roommate groups
+      // (shared groupId → one entry named after the group) and a pooled
+      // entry for solo applicants.
       const groups = listings
         .filter(l => l.applications.length > 0)
-        .map(listing => {
-          const members = listing.applications.map(app => {
-            const monthlyIncome = app.verificationData?.monthlyIncome || 0
-            const cosigner = app.cosigners[0]
-            const cosignerIncome = cosigner?.verifiedMonthlyIncome || 0
-            // The guarantor's income qualifies the tenant — combine them.
-            const effectiveIncome = monthlyIncome + cosignerIncome
-            return {
-              id: app.id,
-              applicationId: app.id,
-              name: `${app.applicant.firstName} ${app.applicant.lastName}`,
-              email: app.applicant.email,
-              university: app.applicant.university || null,
-              applicationStatus:
-                app.status === 'approved' ? 'complete' : 'pending',
-              monthlyIncome,
-              effectiveIncome,
-              income: assessIncome(
-                effectiveIncome,
-                listing.price,
-                listing.incomeMultiplier
-              ),
-              verificationData: {
-                bankConnected: !!app.verificationData?.bankConnected,
-                incomeVerified: !!app.verificationData?.incomeVerified,
-                monthlyIncome: app.verificationData?.monthlyIncome || 0,
-                identityVerified: !!app.verificationData?.identityVerified,
-                applicationFeePaid: !!app.verificationData?.applicationFeePaid,
-              },
-              guarantor: cosigner
-                ? {
-                    name: cosigner.cosigner
-                      ? `${cosigner.cosigner.firstName} ${cosigner.cosigner.lastName}`
-                      : cosigner.inviteEmail,
-                    email: cosigner.cosigner?.email || cosigner.inviteEmail,
-                    monthlyIncome: cosignerIncome,
-                    incomeVerified: cosignerIncome > 0,
-                    verificationStatus:
-                      cosigner.status === 'accepted'
-                        ? 'verified'
-                        : cosigner.status === 'pending'
-                          ? 'invited'
-                          : 'not_invited',
-                  }
-                : null,
-            }
-          })
-
-          const combined = assessCombinedIncome(
-            members.map(m => m.effectiveIncome),
-            listing.price,
-            listing.incomeMultiplier
+        .flatMap(listing => {
+          const byGroup = new Map()
+          for (const app of listing.applications) {
+            const key = app.groupId || 'solo'
+            if (!byGroup.has(key)) byGroup.set(key, [])
+            byGroup.get(key).push(app)
+          }
+          return [...byGroup.entries()].map(([key, apps]) =>
+            shapeInboxGroup(
+              listing,
+              apps,
+              key === 'solo' ? null : apps[0].group
+            )
           )
-          const allComplete = members.every(
-            m => m.applicationStatus === 'complete'
-          )
+        })
 
+      function shapeInboxGroup(listing, applications, realGroup) {
+        const members = applications.map(app => {
+          const monthlyIncome = app.verificationData?.monthlyIncome || 0
+          const cosigner = app.cosigners[0]
+          const cosignerIncome = cosigner?.verifiedMonthlyIncome || 0
+          // The guarantor's income qualifies the tenant — combine them.
+          const effectiveIncome = monthlyIncome + cosignerIncome
           return {
-            id: listing.id,
-            propertyId: listing.id,
-            propertyTitle: listing.title,
-            groupName: `${listing.title} — ${members.length} applicant${
-              members.length === 1 ? '' : 's'
-            }`,
-            status: allComplete
-              ? 'applicants_approved'
-              : 'pending_verifications',
-            submittedAt: listing.applications.reduce(
-              (earliest, a) =>
-                a.createdAt < earliest ? a.createdAt : earliest,
-              listing.applications[0].createdAt
+            id: app.id,
+            applicationId: app.id,
+            name: `${app.applicant.firstName} ${app.applicant.lastName}`,
+            email: app.applicant.email,
+            university: app.applicant.university || null,
+            applicationStatus:
+              app.status === 'approved' ? 'complete' : 'pending',
+            monthlyIncome,
+            effectiveIncome,
+            creditScore: app.applicant.creditScore ?? null,
+            // Full standard-application answers (rental history,
+            // employment, household, disclosures incl. criminal history).
+            rentalProfile: app.verificationData?.rentalProfile || null,
+            income: assessIncome(
+              effectiveIncome,
+              listing.price,
+              listing.incomeMultiplier
             ),
-            members,
-            combinedMonthlyIncome: combined.monthlyIncome,
-            rentRequired: listing.price,
-            requiredIncome: combined.requiredIncome,
-            meetsRequirement: combined.meetsRequirement,
+            verificationData: {
+              bankConnected: !!app.verificationData?.bankConnected,
+              incomeVerified: !!app.verificationData?.incomeVerified,
+              monthlyIncome: app.verificationData?.monthlyIncome || 0,
+              identityVerified: !!app.verificationData?.identityVerified,
+              applicationFeePaid: !!app.verificationData?.applicationFeePaid,
+            },
+            guarantor: cosigner
+              ? {
+                  name: cosigner.cosigner
+                    ? `${cosigner.cosigner.firstName} ${cosigner.cosigner.lastName}`
+                    : cosigner.inviteEmail,
+                  email: cosigner.cosigner?.email || cosigner.inviteEmail,
+                  monthlyIncome: cosignerIncome,
+                  incomeVerified: cosignerIncome > 0,
+                  verificationStatus:
+                    cosigner.status === 'accepted'
+                      ? 'verified'
+                      : cosigner.status === 'pending'
+                        ? 'invited'
+                        : 'not_invited',
+                }
+              : null,
           }
         })
+
+        const combined = assessCombinedIncome(
+          members.map(m => m.effectiveIncome),
+          listing.price,
+          listing.incomeMultiplier
+        )
+        const allComplete = members.every(
+          m => m.applicationStatus === 'complete'
+        )
+
+        return {
+          id: realGroup ? `${listing.id}:${realGroup.id}` : listing.id,
+          propertyId: listing.id,
+          propertyTitle: listing.title,
+          isRealGroup: !!realGroup,
+          groupName: realGroup
+            ? `${realGroup.name} (group of ${members.length})`
+            : `${listing.title} — ${members.length} applicant${
+                members.length === 1 ? '' : 's'
+              }`,
+          status: allComplete ? 'applicants_approved' : 'pending_verifications',
+          submittedAt: applications.reduce(
+            (earliest, a) => (a.createdAt < earliest ? a.createdAt : earliest),
+            applications[0].createdAt
+          ),
+          members,
+          combinedMonthlyIncome: combined.monthlyIncome,
+          rentRequired: listing.price,
+          requiredIncome: combined.requiredIncome,
+          meetsRequirement: combined.meetsRequirement,
+        }
+      }
 
       // Flat individual-applications view (richer per-applicant detail).
       const avatarFor = name =>
