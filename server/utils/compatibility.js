@@ -1,27 +1,78 @@
 /**
  * Compatibility scoring for the Housemates feature.
  *
- * The score is intentionally simple and explainable: we compare the four core
- * lifestyle dimensions that drive day-to-day friction between housemates and
- * award an equal weight to each. The result is a 0-100 "Compatibility Score".
+ * Weighted by what roommate-conflict research says actually causes friction:
+ * cleanliness disputes lead (~42-47% of conflicts), then noise/sleep (~38%),
+ * then guests & partners (~31-35%), then sharing food/belongings (~27%).
+ * Smoking and pets act as near-dealbreakers, and conflict-resolution style
+ * predicts whether issues get resolved at all. The result stays an
+ * explainable 0-100 "Compatibility Score".
  */
 
-// The lifestyle dimensions we compare, each worth an equal share of 100.
+// Each dimension: research-informed weight + which answer pairs deserve
+// partial credit (adjacent lifestyles that can coexist with compromise).
 const DIMENSIONS = [
-  'sleepSchedule',
-  'cleanliness',
-  'noiseTolerance',
-  'guestFrequency',
+  { key: 'cleanliness', weight: 1.5, partial: [] },
+  {
+    key: 'smoking',
+    weight: 1.5,
+    partial: [
+      ['no', 'outdoor'],
+      ['outdoor', 'yes'],
+    ],
+  },
+  { key: 'sleepSchedule', weight: 1.25, partial: [] },
+  { key: 'noiseTolerance', weight: 1.25, partial: [] },
+  {
+    key: 'guestFrequency',
+    weight: 1.0,
+    partial: [
+      ['rarely', 'sometimes'],
+      ['sometimes', 'often'],
+    ],
+  },
+  {
+    key: 'pets',
+    weight: 1.0,
+    partial: [
+      ['love', 'okay'],
+      ['okay', 'none'],
+    ],
+  },
+  {
+    key: 'sharing',
+    weight: 0.75,
+    partial: [
+      ['share', 'ask'],
+      ['ask', 'separate'],
+    ],
+  },
+  {
+    key: 'socialStyle',
+    weight: 0.75,
+    partial: [
+      ['friends', 'friendly'],
+      ['friendly', 'private'],
+    ],
+  },
+  { key: 'chores', weight: 0.75, partial: [] },
+  { key: 'conflictStyle', weight: 0.75, partial: [] },
 ]
 
-const POINTS_PER_DIMENSION = Math.round(100 / DIMENSIONS.length)
+// Opposed answers on these dimensions are practical dealbreakers (e.g. a
+// smoker and a strict non-smoker): cap the overall score so a match can't
+// look great on the strength of everything else.
+const DEALBREAKERS = [
+  { key: 'smoking', pair: ['no', 'yes'], cap: 45 },
+  { key: 'pets', pair: ['love', 'none'], cap: 55 },
+]
 
 /**
  * Returns true when a profile has at least one lifestyle answer filled in.
  */
 function hasLifestyleAnswers(profile) {
   if (!profile) return false
-  return DIMENSIONS.some(key => Boolean(profile[key]))
+  return DIMENSIONS.some(d => Boolean(profile[d.key]))
 }
 
 /**
@@ -36,6 +87,15 @@ function fallbackScore(candidate) {
   const tagCount = Array.isArray(candidate?.tags) ? candidate.tags.length : 0
   const score = 70 + tagCount * 5
   return Math.min(95, score)
+}
+
+/** Match quality for one dimension: 1 exact, 0.5 adjacent, 0 opposed. */
+function dimensionMatch(dim, a, b) {
+  if (a === b) return 1
+  const isPartial = dim.partial.some(
+    ([x, y]) => (a === x && b === y) || (a === y && b === x)
+  )
+  return isPartial ? 0.5 : 0
 }
 
 /**
@@ -54,28 +114,39 @@ export function computeCompatibility(viewer, candidate) {
     return fallbackScore(candidate)
   }
 
-  let score = 0
-  let comparableDimensions = 0
+  let earned = 0
+  let comparableWeight = 0
 
-  for (const key of DIMENSIONS) {
-    const viewerValue = viewer[key]
-    const candidateValue = candidate[key]
+  for (const dim of DIMENSIONS) {
+    const viewerValue = viewer[dim.key]
+    const candidateValue = candidate[dim.key]
 
     // Only compare dimensions where both sides answered.
     if (viewerValue && candidateValue) {
-      comparableDimensions += 1
-      if (viewerValue === candidateValue) {
-        score += POINTS_PER_DIMENSION
-      }
+      comparableWeight += dim.weight
+      earned += dim.weight * dimensionMatch(dim, viewerValue, candidateValue)
     }
   }
 
   // If there were no overlapping answers, fall back rather than reporting 0%.
-  if (comparableDimensions === 0) {
+  if (comparableWeight === 0) {
     return fallbackScore(candidate)
   }
 
-  return Math.min(100, score)
+  let score = Math.round((earned / comparableWeight) * 100)
+
+  // Apply dealbreaker caps for directly opposed answers.
+  for (const { key, pair, cap } of DEALBREAKERS) {
+    const a = viewer[key]
+    const b = candidate[key]
+    const opposed =
+      (a === pair[0] && b === pair[1]) || (a === pair[1] && b === pair[0])
+    if (a && b && opposed) {
+      score = Math.min(score, cap)
+    }
+  }
+
+  return Math.max(0, Math.min(100, score))
 }
 
 export default { computeCompatibility }

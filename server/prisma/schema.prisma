@@ -419,11 +419,20 @@ model Review {
 // between any two users before they message each other.
 model HousemateProfile {
   id             String   @id @default(cuid())
-  // Lifestyle answers (kept as simple strings so the quiz can evolve freely)
+  // Lifestyle answers (kept as simple strings so the quiz can evolve freely).
+  // Weights in server/utils/compatibility.js reflect roommate-conflict
+  // research: cleanliness is the #1 friction source, then noise/sleep,
+  // then guests; smoking/pets act as near-dealbreakers.
   sleepSchedule  String?  // morning, night
   cleanliness    String?  // very, relaxed
   noiseTolerance String?  // quiet, lively
-  guestFrequency String?  // rarely, often
+  guestFrequency String?  // rarely, sometimes, often
+  smoking        String?  // no, outdoor, yes
+  pets           String?  // love, okay, none
+  socialStyle    String?  // friends, friendly, private
+  sharing        String?  // share, ask, separate
+  chores         String?  // schedule, flexible
+  conflictStyle  String?  // direct, gentle
   // Discovery / display fields
   audience       String?  // professional, student, parent, remote, retiree
   occupation     String?

@@ -30,11 +30,48 @@ describe('HousematesHub', () => {
     ).toBeInTheDocument()
     expect(screen.getByText('Find a Housemate')).toBeInTheDocument()
     expect(screen.getByText('Compatibility Quiz')).toBeInTheDocument()
-    expect(screen.getByText('Browse Rooms')).toBeInTheDocument()
-    expect(screen.getByText('Safe Search')).toBeInTheDocument()
+    // Browse Rooms was removed from the hub.
+    expect(screen.queryByText('Browse Rooms')).not.toBeInTheDocument()
 
     // Flush the async match load so state updates settle within act().
     await screen.findByText('Jordan Avery')
+  })
+
+  it('always shows the Safe Search sidebar, in every section', async () => {
+    renderHub()
+    await screen.findByText('Jordan Avery')
+
+    // Visible on discover…
+    expect(
+      screen.getByRole('complementary', { name: 'Safe Search' })
+    ).toBeInTheDocument()
+
+    // …and still visible after switching to the quiz.
+    fireEvent.click(screen.getByText('Compatibility Quiz'))
+    expect(
+      screen.getByRole('complementary', { name: 'Safe Search' })
+    ).toBeInTheDocument()
+  })
+
+  it('shows the expanded ten-question compatibility quiz', async () => {
+    renderHub()
+    await screen.findByText('Jordan Avery')
+
+    fireEvent.click(screen.getByText('Compatibility Quiz'))
+
+    expect(
+      await screen.findByText('How tidy is your ideal home?')
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('What is your relationship with smoking or vaping?')
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('How do you feel about pets in the home?')
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('When something bothers you at home, you…')
+    ).toBeInTheDocument()
+    expect(screen.getByText('0 of 10 answered')).toBeInTheDocument()
   })
 
   it('falls back to sample housemates when the API returns none', async () => {
