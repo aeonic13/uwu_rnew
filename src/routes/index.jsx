@@ -46,14 +46,10 @@ const LandlordInbox = lazy(() => import('../features/owner/LandlordInbox'))
 const LandlordListingForm = lazy(
   () => import('../features/owner/LandlordListingForm')
 )
-const BankingBookkeeping = lazy(() => import('../BankingBookkeeping'))
-const RentCollectionSystem = lazy(() => import('../RentCollectionSystem'))
-const TaxCenter = lazy(() => import('../TaxCenter'))
-const SecurityDepositManager = lazy(() => import('../SecurityDepositManager'))
-const OwnerApprovalSystem = lazy(() => import('../OwnerApprovalSystem'))
-const OwnerDocumentManager = lazy(() => import('../OwnerDocumentManager'))
-const DisputeResolutionCenter = lazy(() => import('../DisputeResolutionCenter'))
-const PropertyInspectionTools = lazy(() => import('../PropertyInspectionTools'))
+// Not-yet-real owner screens are gated behind an honest Coming Soon page
+// (launch plan P0-3). Their mock components stay in the repo as design
+// references but are intentionally unrouted.
+const ComingSoon = lazy(() => import('../components/common/ComingSoon'))
 
 // Group features (student only)
 const GroupDashboard = lazy(() => import('../features/groups/GroupDashboard'))
@@ -482,102 +478,66 @@ const routeConfig = [
           </ProtectedRoute>
         ),
       },
-      {
-        path: '/dashboard/banking',
+      // Gated owner screens (P0-3): honest Coming Soon instead of mock data.
+      ...[
+        {
+          path: '/dashboard/banking',
+          title: 'Banking & Bookkeeping',
+          description:
+            'Connected accounts, categorized transactions, and reports are on the way.',
+        },
+        {
+          path: '/dashboard/rent-collection',
+          title: 'Rent Collection',
+          description:
+            'Automated rent tracking and reminders are coming. Your rent roll is live on the dashboard today.',
+        },
+        {
+          path: '/dashboard/tax',
+          title: 'Tax Center',
+          description:
+            'Schedule E and 1099 exports are on the roadmap for tax season.',
+        },
+        {
+          path: '/dashboard/security-deposits',
+          title: 'Security Deposits',
+          description:
+            'State-compliant deposit tracking, deductions, and refunds are in the works.',
+        },
+        {
+          path: '/dashboard/approvals',
+          title: 'Approvals Center',
+          description:
+            'Approve or reject applicants from your Inbox today — a dedicated approvals workspace is coming.',
+        },
+        {
+          path: '/dashboard/documents',
+          title: 'Document Manager',
+          description: 'Lease and document storage with e-sign is on the way.',
+        },
+        {
+          path: '/dashboard/disputes',
+          title: 'Dispute Resolution',
+          description: 'Structured dispute and mediation tools are planned.',
+        },
+        {
+          path: '/dashboard/inspections',
+          title: 'Property Inspections',
+          description:
+            'Move-in/move-out inspections with saved photo reports are coming.',
+        },
+      ].map(({ path, title, description }) => ({
+        path,
         element: (
           <ProtectedRoute>
             <RoleRoute allowedRoles={['owner']}>
               <Suspense fallback={<SuspenseFallback />}>
-                <BankingBookkeeping />
+                <ComingSoon title={title} description={description} />
               </Suspense>
             </RoleRoute>
           </ProtectedRoute>
         ),
-      },
-      {
-        path: '/dashboard/rent-collection',
-        element: (
-          <ProtectedRoute>
-            <RoleRoute allowedRoles={['owner']}>
-              <Suspense fallback={<SuspenseFallback />}>
-                <RentCollectionSystem />
-              </Suspense>
-            </RoleRoute>
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: '/dashboard/tax',
-        element: (
-          <ProtectedRoute>
-            <RoleRoute allowedRoles={['owner']}>
-              <Suspense fallback={<SuspenseFallback />}>
-                <TaxCenter />
-              </Suspense>
-            </RoleRoute>
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: '/dashboard/security-deposits',
-        element: (
-          <ProtectedRoute>
-            <RoleRoute allowedRoles={['owner']}>
-              <Suspense fallback={<SuspenseFallback />}>
-                <SecurityDepositManager />
-              </Suspense>
-            </RoleRoute>
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: '/dashboard/approvals',
-        element: (
-          <ProtectedRoute>
-            <RoleRoute allowedRoles={['owner']}>
-              <Suspense fallback={<SuspenseFallback />}>
-                <OwnerApprovalSystem />
-              </Suspense>
-            </RoleRoute>
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: '/dashboard/documents',
-        element: (
-          <ProtectedRoute>
-            <RoleRoute allowedRoles={['owner']}>
-              <Suspense fallback={<SuspenseFallback />}>
-                <OwnerDocumentManager />
-              </Suspense>
-            </RoleRoute>
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: '/dashboard/disputes',
-        element: (
-          <ProtectedRoute>
-            <RoleRoute allowedRoles={['owner']}>
-              <Suspense fallback={<SuspenseFallback />}>
-                <DisputeResolutionCenter />
-              </Suspense>
-            </RoleRoute>
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: '/dashboard/inspections',
-        element: (
-          <ProtectedRoute>
-            <RoleRoute allowedRoles={['owner']}>
-              <Suspense fallback={<SuspenseFallback />}>
-                <PropertyInspectionTools />
-              </Suspense>
-            </RoleRoute>
-          </ProtectedRoute>
-        ),
-      },
+      })),
     ],
   },
 
