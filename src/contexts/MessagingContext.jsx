@@ -227,13 +227,12 @@ export function MessagingProvider({ children }) {
           return { success: true, conversation: existing }
         }
 
-        // Create new conversation
-        return await createConversation({
-          type: groupId ? 'group' : 'individual',
-          participants,
-          listingId,
-          groupId,
-        })
+        // Create new conversation. createConversation takes positional
+        // args (recipientId, listingId); the backend derives the rest.
+        const recipientId = Array.isArray(participants)
+          ? participants[0]
+          : participants
+        return await createConversation(recipientId, listingId)
       } catch (error) {
         return { success: false, error: error.message }
       }

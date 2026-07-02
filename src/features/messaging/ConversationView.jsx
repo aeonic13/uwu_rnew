@@ -204,11 +204,12 @@ function ConversationView() {
       await messagingService.sendMessage(conversationId, newMessage.trim())
     } catch (err) {
       console.error('Failed to send message:', err)
-      // Revert optimistic update on failure
+      // Revert optimistic update and restore the text so it isn't lost
       setConversation(prev => ({
         ...prev,
         messages: prev.messages.filter(m => m.id !== message.id),
       }))
+      setNewMessage(message.text)
     }
 
     setIsSending(false)

@@ -575,9 +575,12 @@ export function resetRateLimit(identifier, action) {
  */
 export function generateSecureToken(length = 32) {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+  // Math.random() is not cryptographically secure — use Web Crypto.
+  const values = new Uint32Array(length)
+  crypto.getRandomValues(values)
   let result = ''
   for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length))
+    result += chars.charAt(values[i] % chars.length)
   }
   return result
 }

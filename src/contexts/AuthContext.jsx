@@ -76,26 +76,6 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const initAuth = async () => {
       try {
-        // DEVELOPMENT MODE: Auto-login with test user
-        const isDev = import.meta.env.DEV
-        const bypassAuth = localStorage.getItem('bypassAuth') === 'true'
-
-        if (isDev && bypassAuth) {
-          // Create mock user for testing
-          const mockUser = {
-            id: 'dev-user-123',
-            email: 'test@student.edu',
-            userType: 'student',
-            firstName: 'Test',
-            lastName: 'Student',
-            university: 'Test University',
-            verified: true,
-          }
-          console.log('🔓 Development mode: Auto-logged in as test user')
-          dispatch({ type: AUTH_ACTIONS.LOGIN_SUCCESS, payload: mockUser })
-          return
-        }
-
         const token = localStorage.getItem('authToken')
         if (token) {
           const user = await authService.validateToken(token)

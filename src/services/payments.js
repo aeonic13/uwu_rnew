@@ -1,5 +1,7 @@
 import api from './api'
 
+// Note: the api response interceptor already returns response.data (the
+// body), so methods return the api call directly — no second unwrap.
 export const paymentsService = {
   /**
    * Create Moov account for user
@@ -7,8 +9,7 @@ export const paymentsService = {
    * @returns {Promise} Created Moov account
    */
   createAccount: async accountData => {
-    const response = await api.post('/payments/create-account', accountData)
-    return response.data
+    return api.post('/payments/moov/create-account', accountData)
   },
 
   /**
@@ -17,8 +18,7 @@ export const paymentsService = {
    * @returns {Promise} Linked bank account
    */
   linkBankAccount: async data => {
-    const response = await api.post('/payments/link-bank', data)
-    return response.data
+    return api.post('/payments/moov/link-bank', data)
   },
 
   /**
@@ -27,8 +27,7 @@ export const paymentsService = {
    * @returns {Promise} Transfer confirmation
    */
   createTransfer: async transferData => {
-    const response = await api.post('/payments/transfer', transferData)
-    return response.data
+    return api.post('/payments/moov/transfer', transferData)
   },
 
   /**
@@ -37,8 +36,7 @@ export const paymentsService = {
    * @returns {Promise} Transfer details
    */
   getTransferStatus: async transferId => {
-    const response = await api.get(`/payments/transfer/${transferId}`)
-    return response.data
+    return api.get(`/payments/moov/transfer/${transferId}`)
   },
 
   /**
@@ -47,7 +45,6 @@ export const paymentsService = {
    * @returns {Promise} List of transactions
    */
   getHistory: async (params = {}) => {
-    // api's response interceptor already returns response.data (the body).
     return api.get('/payments/history', { params })
   },
 
@@ -61,8 +58,7 @@ export const paymentsService = {
    * @returns {Promise} List of payment methods
    */
   getPaymentMethods: async () => {
-    const response = await api.get('/payments/methods')
-    return response.data
+    return api.get('/payments/moov/payment-methods')
   },
 }
 

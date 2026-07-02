@@ -72,30 +72,11 @@ export const listingsService = {
   },
 
   /**
-   * Search listings near university
-   * @param {object} params - Search parameters
-   * @returns {Promise<object[]>}
-   */
-  async searchByUniversity(params) {
-    const { universityId, radiusMiles = 5, ...otherParams } = params
-    const queryParams = new URLSearchParams({
-      universityId,
-      radius: radiusMiles,
-      ...otherParams,
-    })
-
-    const response = await apiClient.get(
-      `/listings/search/university?${queryParams}`
-    )
-    return response.listings || []
-  },
-
-  /**
    * Get user's own listings
    * @returns {Promise<object[]>}
    */
   async getMyListings() {
-    const response = await apiClient.get('/listings/my-listings')
+    const response = await apiClient.get('/listings/my/listings')
     return response.listings || []
   },
 
@@ -106,28 +87,9 @@ export const listingsService = {
    * @returns {Promise<object>}
    */
   async toggleListingStatus(id, active) {
-    const response = await apiClient.patch(`/listings/${id}/status`, { active })
+    // Backend exposes this via the general update endpoint.
+    const response = await apiClient.put(`/listings/${id}`, { active })
     return response.listing
-  },
-
-  /**
-   * Upload listing images
-   * @param {string|number} listingId - Listing ID
-   * @param {File[]} files - Image files
-   * @returns {Promise<string[]>} - Uploaded image URLs
-   */
-  async uploadImages(listingId, files) {
-    const formData = new FormData()
-    files.forEach(file => formData.append('images', file))
-
-    const response = await apiClient.post(
-      `/listings/${listingId}/images`,
-      formData,
-      {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      }
-    )
-    return response.imageUrls || []
   },
 }
 
