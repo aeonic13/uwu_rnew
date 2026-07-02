@@ -23,6 +23,112 @@ import {
   CircleDollarSign,
 } from 'lucide-react'
 
+// ─── Universal rental application (captured once at pre-qualification) ──────
+// Renders the tenant's standard-application answers when present. Older
+// applications (pre-feature) simply won't have this data.
+const RENTAL_PROFILE_SECTIONS = [
+  {
+    title: 'Residence history',
+    rows: [
+      ['Current address', 'currentAddress'],
+      ['Time at address', 'timeAtAddress'],
+      ['Current landlord', 'currentLandlordName'],
+      ['Landlord phone', 'currentLandlordPhone'],
+      ['Current rent', 'currentRent'],
+      ['Reason for leaving', 'reasonForLeaving'],
+      ['Previous address', 'previousAddress'],
+    ],
+  },
+  {
+    title: 'Employment & income',
+    rows: [
+      ['Employer', 'employer'],
+      ['Job title', 'jobTitle'],
+      ['Time with employer', 'employmentLength'],
+      ['Work / supervisor phone', 'workPhone'],
+      ['Gross monthly income', 'monthlyIncome'],
+      ['Other income', 'otherIncome'],
+    ],
+  },
+  {
+    title: 'Household',
+    rows: [
+      ['Occupants', 'occupants'],
+      ['Pets', 'pets'],
+      ['Vehicles', 'vehicles'],
+    ],
+  },
+]
+
+const RENTAL_PROFILE_DISCLOSURES = [
+  ['Ever evicted', 'everEvicted'],
+  ['Broken a lease', 'brokenLease'],
+  ['Felony conviction', 'felony'],
+  ['Smoker', 'smoker'],
+]
+
+function RentalApplicationCard({ profile }) {
+  return (
+    <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+      <div className="flex items-center gap-2 mb-3">
+        <FileText size={16} className="text-brand-500" />
+        <h4 className="font-semibold text-gray-900">Full Rental Application</h4>
+        <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+          Filled at pre-qualification
+        </span>
+      </div>
+
+      <div className="space-y-4">
+        {RENTAL_PROFILE_SECTIONS.map(section => {
+          const rows = section.rows.filter(([, key]) => profile[key])
+          if (rows.length === 0) return null
+          return (
+            <div key={section.title}>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                {section.title}
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
+                {rows.map(([label, key]) => (
+                  <div key={key} className="text-sm">
+                    <span className="text-gray-500">{label}: </span>
+                    <span className="font-medium text-gray-900">
+                      {profile[key]}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
+        })}
+
+        <div>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+            Disclosures
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {RENTAL_PROFILE_DISCLOSURES.map(([label, key]) => {
+              if (typeof profile[key] !== 'boolean') return null
+              const yes = profile[key]
+              return (
+                <span
+                  key={key}
+                  className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                    yes
+                      ? 'bg-amber-100 text-amber-800'
+                      : 'bg-green-100 text-green-700'
+                  }`}
+                >
+                  {label}: {yes ? 'Yes' : 'No'}
+                </span>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Pipeline stages ─────────────────────────────────────────────────────────
 const PIPELINE_STAGES = [
   { key: 'pending_verifications', label: 'Verifying', color: 'yellow' },
@@ -1316,6 +1422,12 @@ const LandlordInbox = ({
                 ))}
               </div>
             </div>
+
+            {selectedApplicant.application.rentalProfile && (
+              <RentalApplicationCard
+                profile={selectedApplicant.application.rentalProfile}
+              />
+            )}
           </div>
         </div>
 

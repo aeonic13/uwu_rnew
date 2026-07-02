@@ -663,6 +663,9 @@ router.get(
               message: app.message || '',
               appliedAt: app.createdAt,
               documents: app.documents || [],
+              // Universal rental application answers captured at pre-qual
+              // (residence history, employment, household, disclosures).
+              rentalProfile: app.verificationData?.rentalProfile || null,
               incomeAssessment: assessIncome(
                 monthlyIncome,
                 listing.price,
