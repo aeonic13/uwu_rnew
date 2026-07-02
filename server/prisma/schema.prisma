@@ -75,6 +75,10 @@ model User {
   // Plaid item access token, held server-side only (never sent to the
   // client). TODO: encrypt at rest with a KMS-managed key before GA.
   plaidAccessToken String?
+  // Universal rental application answers (residence history, employment,
+  // references, disclosures) filled once at pre-qualification and reused
+  // to prefill every property application. Deliberately excludes SSN/DOB.
+  rentalProfile Json?
   resetToken    String?
   resetTokenExp DateTime?
   createdAt     DateTime  @default(now())

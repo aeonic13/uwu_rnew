@@ -16,6 +16,7 @@ import { usePreQualification } from '../../hooks/usePreQualification'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import { paymentsService } from '../../services/payments'
 import { applicationsService } from '../../services/applicationsService'
+import { rentalProfileService } from '../../services/rentalProfileService'
 import InviteCosignerForm from '../cosigner/InviteCosignerForm'
 
 // Verify step removed — now handled once via /pre-qualify
@@ -923,6 +924,49 @@ function ApplicationFlow() {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submittedAppId, setSubmittedAppId] = useState(null)
+  const [rentalProfile, setRentalProfile] = useState(null)
+
+  // Prefill from the universal rental application saved at pre-qualification
+  // (the whole point: answer once, apply anywhere). Never overwrites what the
+  // user already typed.
+  useEffect(() => {
+    let active = true
+    rentalProfileService
+      .get()
+      .then(p => {
+        if (!active || !p) return
+        setRentalProfile(p)
+        const emergency = [
+          p.emergencyName,
+          p.emergencyRelation,
+          p.emergencyPhone,
+        ]
+          .filter(Boolean)
+          .join(' — ')
+        const employment = [p.jobTitle, p.employer].filter(Boolean).join(' at ')
+        const refs = [
+          [p.reference1Name, p.reference1Relation, p.reference1Phone]
+            .filter(Boolean)
+            .join(' — '),
+          [p.reference2Name, p.reference2Relation, p.reference2Phone]
+            .filter(Boolean)
+            .join(' — '),
+        ]
+          .filter(Boolean)
+          .join('\n')
+
+        setFormData(prev => ({
+          ...prev,
+          emergencyContact: prev.emergencyContact || emergency,
+          employmentStatus: prev.employmentStatus || employment,
+          references: prev.references || refs,
+        }))
+      })
+      .catch(() => {})
+    return () => {
+      active = false
+    }
+  }, [])
 
   useEffect(() => {
     if (listingId) {
@@ -951,19 +995,26 @@ function ApplicationFlow() {
   const handleSubmit = async () => {
     setIsSubmitting(true)
     try {
-      // Attach pre-qualification data so landlords can see it was verified
-      const verificationData = preQualData
-        ? {
-            preQualified: true,
-            preQualifiedAt: preQualData.completedAt,
-            bankConnected: !!preQualData.verifications?.bank?.verified,
-            incomeVerified: !!preQualData.verifications?.income?.verified,
-            monthlyIncome:
-              preQualData.verifications?.income?.monthlyIncome || null,
-            identityVerified: !!preQualData.verifications?.identity?.verified,
-            applicationFeePaid: true,
-          }
-        : null
+      // Attach pre-qualification data so landlords can see it was verified,
+      // plus the universal rental application answers (residence history,
+      // employment, disclosures) filled once at pre-qualification.
+      const verificationData =
+        preQualData || rentalProfile
+          ? {
+              ...(preQualData && {
+                preQualified: true,
+                preQualifiedAt: preQualData.completedAt,
+                bankConnected: !!preQualData.verifications?.bank?.verified,
+                incomeVerified: !!preQualData.verifications?.income?.verified,
+                monthlyIncome:
+                  preQualData.verifications?.income?.monthlyIncome || null,
+                identityVerified:
+                  !!preQualData.verifications?.identity?.verified,
+                applicationFeePaid: true,
+              }),
+              ...(rentalProfile && { rentalProfile }),
+            }
+          : null
       const res = await applicationsService.submitApplication({
         listingId,
         startDate: formData.moveInDate,

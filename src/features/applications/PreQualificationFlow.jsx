@@ -11,10 +11,12 @@ import {
   AlertCircle,
   Info,
   ShieldCheck,
+  ClipboardList,
 } from 'lucide-react'
 import { usePlaidLink } from 'react-plaid-link'
 import { usePreQualification } from '../../hooks/usePreQualification'
 import { paymentsService } from '../../services/payments'
+import RentalProfileForm from './RentalProfileForm'
 
 /**
  * Standalone Pre-Qualification Flow
@@ -48,6 +50,10 @@ export default function PreQualificationFlow() {
   })
   const [feeStatus, setFeeStatus] = useState('unpaid')
   const [error, setError] = useState(null)
+  // The universal rental application (residence, employment, references,
+  // disclosures) — saved once here, reused to prefill every application.
+  const [profileDone, setProfileDone] = useState(false)
+  const [profileOpen, setProfileOpen] = useState(true)
 
   // Fetch Plaid link token
   useEffect(() => {
@@ -142,7 +148,7 @@ export default function PreQualificationFlow() {
   const incomeDone = verifications.income?.verified
   const identityDone = verifications.identity?.verified
   const allVerified = bankDone && (incomeDone || identityDone)
-  const canComplete = allVerified && feeStatus === 'paid'
+  const canComplete = profileDone && allVerified && feeStatus === 'paid'
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -176,9 +182,10 @@ export default function PreQualificationFlow() {
               Complete this once, apply anywhere
             </p>
             <p className="text-sm text-gray-600 mt-1">
-              Pre-qualify now by verifying your income and identity and paying
-              the one-time $50 screening fee. After that, you can instantly
-              apply to any listing on Rentra.
+              Every landlord&apos;s rental application asks the same questions.
+              Answer them once here, verify your income and identity, pay the
+              one-time $50 screening fee — and every application on Rentra is
+              prefilled from your profile.
             </p>
           </div>
         </div>
@@ -200,7 +207,50 @@ export default function PreQualificationFlow() {
           </div>
         </div>
 
-        {/* Step 1: Bank Connection */}
+        {/* Step 1: Universal rental application */}
+        <div className="bg-white border border-gray-200 rounded-xl p-4">
+          <button
+            onClick={() => setProfileOpen(open => !open)}
+            className="w-full flex items-center justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <div
+                className={`w-9 h-9 rounded-full flex items-center justify-center ${profileDone ? 'bg-green-100' : 'bg-gray-100'}`}
+              >
+                {profileDone ? (
+                  <CheckCircle2 size={20} className="text-green-600" />
+                ) : (
+                  <ClipboardList size={18} className="text-gray-500" />
+                )}
+              </div>
+              <div className="text-left">
+                <p className="font-medium text-gray-900">Rental Application</p>
+                <p
+                  className={`text-xs ${profileDone ? 'text-green-600' : 'text-gray-400'}`}
+                >
+                  {profileDone
+                    ? 'Saved — prefills every application'
+                    : 'The standard questions every landlord asks, once'}
+                </p>
+              </div>
+            </div>
+            <span className="text-xs text-brand-500 font-medium">
+              {profileOpen ? 'Hide' : profileDone ? 'Edit' : 'Fill out'}
+            </span>
+          </button>
+          {profileOpen && (
+            <div className="mt-4 border-t pt-4">
+              <RentalProfileForm
+                onSaved={() => {
+                  setProfileDone(true)
+                  setProfileOpen(false)
+                }}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Step 2: Bank Connection */}
         <div className="bg-white border border-gray-200 rounded-xl p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">

@@ -119,6 +119,66 @@ router.put('/profile', async (req, res) => {
   }
 })
 
+// GET /api/users/rental-profile - the caller's universal rental application
+// answers (must be registered before /:id so "rental-profile" isn't captured
+// as an id).
+router.get('/rental-profile', async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { rentalProfile: true },
+    })
+    res.json({ rentalProfile: user?.rentalProfile || null })
+  } catch (error) {
+    console.error('Get rental profile error:', error)
+    res.status(500).json({ error: { message: 'Failed to get rental profile' } })
+  }
+})
+
+// PUT /api/users/rental-profile - save the universal rental application.
+// Stored as JSON so the questionnaire can evolve without migrations.
+router.put('/rental-profile', async (req, res) => {
+  try {
+    const profile = req.body?.rentalProfile
+    if (!profile || typeof profile !== 'object' || Array.isArray(profile)) {
+      return res
+        .status(400)
+        .json({ error: { message: 'rentalProfile object is required' } })
+    }
+    // Guard size and shape: flat string/boolean answers only, capped lengths.
+    const entries = Object.entries(profile)
+    if (entries.length > 60) {
+      return res.status(400).json({ error: { message: 'Too many fields' } })
+    }
+    const clean = {}
+    for (const [key, value] of entries) {
+      if (typeof key !== 'string' || key.length > 60) continue
+      if (typeof value === 'boolean') {
+        clean[key] = value
+      } else if (typeof value === 'string') {
+        if (value.length > 1000) {
+          return res.status(400).json({
+            error: { message: `${key} must be at most 1000 characters` },
+          })
+        }
+        clean[key] = value
+      }
+      // Anything else (objects, arrays, numbers-as-needed) is dropped.
+    }
+
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: { rentalProfile: clean },
+    })
+    res.json({ message: 'Rental profile saved', rentalProfile: clean })
+  } catch (error) {
+    console.error('Save rental profile error:', error)
+    res
+      .status(500)
+      .json({ error: { message: 'Failed to save rental profile' } })
+  }
+})
+
 // GET /api/users/:id - Public profile
 router.get('/:id', async (req, res) => {
   try {
