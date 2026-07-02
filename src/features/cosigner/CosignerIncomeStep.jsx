@@ -38,13 +38,13 @@ export default function CosignerIncomeStep({ onDone }) {
     setStatus('loading')
     setError(null)
     try {
-      const ex = await api.post('/payments/plaid/exchange-token', {
+      // Exchange stores the access token server-side; verify-income looks
+      // it up from the authenticated user.
+      await api.post('/payments/plaid/exchange-token', {
         publicToken,
         accountId: metadata?.accounts?.[0]?.id,
       })
-      const incomeRes = await api.post('/payments/plaid/verify-income', {
-        accessToken: ex.accessToken,
-      })
+      const incomeRes = await api.post('/payments/plaid/verify-income', {})
       const monthlyIncome = incomeRes?.income?.totalMonthlyIncome || 0
       await cosignerService.verifyIncome(monthlyIncome)
       setIncome(monthlyIncome)

@@ -47,7 +47,6 @@ export default function PreQualificationFlow() {
     identity: null,
   })
   const [feeStatus, setFeeStatus] = useState('unpaid')
-  const [accessToken, setAccessToken] = useState(null)
   const [error, setError] = useState(null)
 
   // Fetch Plaid link token
@@ -77,8 +76,8 @@ export default function PreQualificationFlow() {
         publicToken,
         accountId: metadata?.accounts?.[0]?.id,
       })
-      const token = exchangeData.accessToken
-      setAccessToken(token)
+      // The access token is stored server-side; verify endpoints look it
+      // up from the authenticated user.
       setVerifications(prev => ({
         ...prev,
         bank: {
@@ -89,8 +88,8 @@ export default function PreQualificationFlow() {
       }))
 
       const [incomeRes, identityRes] = await Promise.allSettled([
-        api.post('/payments/plaid/verify-income', { accessToken: token }),
-        api.post('/payments/plaid/verify-identity', { accessToken: token }),
+        api.post('/payments/plaid/verify-income', {}),
+        api.post('/payments/plaid/verify-identity', {}),
       ])
 
       setVerifications(prev => ({
@@ -128,9 +127,7 @@ export default function PreQualificationFlow() {
     setFeeStatus('charging')
     setError(null)
     try {
-      await api.post('/payments/application-fee', {
-        plaidAccessToken: accessToken,
-      })
+      await api.post('/payments/application-fee', {})
       setFeeStatus('paid')
     } catch (err) {
       setFeeStatus('error')

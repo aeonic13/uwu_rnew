@@ -13,6 +13,16 @@ import * as plaidUtils from '../utils/plaid.js'
 
 const router = express.Router()
 
+// Resolve the caller's Plaid access token from their user record.
+// (Tokens are stored server-side; clients never hold them.)
+async function getPlaidToken(userId) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { plaidAccessToken: true },
+  })
+  return user?.plaidAccessToken || null
+}
+
 // PLAID: Create link token for bank account connection
 router.post('/plaid/create-link-token', authenticate, async (req, res) => {
   try {
@@ -62,9 +72,12 @@ router.post('/plaid/exchange-token', authenticate, async (req, res) => {
       )
     }
 
-    // TODO: Store accessToken securely (encrypted) in database
-    // For now, returning to frontend (NOT SECURE - fix in production)
-    console.warn('⚠️  Plaid access token should be encrypted before storing!')
+    // Store the access token server-side only — it must never reach the
+    // client. Verify endpoints look it up from the user record.
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: { plaidAccessToken: accessToken },
+    })
 
     res.json({
       success: true,
@@ -72,8 +85,6 @@ router.post('/plaid/exchange-token', authenticate, async (req, res) => {
       accounts,
       processorToken,
       itemId,
-      // TEMPORARY: Remove this in production
-      accessToken, // Frontend will store temporarily
     })
   } catch (error) {
     console.error('Exchange token error:', error)
@@ -86,11 +97,11 @@ router.post('/plaid/exchange-token', authenticate, async (req, res) => {
 // PLAID: Get connected bank accounts
 router.get('/plaid/accounts', authenticate, async (req, res) => {
   try {
-    const { accessToken } = req.query
+    const accessToken = await getPlaidToken(req.user.id)
 
     if (!accessToken) {
       return res.status(400).json({
-        error: { message: 'Access token is required' },
+        error: { message: 'No bank connection found. Connect a bank first.' },
       })
     }
 
@@ -107,11 +118,12 @@ router.get('/plaid/accounts', authenticate, async (req, res) => {
 // PLAID: Verify account ownership and balance
 router.post('/plaid/verify-account', authenticate, async (req, res) => {
   try {
-    const { accessToken, accountId, requiredBalance } = req.body
+    const { accountId, requiredBalance } = req.body
+    const accessToken = await getPlaidToken(req.user.id)
 
     if (!accessToken) {
       return res.status(400).json({
-        error: { message: 'Access token is required' },
+        error: { message: 'No bank connection found. Connect a bank first.' },
       })
     }
 
@@ -151,11 +163,11 @@ router.post('/plaid/verify-account', authenticate, async (req, res) => {
 // PLAID: Verify income
 router.post('/plaid/verify-income', authenticate, async (req, res) => {
   try {
-    const { accessToken } = req.body
+    const accessToken = await getPlaidToken(req.user.id)
 
     if (!accessToken) {
       return res.status(400).json({
-        error: { message: 'Access token is required' },
+        error: { message: 'No bank connection found. Connect a bank first.' },
       })
     }
 
@@ -179,11 +191,11 @@ router.post('/plaid/verify-income', authenticate, async (req, res) => {
 // PLAID: Verify identity
 router.post('/plaid/verify-identity', authenticate, async (req, res) => {
   try {
-    const { accessToken } = req.body
+    const accessToken = await getPlaidToken(req.user.id)
 
     if (!accessToken) {
       return res.status(400).json({
-        error: { message: 'Access token is required' },
+        error: { message: 'No bank connection found. Connect a bank first.' },
       })
     }
 
@@ -215,13 +227,10 @@ router.post('/plaid/verify-identity', authenticate, async (req, res) => {
 // Charge $50 non-refundable application fee after Plaid verification
 router.post('/application-fee', authenticate, async (req, res) => {
   try {
-    const { listingId, plaidAccessToken } = req.body
-
-    if (!listingId) {
-      return res.status(400).json({ error: { message: 'Listing ID required' } })
-    }
-
+    // The fee is charged once at pre-qualification, not per listing —
+    // no listingId required (the caller doesn't have one yet).
     const APPLICATION_FEE = 50
+    const hasBank = !!(await getPlaidToken(req.user.id))
 
     // Record the fee as a real Transaction. Pre-application charge, so no
     // applicationId. If the write fails we must NOT claim success.
@@ -232,7 +241,7 @@ router.post('/application-fee', authenticate, async (req, res) => {
         serviceFee: 0,
         total: APPLICATION_FEE,
         status: 'completed',
-        paymentMethod: plaidAccessToken ? 'ach' : 'card',
+        paymentMethod: hasBank ? 'ach' : 'card',
       },
     })
 

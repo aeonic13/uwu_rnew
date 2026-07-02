@@ -72,6 +72,9 @@ model User {
   verified      Boolean   @default(false)
   verifyToken   String?
   verifyTokenExp DateTime?
+  // Plaid item access token, held server-side only (never sent to the
+  // client). TODO: encrypt at rest with a KMS-managed key before GA.
+  plaidAccessToken String?
   resetToken    String?
   resetTokenExp DateTime?
   createdAt     DateTime  @default(now())

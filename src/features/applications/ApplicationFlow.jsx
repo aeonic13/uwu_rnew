@@ -363,8 +363,8 @@ function VerifyStep({ listingId, onNext, onBack, onVerificationComplete }) {
           publicToken,
           accountId: metadata?.accounts?.[0]?.id,
         })
-        const token = exchangeData.accessToken
-        setAccessToken(token)
+        // Token is stored server-side; verify endpoints look it up.
+        setAccessToken(true)
         setVerifications(prev => ({
           ...prev,
           bank: {
@@ -376,8 +376,8 @@ function VerifyStep({ listingId, onNext, onBack, onVerificationComplete }) {
 
         // Run income + identity in parallel
         const [incomeRes, identityRes] = await Promise.allSettled([
-          api.post('/payments/plaid/verify-income', { accessToken: token }),
-          api.post('/payments/plaid/verify-identity', { accessToken: token }),
+          api.post('/payments/plaid/verify-income', {}),
+          api.post('/payments/plaid/verify-identity', {}),
         ])
 
         setVerifications(prev => ({
@@ -397,7 +397,7 @@ function VerifyStep({ listingId, onNext, onBack, onVerificationComplete }) {
         }))
 
         setPlaidStatus('connected')
-        onVerificationComplete?.(token, {
+        onVerificationComplete?.(true, {
           income:
             incomeRes.status === 'fulfilled' ? incomeRes.value?.income : null,
           identity:
@@ -424,10 +424,7 @@ function VerifyStep({ listingId, onNext, onBack, onVerificationComplete }) {
     setFeeStatus('charging')
     setError(null)
     try {
-      await api.post('/payments/application-fee', {
-        listingId,
-        plaidAccessToken: accessToken,
-      })
+      await api.post('/payments/application-fee', { listingId })
       setFeeStatus('paid')
     } catch (err) {
       setFeeStatus('error')
