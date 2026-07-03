@@ -421,3 +421,25 @@ export default {
   sendMessageNotification,
   sendCosignerInvitation,
 }
+
+/**
+ * Notify a tenant that their invited cosigner declined.
+ */
+export async function sendCosignerDeclinedEmail(tenant, cosignerEmail) {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+      <h2 style="color: #fc6a03;">Co-signer update</h2>
+      <p>Hi ${tenant.firstName},</p>
+      <p>Unfortunately <strong>${cosignerEmail}</strong> declined your co-signer invitation.</p>
+      <p>You can invite a different co-signer any time from your pre-qualification page — their verified income will attach to every application you submit.</p>
+      <p style="margin-top: 24px;"><a href="${process.env.CLIENT_URL}/pre-qualify" style="background: #fc6a03; color: #fff; padding: 10px 18px; border-radius: 6px; text-decoration: none;">Invite another co-signer</a></p>
+      <p style="color: #888; font-size: 13px; margin-top: 24px;">— The Rentra Team</p>
+    </div>
+  `
+  return sendEmail({
+    to: tenant.email,
+    subject: 'Your co-signer invitation was declined',
+    html,
+    text: `Hi ${tenant.firstName}, ${cosignerEmail} declined your co-signer invitation. You can invite a different co-signer from ${process.env.CLIENT_URL}/pre-qualify`,
+  })
+}

@@ -2,7 +2,10 @@ import express from 'express'
 import prisma from '../utils/prisma.js'
 import { authenticate } from '../middleware/authenticate.js'
 import { generateSecureToken } from '../utils/auth.js'
-import { sendCosignerInvitation } from '../utils/email.js'
+import {
+  sendCosignerInvitation,
+  sendCosignerDeclinedEmail,
+} from '../utils/email.js'
 
 const router = express.Router()
 
@@ -507,7 +510,23 @@ router.post('/decline/:token', async (req, res) => {
       },
     })
 
-    // TODO: Notify tenant that cosigner declined
+    // Notify the tenant so they can invite someone else.
+    try {
+      const withTenant = await prisma.cosigner.findUnique({
+        where: { id: cosigner.id },
+        include: {
+          tenant: { select: { email: true, firstName: true } },
+        },
+      })
+      if (withTenant?.tenant) {
+        await sendCosignerDeclinedEmail(
+          withTenant.tenant,
+          withTenant.inviteEmail
+        )
+      }
+    } catch (emailError) {
+      console.error('Failed to send decline notification:', emailError)
+    }
 
     res.json({
       message: 'Cosigner invitation declined',

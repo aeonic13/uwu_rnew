@@ -91,3 +91,10 @@ export-everything.json
 .vscode-testserver/uploads/
 .vercel
 .env*.local
+
+# Graphify knowledge-graph outputs (regenerable)
+graphify-out/
+
+# Playwright
+test-results/
+playwright-report/

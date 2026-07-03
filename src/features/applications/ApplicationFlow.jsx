@@ -958,8 +958,25 @@ function ReviewStep({
 
       {/* Terms */}
       <div className="text-sm text-gray-500">
-        By submitting, you agree to our Terms of Service and Privacy Policy.
-        Payment will be processed once the owner approves your application.
+        By submitting, you agree to our{' '}
+        <a
+          href="/terms"
+          target="_blank"
+          rel="noreferrer"
+          className="text-brand-500 underline"
+        >
+          Terms of Service
+        </a>{' '}
+        and{' '}
+        <a
+          href="/privacy"
+          target="_blank"
+          rel="noreferrer"
+          className="text-brand-500 underline"
+        >
+          Privacy Policy
+        </a>
+        . Payment will be processed once the owner approves your application.
       </div>
 
       <div className="flex gap-3">

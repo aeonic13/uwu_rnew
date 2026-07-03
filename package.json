@@ -19,7 +19,8 @@
     "format:check": "prettier --check \"src/**/*.{js,jsx,css}\"",
     "server": "cd server && npm run dev",
     "dev:all": "concurrently \"npm run dev\" \"npm run server\"",
-    "prepare": "husky || true"
+    "prepare": "husky || true",
+    "test:e2e": "playwright test"
   },
   "lint-staged": {
     "src/**/*.{js,jsx}": [
@@ -47,6 +48,7 @@
   "devDependencies": {
     "@dotenvx/dotenvx": "^1.75.1",
     "@eslint/js": "^9.38.0",
+    "@playwright/test": "^1.61.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",

@@ -8,7 +8,10 @@ import {
   validatePasswordStrength,
   verifyToken,
 } from '../utils/auth.js'
-import { sendVerificationEmail } from '../utils/email.js'
+import {
+  sendVerificationEmail,
+  sendPasswordResetEmail,
+} from '../utils/email.js'
 
 const router = express.Router()
 
@@ -244,8 +247,12 @@ router.post('/forgot-password', async (req, res) => {
       },
     })
 
-    // TODO: Send password reset email with resetToken
-    console.log(`Reset token for ${email}: ${resetToken}`)
+    try {
+      await sendPasswordResetEmail(user, resetToken)
+    } catch (emailError) {
+      console.error('Failed to send password reset email:', emailError)
+      // Response stays generic either way (no enumeration).
+    }
 
     res.json({
       message: 'If an account exists, a password reset email has been sent',

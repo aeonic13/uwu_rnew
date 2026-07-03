@@ -40,6 +40,14 @@ const CosignerAcceptPage = lazy(
   () => import('../features/cosigner/CosignerAcceptPage')
 )
 
+// Legal pages (public)
+const TermsPage = lazy(() =>
+  import('../features/legal/LegalPages').then(m => ({ default: m.TermsPage }))
+)
+const PrivacyPage = lazy(() =>
+  import('../features/legal/LegalPages').then(m => ({ default: m.PrivacyPage }))
+)
+
 // Owner-specific pages
 const OwnerDashboard = lazy(() => import('../features/owner/OwnerDashboard'))
 const LandlordInbox = lazy(() => import('../features/owner/LandlordInbox'))
@@ -190,6 +198,24 @@ const routeConfig = [
           <RegisterPage />
         </Suspense>
       </PublicRoute>
+    ),
+  },
+
+  // Legal pages (public — the privacy URL is required for Plaid production)
+  {
+    path: '/terms',
+    element: (
+      <Suspense fallback={<SuspenseFallback />}>
+        <TermsPage />
+      </Suspense>
+    ),
+  },
+  {
+    path: '/privacy',
+    element: (
+      <Suspense fallback={<SuspenseFallback />}>
+        <PrivacyPage />
+      </Suspense>
     ),
   },
 

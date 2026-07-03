@@ -252,9 +252,13 @@ function PayRentTab() {
             Processing...
           </span>
         ) : (
-          `Pay $${currentLease.monthlyRent} Now`
+          `Record rent payment — $${currentLease.monthlyRent}`
         )}
       </button>
+      <p className="text-xs text-gray-400 text-center">
+        Records the payment on your rent ledger and your landlord&apos;s rent
+        roll. In-app bank payments (ACH) are coming soon.
+      </p>
       {payError && <p className="text-sm text-red-600">{payError}</p>}
 
       {/* Auto-pay Option */}
