@@ -38,6 +38,31 @@ export async function findReusableReport(prisma, userId) {
 }
 
 /**
+ * Batch variant of findReusableReport for group applications: one query for
+ * many users. Returns a Map<userId, ScreeningReport> holding each user's most
+ * recent still-valid report (users with none are simply absent from the map).
+ *
+ * @param {import('@prisma/client').PrismaClient} prisma
+ * @param {string[]} userIds
+ * @returns {Promise<Map<string, object>>}
+ */
+export async function findReusableReports(prisma, userIds) {
+  const byUser = new Map()
+  if (!userIds || userIds.length === 0) return byUser
+  const rows = await prisma.screeningReport.findMany({
+    where: {
+      userId: { in: userIds },
+      status: 'complete',
+      expiresAt: { gt: new Date() },
+    },
+    orderBy: { issuedAt: 'desc' },
+  })
+  // Rows are newest-first, so the first seen per user is the one to keep.
+  for (const r of rows) if (!byUser.has(r.userId)) byUser.set(r.userId, r)
+  return byUser
+}
+
+/**
  * Reuse an unexpired report if one exists, otherwise generate a fresh one via
  * the CRA. Callers must have captured consent first and pass it through.
  *

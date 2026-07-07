@@ -2,6 +2,10 @@ import express from 'express'
 import prisma from '../utils/prisma.js'
 import { authenticate, requireUserType } from '../middleware/authenticate.js'
 import { generateSecureToken } from '../utils/auth.js'
+import {
+  findReusableReport,
+  findReusableReports,
+} from '../utils/screeningReport.js'
 
 const router = express.Router()
 
@@ -123,6 +127,17 @@ router.post('/', authenticate, async (req, res) => {
       })
     }
 
+    // "Pay once, reuse everywhere": if the applicant already has a valid
+    // screening report, link it so the landlord sees it and we don't charge
+    // again (CA AB 2559). Best-effort — an application is valid without it.
+    let screeningReportId = null
+    try {
+      const report = await findReusableReport(prisma, userId)
+      screeningReportId = report?.id ?? null
+    } catch (err) {
+      console.error('findReusableReport error:', err)
+    }
+
     // Create the application
     const application = await prisma.application.create({
       data: {
@@ -138,6 +153,7 @@ router.post('/', authenticate, async (req, res) => {
         ...(Array.isArray(documents) && { documents }),
         status: 'pending',
         ...(verificationData && { verificationData }),
+        ...(screeningReportId && { screeningReportId }),
       },
       include: {
         listing: {
@@ -270,9 +286,22 @@ router.post('/group', authenticate, async (req, res) => {
       })
     }
 
+    // "Pay once, reuse everywhere" for each member — one query for the group.
+    // Best-effort: a failure here must not block the group application.
+    let reportByUser = new Map()
+    try {
+      reportByUser = await findReusableReports(
+        prisma,
+        toCreate.map(m => m.userId)
+      )
+    } catch (err) {
+      console.error('findReusableReports error:', err)
+    }
+
     const created = await prisma.$transaction(
       toCreate.map(m => {
         const rp = m.user.rentalProfile || null
+        const report = reportByUser.get(m.userId)
         return prisma.application.create({
           data: {
             listingId,
@@ -283,6 +312,7 @@ router.post('/group', authenticate, async (req, res) => {
             endDate: new Date(endDate),
             message: message || `Applying as part of group "${group.name}"`,
             status: 'pending',
+            ...(report && { screeningReportId: report.id }),
             verificationData: {
               groupApplication: true,
               submittedBy: req.user.id,

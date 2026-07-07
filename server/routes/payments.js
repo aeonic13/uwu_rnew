@@ -177,10 +177,18 @@ router.post('/plaid/verify-income', authenticate, async (req, res) => {
     // Summarize income
     const summary = plaidUtils.summarizeIncome(incomeData)
 
+    // NOTE: this returns only the income SUMMARY — never the raw Plaid payload.
+    // Echoing full consumer financial data to the browser is an FCRA/PII leak.
+    //
+    // CRA seam: once Plaid Check / TransUnion is wired, this endpoint should
+    // capture consent, then call createOrReuseScreeningReport() (see
+    // utils/screeningReport.js) to persist a reusable, landlord-facing report
+    // instead of returning a scored result assembled from raw Plaid data here
+    // (which would make Rentra an unregistered CRA). Until then it stays a
+    // client-side income summary only.
     res.json({
       verified: true,
       income: summary,
-      rawData: incomeData, // For detailed analysis
     })
   } catch (error) {
     console.error('Verify income error:', error)
