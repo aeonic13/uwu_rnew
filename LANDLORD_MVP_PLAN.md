@@ -3,6 +3,24 @@
 _Last updated: 2026-06-29. This doc reflects the **actual code state**, not aspirational status.
 It supersedes the optimistic framing in `LANDLORD_FEATURES_AUDIT.md`._
 
+> **Update 2026-07-08 — landlord portion feature-complete.** Everything below
+> describing Rent Collection / Security Deposits / Banking / Tax / Documents /
+> landlord maintenance as "mock" is now historical. Shipped and wired to real
+> APIs: **Rent Collection** (`/dashboard/rent-collection`: live rent roll,
+> record offline payments, email reminders, per-lease history),
+> **Security Deposits** (`/dashboard/security-deposits`: state-aware refund
+> countdown incl. CA 21-day Civ. Code 1950.5, itemized deductions, printable
+> disposition letter, refund recording; `SecurityDeposit`/`DepositDeduction`
+> models), **Bookkeeping** (`/dashboard/banking`: `Expense` model, Schedule E
+> categories, income/expense summary), **Tax Center** (`/dashboard/tax`:
+> yearly Schedule E rollup + CSV export), **Documents**
+> (`/dashboard/documents`: Cloudinary-backed `Document` model),
+> **landlord maintenance tab** (live tickets, assign/complete), plus the
+> long-missing **application received/decision emails**. Still gated behind
+> ComingSoon: Approvals workspace (Inbox covers it), Disputes, Inspections.
+> Still v1.1: real ACH via Moov production + webhook signatures; analytics
+> trends need real history.
+
 ---
 
 ## 1. The core problem

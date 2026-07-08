@@ -104,6 +104,9 @@ model User {
   utilityBills         UtilityBill[]       @relation("UtilityBills")
   utilityShares        UtilityBillShare[]  @relation("UtilityShares")
   screeningReports     ScreeningReport[]
+  securityDeposits     SecurityDeposit[]   @relation("OwnerDeposits")
+  expenses             Expense[]
+  documents            Document[]
 
   @@index([email])
   @@index([userType])
@@ -141,6 +144,8 @@ model Listing {
   favorites          Favorite[]
   reviews            Review[]
   maintenanceTickets MaintenanceTicket[]
+  expenses           Expense[]
+  documents          Document[]          @relation("ListingDocuments")
 
   @@index([ownerId])
   @@index([university])
@@ -338,6 +343,8 @@ model Agreement {
   // Relations
   applicationId String      @unique
   application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  // Compliance record for the deposit money this lease holds (see SecurityDeposit).
+  deposit       SecurityDeposit?
 }
 
 // Conversation model
@@ -577,4 +584,95 @@ model ScreeningReport {
   @@index([userId])
   @@index([expiresAt])
   @@index([status])
+}
+
+// Security-deposit compliance record — one per signed lease. Tracks the money
+// held, the state-law refund clock (CA Civ. Code 1950.5: itemized statement +
+// refund within 21 days of move-out), itemized deductions, and the recorded
+// refund. Amounts are whole dollars, matching Agreement.securityDeposit.
+model SecurityDeposit {
+  id                String    @id @default(cuid())
+  amountHeld        Int
+  // Two-letter state whose refund rules apply (from the listing; CA-first).
+  state             String    @default("CA")
+  status            String    @default("holding") // holding, pending_refund, refunded
+  moveOutDate       DateTime?
+  // moveOutDate + the state's statutory return window; the countdown the UI shows.
+  refundDeadline    DateTime?
+  refundAmount      Int?
+  refundMethod      String? // check, ach, cash, other
+  refundedAt        DateTime?
+  letterGeneratedAt DateTime?
+  notes             String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  agreementId String             @unique
+  agreement   Agreement          @relation(fields: [agreementId], references: [id], onDelete: Cascade)
+  // Denormalized from application.ownerId so the owner list is one query.
+  ownerId     String
+  owner       User               @relation("OwnerDeposits", fields: [ownerId], references: [id], onDelete: Cascade)
+  deductions  DepositDeduction[]
+
+  @@index([ownerId])
+  @@index([status])
+}
+
+// One itemized deduction on a security deposit (statement line item).
+model DepositDeduction {
+  id           String   @id @default(cuid())
+  category     String // unpaid_rent, cleaning, repairs, other
+  description  String
+  amount       Int
+  evidenceUrls String[] @default([])
+  createdAt    DateTime @default(now())
+
+  depositId String
+  deposit   SecurityDeposit @relation(fields: [depositId], references: [id], onDelete: Cascade)
+
+  @@index([depositId])
+}
+
+// Property expense for bookkeeping and the Tax Center. category uses
+// Schedule E line names so the tax export needs no mapping table.
+model Expense {
+  id          String   @id @default(cuid())
+  date        DateTime
+  amount      Int
+  category    String // advertising, auto_travel, cleaning_maintenance, insurance, legal_professional, management_fees, mortgage_interest, repairs, supplies, taxes, utilities, other
+  description String
+  vendor      String?
+  receiptUrl  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  listingId String?
+  listing   Listing? @relation(fields: [listingId], references: [id], onDelete: SetNull)
+
+  @@index([ownerId])
+  @@index([listingId])
+  @@index([date])
+}
+
+// Stored landlord document (lease, receipt, notice, insurance...). The file
+// itself lives in Cloudinary; this row is the searchable index entry.
+model Document {
+  id        String   @id @default(cuid())
+  name      String
+  category  String   @default("other") // lease, receipt, notice, insurance, inspection, tax, other
+  url       String
+  mimeType  String?
+  size      Int?
+  createdAt DateTime @default(now())
+
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  listingId String?
+  listing   Listing? @relation("ListingDocuments", fields: [listingId], references: [id], onDelete: SetNull)
+
+  @@index([ownerId])
+  @@index([listingId])
+  @@index([category])
 }

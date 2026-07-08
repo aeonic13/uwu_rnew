@@ -93,6 +93,21 @@ export const paymentsService = {
   getPaymentMethods: async () => {
     return api.get('/payments/moov/payment-methods')
   },
+
+  /** Landlord records an offline rent payment (cash/check) on a lease. */
+  recordPayment: async ({ applicationId, amount, paymentMethod, note }) => {
+    return api.post('/payments/record', {
+      applicationId,
+      amount,
+      paymentMethod,
+      note,
+    })
+  },
+
+  /** Landlord emails the tenant a rent reminder. */
+  sendReminder: async ({ applicationId, balance }) => {
+    return api.post('/payments/remind', { applicationId, balance })
+  },
 }
 
 export default paymentsService

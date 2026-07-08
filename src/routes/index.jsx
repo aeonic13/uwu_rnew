@@ -54,6 +54,13 @@ const LandlordInbox = lazy(() => import('../features/owner/LandlordInbox'))
 const LandlordListingForm = lazy(
   () => import('../features/owner/LandlordListingForm')
 )
+const RentCollection = lazy(() => import('../features/owner/RentCollection'))
+const SecurityDeposits = lazy(
+  () => import('../features/owner/SecurityDeposits')
+)
+const Bookkeeping = lazy(() => import('../features/owner/Bookkeeping'))
+const TaxCenter = lazy(() => import('../features/owner/TaxCenter'))
+const OwnerDocuments = lazy(() => import('../features/owner/Documents'))
 // Not-yet-real owner screens are gated behind an honest Coming Soon page
 // (launch plan P0-3). Their mock components stay in the repo as design
 // references but are intentionally unrouted.
@@ -504,42 +511,32 @@ const routeConfig = [
           </ProtectedRoute>
         ),
       },
+      // Live owner tools (wired to real APIs).
+      ...[
+        { path: '/dashboard/rent-collection', Component: RentCollection },
+        { path: '/dashboard/security-deposits', Component: SecurityDeposits },
+        { path: '/dashboard/banking', Component: Bookkeeping },
+        { path: '/dashboard/tax', Component: TaxCenter },
+        { path: '/dashboard/documents', Component: OwnerDocuments },
+      ].map(({ path, Component }) => ({
+        path,
+        element: (
+          <ProtectedRoute>
+            <RoleRoute allowedRoles={['owner']}>
+              <Suspense fallback={<SuspenseFallback />}>
+                <Component />
+              </Suspense>
+            </RoleRoute>
+          </ProtectedRoute>
+        ),
+      })),
       // Gated owner screens (P0-3): honest Coming Soon instead of mock data.
       ...[
-        {
-          path: '/dashboard/banking',
-          title: 'Banking & Bookkeeping',
-          description:
-            'Connected accounts, categorized transactions, and reports are on the way.',
-        },
-        {
-          path: '/dashboard/rent-collection',
-          title: 'Rent Collection',
-          description:
-            'Automated rent tracking and reminders are coming. Your rent roll is live on the dashboard today.',
-        },
-        {
-          path: '/dashboard/tax',
-          title: 'Tax Center',
-          description:
-            'Schedule E and 1099 exports are on the roadmap for tax season.',
-        },
-        {
-          path: '/dashboard/security-deposits',
-          title: 'Security Deposits',
-          description:
-            'State-compliant deposit tracking, deductions, and refunds are in the works.',
-        },
         {
           path: '/dashboard/approvals',
           title: 'Approvals Center',
           description:
             'Approve or reject applicants from your Inbox today — a dedicated approvals workspace is coming.',
-        },
-        {
-          path: '/dashboard/documents',
-          title: 'Document Manager',
-          description: 'Lease and document storage with e-sign is on the way.',
         },
         {
           path: '/dashboard/disputes',

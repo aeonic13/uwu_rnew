@@ -45,12 +45,33 @@ import {
   Activity,
 } from 'lucide-react'
 import { dashboardService } from './services/dashboardService'
+import { maintenanceService } from './services/maintenanceService'
+import { expensesService } from './services/expensesService'
 
 // Visual-only defaults for fields the rent-roll API does not provide.
 const PLACEHOLDER_PROPERTY_IMAGE =
   'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400'
 const PLACEHOLDER_AVATAR =
   'https://ui-avatars.com/api/?background=fc6a03&color=fff&name='
+
+// Map a real MaintenanceTicket onto the shape the maintenance tab renders.
+function mapTicket(t) {
+  return {
+    id: t.id,
+    tenant: t.tenant ? `${t.tenant.firstName} ${t.tenant.lastName}` : 'Tenant',
+    tenantEmail: t.tenant?.email,
+    unit: t.listing?.title || '—',
+    issue: t.category,
+    category: t.category,
+    priority: t.priority,
+    status: t.status,
+    reportedDate: t.createdAt,
+    assignedTo: t.assignedTo,
+    estimatedCost: null,
+    description: t.description,
+    photos: t.photos || [],
+  }
+}
 
 // Map the /dashboard/landlord/rent-roll response onto the shape this
 // dashboard renders, filling visual-only fields with safe defaults.
@@ -353,6 +374,10 @@ const OwnerDashboard = ({ user, onBack, onNavigate }) => {
 
   // 'demo' until the live rent-roll API returns; 'live' once it does.
   const [dataMode, setDataMode] = useState('demo')
+  // Maintenance goes live independently — an owner with zero tickets is
+  // still real data (an empty list), unlike the rent-roll overlay.
+  const [maintenanceMode, setMaintenanceMode] = useState('demo')
+  const [financialsMode, setFinancialsMode] = useState('demo')
 
   useEffect(() => {
     let active = true
@@ -369,10 +394,83 @@ const OwnerDashboard = ({ user, onBack, onNavigate }) => {
       .catch(() => {
         // Not an owner / not authenticated / network error — stay in demo mode.
       })
+
+    maintenanceService
+      .list()
+      .then(tickets => {
+        if (!active) return
+        const mapped = tickets.map(mapTicket)
+        setDashboardData(prev => ({
+          ...prev,
+          maintenanceRequests: mapped,
+          overview: {
+            ...prev.overview,
+            maintenanceRequests: mapped.filter(t => t.status !== 'completed')
+              .length,
+          },
+        }))
+        setMaintenanceMode('live')
+      })
+      .catch(() => {})
+
+    expensesService
+      .taxSummary(new Date().getFullYear())
+      .then(summary => {
+        if (!active || !summary) return
+        const monthlyBreakdown = summary.byMonth
+          .filter(m => m.income > 0 || m.expenses > 0)
+          .map(m => ({
+            month: new Date(summary.year, m.month - 1, 1).toLocaleString(
+              'en-US',
+              { month: 'long', year: 'numeric' }
+            ),
+            revenue: m.income,
+            expenses: m.expenses,
+            netIncome: m.income - m.expenses,
+          }))
+        const totalExpenses = summary.totals.expenses || 0
+        const expenseCategories = Object.values(summary.byCategory).map(c => ({
+          category: c.label,
+          amount: c.total,
+          percentage:
+            totalExpenses > 0 ? Math.round((c.total / totalExpenses) * 100) : 0,
+        }))
+        setDashboardData(prev => ({
+          ...prev,
+          financials: {
+            monthlyBreakdown,
+            expenseCategories,
+            upcomingPayments: [],
+          },
+        }))
+        setFinancialsMode('live')
+      })
+      .catch(() => {})
+
     return () => {
       active = false
     }
   }, [])
+
+  const updateTicket = async (ticketId, status, assignedTo) => {
+    try {
+      const updated = await maintenanceService.updateStatus(
+        ticketId,
+        status,
+        assignedTo
+      )
+      setDashboardData(prev => ({
+        ...prev,
+        maintenanceRequests: prev.maintenanceRequests.map(r =>
+          r.id === ticketId
+            ? { ...r, status: updated.status, assignedTo: updated.assignedTo }
+            : r
+        ),
+      }))
+    } catch (err) {
+      window.alert(err.message)
+    }
+  }
 
   const getStatusColor = status => {
     switch (status) {
@@ -1043,11 +1141,25 @@ const OwnerDashboard = ({ user, onBack, onNavigate }) => {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="font-semibold">Maintenance Requests</h3>
-            <button className="bg-brand-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-brand-600 flex items-center">
-              <Plus size={16} className="mr-2" />
-              Create Request
-            </button>
+            <span
+              className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                maintenanceMode === 'live'
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-gray-100 text-gray-600'
+              }`}
+            >
+              {maintenanceMode === 'live' ? 'Live data' : 'Demo data'}
+            </span>
           </div>
+
+          {maintenanceMode === 'live' &&
+            dashboardData.maintenanceRequests.length === 0 && (
+              <div className="bg-white border border-gray-200 rounded-lg p-8 text-center text-gray-600">
+                <Wrench size={32} className="mx-auto text-gray-300 mb-2" />
+                No open maintenance requests. Tenants file them from their
+                dashboard and they appear here.
+              </div>
+            )}
 
           {dashboardData.maintenanceRequests.map(request => (
             <div
@@ -1075,7 +1187,11 @@ const OwnerDashboard = ({ user, onBack, onNavigate }) => {
                 <span
                   className={`px-3 py-1 text-sm rounded-full ${getStatusColor(request.status)}`}
                 >
-                  {request.status === 'in-progress' ? 'In Progress' : 'Pending'}
+                  {request.status === 'in-progress'
+                    ? 'In Progress'
+                    : request.status === 'completed'
+                      ? 'Completed'
+                      : 'Pending'}
                 </span>
               </div>
 
@@ -1089,10 +1205,12 @@ const OwnerDashboard = ({ user, onBack, onNavigate }) => {
                   <div className="text-sm text-gray-600">Category</div>
                   <div className="font-medium">{request.category}</div>
                 </div>
-                <div>
-                  <div className="text-sm text-gray-600">Estimated Cost</div>
-                  <div className="font-medium">${request.estimatedCost}</div>
-                </div>
+                {request.estimatedCost != null && (
+                  <div>
+                    <div className="text-sm text-gray-600">Estimated Cost</div>
+                    <div className="font-medium">${request.estimatedCost}</div>
+                  </div>
+                )}
               </div>
 
               {request.assignedTo && (
@@ -1118,17 +1236,38 @@ const OwnerDashboard = ({ user, onBack, onNavigate }) => {
                 </div>
               )}
 
-              <div className="flex space-x-3 pt-4 border-t border-gray-200">
-                <button className="flex-1 bg-brand-500 text-white py-2 rounded-lg font-medium hover:bg-brand-600">
-                  {request.assignedTo ? 'Update' : 'Assign'}
-                </button>
-                <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
-                  Contact Tenant
-                </button>
-                <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
-                  Mark Complete
-                </button>
-              </div>
+              {maintenanceMode === 'live' && request.status !== 'completed' && (
+                <div className="flex space-x-3 pt-4 border-t border-gray-200">
+                  <button
+                    onClick={() => {
+                      const assignee = window.prompt(
+                        'Assign to (vendor or person):',
+                        request.assignedTo || ''
+                      )
+                      if (assignee !== null) {
+                        updateTicket(request.id, 'in-progress', assignee)
+                      }
+                    }}
+                    className="flex-1 bg-brand-500 text-white py-2 rounded-lg font-medium hover:bg-brand-600"
+                  >
+                    {request.assignedTo ? 'Reassign' : 'Assign'}
+                  </button>
+                  {request.tenantEmail && (
+                    <a
+                      href={`mailto:${request.tenantEmail}?subject=Re: ${encodeURIComponent(request.category)} maintenance request`}
+                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                    >
+                      Contact Tenant
+                    </a>
+                  )}
+                  <button
+                    onClick={() => updateTicket(request.id, 'completed')}
+                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                  >
+                    Mark Complete
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -1138,15 +1277,32 @@ const OwnerDashboard = ({ user, onBack, onNavigate }) => {
       {activeTab === 'financials' && (
         <div className="space-y-6">
           <div className="flex justify-between items-center">
-            <h3 className="font-semibold">Financial Overview</h3>
+            <h3 className="font-semibold flex items-center">
+              Financial Overview
+              <span
+                className={`ml-2 px-2 py-0.5 rounded-full text-xs font-medium ${
+                  financialsMode === 'live'
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-gray-100 text-gray-600'
+                }`}
+              >
+                {financialsMode === 'live' ? 'Live data' : 'Demo data'}
+              </span>
+            </h3>
             <div className="flex space-x-2">
-              <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center">
-                <Download size={16} className="mr-2" />
-                Export
-              </button>
-              <button className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 flex items-center">
+              <button
+                onClick={() => onNavigate && onNavigate('banking-bookkeeping')}
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center"
+              >
                 <Receipt size={16} className="mr-2" />
-                Generate Report
+                Bookkeeping
+              </button>
+              <button
+                onClick={() => onNavigate && onNavigate('tax-center')}
+                className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 flex items-center"
+              >
+                <Download size={16} className="mr-2" />
+                Tax Center
               </button>
             </div>
           </div>
@@ -1154,6 +1310,13 @@ const OwnerDashboard = ({ user, onBack, onNavigate }) => {
           {/* Revenue Summary */}
           <div className="bg-white border border-gray-200 rounded-lg p-6">
             <h4 className="font-semibold mb-4">Monthly Performance</h4>
+            {financialsMode === 'live' &&
+              dashboardData.financials.monthlyBreakdown.length === 0 && (
+                <p className="text-sm text-gray-600">
+                  No income or expenses recorded yet this year. Payments land
+                  here from your rent ledger; expenses from Bookkeeping.
+                </p>
+              )}
             <div className="space-y-3">
               {dashboardData.financials.monthlyBreakdown.map((month, index) => (
                 <div
@@ -1181,6 +1344,12 @@ const OwnerDashboard = ({ user, onBack, onNavigate }) => {
           {/* Expense Breakdown */}
           <div className="bg-white border border-gray-200 rounded-lg p-6">
             <h4 className="font-semibold mb-4">Expense Categories</h4>
+            {financialsMode === 'live' &&
+              dashboardData.financials.expenseCategories.length === 0 && (
+                <p className="text-sm text-gray-600">
+                  No expenses categorized yet — add them in Bookkeeping.
+                </p>
+              )}
             <div className="space-y-3">
               {dashboardData.financials.expenseCategories.map(
                 (expense, index) => (
@@ -1209,40 +1378,55 @@ const OwnerDashboard = ({ user, onBack, onNavigate }) => {
             </div>
           </div>
 
-          {/* Upcoming Payments */}
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <h4 className="font-semibold mb-4">Upcoming Payments</h4>
-            <div className="space-y-3">
-              {dashboardData.financials.upcomingPayments.map(
-                (payment, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                  >
-                    <div>
-                      <div className="font-medium">{payment.description}</div>
-                      <div className="text-sm text-gray-600">
-                        Due: {new Date(payment.dueDate).toLocaleDateString()}
+          {/* Upcoming Payments (demo-only concept — hidden when live) */}
+          {dashboardData.financials.upcomingPayments.length > 0 && (
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <h4 className="font-semibold mb-4">Upcoming Payments</h4>
+              <div className="space-y-3">
+                {dashboardData.financials.upcomingPayments.map(
+                  (payment, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                    >
+                      <div>
+                        <div className="font-medium">{payment.description}</div>
+                        <div className="text-sm text-gray-600">
+                          Due: {new Date(payment.dueDate).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-semibold">
+                          ${payment.amount.toLocaleString()}
+                        </div>
+                        <button className="text-sm text-brand-500 hover:text-brand-600">
+                          Pay Now
+                        </button>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="font-semibold">
-                        ${payment.amount.toLocaleString()}
-                      </div>
-                      <button className="text-sm text-brand-500 hover:text-brand-600">
-                        Pay Now
-                      </button>
-                    </div>
-                  </div>
-                )
-              )}
+                  )
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 
-      {/* Analytics Tab */}
-      {activeTab === 'analytics' && (
+      {/* Analytics Tab — demo-only trends; honest placeholder in live mode
+          until we have real month-over-month history to chart. */}
+      {activeTab === 'analytics' && dataMode === 'live' && (
+        <div className="bg-white border border-gray-200 rounded-lg p-8 text-center text-gray-600">
+          <BarChart3 size={32} className="mx-auto text-gray-300 mb-2" />
+          <p className="font-medium text-gray-900 mb-1">
+            Trend analytics coming soon
+          </p>
+          <p className="text-sm">
+            Occupancy and rent trends appear after a few months of live history.
+            Today's real numbers are on the Overview and Financials tabs.
+          </p>
+        </div>
+      )}
+      {activeTab === 'analytics' && dataMode !== 'live' && (
         <div className="space-y-6">
           <h3 className="font-semibold">Performance Analytics</h3>
 

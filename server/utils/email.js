@@ -412,6 +412,38 @@ export async function sendCosignerInvitation({
   })
 }
 
+/**
+ * Rent reminder, sent by the landlord from the Rent Collection screen.
+ */
+export async function sendRentReminderEmail({
+  tenant,
+  landlordName,
+  listingTitle,
+  amount,
+  balance,
+}) {
+  const payUrl = `${process.env.CLIENT_URL}/dashboard`
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+      <h2 style="color: #fc6a03;">Rent reminder 🏠</h2>
+      <p>Hi ${tenant.firstName},</p>
+      <p>${landlordName} sent you a friendly reminder that rent is due for <strong>${listingTitle}</strong>.</p>
+      <div style="background: #f9fafb; padding: 15px; border-radius: 6px; margin: 20px 0;">
+        <strong>Monthly rent:</strong> $${amount.toLocaleString()}<br>
+        ${balance > 0 ? `<strong>Outstanding balance:</strong> $${balance.toLocaleString()}` : ''}
+      </div>
+      <p style="margin-top: 24px;"><a href="${payUrl}" style="background: #fc6a03; color: #fff; padding: 10px 18px; border-radius: 6px; text-decoration: none;">Record your payment</a></p>
+      <p style="color: #888; font-size: 13px; margin-top: 24px;">— The Rentra Team</p>
+    </div>
+  `
+  return sendEmail({
+    to: tenant.email,
+    subject: `Rent reminder for ${listingTitle}`,
+    html,
+    text: `Hi ${tenant.firstName}, ${landlordName} sent a reminder that rent ($${amount}) is due for ${listingTitle}. ${payUrl}`,
+  })
+}
+
 export default {
   sendEmail,
   sendVerificationEmail,
@@ -420,6 +452,7 @@ export default {
   sendApplicationStatusEmail,
   sendMessageNotification,
   sendCosignerInvitation,
+  sendRentReminderEmail,
 }
 
 /**

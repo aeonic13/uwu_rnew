@@ -6,6 +6,10 @@ import {
   findReusableReport,
   findReusableReports,
 } from '../utils/screeningReport.js'
+import {
+  sendApplicationNotification,
+  sendApplicationStatusEmail,
+} from '../utils/email.js'
 
 const router = express.Router()
 
@@ -180,6 +184,7 @@ router.post('/', authenticate, async (req, res) => {
             id: true,
             firstName: true,
             lastName: true,
+            email: true,
           },
         },
       },
@@ -188,6 +193,13 @@ router.post('/', authenticate, async (req, res) => {
     // Attach any floating pre-qual cosigner so the landlord sees the
     // guarantor immediately.
     await attachFloatingCosigners(userId, application.id)
+
+    // Best-effort: never fail the application over a notification.
+    sendApplicationNotification(
+      application.owner,
+      application.applicant,
+      application.listing
+    ).catch(err => console.error('Application notification error:', err))
 
     res.status(201).json({
       message: 'Application submitted successfully',
@@ -247,7 +259,13 @@ router.post('/group', authenticate, async (req, res) => {
 
     const listing = await prisma.listing.findUnique({
       where: { id: listingId },
-      select: { id: true, ownerId: true, active: true },
+      select: {
+        id: true,
+        ownerId: true,
+        active: true,
+        title: true,
+        owner: { select: { firstName: true, email: true } },
+      },
     })
     if (!listing || !listing.active) {
       return res
@@ -330,6 +348,17 @@ router.post('/group', authenticate, async (req, res) => {
     for (const app of created) {
       await attachFloatingCosigners(app.applicantId, app.id)
     }
+
+    // One owner notification for the whole group (not one per member).
+    sendApplicationNotification(
+      listing.owner,
+      {
+        firstName: `Group "${group.name}"`,
+        lastName: '',
+        email: `${created.length} member${created.length === 1 ? '' : 's'} applied together`,
+      },
+      listing
+    ).catch(err => console.error('Group application notification error:', err))
 
     res.status(201).json({
       message: `Group application submitted for ${created.length} member${created.length === 1 ? '' : 's'}`,
@@ -650,6 +679,16 @@ router.put('/:id/status', authenticate, async (req, res) => {
           },
         },
       })
+    }
+
+    // Notify the applicant of the decision. Best-effort.
+    if (status === 'approved' || status === 'rejected') {
+      sendApplicationStatusEmail(
+        updatedApplication.applicant,
+        updatedApplication.listing,
+        status,
+        updatedApplication.owner
+      ).catch(err => console.error('Status notification error:', err))
     }
 
     res.json({

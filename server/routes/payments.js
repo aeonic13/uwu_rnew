@@ -1,6 +1,7 @@
 import express from 'express'
 import prisma from '../utils/prisma.js'
-import { authenticate } from '../middleware/authenticate.js'
+import { authenticate, requireUserType } from '../middleware/authenticate.js'
+import { sendRentReminderEmail } from '../utils/email.js'
 import {
   createMoovAccount,
   linkBankAccount,
@@ -431,6 +432,113 @@ router.post('/rent', authenticate, async (req, res) => {
     res.status(500).json({ error: { message: 'Failed to process payment' } })
   }
 })
+
+// POST /api/payments/record
+// Landlord records an offline rent payment (cash / check / external transfer)
+// against a tenant's lease so the ledger and rent roll stay truthful. No
+// service fee — no money moved through Rentra.
+router.post(
+  '/record',
+  authenticate,
+  requireUserType('owner'),
+  async (req, res) => {
+    try {
+      const { applicationId, amount, paymentMethod = 'cash', note } = req.body
+      if (!applicationId) {
+        return res
+          .status(400)
+          .json({ error: { message: 'applicationId is required' } })
+      }
+
+      const application = await prisma.application.findFirst({
+        where: { id: applicationId, ownerId: req.user.id, status: 'approved' },
+        include: {
+          agreement: { select: { monthlyRent: true } },
+          listing: { select: { price: true } },
+        },
+      })
+      if (!application) {
+        return res.status(404).json({
+          error: { message: 'Approved application not found' },
+        })
+      }
+
+      const rent =
+        application.agreement?.monthlyRent || application.listing?.price || 0
+      const recorded = amount !== undefined ? Math.round(Number(amount)) : rent
+      if (!recorded || recorded <= 0) {
+        return res
+          .status(400)
+          .json({ error: { message: 'A positive amount is required' } })
+      }
+
+      const transaction = await prisma.transaction.create({
+        data: {
+          userId: application.applicantId,
+          applicationId: application.id,
+          amount: recorded,
+          serviceFee: 0,
+          total: recorded,
+          status: 'completed',
+          paymentMethod: note
+            ? `${paymentMethod} — ${String(note).slice(0, 120)}`
+            : paymentMethod,
+        },
+      })
+      res.status(201).json({ transaction })
+    } catch (error) {
+      console.error('Record payment error:', error)
+      res.status(500).json({ error: { message: 'Failed to record payment' } })
+    }
+  }
+)
+
+// POST /api/payments/remind
+// Landlord sends a rent-reminder email to the tenant on a lease.
+router.post(
+  '/remind',
+  authenticate,
+  requireUserType('owner'),
+  async (req, res) => {
+    try {
+      const { applicationId, balance = 0 } = req.body
+      if (!applicationId) {
+        return res
+          .status(400)
+          .json({ error: { message: 'applicationId is required' } })
+      }
+
+      const application = await prisma.application.findFirst({
+        where: { id: applicationId, ownerId: req.user.id, status: 'approved' },
+        include: {
+          applicant: {
+            select: { firstName: true, lastName: true, email: true },
+          },
+          agreement: { select: { monthlyRent: true } },
+          listing: { select: { title: true, price: true } },
+        },
+      })
+      if (!application) {
+        return res.status(404).json({
+          error: { message: 'Approved application not found' },
+        })
+      }
+
+      await sendRentReminderEmail({
+        tenant: application.applicant,
+        landlordName: `${req.user.firstName} ${req.user.lastName}`,
+        listingTitle: application.listing?.title || 'your rental',
+        amount:
+          application.agreement?.monthlyRent || application.listing?.price || 0,
+        balance: Math.max(0, Math.round(Number(balance) || 0)),
+      })
+      res.json({ message: 'Reminder sent' })
+    } catch (error) {
+      console.error('Send reminder error:', error)
+      res.status(500).json({ error: { message: 'Failed to send reminder' } })
+    }
+  }
+)
 
 // GET /api/payments/history
 router.get('/history', authenticate, async (req, res) => {

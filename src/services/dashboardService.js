@@ -38,6 +38,14 @@ export const dashboardService = {
   async getListingApplications(listingId) {
     return apiClient.get(`/dashboard/landlord/applications/${listingId}`)
   },
+
+  /**
+   * Get detailed payment history + balance for one lease/application.
+   * @param {string} applicationId
+   */
+  async getPaymentStatus(applicationId) {
+    return apiClient.get(`/dashboard/landlord/payment-status/${applicationId}`)
+  },
 }
 
 export default dashboardService

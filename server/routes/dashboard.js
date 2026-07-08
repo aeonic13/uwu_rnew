@@ -290,6 +290,7 @@ router.get(
       const rentRoll = listings.map(listing => {
         const tenants = listing.applications.map(app => ({
           id: app.applicant.id,
+          applicationId: app.id,
           name: `${app.applicant.firstName} ${app.applicant.lastName}`,
           email: app.applicant.email,
           monthlyRent: app.agreement?.monthlyRent || listing.price,
