@@ -12,6 +12,7 @@ import { RouteErrorBoundary } from '../components/ErrorBoundary'
 // Lazy-loaded feature components
 const BrowseView = lazy(() => import('../features/listings/BrowseView'))
 const PropertyDetail = lazy(() => import('../features/listings/PropertyDetail'))
+const SavedListings = lazy(() => import('../features/listings/SavedListings'))
 const UniversitySearch = lazy(() => import('../UniversitySearch'))
 const MessagesView = lazy(() => import('../features/messaging/MessagesView'))
 const ConversationView = lazy(
@@ -256,6 +257,16 @@ const routeConfig = [
           <Suspense fallback={<SuspenseFallback />}>
             <BrowseView />
           </Suspense>
+        ),
+      },
+      {
+        path: '/favorites',
+        element: (
+          <ProtectedRoute>
+            <Suspense fallback={<SuspenseFallback />}>
+              <SavedListings />
+            </Suspense>
+          </ProtectedRoute>
         ),
       },
       {

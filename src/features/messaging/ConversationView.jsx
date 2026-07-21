@@ -1,16 +1,7 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import PropTypes from 'prop-types'
-import {
-  ArrowLeft,
-  Send,
-  Calendar,
-  MoreVertical,
-  Phone,
-  Info,
-  Image,
-  Paperclip,
-} from 'lucide-react'
+import { ArrowLeft, Send, Calendar, MoreVertical, Info } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { messagingService } from '../../services/messagingService'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
@@ -22,6 +13,8 @@ function normalizeMessage(apiMsg, currentUserId) {
   return {
     id: apiMsg.id,
     text: apiMsg.content || '',
+    type: apiMsg.type || 'text',
+    metadata: apiMsg.metadata || null,
     sender:
       apiMsg.sender?.id === currentUserId || apiMsg.senderId === currentUserId
         ? 'me'
@@ -119,6 +112,192 @@ MessageBubble.propTypes = {
   isMe: PropTypes.bool.isRequired,
 }
 
+/** Human-readable date + time for a proposed tour slot. */
+function formatSlot(iso) {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return iso
+  return date.toLocaleString([], {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}
+
+/**
+ * Tour request card. The recipient of a pending request can confirm one of
+ * the proposed times or decline; everyone else sees the current status.
+ */
+function TourRequestCard({ message, isMe, onRespond, responding }) {
+  const meta = message.metadata || {}
+  const times = Array.isArray(meta.proposedTimes) ? meta.proposedTimes : []
+  const status = meta.status || 'pending'
+
+  return (
+    <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} mb-2`}>
+      <div className="max-w-[85%] w-full sm:w-auto rounded-2xl border border-brand-200 bg-brand-50 p-4">
+        <div className="flex items-center gap-2 mb-2 text-brand-600 font-semibold text-sm">
+          <Calendar size={16} />
+          Tour request
+        </div>
+        {message.text && (
+          <p className="text-sm text-gray-700 mb-2">{message.text}</p>
+        )}
+
+        {status === 'pending' && !isMe ? (
+          <div className="space-y-2">
+            <p className="text-xs text-gray-500">Pick a time to confirm:</p>
+            {times.map(t => (
+              <button
+                key={t}
+                disabled={responding}
+                onClick={() => onRespond(message.id, 'confirmed', t)}
+                className="w-full text-left px-3 py-2 rounded-lg bg-white border border-brand-300 text-sm font-medium text-brand-600 hover:bg-brand-100 transition-colors disabled:opacity-50"
+              >
+                {formatSlot(t)}
+              </button>
+            ))}
+            <button
+              disabled={responding}
+              onClick={() => onRespond(message.id, 'declined', null)}
+              className="w-full px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50"
+            >
+              Decline
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-1">
+            {times.map(t => (
+              <div
+                key={t}
+                className={`text-sm px-3 py-1.5 rounded-lg ${
+                  status === 'confirmed' && meta.confirmedTime === t
+                    ? 'bg-green-100 text-green-800 font-medium'
+                    : 'bg-white text-gray-600'
+                }`}
+              >
+                {formatSlot(t)}
+              </div>
+            ))}
+            <p className="text-xs mt-1 font-medium text-gray-500">
+              {status === 'pending'
+                ? 'Waiting for a response…'
+                : status === 'confirmed'
+                  ? '✓ Tour confirmed'
+                  : 'Declined'}
+            </p>
+          </div>
+        )}
+        <span className="text-xs mt-2 block text-gray-400">
+          {formatTime(message.timestamp)}
+        </span>
+      </div>
+    </div>
+  )
+}
+
+TourRequestCard.propTypes = {
+  message: PropTypes.object.isRequired,
+  isMe: PropTypes.bool.isRequired,
+  onRespond: PropTypes.func.isRequired,
+  responding: PropTypes.bool,
+}
+
+/**
+ * Modal for proposing tour times: up to three datetime slots + a note.
+ */
+function ScheduleTourModal({ onClose, onSend, sending }) {
+  const [slots, setSlots] = useState([''])
+  const [note, setNote] = useState('')
+
+  const validSlots = slots.filter(Boolean)
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Schedule a tour"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl max-w-md w-full p-6"
+        onClick={e => e.stopPropagation()}
+      >
+        <h2 className="text-lg font-bold mb-1">Schedule a tour</h2>
+        <p className="text-sm text-gray-600 mb-4">
+          Propose up to three times — they confirm one, and it's set.
+        </p>
+
+        <div className="space-y-3 mb-4">
+          {slots.map((slot, i) => (
+            <input
+              key={i}
+              type="datetime-local"
+              value={slot}
+              aria-label={`Proposed time ${i + 1}`}
+              onChange={e =>
+                setSlots(prev =>
+                  prev.map((s, idx) => (idx === i ? e.target.value : s))
+                )
+              }
+              className="w-full p-3 border border-gray-300 rounded-lg text-sm"
+            />
+          ))}
+          {slots.length < 3 && (
+            <button
+              type="button"
+              onClick={() => setSlots(prev => [...prev, ''])}
+              className="text-sm font-medium text-brand-500 hover:text-brand-600"
+            >
+              + Add another time
+            </button>
+          )}
+        </div>
+
+        <textarea
+          rows={2}
+          value={note}
+          maxLength={300}
+          placeholder="Anything they should know? (optional)"
+          onChange={e => setNote(e.target.value)}
+          className="w-full p-3 border border-gray-300 rounded-lg text-sm resize-none mb-4"
+        />
+
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 border border-gray-300 text-gray-700 py-2.5 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            disabled={validSlots.length === 0 || sending}
+            onClick={() =>
+              onSend(
+                validSlots.map(s => new Date(s).toISOString()),
+                note.trim()
+              )
+            }
+            className="flex-1 bg-brand-500 text-white py-2.5 rounded-lg font-medium hover:bg-brand-600 transition-colors disabled:opacity-50"
+          >
+            {sending ? 'Sending…' : 'Send request'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+ScheduleTourModal.propTypes = {
+  onClose: PropTypes.func.isRequired,
+  onSend: PropTypes.func.isRequired,
+  sending: PropTypes.bool,
+}
+
 /**
  * Date separator
  */
@@ -151,40 +330,36 @@ function ConversationView() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSending, setIsSending] = useState(false)
   const [showOptions, setShowOptions] = useState(false)
+  const [showTourModal, setShowTourModal] = useState(false)
+  const [tourSending, setTourSending] = useState(false)
+  const [tourResponding, setTourResponding] = useState(false)
 
-  useEffect(() => {
-    let active = true
-
-    const fetchConversation = async (silent = false) => {
+  // Shared fetcher: initial load shows the spinner; silent refreshes
+  // (polling, post-action) never do.
+  const fetchConversation = useCallback(
+    async (silent = false) => {
       if (!silent) setIsLoading(true)
       try {
         const data = await messagingService.getConversation(conversationId)
-        if (!active) return
         const normalized = normalizeConversationDetail(data, user?.id)
         setConversation(normalized)
       } catch (err) {
         console.error('Failed to load conversation:', err)
-        if (!silent && active) setConversation(null)
+        if (!silent) setConversation(null)
       } finally {
-        if (!silent && active) setIsLoading(false)
+        if (!silent) setIsLoading(false)
       }
-    }
+    },
+    [conversationId, user?.id]
+  )
 
-    if (conversationId) {
-      fetchConversation()
-      // Lightweight polling so replies appear without a manual refresh.
-      // Silent refreshes never toggle the loading spinner.
-      const timer = setInterval(() => fetchConversation(true), 15000)
-      return () => {
-        active = false
-        clearInterval(timer)
-      }
-    }
-
-    return () => {
-      active = false
-    }
-  }, [conversationId, user?.id])
+  useEffect(() => {
+    if (!conversationId) return undefined
+    fetchConversation()
+    // Lightweight polling so replies appear without a manual refresh.
+    const timer = setInterval(() => fetchConversation(true), 15000)
+    return () => clearInterval(timer)
+  }, [conversationId, fetchConversation])
 
   // Scroll to bottom on new messages. Keyed on the count (not array
   // identity) so silent polling refreshes don't yank the scroll position.
@@ -238,9 +413,41 @@ function ConversationView() {
     }
   }
 
-  const handleScheduleTour = () => {
-    // TODO: Implement tour scheduling
-    navigate(`/listings/${conversation?.listing?.id}`)
+  // Tour scheduling — real flow over the tour-request/response endpoints.
+  const handleScheduleTour = () => setShowTourModal(true)
+
+  const handleSendTourRequest = async (proposedTimes, note) => {
+    setTourSending(true)
+    try {
+      await messagingService.sendTourRequest(
+        conversationId,
+        conversation?.listing?.id,
+        proposedTimes,
+        note || null
+      )
+      setShowTourModal(false)
+      await fetchConversation(true)
+    } catch (err) {
+      console.error('Failed to send tour request:', err)
+    } finally {
+      setTourSending(false)
+    }
+  }
+
+  const handleTourRespond = async (messageId, status, confirmedTime) => {
+    setTourResponding(true)
+    try {
+      await messagingService.respondToTourRequest(
+        messageId,
+        status,
+        confirmedTime
+      )
+      await fetchConversation(true)
+    } catch (err) {
+      console.error('Failed to respond to tour request:', err)
+    } finally {
+      setTourResponding(false)
+    }
   }
 
   if (isLoading) {
@@ -298,13 +505,8 @@ function ConversationView() {
 
           <div className="flex-1">
             <h2 className="font-semibold">{conversation.participant.name}</h2>
-            <p className="text-xs text-gray-500">
-              {conversation.participant.online ? (
-                <span className="text-green-500">Online</span>
-              ) : (
-                'Offline'
-              )}
-            </p>
+            {/* Presence indicator removed — it was hardcoded to "Offline"
+                (no real presence system exists). */}
           </div>
 
           <div className="flex items-center gap-2">
@@ -352,13 +554,23 @@ function ConversationView() {
         {Object.entries(groupedMessages).map(([date, messages]) => (
           <div key={date}>
             <DateSeparator date={messages[0].timestamp} />
-            {messages.map(message => (
-              <MessageBubble
-                key={message.id}
-                message={message}
-                isMe={message.sender === 'me'}
-              />
-            ))}
+            {messages.map(message =>
+              message.type === 'tour-request' ? (
+                <TourRequestCard
+                  key={message.id}
+                  message={message}
+                  isMe={message.sender === 'me'}
+                  onRespond={handleTourRespond}
+                  responding={tourResponding}
+                />
+              ) : (
+                <MessageBubble
+                  key={message.id}
+                  message={message}
+                  isMe={message.sender === 'me'}
+                />
+              )
+            )}
           </div>
         ))}
         <div ref={messagesEndRef} />
@@ -367,19 +579,7 @@ function ConversationView() {
       {/* Message Input */}
       <div className="sticky bottom-0 bg-white border-t p-4">
         <div className="flex items-end gap-2">
-          <button
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            aria-label="Attach image"
-          >
-            <Image size={20} className="text-gray-500" />
-          </button>
-          <button
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            aria-label="Attach file"
-          >
-            <Paperclip size={20} className="text-gray-500" />
-          </button>
-
+          {/* Dead attach buttons removed — attachments aren't supported yet. */}
           <div className="flex-1 relative">
             <textarea
               ref={inputRef}
@@ -418,10 +618,7 @@ function ConversationView() {
             className="absolute top-16 right-4 bg-white rounded-lg shadow-lg border overflow-hidden"
             onClick={e => e.stopPropagation()}
           >
-            <button className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center">
-              <Phone size={18} className="mr-3 text-gray-500" />
-              Call Owner
-            </button>
+            {/* "Call Owner" removed — it was a dead button (no phone flow). */}
             <button
               className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center"
               onClick={() => {
@@ -434,13 +631,25 @@ function ConversationView() {
             </button>
             <button
               className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center"
-              onClick={handleScheduleTour}
+              onClick={() => {
+                setShowOptions(false)
+                handleScheduleTour()
+              }}
             >
               <Calendar size={18} className="mr-3 text-gray-500" />
               Schedule Tour
             </button>
           </div>
         </div>
+      )}
+
+      {/* Tour scheduling modal */}
+      {showTourModal && (
+        <ScheduleTourModal
+          onClose={() => setShowTourModal(false)}
+          onSend={handleSendTourRequest}
+          sending={tourSending}
+        />
       )}
     </div>
   )

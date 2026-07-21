@@ -6,6 +6,7 @@ import {
   Menu,
   X,
   Home,
+  Heart,
   MessageSquare,
   User,
   PlusCircle,
@@ -59,6 +60,7 @@ export default function Header() {
   // Student navigation items
   const studentNavItems = [
     { path: '/', label: 'Browse', icon: Home },
+    { path: '/favorites', label: 'Saved', icon: Heart },
     { path: '/housemates', label: 'Housemates', icon: Sparkles },
     { path: '/pre-qualify', label: 'Pre-Qualify', icon: ShieldCheck },
     { path: '/messages', label: 'Messages', icon: MessageSquare },

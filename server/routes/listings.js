@@ -1,6 +1,8 @@
 import express from 'express'
 import prisma from '../utils/prisma.js'
 import { authenticate, optionalAuth } from '../middleware/authenticate.js'
+import { matchesSavedSearch } from '../utils/savedSearchMatcher.js'
+import { sendNewListingAlert } from '../utils/email.js'
 
 const router = express.Router()
 
@@ -242,11 +244,41 @@ router.post('/', authenticate, async (req, res) => {
       message: 'Listing created successfully',
       listing,
     })
+
+    // Saved-search alerts: fan out AFTER responding so listing creation is
+    // never slowed or failed by notification work. Best-effort by design.
+    notifySavedSearchMatches(listing).catch(err =>
+      console.error('Saved-search alert fan-out failed:', err?.message)
+    )
   } catch (error) {
     console.error('Create listing error:', error)
     res.status(400).json({ error: { message: 'Failed to create listing' } })
   }
 })
+
+/**
+ * Email every user whose saved search matches a newly created listing.
+ * One email per user even if several of their searches match; the listing
+ * owner is never alerted about their own posting.
+ */
+async function notifySavedSearchMatches(listing) {
+  const searches = await prisma.savedSearch.findMany({
+    where: { userId: { not: listing.ownerId } },
+    include: {
+      user: { select: { id: true, email: true, firstName: true } },
+    },
+  })
+
+  const notified = new Set()
+  for (const search of searches) {
+    if (notified.has(search.userId)) continue
+    if (!matchesSavedSearch(search, listing)) continue
+    notified.add(search.userId)
+    sendNewListingAlert(search.user, listing).catch(err =>
+      console.error('Saved-search alert email failed:', err?.message)
+    )
+  }
+}
 
 // PUT /api/listings/:id - Update listing (owner only)
 router.put('/:id', authenticate, async (req, res) => {

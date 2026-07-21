@@ -91,6 +91,25 @@ export const listingsService = {
     const response = await apiClient.put(`/listings/${id}`, { active })
     return response.listing
   },
+
+  /**
+   * Toggle a listing as favorite for the current user.
+   * @param {string} id - Listing ID
+   * @returns {Promise<boolean>} New favorited state
+   */
+  async toggleFavorite(id) {
+    const response = await apiClient.post(`/listings/${id}/favorite`)
+    return Boolean(response.isFavorited)
+  },
+
+  /**
+   * Get the current user's favorited listings (full objects).
+   * @returns {Promise<object[]>}
+   */
+  async getFavorites() {
+    const response = await apiClient.get('/listings/favorites/all')
+    return response.listings || []
+  },
 }
 
 export default listingsService

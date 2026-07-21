@@ -35,6 +35,8 @@ import utilitiesRoutes from './routes/utilities.js'
 import depositsRoutes from './routes/deposits.js'
 import expensesRoutes from './routes/expenses.js'
 import documentsRoutes from './routes/documents.js'
+import reviewsRoutes from './routes/reviews.js'
+import savedSearchesRoutes from './routes/savedSearches.js'
 
 // Get __dirname equivalent in ES modules
 const __filename = fileURLToPath(import.meta.url)
@@ -141,6 +143,8 @@ app.use('/api/utilities', utilitiesRoutes)
 app.use('/api/deposits', depositsRoutes)
 app.use('/api/expenses', expensesRoutes)
 app.use('/api/documents', documentsRoutes)
+app.use('/api/reviews', reviewsRoutes)
+app.use('/api/saved-searches', savedSearchesRoutes)
 
 // Error handling middleware
 app.use((err, req, res, next) => {

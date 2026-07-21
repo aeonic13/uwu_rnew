@@ -107,9 +107,30 @@ model User {
   securityDeposits     SecurityDeposit[]   @relation("OwnerDeposits")
   expenses             Expense[]
   documents            Document[]
+  savedSearches        SavedSearch[]
 
   @@index([email])
   @@index([userType])
+}
+
+// Saved search — a tenant's standing search. When a new listing matches, we
+// email them, which turns a one-off visit into a standing relationship (the
+// main mitigation for a thin marketplace).
+model SavedSearch {
+  id           String   @id @default(cuid())
+  // Filter snapshot; all optional. location is substring-matched against
+  // the listing's location and university fields, case-insensitively.
+  location     String?
+  minPrice     Int?
+  maxPrice     Int?
+  minBeds      Int?
+  propertyType String?
+  createdAt    DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 // Listing model

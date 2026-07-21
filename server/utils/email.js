@@ -444,6 +444,34 @@ export async function sendRentReminderEmail({
   })
 }
 
+/**
+ * Alert a tenant that a newly posted listing matches their saved search.
+ */
+export async function sendNewListingAlert(recipient, listing) {
+  const listingUrl = `${process.env.CLIENT_URL}/listings/${listing.id}`
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+      <h2 style="color: #fc6a03;">New rental matches your search 🏠</h2>
+      <p>Hi ${recipient.firstName},</p>
+      <p>A new listing just went up that matches a search you saved:</p>
+      <div style="background: #f9fafb; padding: 15px; border-radius: 6px; margin: 20px 0;">
+        <strong>${listing.title}</strong><br>
+        ${listing.location}<br>
+        <strong>$${listing.price.toLocaleString()}/mo</strong> · ${listing.bedrooms} bed · ${listing.propertyType}
+      </div>
+      <p style="margin-top: 24px;"><a href="${listingUrl}" style="background: #fc6a03; color: #fff; padding: 10px 18px; border-radius: 6px; text-decoration: none;">View listing</a></p>
+      <p style="color: #888; font-size: 13px; margin-top: 24px;">You get these because you saved a search on Rentra. Delete the saved search from your Saved page to stop.</p>
+      <p style="color: #888; font-size: 13px;">— The Rentra Team</p>
+    </div>
+  `
+  return sendEmail({
+    to: recipient.email,
+    subject: `New rental in ${listing.location}: ${listing.title}`,
+    html,
+    text: `Hi ${recipient.firstName}, a new listing matches your saved search: ${listing.title} — ${listing.location} — $${listing.price}/mo. ${listingUrl}`,
+  })
+}
+
 export default {
   sendEmail,
   sendVerificationEmail,
@@ -453,6 +481,7 @@ export default {
   sendMessageNotification,
   sendCosignerInvitation,
   sendRentReminderEmail,
+  sendNewListingAlert,
 }
 
 /**

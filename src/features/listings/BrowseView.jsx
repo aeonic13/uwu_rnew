@@ -12,9 +12,12 @@ import {
   Bed,
   Bath,
   Tag,
+  Bell,
 } from 'lucide-react'
 import { useListings } from '../../contexts/ListingsContext'
 import { useFavorites } from '../../contexts/FavoritesContext'
+import { useAuth } from '../../contexts/AuthContext'
+import { savedSearchesService } from '../../services/savedSearchesService'
 import { ListingShape } from '../../types/propTypes'
 import AdvancedFiltersModal from '../../components/AdvancedFiltersModal'
 
@@ -178,6 +181,7 @@ ListingCard.propTypes = {
  */
 function BrowseView() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { filteredListings, filters, setFilters, clearFilters } = useListings()
   const { isFavorite, toggleFavorite } = useFavorites()
 
@@ -186,6 +190,48 @@ function BrowseView() {
   const [minBeds, setMinBeds] = useState('Any Beds')
   const [propertyType, setPropertyType] = useState('Any Type')
   const [sortBy, setSortBy] = useState('newest')
+  // Saved-search alert state: idle | saving | saved | error
+  const [alertState, setAlertState] = useState('idle')
+  const [alertMessage, setAlertMessage] = useState('')
+
+  // Snapshot the current UI filters as a saved-search payload. Area comes
+  // from the dropdown or, failing that, the free-text search term.
+  const currentSearchFilters = () => {
+    const payload = {}
+    const area =
+      (filters.university && filters.university !== 'All Universities'
+        ? filters.university
+        : filters.searchTerm) || ''
+    if (area.trim()) payload.location = area.trim()
+    if (priceRange.min > 0) payload.minPrice = priceRange.min
+    if (priceRange.max !== Infinity) payload.maxPrice = priceRange.max
+    if (minBeds !== 'Any Beds') payload.minBeds = parseInt(minBeds, 10)
+    if (propertyType !== 'Any Type') payload.propertyType = propertyType
+    return payload
+  }
+
+  const handleSaveSearch = async () => {
+    if (!user) {
+      navigate('/login')
+      return
+    }
+    const payload = currentSearchFilters()
+    if (Object.keys(payload).length === 0) {
+      setAlertState('error')
+      setAlertMessage('Set an area or a filter first, then save the search.')
+      return
+    }
+    setAlertState('saving')
+    setAlertMessage('')
+    try {
+      await savedSearchesService.create(payload)
+      setAlertState('saved')
+      setAlertMessage("Saved — we'll email you when a match is posted.")
+    } catch (err) {
+      setAlertState('error')
+      setAlertMessage(err?.message || 'Could not save this search.')
+    }
+  }
 
   // Apply local filters on top of context filters
   const displayedListings = useMemo(() => {
@@ -362,25 +408,47 @@ function BrowseView() {
             )}
           </div>
 
-          {/* Sort */}
-          <div className="relative">
-            <select
-              value={sortBy}
-              onChange={e => setSortBy(e.target.value)}
-              className="appearance-none pl-3 pr-8 py-2 border border-gray-300 rounded-lg text-sm bg-white cursor-pointer focus:outline-none focus:border-brand-500"
+          <div className="flex items-center gap-2">
+            {/* Save this search → email alerts on new matches */}
+            <button
+              onClick={handleSaveSearch}
+              disabled={alertState === 'saving'}
+              className="flex items-center gap-1.5 px-3 py-2 border border-brand-500 text-brand-500 rounded-lg text-sm font-medium hover:bg-brand-50 transition-colors disabled:opacity-50"
             >
-              {SORT_OPTIONS.map(s => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-            <ChevronDown
-              size={14}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-            />
+              <Bell size={15} />
+              {alertState === 'saved' ? 'Alert on' : 'Get alerts'}
+            </button>
+
+            {/* Sort */}
+            <div className="relative">
+              <select
+                value={sortBy}
+                onChange={e => setSortBy(e.target.value)}
+                className="appearance-none pl-3 pr-8 py-2 border border-gray-300 rounded-lg text-sm bg-white cursor-pointer focus:outline-none focus:border-brand-500"
+              >
+                {SORT_OPTIONS.map(s => (
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown
+                size={14}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+              />
+            </div>
           </div>
         </div>
+
+        {alertMessage && (
+          <p
+            className={`text-sm mb-4 -mt-2 ${
+              alertState === 'error' ? 'text-red-600' : 'text-green-700'
+            }`}
+          >
+            {alertMessage}
+          </p>
+        )}
 
         {/* Grid */}
         {displayedListings.length === 0 ? (
@@ -434,3 +502,5 @@ function BrowseView() {
 }
 
 export default BrowseView
+// Reused by the Saved (favorites) page so cards look identical everywhere.
+export { ListingCard }

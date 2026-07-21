@@ -22,6 +22,7 @@ import { useFavorites } from '../../contexts/FavoritesContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { usePreQualification } from '../../hooks/usePreQualification'
 import { messagingService } from '../../services/messagingService'
+import { reviewsService } from '../../services/reviewsService'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 
 /**
@@ -152,6 +153,189 @@ OwnerCard.propTypes = {
   onContact: PropTypes.func.isRequired,
   contacting: PropTypes.bool,
   contactError: PropTypes.string,
+}
+
+/** Star rating row (read-only). */
+function Stars({ rating, size = 14 }) {
+  return (
+    <span className="inline-flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map(n => (
+        <Star
+          key={n}
+          size={size}
+          className={
+            n <= rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
+          }
+        />
+      ))}
+    </span>
+  )
+}
+
+Stars.propTypes = {
+  rating: PropTypes.number.isRequired,
+  size: PropTypes.number,
+}
+
+/**
+ * Reviews section — real reviews from tenants with an approved application.
+ * Eligible tenants get a write form; everyone sees the list.
+ */
+function ReviewsSection({ listing, user }) {
+  const [reviews, setReviews] = useState(listing.reviews || [])
+  const [eligible, setEligible] = useState(false)
+  const [rating, setRating] = useState(0)
+  const [comment, setComment] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
+  const [submitted, setSubmitted] = useState(false)
+
+  useEffect(() => {
+    if (!user || user.userType !== 'student') return undefined
+    let active = true
+    reviewsService
+      .getEligibility(listing.id)
+      .then(result => {
+        if (active) setEligible(Boolean(result?.eligible))
+      })
+      .catch(() => {})
+    return () => {
+      active = false
+    }
+  }, [listing.id, user])
+
+  const average =
+    reviews.length > 0
+      ? (
+          reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+        ).toFixed(1)
+      : null
+
+  const handleSubmit = async () => {
+    if (!rating) return
+    setSubmitting(true)
+    setError('')
+    try {
+      const review = await reviewsService.create(listing.id, rating, comment)
+      setReviews(prev => [review, ...prev])
+      setEligible(false)
+      setSubmitted(true)
+    } catch (err) {
+      setError(err?.message || 'Could not submit your review.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="mb-6">
+      <div className="flex items-center gap-2 mb-3">
+        <h2 className="text-lg font-semibold">Reviews</h2>
+        {average && (
+          <span className="flex items-center gap-1 text-sm text-gray-600">
+            <Stars rating={Math.round(Number(average))} />
+            {average} · {reviews.length}{' '}
+            {reviews.length === 1 ? 'review' : 'reviews'}
+          </span>
+        )}
+      </div>
+
+      {eligible && (
+        <div className="bg-gray-50 rounded-lg p-4 mb-4">
+          <p className="font-medium text-sm mb-2">
+            You rented here — how was it?
+          </p>
+          <div className="flex items-center gap-1 mb-3">
+            {[1, 2, 3, 4, 5].map(n => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => setRating(n)}
+                aria-label={`${n} star${n === 1 ? '' : 's'}`}
+                className="p-0.5"
+              >
+                <Star
+                  size={24}
+                  className={
+                    n <= rating
+                      ? 'text-yellow-400 fill-current'
+                      : 'text-gray-300 hover:text-yellow-300'
+                  }
+                />
+              </button>
+            ))}
+          </div>
+          <textarea
+            rows={3}
+            value={comment}
+            maxLength={1000}
+            placeholder="What should future tenants know? (optional)"
+            onChange={e => setComment(e.target.value)}
+            className="w-full p-3 border border-gray-300 rounded-lg text-sm resize-none mb-3"
+          />
+          {error && <p className="text-sm text-red-600 mb-2">{error}</p>}
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={!rating || submitting}
+            className="bg-brand-500 text-white px-5 py-2 rounded-lg font-medium hover:bg-brand-600 transition-colors disabled:opacity-50"
+          >
+            {submitting ? 'Submitting…' : 'Submit review'}
+          </button>
+        </div>
+      )}
+      {submitted && (
+        <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-2 mb-4">
+          Thanks — your review is live.
+        </p>
+      )}
+
+      {reviews.length === 0 ? (
+        <p className="text-sm text-gray-500">
+          No reviews yet. Reviews come from tenants whose applications were
+          approved, so you can trust they actually rented here.
+        </p>
+      ) : (
+        <div className="space-y-4">
+          {reviews.map(review => (
+            <div key={review.id} className="border-b border-gray-100 pb-4">
+              <div className="flex items-center gap-2 mb-1">
+                <img
+                  src={
+                    review.author?.avatarUrl ||
+                    'https://via.placeholder.com/32?text=%20'
+                  }
+                  alt={review.author?.firstName || 'Tenant'}
+                  className="w-8 h-8 rounded-full object-cover bg-gray-100"
+                />
+                <span className="font-medium text-sm">
+                  {review.author?.firstName} {review.author?.lastName}
+                </span>
+                <Stars rating={review.rating} />
+                <span className="text-xs text-gray-400 ml-auto">
+                  {new Date(review.createdAt).toLocaleDateString([], {
+                    month: 'short',
+                    year: 'numeric',
+                  })}
+                </span>
+              </div>
+              {review.comment && (
+                <p className="text-sm text-gray-700">{review.comment}</p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+ReviewsSection.propTypes = {
+  listing: PropTypes.shape({
+    id: PropTypes.string.isRequired,
+    reviews: PropTypes.array,
+  }).isRequired,
+  user: PropTypes.object,
 }
 
 /**
@@ -419,6 +603,9 @@ function PropertyDetail() {
                 />
               </div>
             )}
+
+            {/* Reviews from approved tenants */}
+            <ReviewsSection listing={listing} user={user} />
 
             {/* Desktop CTA Buttons */}
             {user?.userType === 'student' && (
