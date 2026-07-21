@@ -1,40 +1,84 @@
 import sgMail from '@sendgrid/mail'
 
+// Providers, in order of preference. Resend has a permanently free tier
+// (3,000/mo, 100/day) and is hit via plain HTTP — no SDK dependency.
+// SendGrid remains as a fallback for anyone still carrying that key
+// (its free tier was retired in 2025, so Resend is the default path).
+const RESEND_API_KEY = process.env.RESEND_API_KEY
 const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY
 const FROM_EMAIL = process.env.EMAIL_FROM || 'noreply@rentra.com'
 const FROM_NAME = process.env.EMAIL_FROM_NAME || 'Rentra'
 
-// Initialize SendGrid
-if (SENDGRID_API_KEY) {
+if (RESEND_API_KEY) {
+  console.log('📧 Email provider: Resend')
+} else if (SENDGRID_API_KEY) {
   sgMail.setApiKey(SENDGRID_API_KEY)
+  console.log('📧 Email provider: SendGrid')
 } else {
-  console.warn('⚠️  SendGrid API key not configured. Email sending will fail.')
+  console.warn(
+    '⚠️  No email API key configured (RESEND_API_KEY or SENDGRID_API_KEY). Email sending will no-op.'
+  )
+}
+
+/** Send via Resend's HTTP API (https://resend.com/docs/api-reference). */
+async function sendViaResend({ to, subject, html, text }) {
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: `${FROM_NAME} <${FROM_EMAIL}>`,
+      to: [to],
+      subject,
+      html,
+      text,
+    }),
+  })
+  if (!response.ok) {
+    const body = await response.text().catch(() => '')
+    throw new Error(`Resend ${response.status}: ${body.slice(0, 300)}`)
+  }
+}
+
+/** Send via SendGrid (legacy fallback). */
+async function sendViaSendGrid({ to, subject, html, text }) {
+  await sgMail.send({
+    to,
+    from: { email: FROM_EMAIL, name: FROM_NAME },
+    subject,
+    text,
+    html,
+  })
 }
 
 /**
- * Send an email using SendGrid
+ * Send an email through whichever provider is configured. All templates in
+ * this file route through here, so swapping providers is an env-var change.
  */
 async function sendEmail({ to, subject, html, text }) {
-  if (!SENDGRID_API_KEY) {
+  if (!RESEND_API_KEY && !SENDGRID_API_KEY) {
     console.log(
       `📧 [EMAIL NOT SENT - No API Key] To: ${to}, Subject: ${subject}`
     )
-    return { success: false, error: 'SendGrid not configured' }
+    return { success: false, error: 'No email provider configured' }
+  }
+
+  const payload = {
+    to,
+    subject,
+    html,
+    // Strip HTML for the text version when one isn't provided.
+    text: text || html.replace(/<[^>]*>/g, ''),
   }
 
   try {
-    const msg = {
-      to,
-      from: {
-        email: FROM_EMAIL,
-        name: FROM_NAME,
-      },
-      subject,
-      text: text || html.replace(/<[^>]*>/g, ''), // Strip HTML for text version
-      html,
+    if (RESEND_API_KEY) {
+      await sendViaResend(payload)
+    } else {
+      await sendViaSendGrid(payload)
     }
-
-    await sgMail.send(msg)
     console.log(`✅ Email sent to ${to}: ${subject}`)
     return { success: true }
   } catch (error) {
