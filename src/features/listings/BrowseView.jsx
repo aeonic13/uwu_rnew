@@ -95,10 +95,14 @@ function ListingCard({ listing, isFavorite, onToggleFavorite, onClick }) {
         <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-gray-700 text-xs font-semibold px-2 py-1 rounded-full">
           {listing.propertyType || 'Rental'}
         </span>
-        {/* Verified badge */}
+        {/* Email-confirmed badge — honest label: this only certifies the
+            owner confirmed their email address, not their identity. */}
         {listing.owner?.verified && (
-          <span className="absolute bottom-3 left-3 bg-brand-500 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1">
-            <Shield size={11} /> Verified
+          <span
+            title="This owner confirmed their email address"
+            className="absolute bottom-3 left-3 bg-brand-500 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1"
+          >
+            <Shield size={11} /> Email confirmed
           </span>
         )}
       </div>

@@ -103,13 +103,17 @@ function applyFilters(listings, filters) {
       if (!matchesSearch) return false
     }
 
-    // University filter
-    if (
-      filters.university &&
-      filters.university !== 'All Universities' &&
-      listing.university !== filters.university
-    ) {
-      return false
+    // Area filter. The dropdown mixes neighborhood names and university
+    // names, so match case-insensitively against BOTH the listing's
+    // location and its university field (exact equality against
+    // `university` alone made every neighborhood selection return zero).
+    if (filters.university && filters.university !== 'All Universities') {
+      const area = filters.university.toLowerCase()
+      const location = (listing.location || '').toLowerCase()
+      const university = (listing.university || '').toLowerCase()
+      if (!location.includes(area) && !university.includes(area)) {
+        return false
+      }
     }
 
     // Price range filter

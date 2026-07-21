@@ -144,6 +144,7 @@ function AgeRangeSlider({ value, onChange }) {
 const sampleHousemates = [
   {
     id: 'sample-1',
+    isSample: true,
     audience: 'professional',
     age: 28,
     gender: 'nonbinary',
@@ -157,13 +158,14 @@ const sampleHousemates = [
     user: {
       firstName: 'Jordan',
       lastName: 'Avery',
-      verified: true,
+      verified: false,
       avatarUrl:
         'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=80',
     },
   },
   {
     id: 'sample-2',
+    isSample: true,
     audience: 'student',
     age: 21,
     gender: 'man',
@@ -177,13 +179,14 @@ const sampleHousemates = [
     user: {
       firstName: 'Alex',
       lastName: 'Johnson',
-      verified: true,
+      verified: false,
       avatarUrl:
         'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=200&q=80',
     },
   },
   {
     id: 'sample-3',
+    isSample: true,
     audience: 'parent',
     age: 34,
     gender: 'woman',
@@ -197,13 +200,14 @@ const sampleHousemates = [
     user: {
       firstName: 'Maria',
       lastName: 'Delgado',
-      verified: true,
+      verified: false,
       avatarUrl:
         'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&q=80',
     },
   },
   {
     id: 'sample-4',
+    isSample: true,
     audience: 'remote',
     age: 31,
     gender: 'man',
@@ -217,13 +221,14 @@ const sampleHousemates = [
     user: {
       firstName: 'Devin',
       lastName: 'Park',
-      verified: true,
+      verified: false,
       avatarUrl:
         'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80',
     },
   },
   {
     id: 'sample-5',
+    isSample: true,
     audience: 'retiree',
     age: 63,
     gender: 'woman',
@@ -237,7 +242,7 @@ const sampleHousemates = [
     user: {
       firstName: 'Eleanor',
       lastName: 'Foster',
-      verified: true,
+      verified: false,
       avatarUrl:
         'https://images.unsplash.com/photo-1551836022-deb4988cc6c0?w=200&q=80',
     },
@@ -344,7 +349,7 @@ const safetyTips = [
   'Verify that profile details stay consistent across your conversations.',
   'Watch for urgency pressure or any request for payment before a viewing.',
   'Meet potential housemates in a public place first.',
-  'Block and report anyone who makes you uncomfortable.',
+  'Trust your instincts — stop replying to anyone who makes you uncomfortable.',
 ]
 
 // Client-side mirror of the backend discovery filter, used for the offline
@@ -438,7 +443,14 @@ function HousemateProfileModal({
                   {profile.age ? `, ${profile.age}` : ''}
                 </h2>
                 {u.verified && (
-                  <CheckCircle size={18} className="flex-shrink-0" />
+                  <span title="Email confirmed">
+                    <CheckCircle size={18} className="flex-shrink-0" />
+                  </span>
+                )}
+                {profile.isSample && (
+                  <span className="ml-1 text-[10px] font-semibold uppercase tracking-wide bg-white/25 px-1.5 py-0.5 rounded flex-shrink-0">
+                    Example profile
+                  </span>
                 )}
               </div>
               {profile.occupation && (
@@ -873,115 +885,133 @@ function HousematesHub() {
                   </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {profiles.map(p => (
-                    <div
-                      key={p.id}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => openProfile(p)}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault()
-                          openProfile(p)
-                        }
-                      }}
-                      className="text-left border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:border-blue-300 transition-all bg-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <div className="p-4 flex items-center gap-4">
-                        <img
-                          src={
-                            p.user?.avatarUrl ||
-                            'https://via.placeholder.com/80?text=%20'
+                <>
+                  {profiles.some(p => p.isSample) && (
+                    <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                      These are example profiles to show how matching works —
+                      real housemates will appear here as people join in your
+                      area. Take the quiz so they can find you.
+                    </div>
+                  )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {profiles.map(p => (
+                      <div
+                        key={p.id}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => openProfile(p)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            openProfile(p)
                           }
-                          alt={`${p.user?.firstName || 'Housemate'}`}
-                          className="w-16 h-16 rounded-full object-cover bg-gray-100"
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center gap-1">
-                            <h3 className="font-semibold text-lg">
-                              {p.user?.firstName} {p.user?.lastName}
-                              {p.age ? (
-                                <span className="font-normal text-gray-500">
-                                  {', '}
-                                  {p.age}
+                        }}
+                        className="text-left border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:border-blue-300 transition-all bg-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <div className="p-4 flex items-center gap-4">
+                          <img
+                            src={
+                              p.user?.avatarUrl ||
+                              'https://via.placeholder.com/80?text=%20'
+                            }
+                            alt={`${p.user?.firstName || 'Housemate'}`}
+                            className="w-16 h-16 rounded-full object-cover bg-gray-100"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-1">
+                              <h3 className="font-semibold text-lg">
+                                {p.user?.firstName} {p.user?.lastName}
+                                {p.age ? (
+                                  <span className="font-normal text-gray-500">
+                                    {', '}
+                                    {p.age}
+                                  </span>
+                                ) : null}
+                              </h3>
+                              {p.user?.verified && (
+                                <span title="Email confirmed">
+                                  <CheckCircle
+                                    size={16}
+                                    className="text-blue-500"
+                                  />
                                 </span>
-                              ) : null}
-                            </h3>
-                            {p.user?.verified && (
-                              <CheckCircle
-                                size={16}
-                                className="text-blue-500"
-                              />
+                              )}
+                              {p.isSample && (
+                                <span className="ml-1 text-[10px] font-semibold uppercase tracking-wide bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">
+                                  Example
+                                </span>
+                              )}
+                            </div>
+                            {p.occupation && (
+                              <div className="flex items-center text-sm text-gray-600">
+                                <Briefcase size={14} className="mr-1" />
+                                {p.occupation}
+                              </div>
                             )}
                           </div>
-                          {p.occupation && (
-                            <div className="flex items-center text-sm text-gray-600">
-                              <Briefcase size={14} className="mr-1" />
-                              {p.occupation}
+                          <div className="text-center">
+                            <div className="flex items-center text-green-600 font-bold">
+                              <Star size={14} className="fill-current mr-1" />
+                              {p.compatibilityScore}%
+                            </div>
+                            <div className="text-[10px] text-gray-500">
+                              Match
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="px-4 pb-4">
+                          <div className="flex items-center text-sm text-gray-600 mb-2">
+                            <MapPin size={14} className="mr-1" />
+                            {p.location || 'Location flexible'}
+                            {p.budgetMin && p.budgetMax
+                              ? ` • $${p.budgetMin}–$${p.budgetMax}/mo`
+                              : ''}
+                          </div>
+                          {p.bio && (
+                            <p className="text-sm text-gray-700 mb-3 line-clamp-2">
+                              {p.bio}
+                            </p>
+                          )}
+                          {p.tags && p.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mb-4">
+                              {p.tags.map(tag => (
+                                <span
+                                  key={tag}
+                                  className="bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-full"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
                             </div>
                           )}
-                        </div>
-                        <div className="text-center">
-                          <div className="flex items-center text-green-600 font-bold">
-                            <Star size={14} className="fill-current mr-1" />
-                            {p.compatibilityScore}%
+                          <div className="flex gap-2">
+                            <button
+                              onClick={e => {
+                                e.stopPropagation()
+                                openProfile(p)
+                              }}
+                              className="flex-1 border border-blue-600 text-blue-600 py-2 rounded-lg flex items-center justify-center font-medium hover:bg-blue-50 transition-colors"
+                            >
+                              <User size={16} className="mr-1" />
+                              View profile
+                            </button>
+                            <button
+                              onClick={e => {
+                                e.stopPropagation()
+                                handleConnect(p)
+                              }}
+                              className="flex-1 bg-blue-600 text-white py-2 rounded-lg flex items-center justify-center font-medium hover:bg-blue-700 transition-colors"
+                            >
+                              <MessageCircle size={16} className="mr-1" />
+                              Message
+                            </button>
                           </div>
-                          <div className="text-[10px] text-gray-500">Match</div>
                         </div>
                       </div>
-
-                      <div className="px-4 pb-4">
-                        <div className="flex items-center text-sm text-gray-600 mb-2">
-                          <MapPin size={14} className="mr-1" />
-                          {p.location || 'Location flexible'}
-                          {p.budgetMin && p.budgetMax
-                            ? ` • $${p.budgetMin}–$${p.budgetMax}/mo`
-                            : ''}
-                        </div>
-                        {p.bio && (
-                          <p className="text-sm text-gray-700 mb-3 line-clamp-2">
-                            {p.bio}
-                          </p>
-                        )}
-                        {p.tags && p.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mb-4">
-                            {p.tags.map(tag => (
-                              <span
-                                key={tag}
-                                className="bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-full"
-                              >
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                        <div className="flex gap-2">
-                          <button
-                            onClick={e => {
-                              e.stopPropagation()
-                              openProfile(p)
-                            }}
-                            className="flex-1 border border-blue-600 text-blue-600 py-2 rounded-lg flex items-center justify-center font-medium hover:bg-blue-50 transition-colors"
-                          >
-                            <User size={16} className="mr-1" />
-                            View profile
-                          </button>
-                          <button
-                            onClick={e => {
-                              e.stopPropagation()
-                              handleConnect(p)
-                            }}
-                            className="flex-1 bg-blue-600 text-white py-2 rounded-lg flex items-center justify-center font-medium hover:bg-blue-700 transition-colors"
-                          >
-                            <MessageCircle size={16} className="mr-1" />
-                            Message
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                </>
               )}
             </section>
           )}

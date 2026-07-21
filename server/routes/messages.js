@@ -1,8 +1,19 @@
 import express from 'express'
 import prisma from '../utils/prisma.js'
 import { authenticate } from '../middleware/authenticate.js'
+import { sendMessageNotification } from '../utils/email.js'
 
 const router = express.Router()
+
+/** Escape HTML special chars so message text is safe inside the email body. */
+function escapeHtml(text) {
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
 
 /**
  * GET /api/messages/conversations
@@ -307,6 +318,19 @@ router.post('/', authenticate, async (req, res) => {
       data: { updatedAt: new Date() },
     })
 
+    // Snapshot other participants BEFORE incrementing so we know who is
+    // seeing their first unread message (unreadCount 0 → notify by email;
+    // further messages in the same unread stretch stay silent to avoid spam).
+    const otherParticipants = await prisma.conversationUser.findMany({
+      where: {
+        conversationId,
+        userId: { not: userId },
+      },
+      include: {
+        user: { select: { email: true, firstName: true } },
+      },
+    })
+
     // Increment unread count for other participants
     await prisma.conversationUser.updateMany({
       where: {
@@ -317,6 +341,24 @@ router.post('/', authenticate, async (req, res) => {
         unreadCount: { increment: 1 },
       },
     })
+
+    // Best-effort email notification — never blocks or fails the send.
+    const preview = escapeHtml(
+      content.trim().length > 140
+        ? `${content.trim().slice(0, 140)}…`
+        : content.trim()
+    )
+    for (const participant of otherParticipants) {
+      if (participant.unreadCount === 0 && participant.user?.email) {
+        sendMessageNotification(
+          participant.user,
+          message.sender,
+          preview
+        ).catch(err =>
+          console.error('Message notification email failed:', err?.message)
+        )
+      }
+    }
 
     res.status(201).json({
       message: {

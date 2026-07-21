@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
+import { messagingService } from '../../services/messagingService'
 import {
   Menu,
   X,
@@ -21,9 +22,32 @@ import {
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [unreadTotal, setUnreadTotal] = useState(0)
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+
+  // Global unread-message badge: poll every 30s, plus refresh on every
+  // navigation so opening a thread clears the badge promptly. No reset on
+  // logout is needed — guests have no Messages nav item, and a login
+  // refetch overwrites any stale value before the badge can render.
+  useEffect(() => {
+    if (!user) return undefined
+    let active = true
+    const load = () =>
+      messagingService
+        .getUnreadCount()
+        .then(data => {
+          if (active) setUnreadTotal(data?.total || 0)
+        })
+        .catch(() => {})
+    load()
+    const timer = setInterval(load, 30000)
+    return () => {
+      active = false
+      clearInterval(timer)
+    }
+  }, [user, location.pathname])
 
   const handleLogout = () => {
     logout()
@@ -41,7 +65,8 @@ export default function Header() {
     { path: '/profile', label: 'Profile', icon: User },
   ]
 
-  // Owner navigation items
+  // Owner navigation items. Messages is included so landlords actually see
+  // tenant conversations — the Inbox covers applications, not chat.
   const ownerNavItems = [
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     {
@@ -50,6 +75,7 @@ export default function Header() {
       icon: PlusCircle,
     },
     { path: '/dashboard/inbox', label: 'Inbox', icon: Inbox },
+    { path: '/messages', label: 'Messages', icon: MessageSquare },
     { path: '/payments', label: 'Payments', icon: DollarSign },
     { path: '/profile', label: 'Profile', icon: User },
   ]
@@ -79,11 +105,12 @@ export default function Header() {
           <nav className="hidden md:flex items-center gap-6">
             {navItems.map(item => {
               const Icon = item.icon
+              const showBadge = item.path === '/messages' && unreadTotal > 0
               return (
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`relative flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                     isActive(item.path)
                       ? 'bg-brand-50 text-brand-500'
                       : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
@@ -91,6 +118,14 @@ export default function Header() {
                 >
                   <Icon size={18} />
                   <span>{item.label}</span>
+                  {showBadge && (
+                    <span
+                      aria-label={`${unreadTotal} unread messages`}
+                      className="min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[11px] font-bold flex items-center justify-center"
+                    >
+                      {unreadTotal > 9 ? '9+' : unreadTotal}
+                    </span>
+                  )}
                 </Link>
               )
             })}
@@ -146,6 +181,7 @@ export default function Header() {
           <nav className="px-4 py-4 space-y-2">
             {navItems.map(item => {
               const Icon = item.icon
+              const showBadge = item.path === '/messages' && unreadTotal > 0
               return (
                 <Link
                   key={item.path}
@@ -159,6 +195,14 @@ export default function Header() {
                 >
                   <Icon size={20} />
                   <span>{item.label}</span>
+                  {showBadge && (
+                    <span
+                      aria-label={`${unreadTotal} unread messages`}
+                      className="min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[11px] font-bold flex items-center justify-center"
+                    >
+                      {unreadTotal > 9 ? '9+' : unreadTotal}
+                    </span>
+                  )}
                 </Link>
               )
             })}

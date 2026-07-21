@@ -732,118 +732,6 @@ function VerifyStep({ listingId, onNext, onBack, onVerificationComplete }) {
 }
 
 /**
- * Step 4: Payment
- */
-function PaymentStep({ formData, onChange, onNext, onBack, listing }) {
-  const serviceFee = Math.round((listing?.price || 0) * 0.03)
-  const total = (listing?.price || 0) + serviceFee
-
-  return (
-    <div className="p-4 space-y-4">
-      <h2 className="text-xl font-bold mb-4">Payment Details</h2>
-
-      <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-        <div className="flex justify-between">
-          <span>First Month&apos;s Rent</span>
-          <span className="font-medium">${listing?.price || 0}</span>
-        </div>
-        <div className="flex justify-between">
-          <span>Service Fee</span>
-          <span className="font-medium">${serviceFee}</span>
-        </div>
-        <div className="border-t pt-3 flex justify-between">
-          <span className="font-semibold">Due Now</span>
-          <span className="font-bold text-lg">${total}</span>
-        </div>
-      </div>
-
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-        <div className="flex items-start">
-          <AlertCircle
-            className="text-yellow-600 mr-2 flex-shrink-0 mt-0.5\"
-            size={18}
-          />
-          <p className="text-sm text-yellow-700">
-            Security deposit of ${(listing?.price || 0) * 2} will be due before
-            move-in.
-          </p>
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Payment Method
-        </label>
-        <select
-          value={formData.paymentMethod || ''}
-          onChange={e => onChange({ paymentMethod: e.target.value })}
-          className="w-full p-3 border border-gray-300 rounded-lg"
-        >
-          <option value="">Select payment method</option>
-          <option value="card">Credit/Debit Card</option>
-          <option value="bank">Bank Transfer</option>
-        </select>
-      </div>
-
-      {formData.paymentMethod === 'card' && (
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Card Number
-            </label>
-            <input
-              type="text"
-              placeholder="1234 5678 9012 3456"
-              className="w-full p-3 border border-gray-300 rounded-lg"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Expiry
-              </label>
-              <input
-                type="text"
-                placeholder="MM/YY"
-                className="w-full p-3 border border-gray-300 rounded-lg"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                CVC
-              </label>
-              <input
-                type="text"
-                placeholder="123"
-                className="w-full p-3 border border-gray-300 rounded-lg"
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="flex gap-3">
-        <button
-          type="button"
-          onClick={onBack}
-          className="flex-1 border border-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
-        >
-          Back
-        </button>
-        <button
-          type="button"
-          onClick={onNext}
-          disabled={!formData.paymentMethod}
-          className="flex-1 bg-brand-500 text-white py-3 rounded-lg font-semibold hover:bg-brand-600 transition-colors disabled:opacity-50"
-        >
-          Continue
-        </button>
-      </div>
-    </div>
-  )
-}
-
-/**
  * Step 4: Review
  */
 function ReviewStep({
@@ -856,9 +744,6 @@ function ReviewStep({
   selectedGroupId = null,
   onSelectGroup,
 }) {
-  const serviceFee = Math.round((listing?.price || 0) * 0.03)
-  const total = (listing?.price || 0) + serviceFee
-
   return (
     <div className="p-4 space-y-4">
       <h2 className="text-xl font-bold mb-4">Review Application</h2>
@@ -897,23 +782,15 @@ function ReviewStep({
         <p>Move-out: {formData.moveOutDate}</p>
       </div>
 
-      {/* Payment Summary */}
-      <div className="bg-gray-50 rounded-lg p-4">
-        <h3 className="font-semibold mb-2">Payment Summary</h3>
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <span>First Month&apos;s Rent</span>
-            <span>${listing?.price || 0}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Service Fee</span>
-            <span>${serviceFee}</span>
-          </div>
-          <div className="border-t pt-2 flex justify-between font-semibold">
-            <span>Total Due Now</span>
-            <span>${total}</span>
-          </div>
-        </div>
+      {/* Honest cost framing: nothing is charged when an application is
+          submitted — money changes hands only after landlord approval. */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <h3 className="font-semibold mb-1 text-blue-900">No payment due now</h3>
+        <p className="text-sm text-blue-800">
+          Submitting this application is free. If the landlord approves you,
+          first month&apos;s rent (${listing?.price || 0}/mo) and any deposit
+          are arranged in your lease agreement.
+        </p>
       </div>
 
       {/* Apply solo or as a roommate group */}

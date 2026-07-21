@@ -21,6 +21,7 @@ import { useListings } from '../../contexts/ListingsContext'
 import { useFavorites } from '../../contexts/FavoritesContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { usePreQualification } from '../../hooks/usePreQualification'
+import { messagingService } from '../../services/messagingService'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 
 /**
@@ -95,52 +96,62 @@ ImageGallery.propTypes = {
 /**
  * Owner info card
  */
-function OwnerCard({ owner, onContact }) {
+function OwnerCard({ owner, onContact, contacting, contactError }) {
+  const name =
+    [owner.firstName, owner.lastName].filter(Boolean).join(' ') || 'Owner'
+  const listingCount = owner._count?.listings
+
   return (
     <div className="bg-gray-50 rounded-lg p-4">
       <div className="flex items-center mb-4">
         <img
-          src={owner.avatar || 'https://via.placeholder.com/60'}
-          alt={owner.name}
-          className="w-14 h-14 rounded-full mr-3"
+          src={owner.avatarUrl || 'https://via.placeholder.com/60'}
+          alt={name}
+          className="w-14 h-14 rounded-full mr-3 object-cover bg-gray-200"
         />
         <div className="flex-1">
           <div className="flex items-center">
-            <h3 className="font-semibold">{owner.name}</h3>
+            <h3 className="font-semibold">{name}</h3>
             {owner.verified && (
-              <Shield size={16} className="ml-1 text-brand-500" />
+              <span title="Email confirmed">
+                <Shield size={16} className="ml-1 text-brand-500" />
+              </span>
             )}
           </div>
-          <div className="flex items-center text-sm text-gray-600">
-            <Star size={14} className="text-yellow-400 fill-current mr-1" />
-            <span>{owner.rating || 'N/A'}</span>
-            {owner.reviewCount && (
-              <span className="ml-1">({owner.reviewCount} reviews)</span>
-            )}
+          <div className="text-sm text-gray-600">
+            {listingCount
+              ? `${listingCount} listing${listingCount === 1 ? '' : 's'} on Rentra`
+              : 'Landlord on Rentra'}
           </div>
         </div>
       </div>
 
       <button
         onClick={onContact}
-        className="w-full bg-brand-500 text-white py-3 rounded-lg font-medium hover:bg-brand-600 transition-colors flex items-center justify-center"
+        disabled={contacting}
+        className="w-full bg-brand-500 text-white py-3 rounded-lg font-medium hover:bg-brand-600 transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <MessageCircle size={20} className="mr-2" />
-        Contact Owner
+        {contacting ? 'Opening conversation…' : 'Contact Owner'}
       </button>
+      {contactError && (
+        <p className="text-sm text-red-600 mt-2">{contactError}</p>
+      )}
     </div>
   )
 }
 
 OwnerCard.propTypes = {
   owner: PropTypes.shape({
-    name: PropTypes.string.isRequired,
-    avatar: PropTypes.string,
-    rating: PropTypes.number,
+    firstName: PropTypes.string,
+    lastName: PropTypes.string,
+    avatarUrl: PropTypes.string,
     verified: PropTypes.bool,
-    reviewCount: PropTypes.number,
+    _count: PropTypes.shape({ listings: PropTypes.number }),
   }).isRequired,
   onContact: PropTypes.func.isRequired,
+  contacting: PropTypes.bool,
+  contactError: PropTypes.string,
 }
 
 /**
@@ -155,6 +166,8 @@ function PropertyDetail() {
   const { isPreQualified } = usePreQualification()
 
   const [showShareModal, setShowShareModal] = useState(false)
+  const [contacting, setContacting] = useState(false)
+  const [contactError, setContactError] = useState('')
 
   useEffect(() => {
     if (id) {
@@ -166,9 +179,35 @@ function PropertyDetail() {
     navigate(-1)
   }
 
-  const handleContact = () => {
-    // Navigate to messages or create new conversation
-    navigate(`/messages?listingId=${id}`)
+  // Start (or resume) a conversation with the owner about this listing and
+  // land directly in that thread. Requires login; owners can't message
+  // themselves.
+  const handleContact = async () => {
+    if (!user) {
+      navigate('/login')
+      return
+    }
+    const ownerId = selectedListing?.owner?.id
+    if (!ownerId) {
+      setContactError('Owner information is unavailable for this listing.')
+      return
+    }
+    if (ownerId === user.id) {
+      setContactError('This is your own listing.')
+      return
+    }
+    setContacting(true)
+    setContactError('')
+    try {
+      const data = await messagingService.startConversation(ownerId, id)
+      const conversationId = data?.conversation?.id
+      if (!conversationId) throw new Error('No conversation returned')
+      navigate(`/messages/${conversationId}`)
+    } catch {
+      setContactError('Could not start the conversation. Please try again.')
+    } finally {
+      setContacting(false)
+    }
   }
 
   const handleApply = () => {
@@ -372,7 +411,12 @@ function PropertyDetail() {
             {listing.owner && (
               <div className="mb-6">
                 <h2 className="text-lg font-semibold mb-3">Listed by</h2>
-                <OwnerCard owner={listing.owner} onContact={handleContact} />
+                <OwnerCard
+                  owner={listing.owner}
+                  onContact={handleContact}
+                  contacting={contacting}
+                  contactError={contactError}
+                />
               </div>
             )}
 
@@ -394,7 +438,8 @@ function PropertyDetail() {
                 <div className="flex gap-3">
                   <button
                     onClick={handleContact}
-                    className="flex-1 border-2 border-brand-500 text-brand-500 py-3 rounded-lg font-semibold hover:bg-brand-50 transition-colors"
+                    disabled={contacting}
+                    className="flex-1 border-2 border-brand-500 text-brand-500 py-3 rounded-lg font-semibold hover:bg-brand-50 transition-colors disabled:opacity-50"
                   >
                     Message Owner
                   </button>
@@ -417,7 +462,8 @@ function PropertyDetail() {
           <div className="flex gap-3">
             <button
               onClick={handleContact}
-              className="flex-1 border-2 border-brand-500 text-brand-500 py-3 rounded-lg font-semibold hover:bg-brand-50 transition-colors"
+              disabled={contacting}
+              className="flex-1 border-2 border-brand-500 text-brand-500 py-3 rounded-lg font-semibold hover:bg-brand-50 transition-colors disabled:opacity-50"
             >
               Message
             </button>

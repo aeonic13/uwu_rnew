@@ -153,31 +153,46 @@ function ConversationView() {
   const [showOptions, setShowOptions] = useState(false)
 
   useEffect(() => {
-    const fetchConversation = async () => {
-      setIsLoading(true)
+    let active = true
+
+    const fetchConversation = async (silent = false) => {
+      if (!silent) setIsLoading(true)
       try {
         const data = await messagingService.getConversation(conversationId)
+        if (!active) return
         const normalized = normalizeConversationDetail(data, user?.id)
         setConversation(normalized)
       } catch (err) {
         console.error('Failed to load conversation:', err)
-        setConversation(null)
+        if (!silent && active) setConversation(null)
       } finally {
-        setIsLoading(false)
+        if (!silent && active) setIsLoading(false)
       }
     }
 
     if (conversationId) {
       fetchConversation()
+      // Lightweight polling so replies appear without a manual refresh.
+      // Silent refreshes never toggle the loading spinner.
+      const timer = setInterval(() => fetchConversation(true), 15000)
+      return () => {
+        active = false
+        clearInterval(timer)
+      }
+    }
+
+    return () => {
+      active = false
     }
   }, [conversationId, user?.id])
 
-  // Scroll to bottom on new messages
+  // Scroll to bottom on new messages. Keyed on the count (not array
+  // identity) so silent polling refreshes don't yank the scroll position.
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
     }
-  }, [conversation?.messages])
+  }, [conversation?.messages?.length])
 
   const handleSend = async () => {
     if (!newMessage.trim() || isSending) return

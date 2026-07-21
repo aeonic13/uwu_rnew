@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import PropTypes from 'prop-types'
 import { Search, MessageCircle, Clock, Check, CheckCheck } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
@@ -153,48 +153,42 @@ ConversationCard.propTypes = {
  */
 function MessagesView() {
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
   const { user } = useAuth()
 
   const [conversations, setConversations] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
   const [isLoading, setIsLoading] = useState(true)
 
-  // Check if coming from a listing to start new conversation
-  const listingId = searchParams.get('listingId')
+  // Note: listing pages now start conversations directly via
+  // startConversation and navigate straight to the thread, so the old
+  // ?listingId=… redirect flow (which dead-ended at a nonexistent
+  // /messages/new route) is gone.
 
   useEffect(() => {
-    const fetchConversations = async () => {
-      setIsLoading(true)
+    let active = true
+
+    const fetchConversations = async (silent = false) => {
+      if (!silent) setIsLoading(true)
       try {
         const data = await messagingService.getConversations()
+        if (!active) return
         const normalized = (data.conversations || []).map(normalizeConversation)
         setConversations(normalized)
       } catch (err) {
         console.error('Failed to load conversations:', err)
       } finally {
-        setIsLoading(false)
+        if (!silent && active) setIsLoading(false)
       }
     }
 
     fetchConversations()
-  }, [])
-
-  // Handle new conversation from listing
-  useEffect(() => {
-    if (listingId) {
-      // Check if conversation already exists
-      const existingConvo = conversations.find(
-        c => c.listingId === parseInt(listingId)
-      )
-      if (existingConvo) {
-        navigate(`/messages/${existingConvo.id}`, { replace: true })
-      } else {
-        // Navigate to new conversation
-        navigate(`/messages/new?listingId=${listingId}`, { replace: true })
-      }
+    // Refresh the list quietly so new conversations/unreads show up.
+    const timer = setInterval(() => fetchConversations(true), 30000)
+    return () => {
+      active = false
+      clearInterval(timer)
     }
-  }, [listingId, conversations, navigate])
+  }, [])
 
   const handleConversationClick = conversationId => {
     navigate(`/messages/${conversationId}`)
