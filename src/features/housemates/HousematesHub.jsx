@@ -27,6 +27,9 @@ import {
   Coffee,
   CalendarClock,
   Shuffle,
+  SlidersHorizontal,
+  Cake,
+  User,
 } from 'lucide-react'
 import { housematesService } from '../../services/housematesService'
 import { messagingService } from '../../services/messagingService'
@@ -52,16 +55,87 @@ const categories = [
   },
 ]
 
-// Audience filters for the discovery feed. Housemates serves every stage of
-// life, including students and grads.
-const audiences = [
-  { id: 'all', label: 'Everyone' },
-  { id: 'professional', label: 'Young Professionals' },
-  { id: 'student', label: 'Students & Grads' },
-  { id: 'parent', label: 'Single Parents' },
-  { id: 'remote', label: 'Remote Workers' },
-  { id: 'retiree', label: 'Retirees' },
+// Hinge-style discovery preferences. Instead of life-stage buckets, people
+// filter the feed by the age range and gender they want in a housemate.
+const AGE_FLOOR = 18
+const AGE_CEIL = 75
+const DEFAULT_AGE_PREF = { min: AGE_FLOOR, max: 45 }
+
+// Desired-roommate gender options (what the viewer wants to see).
+const genderPreferences = [
+  { id: 'everyone', label: 'Everyone' },
+  { id: 'men', label: 'Men' },
+  { id: 'women', label: 'Women' },
+  { id: 'nonbinary', label: 'Nonbinary' },
 ]
+
+// The viewer's own gender identity (stored on their profile so others can
+// filter). Values match the backend and genderPreferences mapping.
+const genderIdentities = [
+  { id: 'man', label: 'Man' },
+  { id: 'woman', label: 'Woman' },
+  { id: 'nonbinary', label: 'Nonbinary' },
+]
+
+// Maps a desired-gender preference to the candidate gender it matches.
+const genderPrefToIdentity = {
+  men: 'man',
+  women: 'woman',
+  nonbinary: 'nonbinary',
+}
+
+/**
+ * Dual-handle age range slider (min–max), styled like a dating app. Two
+ * overlaid range inputs share a track; only the thumbs are interactive.
+ */
+function AgeRangeSlider({ value, onChange }) {
+  const span = AGE_CEIL - AGE_FLOOR
+  const pct = v => ((v - AGE_FLOOR) / span) * 100
+
+  const setMin = v => onChange({ min: Math.min(v, value.max), max: value.max })
+  const setMax = v => onChange({ min: value.min, max: Math.max(v, value.min) })
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-sm font-medium text-gray-700">Age range</span>
+        <span className="text-sm font-semibold text-blue-600">
+          {value.min}–{value.max === AGE_CEIL ? `${AGE_CEIL}+` : value.max}
+        </span>
+      </div>
+      <div className="relative h-6">
+        {/* Base track */}
+        <div className="absolute top-1/2 -translate-y-1/2 w-full h-1.5 rounded-full bg-gray-200" />
+        {/* Selected span */}
+        <div
+          className="absolute top-1/2 -translate-y-1/2 h-1.5 rounded-full bg-blue-600"
+          style={{
+            left: `${pct(value.min)}%`,
+            right: `${100 - pct(value.max)}%`,
+          }}
+        />
+        <input
+          type="range"
+          className="range-dual"
+          min={AGE_FLOOR}
+          max={AGE_CEIL}
+          value={value.min}
+          aria-label="Minimum age"
+          onChange={e => setMin(Number(e.target.value))}
+        />
+        <input
+          type="range"
+          className="range-dual"
+          min={AGE_FLOOR}
+          max={AGE_CEIL}
+          value={value.max}
+          aria-label="Maximum age"
+          onChange={e => setMax(Number(e.target.value))}
+        />
+      </div>
+    </div>
+  )
+}
 
 // Sample housemate profiles used as a fallback when the API is unavailable.
 // Shaped exactly like the API response so the same render code works for both.
@@ -69,6 +143,8 @@ const sampleHousemates = [
   {
     id: 'sample-1',
     audience: 'professional',
+    age: 28,
+    gender: 'nonbinary',
     occupation: 'Software Engineer',
     location: 'Seattle, WA',
     budgetMin: 900,
@@ -87,6 +163,8 @@ const sampleHousemates = [
   {
     id: 'sample-2',
     audience: 'student',
+    age: 21,
+    gender: 'man',
     occupation: 'Computer Science Student',
     location: 'University Park, Los Angeles, CA',
     budgetMin: 800,
@@ -105,6 +183,8 @@ const sampleHousemates = [
   {
     id: 'sample-3',
     audience: 'parent',
+    age: 34,
+    gender: 'woman',
     occupation: 'Nurse & Parent',
     location: 'Austin, TX',
     budgetMin: 1000,
@@ -123,6 +203,8 @@ const sampleHousemates = [
   {
     id: 'sample-4',
     audience: 'remote',
+    age: 31,
+    gender: 'man',
     occupation: 'Remote Product Designer',
     location: 'Denver, CO',
     budgetMin: 800,
@@ -141,6 +223,8 @@ const sampleHousemates = [
   {
     id: 'sample-5',
     audience: 'retiree',
+    age: 63,
+    gender: 'woman',
     occupation: 'Retired Teacher',
     location: 'Portland, OR',
     budgetMin: 700,
@@ -261,9 +345,16 @@ const safetyTips = [
   'Block and report anyone who makes you uncomfortable.',
 ]
 
-function filterSample(audienceId) {
-  if (audienceId === 'all') return sampleHousemates
-  return sampleHousemates.filter(h => h.audience === audienceId)
+// Client-side mirror of the backend discovery filter, used for the offline
+// sample fallback. Candidates without an age still pass the age filter.
+function filterSample(agePref, genderPref) {
+  const wantGender = genderPrefToIdentity[genderPref]
+  return sampleHousemates.filter(h => {
+    const ageOk =
+      h.age == null || (h.age >= agePref.min && h.age <= agePref.max)
+    const genderOk = !wantGender || h.gender === wantGender
+    return ageOk && genderOk
+  })
 }
 
 /**
@@ -274,14 +365,18 @@ function filterSample(audienceId) {
 function HousematesHub() {
   const navigate = useNavigate()
   const [activeCategory, setActiveCategory] = useState('discover')
-  const [audience, setAudience] = useState('all')
+  // Hinge-style discovery preferences.
+  const [agePref, setAgePref] = useState(DEFAULT_AGE_PREF)
+  const [genderPref, setGenderPref] = useState('everyone')
   const [quizAnswers, setQuizAnswers] = useState({})
+  // "About you" fields that make the viewer discoverable to others.
+  const [aboutYou, setAboutYou] = useState({ age: 25, gender: '' })
   const [profiles, setProfiles] = useState([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [reloadFlag, setReloadFlag] = useState(false)
 
-  // Load matches whenever the audience filter changes or a save triggers a
+  // Load matches whenever the discovery preferences change or a save triggers a
   // refresh. Falls back to sample data on error or empty results.
   useEffect(() => {
     let active = true
@@ -289,13 +384,19 @@ function HousematesHub() {
     const loadMatches = async () => {
       setLoading(true)
       try {
-        const result = await housematesService.getMatches({ audience })
+        const result = await housematesService.getMatches({
+          ageMin: agePref.min,
+          ageMax: agePref.max,
+          gender: genderPref,
+        })
         if (!active) return
         setProfiles(
-          result && result.length > 0 ? result : filterSample(audience)
+          result && result.length > 0
+            ? result
+            : filterSample(agePref, genderPref)
         )
       } catch {
-        if (active) setProfiles(filterSample(audience))
+        if (active) setProfiles(filterSample(agePref, genderPref))
       } finally {
         if (active) setLoading(false)
       }
@@ -306,10 +407,10 @@ function HousematesHub() {
     return () => {
       active = false
     }
-  }, [audience, reloadFlag])
+  }, [agePref, genderPref, reloadFlag])
 
-  // Preload any previously saved quiz answers so returning users see and can
-  // edit what they answered before.
+  // Preload any previously saved answers and preferences so returning users see
+  // and can edit what they set before.
   useEffect(() => {
     let active = true
     housematesService
@@ -322,6 +423,24 @@ function HousematesHub() {
         }
         if (Object.keys(saved).length > 0) {
           setQuizAnswers(prev => ({ ...saved, ...prev }))
+        }
+        if (profile.age != null || profile.gender) {
+          setAboutYou(prev => ({
+            age: profile.age ?? prev.age,
+            gender: profile.gender ?? prev.gender,
+          }))
+        }
+        if (
+          profile.agePreferenceMin != null ||
+          profile.agePreferenceMax != null
+        ) {
+          setAgePref({
+            min: profile.agePreferenceMin ?? DEFAULT_AGE_PREF.min,
+            max: profile.agePreferenceMax ?? DEFAULT_AGE_PREF.max,
+          })
+        }
+        if (profile.genderPreference) {
+          setGenderPref(profile.genderPreference)
         }
       })
       .catch(() => {})
@@ -352,7 +471,14 @@ function HousematesHub() {
   const handleSaveQuiz = async () => {
     setSaving(true)
     try {
-      await housematesService.saveMyProfile(quizAnswers)
+      await housematesService.saveMyProfile({
+        ...quizAnswers,
+        age: aboutYou.age,
+        gender: aboutYou.gender || undefined,
+        agePreferenceMin: agePref.min,
+        agePreferenceMax: agePref.max,
+        genderPreference: genderPref,
+      })
     } catch {
       // Best-effort: in demo/offline mode we still continue to discovery.
     }
@@ -421,23 +547,46 @@ function HousematesHub() {
           {/* Discover housemates */}
           {activeCategory === 'discover' && (
             <section>
-              <h2 className="text-lg font-bold mb-3">
-                For everyone, every stage of life
-              </h2>
-              <div className="flex flex-wrap gap-2 mb-6">
-                {audiences.map(a => (
-                  <button
-                    key={a.id}
-                    onClick={() => setAudience(a.id)}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                      audience === a.id
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    {a.label}
-                  </button>
-                ))}
+              {/* Discovery preferences — set who you want to live with */}
+              <div className="rounded-xl border border-gray-200 bg-white p-5 mb-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <SlidersHorizontal size={18} className="text-blue-600" />
+                  <h2 className="text-lg font-bold">Your preferences</h2>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Age preference slider */}
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-2 text-gray-700">
+                      <Cake size={16} />
+                      <span className="text-sm font-medium">Preferred age</span>
+                    </div>
+                    <AgeRangeSlider value={agePref} onChange={setAgePref} />
+                  </div>
+
+                  {/* Desired-roommate gender preference */}
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-2 text-gray-700">
+                      <User size={16} />
+                      <span className="text-sm font-medium">Show me</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {genderPreferences.map(g => (
+                        <button
+                          key={g.id}
+                          onClick={() => setGenderPref(g.id)}
+                          className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                            genderPref === g.id
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {g.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {loading && profiles.length === 0 ? (
@@ -481,6 +630,12 @@ function HousematesHub() {
                           <div className="flex items-center gap-1">
                             <h3 className="font-semibold text-lg">
                               {p.user?.firstName} {p.user?.lastName}
+                              {p.age ? (
+                                <span className="font-normal text-gray-500">
+                                  {', '}
+                                  {p.age}
+                                </span>
+                              ) : null}
                             </h3>
                             {p.user?.verified && (
                               <CheckCircle
@@ -556,6 +711,60 @@ function HousematesHub() {
                 housemate friction — power your Compatibility Score with
                 everyone else. Your saved answers load automatically.
               </p>
+
+              {/* About you — makes you discoverable in others' age/gender
+                  preferences */}
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 mb-6 space-y-4">
+                <div className="font-semibold text-gray-800">About you</div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium text-gray-700">
+                      Your age
+                    </span>
+                    <span className="text-sm font-semibold text-blue-600">
+                      {aboutYou.age}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={AGE_FLOOR}
+                    max={AGE_CEIL}
+                    value={aboutYou.age}
+                    aria-label="Your age"
+                    onChange={e =>
+                      setAboutYou(prev => ({
+                        ...prev,
+                        age: Number(e.target.value),
+                      }))
+                    }
+                    className="w-full accent-blue-600"
+                  />
+                </div>
+
+                <div>
+                  <div className="text-sm font-medium text-gray-700 mb-2">
+                    Your gender
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {genderIdentities.map(g => (
+                      <button
+                        key={g.id}
+                        onClick={() =>
+                          setAboutYou(prev => ({ ...prev, gender: g.id }))
+                        }
+                        className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                          aboutYou.gender === g.id
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-100'
+                        }`}
+                      >
+                        {g.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
 
               <div className="space-y-6">
                 {quizQuestions.map(q => (

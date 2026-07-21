@@ -468,6 +468,13 @@ model HousemateProfile {
   sharing        String? // share, ask, separate
   chores         String? // schedule, flexible
   conflictStyle  String? // direct, gentle
+  // About-you fields used for Hinge-style discovery filtering
+  age    Int? // the housemate's own age
+  gender String? // man, woman, nonbinary
+  // Desired-roommate preferences (who this person wants to see / be seen by)
+  agePreferenceMin Int? // desired roommate minimum age
+  agePreferenceMax Int? // desired roommate maximum age
+  genderPreference String? // everyone, men, women, nonbinary
   // Discovery / display fields
   audience       String? // professional, student, parent, remote, retiree
   occupation     String?

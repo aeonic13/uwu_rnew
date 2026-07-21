@@ -858,6 +858,11 @@ async function main() {
       {
         userId: tenant1.id,
         audience: 'professional',
+        age: 27,
+        gender: 'woman',
+        agePreferenceMin: 22,
+        agePreferenceMax: 35,
+        genderPreference: 'everyone',
         occupation: 'Working Professional',
         location: 'San Diego, CA',
         budgetMin: 1200,
@@ -873,6 +878,11 @@ async function main() {
       {
         userId: tenant2.id,
         audience: 'student',
+        age: 24,
+        gender: 'man',
+        agePreferenceMin: 20,
+        agePreferenceMax: 30,
+        genderPreference: 'everyone',
         occupation: 'Graduate Student',
         location: 'San Diego, CA',
         budgetMin: 1000,

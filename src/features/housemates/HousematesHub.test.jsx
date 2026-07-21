@@ -92,13 +92,30 @@ describe('HousematesHub', () => {
     ).toBeInTheDocument()
   })
 
-  it('filters the discovery feed by audience', async () => {
+  it('shows Hinge-style age and gender discovery preferences', async () => {
     renderHub()
     await screen.findByText('Jordan Avery')
 
-    // Switch to the Students & Grads audience and verify a student renders.
-    fireEvent.click(screen.getByText('Students & Grads'))
+    expect(screen.getByText('Your preferences')).toBeInTheDocument()
+    expect(screen.getByText('Preferred age')).toBeInTheDocument()
+    expect(screen.getByLabelText('Minimum age')).toBeInTheDocument()
+    expect(screen.getByLabelText('Maximum age')).toBeInTheDocument()
 
-    expect(await screen.findByText('Alex Johnson')).toBeInTheDocument()
+    // The old life-stage audience buttons are gone.
+    expect(screen.queryByText('Students & Grads')).not.toBeInTheDocument()
+    expect(screen.queryByText('Young Professionals')).not.toBeInTheDocument()
+  })
+
+  it('filters the sample feed by gender preference', async () => {
+    renderHub()
+    // Alex Johnson (man) and Maria Delgado (woman) both start visible.
+    await screen.findByText('Alex Johnson')
+    expect(screen.getByText('Maria Delgado')).toBeInTheDocument()
+
+    // Choosing "Women" hides the men and keeps the women.
+    fireEvent.click(screen.getByRole('button', { name: 'Women' }))
+
+    expect(await screen.findByText('Maria Delgado')).toBeInTheDocument()
+    expect(screen.queryByText('Alex Johnson')).not.toBeInTheDocument()
   })
 })

@@ -17,6 +17,15 @@ export const housematesService = {
     if (params.lookingForRoom) {
       queryParams.append('lookingForRoom', 'true')
     }
+    if (params.ageMin != null) {
+      queryParams.append('ageMin', String(params.ageMin))
+    }
+    if (params.ageMax != null) {
+      queryParams.append('ageMax', String(params.ageMax))
+    }
+    if (params.gender && params.gender !== 'everyone') {
+      queryParams.append('gender', params.gender)
+    }
 
     const queryString = queryParams.toString()
     const url = queryString ? `/housemates?${queryString}` : '/housemates'

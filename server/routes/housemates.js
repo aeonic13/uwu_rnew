@@ -27,12 +27,23 @@ const editableFields = [
   'sharing',
   'chores',
   'conflictStyle',
+  'gender',
+  'genderPreference',
   'audience',
   'occupation',
   'location',
   'bio',
   'tags',
   'lookingForRoom',
+]
+
+// Integer profile fields that need parsing/coercion before hitting Prisma.
+const integerFields = [
+  'age',
+  'agePreferenceMin',
+  'agePreferenceMax',
+  'budgetMin',
+  'budgetMax',
 ]
 
 /**
@@ -54,11 +65,10 @@ function buildProfileData(body) {
     }
   }
 
-  if (body.budgetMin !== undefined && body.budgetMin !== null) {
-    data.budgetMin = parseInt(body.budgetMin, 10)
-  }
-  if (body.budgetMax !== undefined && body.budgetMax !== null) {
-    data.budgetMax = parseInt(body.budgetMax, 10)
+  for (const field of integerFields) {
+    if (body[field] === undefined || body[field] === null) continue
+    const parsed = parseInt(body[field], 10)
+    if (!Number.isNaN(parsed)) data[field] = parsed
   }
 
   return data
@@ -67,7 +77,7 @@ function buildProfileData(body) {
 // GET /api/housemates - list housemate profiles ranked by compatibility
 router.get('/', optionalAuth, async (req, res) => {
   try {
-    const { audience, lookingForRoom } = req.query
+    const { audience, lookingForRoom, ageMin, ageMax, gender } = req.query
 
     const where = { active: true }
 
@@ -77,6 +87,24 @@ router.get('/', optionalAuth, async (req, res) => {
 
     if (lookingForRoom === 'true') {
       where.lookingForRoom = true
+    }
+
+    // Age-range filter. Candidates who haven't shared an age still pass through
+    // (null age) so a rollout doesn't hide the existing dataset.
+    const minAge = parseInt(ageMin, 10)
+    const maxAge = parseInt(ageMax, 10)
+    const ageBounds = {}
+    if (!Number.isNaN(minAge)) ageBounds.gte = minAge
+    if (!Number.isNaN(maxAge)) ageBounds.lte = maxAge
+    if (Object.keys(ageBounds).length > 0) {
+      where.OR = [{ age: ageBounds }, { age: null }]
+    }
+
+    // Gender preference. "everyone" (or unset) applies no filter; a specific
+    // preference maps to the candidate's own gender.
+    const genderMap = { men: 'man', women: 'woman', nonbinary: 'nonbinary' }
+    if (gender && genderMap[gender]) {
+      where.gender = genderMap[gender]
     }
 
     // Exclude the current user from their own results.
