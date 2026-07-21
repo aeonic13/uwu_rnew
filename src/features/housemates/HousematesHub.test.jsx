@@ -13,6 +13,13 @@ vi.mock('../../services/housematesService', () => ({
   },
 }))
 
+// Provide a stable current user without needing the real AuthProvider.
+vi.mock('../../contexts/AuthContext', () => ({
+  useAuth: () => ({
+    user: { firstName: 'Test', lastName: 'User', verified: false },
+  }),
+}))
+
 function renderHub() {
   return render(
     <MemoryRouter>
@@ -144,5 +151,27 @@ describe('HousematesHub', () => {
     expect(
       await screen.findByText(/sample profile, so messaging is disabled/i)
     ).toBeInTheDocument()
+  })
+
+  it('lets you edit a bio and preview your own profile', async () => {
+    renderHub()
+    await screen.findByText('Jordan Avery')
+
+    fireEvent.click(screen.getByText('Compatibility Quiz'))
+
+    // Edit the short bio.
+    const bio = await screen.findByPlaceholderText(/couple of sentences/i)
+    fireEvent.change(bio, {
+      target: { value: 'Tidy night owl who loves to cook.' },
+    })
+
+    // Preview shows the bio back in a read-only, self-view modal.
+    fireEvent.click(screen.getByRole('button', { name: /preview my profile/i }))
+
+    const dialog = await screen.findByRole('dialog')
+    expect(dialog).toHaveTextContent('This is how others see you')
+    expect(dialog).toHaveTextContent('Tidy night owl who loves to cook.')
+    // No messaging action on your own profile.
+    expect(dialog).not.toHaveTextContent('Message for free')
   })
 })

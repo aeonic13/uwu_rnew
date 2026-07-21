@@ -34,6 +34,7 @@ import {
 } from 'lucide-react'
 import { housematesService } from '../../services/housematesService'
 import { messagingService } from '../../services/messagingService'
+import { useAuth } from '../../contexts/AuthContext'
 
 // Top-level categories for the Housemates tab. Kept intentionally simple and
 // fully clickable: each switches the section shown below. Safe Search is not
@@ -390,6 +391,7 @@ function HousemateProfileModal({
   onMessage,
   messaging,
   error,
+  preview = false,
 }) {
   if (!profile) return null
   const u = profile.user || {}
@@ -404,7 +406,11 @@ function HousemateProfileModal({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
       role="dialog"
       aria-modal="true"
-      aria-label={`${u.firstName || 'Housemate'} profile`}
+      aria-label={
+        preview
+          ? 'Your profile preview'
+          : `${u.firstName || 'Housemate'} profile`
+      }
       onClick={onClose}
     >
       <div
@@ -442,8 +448,14 @@ function HousemateProfileModal({
                 </div>
               )}
               <div className="mt-1 inline-flex items-center bg-white/20 rounded-full px-2 py-0.5 text-sm font-medium">
-                <Star size={13} className="fill-current mr-1" />
-                {profile.compatibilityScore}% match
+                {preview ? (
+                  'This is how others see you'
+                ) : (
+                  <>
+                    <Star size={13} className="fill-current mr-1" />
+                    {profile.compatibilityScore}% match
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -488,7 +500,7 @@ function HousemateProfileModal({
           {lifestyle.length > 0 && (
             <div>
               <h3 className="font-semibold text-sm text-gray-800 mb-2">
-                How they live
+                {preview ? 'How you live' : 'How they live'}
               </h3>
               <div className="space-y-1.5">
                 {lifestyle.map(row => (
@@ -508,18 +520,27 @@ function HousemateProfileModal({
 
           {error && <p className="text-sm text-red-600">{error}</p>}
 
-          <button
-            onClick={() => onMessage(profile)}
-            disabled={messaging}
-            className="w-full bg-blue-600 text-white py-2.5 rounded-lg flex items-center justify-center font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {messaging ? (
-              <Loader2 size={16} className="mr-1 animate-spin" />
-            ) : (
-              <MessageCircle size={16} className="mr-1" />
-            )}
-            Message for free
-          </button>
+          {preview ? (
+            <button
+              onClick={onClose}
+              className="w-full border border-gray-300 text-gray-700 py-2.5 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+            >
+              Close preview
+            </button>
+          ) : (
+            <button
+              onClick={() => onMessage(profile)}
+              disabled={messaging}
+              className="w-full bg-blue-600 text-white py-2.5 rounded-lg flex items-center justify-center font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {messaging ? (
+                <Loader2 size={16} className="mr-1 animate-spin" />
+              ) : (
+                <MessageCircle size={16} className="mr-1" />
+              )}
+              Message for free
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -533,19 +554,31 @@ function HousemateProfileModal({
  */
 function HousematesHub() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [activeCategory, setActiveCategory] = useState('discover')
   // Hinge-style discovery preferences.
   const [agePref, setAgePref] = useState(DEFAULT_AGE_PREF)
   const [genderPref, setGenderPref] = useState('everyone')
   const [quizAnswers, setQuizAnswers] = useState({})
-  // "About you" fields that make the viewer discoverable to others.
-  const [aboutYou, setAboutYou] = useState({ age: 25, gender: '' })
+  // Editable "About you" fields: identity (age/gender) + the display profile
+  // (occupation, location, budget, bio) others see.
+  const [aboutYou, setAboutYou] = useState({
+    age: 25,
+    gender: '',
+    occupation: '',
+    location: '',
+    budgetMin: '',
+    budgetMax: '',
+    bio: '',
+  })
   const [profiles, setProfiles] = useState([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [reloadFlag, setReloadFlag] = useState(false)
-  // Profile view (modal) + its messaging state.
+  // Profile view (modal) + its messaging state. isPreview flips the same modal
+  // into a read-only preview of the current user's own profile.
   const [selectedProfile, setSelectedProfile] = useState(null)
+  const [isPreview, setIsPreview] = useState(false)
   const [messaging, setMessaging] = useState(false)
   const [messageError, setMessageError] = useState('')
 
@@ -597,12 +630,15 @@ function HousematesHub() {
         if (Object.keys(saved).length > 0) {
           setQuizAnswers(prev => ({ ...saved, ...prev }))
         }
-        if (profile.age != null || profile.gender) {
-          setAboutYou(prev => ({
-            age: profile.age ?? prev.age,
-            gender: profile.gender ?? prev.gender,
-          }))
-        }
+        setAboutYou(prev => ({
+          age: profile.age ?? prev.age,
+          gender: profile.gender ?? prev.gender,
+          occupation: profile.occupation ?? prev.occupation,
+          location: profile.location ?? prev.location,
+          budgetMin: profile.budgetMin ?? prev.budgetMin,
+          budgetMax: profile.budgetMax ?? prev.budgetMax,
+          bio: profile.bio ?? prev.bio,
+        }))
         if (
           profile.agePreferenceMin != null ||
           profile.agePreferenceMax != null
@@ -627,7 +663,37 @@ function HousematesHub() {
   // Open the full profile view for a housemate.
   const openProfile = profile => {
     setMessageError('')
+    setIsPreview(false)
     setSelectedProfile(profile)
+  }
+
+  // Assemble the current user's profile the way others would see it, from the
+  // live draft in state (no round-trip needed), and open it in preview mode.
+  const openMyPreview = () => {
+    const toInt = v => {
+      const n = parseInt(v, 10)
+      return Number.isNaN(n) ? null : n
+    }
+    setMessageError('')
+    setIsPreview(true)
+    setSelectedProfile({
+      id: 'me-preview',
+      ...quizAnswers,
+      age: aboutYou.age,
+      gender: aboutYou.gender || null,
+      occupation: aboutYou.occupation || null,
+      location: aboutYou.location || null,
+      budgetMin: toInt(aboutYou.budgetMin),
+      budgetMax: toInt(aboutYou.budgetMax),
+      bio: aboutYou.bio || null,
+      tags: [],
+      user: {
+        firstName: user?.firstName || 'You',
+        lastName: user?.lastName || '',
+        avatarUrl: user?.avatarUrl || null,
+        verified: user?.verified || false,
+      },
+    })
   }
 
   // Start a real conversation with this housemate and land in that thread.
@@ -666,6 +732,11 @@ function HousematesHub() {
         ...quizAnswers,
         age: aboutYou.age,
         gender: aboutYou.gender || undefined,
+        occupation: aboutYou.occupation || undefined,
+        location: aboutYou.location || undefined,
+        budgetMin: aboutYou.budgetMin === '' ? undefined : aboutYou.budgetMin,
+        budgetMax: aboutYou.budgetMax === '' ? undefined : aboutYou.budgetMax,
+        bio: aboutYou.bio || undefined,
         agePreferenceMin: agePref.min,
         agePreferenceMax: agePref.max,
         genderPreference: genderPref,
@@ -979,6 +1050,111 @@ function HousematesHub() {
                     ))}
                   </div>
                 </div>
+
+                {/* Display profile — what others see on your card */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-1 block">
+                      Occupation
+                    </label>
+                    <input
+                      type="text"
+                      value={aboutYou.occupation}
+                      placeholder="e.g. Nurse, CS Student"
+                      maxLength={80}
+                      onChange={e =>
+                        setAboutYou(prev => ({
+                          ...prev,
+                          occupation: e.target.value,
+                        }))
+                      }
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-1 block">
+                      Location
+                    </label>
+                    <input
+                      type="text"
+                      value={aboutYou.location}
+                      placeholder="e.g. San Diego, CA"
+                      maxLength={80}
+                      onChange={e =>
+                        setAboutYou(prev => ({
+                          ...prev,
+                          location: e.target.value,
+                        }))
+                      }
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-1 block">
+                      Budget min ($/mo)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={aboutYou.budgetMin}
+                      placeholder="800"
+                      onChange={e =>
+                        setAboutYou(prev => ({
+                          ...prev,
+                          budgetMin: e.target.value,
+                        }))
+                      }
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-1 block">
+                      Budget max ($/mo)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={aboutYou.budgetMax}
+                      placeholder="1200"
+                      onChange={e =>
+                        setAboutYou(prev => ({
+                          ...prev,
+                          budgetMax: e.target.value,
+                        }))
+                      }
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-sm font-medium text-gray-700">
+                      Short bio
+                    </label>
+                    <span className="text-xs text-gray-400">
+                      {aboutYou.bio.length}/280
+                    </span>
+                  </div>
+                  <textarea
+                    rows={3}
+                    value={aboutYou.bio}
+                    maxLength={280}
+                    placeholder="A couple of sentences on who you are and what you're looking for in a home."
+                    onChange={e =>
+                      setAboutYou(prev => ({ ...prev, bio: e.target.value }))
+                    }
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <button
+                  onClick={openMyPreview}
+                  className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-700"
+                >
+                  <User size={16} className="mr-1" />
+                  Preview my profile
+                </button>
               </div>
 
               <div className="space-y-6">
@@ -1079,6 +1255,7 @@ function HousematesHub() {
         onMessage={handleConnect}
         messaging={messaging}
         error={messageError}
+        preview={isPreview}
       />
     </div>
   )
