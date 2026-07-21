@@ -30,6 +30,7 @@ import {
   SlidersHorizontal,
   Cake,
   User,
+  X,
 } from 'lucide-react'
 import { housematesService } from '../../services/housematesService'
 import { messagingService } from '../../services/messagingService'
@@ -357,6 +358,174 @@ function filterSample(agePref, genderPref) {
   })
 }
 
+// Readable gender labels for the profile view.
+const genderLabels = { man: 'Man', woman: 'Woman', nonbinary: 'Nonbinary' }
+
+// Turn a profile's stored lifestyle values into human-readable rows using the
+// quiz question text + option labels, so the profile view explains the match.
+function lifestyleSummary(profile) {
+  if (!profile) return []
+  const rows = []
+  for (const q of quizQuestions) {
+    const value = profile[q.id]
+    if (!value) continue
+    const opt = q.options.find(o => o.value === value)
+    rows.push({
+      id: q.id,
+      question: q.question,
+      label: opt ? opt.label : value,
+    })
+  }
+  return rows
+}
+
+/**
+ * Full housemate profile view, shown as a modal when a card is opened. Renders
+ * everything the card summarizes plus the lifestyle answers, and hosts the
+ * "Message for free" action.
+ */
+function HousemateProfileModal({
+  profile,
+  onClose,
+  onMessage,
+  messaging,
+  error,
+}) {
+  if (!profile) return null
+  const u = profile.user || {}
+  const lifestyle = lifestyleSummary(profile)
+  const budget =
+    profile.budgetMin && profile.budgetMax
+      ? `$${profile.budgetMin}–$${profile.budgetMax}/mo`
+      : null
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${u.firstName || 'Housemate'} profile`}
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-xl"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="relative p-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-t-2xl">
+          <button
+            onClick={onClose}
+            aria-label="Close profile"
+            className="absolute top-4 right-4 p-1 rounded-full hover:bg-white/20 transition-colors"
+          >
+            <X size={20} />
+          </button>
+          <div className="flex items-center gap-4">
+            <img
+              src={u.avatarUrl || 'https://via.placeholder.com/96?text=%20'}
+              alt={u.firstName || 'Housemate'}
+              className="w-20 h-20 rounded-full object-cover bg-white/20"
+            />
+            <div className="min-w-0">
+              <div className="flex items-center gap-1">
+                <h2 className="text-xl font-bold truncate">
+                  {u.firstName} {u.lastName}
+                  {profile.age ? `, ${profile.age}` : ''}
+                </h2>
+                {u.verified && (
+                  <CheckCircle size={18} className="flex-shrink-0" />
+                )}
+              </div>
+              {profile.occupation && (
+                <div className="flex items-center text-sm text-blue-50">
+                  <Briefcase size={14} className="mr-1" />
+                  {profile.occupation}
+                </div>
+              )}
+              <div className="mt-1 inline-flex items-center bg-white/20 rounded-full px-2 py-0.5 text-sm font-medium">
+                <Star size={13} className="fill-current mr-1" />
+                {profile.compatibilityScore}% match
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-4">
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
+            <span className="flex items-center">
+              <MapPin size={14} className="mr-1" />
+              {profile.location || 'Location flexible'}
+            </span>
+            {budget && (
+              <span className="font-medium text-gray-800">{budget}</span>
+            )}
+            {profile.gender && genderLabels[profile.gender] && (
+              <span className="flex items-center">
+                <User size={14} className="mr-1" />
+                {genderLabels[profile.gender]}
+              </span>
+            )}
+          </div>
+
+          {profile.bio && (
+            <p className="text-sm text-gray-700 leading-relaxed">
+              {profile.bio}
+            </p>
+          )}
+
+          {profile.tags && profile.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {profile.tags.map(tag => (
+                <span
+                  key={tag}
+                  className="bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-full"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {lifestyle.length > 0 && (
+            <div>
+              <h3 className="font-semibold text-sm text-gray-800 mb-2">
+                How they live
+              </h3>
+              <div className="space-y-1.5">
+                {lifestyle.map(row => (
+                  <div
+                    key={row.id}
+                    className="flex items-baseline justify-between gap-4 text-sm"
+                  >
+                    <span className="text-gray-500">{row.question}</span>
+                    <span className="font-medium text-gray-800 text-right flex-shrink-0">
+                      {row.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {error && <p className="text-sm text-red-600">{error}</p>}
+
+          <button
+            onClick={() => onMessage(profile)}
+            disabled={messaging}
+            className="w-full bg-blue-600 text-white py-2.5 rounded-lg flex items-center justify-center font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {messaging ? (
+              <Loader2 size={16} className="mr-1 animate-spin" />
+            ) : (
+              <MessageCircle size={16} className="mr-1" />
+            )}
+            Message for free
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /**
  * Housemates Hub - a people-first, compatibility-based matching tab. Categories
  * are simple and clickable. Data is loaded from the housemates API and falls
@@ -375,6 +544,10 @@ function HousematesHub() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [reloadFlag, setReloadFlag] = useState(false)
+  // Profile view (modal) + its messaging state.
+  const [selectedProfile, setSelectedProfile] = useState(null)
+  const [messaging, setMessaging] = useState(false)
+  const [messageError, setMessageError] = useState('')
 
   // Load matches whenever the discovery preferences change or a save triggers a
   // refresh. Falls back to sample data on error or empty results.
@@ -451,20 +624,38 @@ function HousematesHub() {
 
   const quizComplete = Object.keys(quizAnswers).length === quizQuestions.length
 
-  // Start a real conversation with this housemate; fall back to the messages
-  // list for sample profiles (no real user behind them).
+  // Open the full profile view for a housemate.
+  const openProfile = profile => {
+    setMessageError('')
+    setSelectedProfile(profile)
+  }
+
+  // Start a real conversation with this housemate and land in that thread.
+  // Sample profiles have no real user behind them, so messaging is explained
+  // rather than silently dumping the user into the messages list.
   const handleConnect = async profile => {
     const recipientId = profile?.user?.id
     if (!recipientId) {
-      navigate('/messages')
+      // Surface the explanation in the profile view (may be triggered from the
+      // card, where no modal is open yet).
+      setSelectedProfile(profile)
+      setMessageError(
+        'This is a sample profile, so messaging is disabled. Real matches you find here can be messaged directly.'
+      )
       return
     }
+    setMessaging(true)
+    setMessageError('')
     try {
       const data = await messagingService.startConversation(recipientId)
       const conversationId = data?.conversation?.id
-      navigate(conversationId ? `/messages/${conversationId}` : '/messages')
+      if (!conversationId) throw new Error('No conversation returned')
+      navigate(`/messages/${conversationId}`)
     } catch {
-      navigate('/messages')
+      setSelectedProfile(profile)
+      setMessageError('Could not start the conversation. Please try again.')
+    } finally {
+      setMessaging(false)
     }
   }
 
@@ -615,7 +806,16 @@ function HousematesHub() {
                   {profiles.map(p => (
                     <div
                       key={p.id}
-                      className="border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow bg-white"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => openProfile(p)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          openProfile(p)
+                        }
+                      }}
+                      className="text-left border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:border-blue-300 transition-all bg-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <div className="p-4 flex items-center gap-4">
                         <img
@@ -685,13 +885,28 @@ function HousematesHub() {
                             ))}
                           </div>
                         )}
-                        <button
-                          onClick={() => handleConnect(p)}
-                          className="w-full bg-blue-600 text-white py-2 rounded-lg flex items-center justify-center font-medium hover:bg-blue-700 transition-colors"
-                        >
-                          <MessageCircle size={16} className="mr-1" />
-                          Message for free
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={e => {
+                              e.stopPropagation()
+                              openProfile(p)
+                            }}
+                            className="flex-1 border border-blue-600 text-blue-600 py-2 rounded-lg flex items-center justify-center font-medium hover:bg-blue-50 transition-colors"
+                          >
+                            <User size={16} className="mr-1" />
+                            View profile
+                          </button>
+                          <button
+                            onClick={e => {
+                              e.stopPropagation()
+                              handleConnect(p)
+                            }}
+                            className="flex-1 bg-blue-600 text-white py-2 rounded-lg flex items-center justify-center font-medium hover:bg-blue-700 transition-colors"
+                          >
+                            <MessageCircle size={16} className="mr-1" />
+                            Message
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -856,6 +1071,15 @@ function HousematesHub() {
           </div>
         </aside>
       </div>
+
+      {/* Full profile view */}
+      <HousemateProfileModal
+        profile={selectedProfile}
+        onClose={() => setSelectedProfile(null)}
+        onMessage={handleConnect}
+        messaging={messaging}
+        error={messageError}
+      />
     </div>
   )
 }

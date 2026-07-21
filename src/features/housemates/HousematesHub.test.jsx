@@ -118,4 +118,31 @@ describe('HousematesHub', () => {
     expect(await screen.findByText('Maria Delgado')).toBeInTheDocument()
     expect(screen.queryByText('Alex Johnson')).not.toBeInTheDocument()
   })
+
+  it('opens a full profile view when a card is clicked', async () => {
+    renderHub()
+    await screen.findByText('Jordan Avery')
+
+    // Open Jordan's profile via the card's View profile button.
+    fireEvent.click(screen.getAllByRole('button', { name: /view profile/i })[0])
+
+    // The modal opens with the person's details and the full message action
+    // (cards only say "Message"; the profile view says "Message for free").
+    const dialog = await screen.findByRole('dialog')
+    expect(dialog).toHaveTextContent('Jordan Avery')
+    expect(dialog).toHaveTextContent('Software Engineer')
+    expect(dialog).toHaveTextContent('Message for free')
+  })
+
+  it('explains that sample profiles cannot be messaged instead of leaving the page', async () => {
+    renderHub()
+    await screen.findByText('Jordan Avery')
+
+    // Sample profiles have no real user; messaging should explain, not navigate.
+    fireEvent.click(screen.getAllByRole('button', { name: /^message$/i })[0])
+
+    expect(
+      await screen.findByText(/sample profile, so messaging is disabled/i)
+    ).toBeInTheDocument()
+  })
 })
