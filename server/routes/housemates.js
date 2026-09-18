@@ -1,7 +1,16 @@
 import express from 'express'
 import prisma from '../utils/prisma.js'
 import { authenticate, optionalAuth } from '../middleware/authenticate.js'
-import { computeCompatibility } from '../utils/compatibility.js'
+import {
+  computeCompatibility,
+  hasLifestyleAnswers,
+} from '../utils/compatibility.js'
+import {
+  GENDER_PREF_TO_IDENTITY,
+  satisfiesPreferencesOf,
+  locationsCompatible,
+} from '../utils/housemateMatch.js'
+import { sendNewHousemateAlert } from '../utils/email.js'
 
 const router = express.Router()
 
@@ -35,6 +44,7 @@ const editableFields = [
   'bio',
   'tags',
   'lookingForRoom',
+  'active',
 ]
 
 // Integer profile fields that need parsing/coercion before hitting Prisma.
@@ -45,6 +55,17 @@ const integerFields = [
   'budgetMin',
   'budgetMax',
 ]
+
+// Minimum score before we email someone about a new arrival — alerts should
+// feel like good news, not noise.
+const ALERT_MIN_SCORE = 70
+
+// Discovery page size bounds.
+const DEFAULT_LIMIT = 24
+const MAX_LIMIT = 100
+
+// Accepted report reasons (mirrors the client's report form).
+const REPORT_REASONS = ['spam', 'inappropriate', 'harassment', 'fake', 'other']
 
 /**
  * Build a Prisma-ready data object from a request body, only picking known
@@ -58,8 +79,8 @@ function buildProfileData(body) {
 
     if (field === 'tags') {
       data.tags = Array.isArray(body.tags) ? body.tags : []
-    } else if (field === 'lookingForRoom') {
-      data.lookingForRoom = Boolean(body.lookingForRoom)
+    } else if (field === 'lookingForRoom' || field === 'active') {
+      data[field] = Boolean(body[field])
     } else {
       data[field] = body[field]
     }
@@ -74,20 +95,28 @@ function buildProfileData(body) {
   return data
 }
 
+/**
+ * User ids the given user must never see (and must never see them): both
+ * directions of any block they are part of.
+ */
+async function blockedUserIds(userId) {
+  const blocks = await prisma.userBlock.findMany({
+    where: { OR: [{ blockerId: userId }, { blockedId: userId }] },
+    select: { blockerId: true, blockedId: true },
+  })
+  return blocks.map(b => (b.blockerId === userId ? b.blockedId : b.blockerId))
+}
+
 // GET /api/housemates - list housemate profiles ranked by compatibility
 router.get('/', optionalAuth, async (req, res) => {
   try {
-    const { audience, lookingForRoom, ageMin, ageMax, gender } = req.query
+    const { lookingForRoom, ageMin, ageMax, gender, location } = req.query
 
     const where = { active: true }
 
-    if (audience && audience !== 'all') {
-      where.audience = audience
-    }
-
-    if (lookingForRoom === 'true') {
-      where.lookingForRoom = true
-    }
+    // "Has a place" vs "looking for a place" filter (omit for everyone).
+    if (lookingForRoom === 'true') where.lookingForRoom = true
+    if (lookingForRoom === 'false') where.lookingForRoom = false
 
     // Age-range filter. Candidates who haven't shared an age still pass through
     // (null age) so a rollout doesn't hide the existing dataset.
@@ -100,16 +129,28 @@ router.get('/', optionalAuth, async (req, res) => {
       where.OR = [{ age: ageBounds }, { age: null }]
     }
 
-    // Gender preference. "everyone" (or unset) applies no filter; a specific
-    // preference maps to the candidate's own gender.
-    const genderMap = { men: 'man', women: 'woman', nonbinary: 'nonbinary' }
-    if (gender && genderMap[gender]) {
-      where.gender = genderMap[gender]
+    // Gender preference: comma list of preference ids ("women,nonbinary").
+    // Unset or "everyone" applies no filter.
+    if (gender && gender !== 'everyone') {
+      const identities = gender
+        .split(',')
+        .map(part => GENDER_PREF_TO_IDENTITY[part.trim()])
+        .filter(Boolean)
+      if (identities.length > 0) {
+        where.gender = { in: identities }
+      }
     }
 
-    // Exclude the current user from their own results.
+    // Rough locality filter (v1): case-insensitive substring on the free-text
+    // location. A lifestyle match in another city is not a match.
+    if (location && location.trim()) {
+      where.location = { contains: location.trim(), mode: 'insensitive' }
+    }
+
+    // Exclude the current user and anyone in a block with them.
     if (req.user) {
-      where.userId = { not: req.user.id }
+      const excluded = await blockedUserIds(req.user.id)
+      where.userId = { notIn: [req.user.id, ...excluded] }
     }
 
     // Look up the viewer's own profile so we can score against it.
@@ -126,15 +167,39 @@ router.get('/', optionalAuth, async (req, res) => {
       orderBy: { updatedAt: 'desc' },
     })
 
-    // Attach a compatibility score and sort by it (highest first).
-    const scored = profiles
+    // Consent pass: a candidate's own age/gender preferences decide who may
+    // see them — the mirror image of the viewer's filters above.
+    const visible = profiles.filter(profile =>
+      satisfiesPreferencesOf(profile, viewerProfile)
+    )
+
+    // Attach compatibility (null = unknown, never fabricated) and sort by it.
+    // The stable sort keeps the updatedAt ordering inside each score band, so
+    // unscored feeds (viewer hasn't taken the quiz) stay freshest-first.
+    const scored = visible
       .map(profile => ({
         ...profile,
         compatibilityScore: computeCompatibility(viewerProfile, profile),
       }))
-      .sort((a, b) => b.compatibilityScore - a.compatibilityScore)
+      .sort(
+        (a, b) => (b.compatibilityScore ?? -1) - (a.compatibilityScore ?? -1)
+      )
 
-    res.json({ profiles: scored, total: scored.length })
+    // Post-score pagination: scoring needs the full candidate set, so we
+    // slice afterwards. Fine at current scale; revisit with a real ranker.
+    const limit = Math.min(
+      Math.max(parseInt(req.query.limit, 10) || DEFAULT_LIMIT, 1),
+      MAX_LIMIT
+    )
+    const offset = Math.max(parseInt(req.query.offset, 10) || 0, 0)
+    const page = scored.slice(offset, offset + limit)
+
+    res.json({
+      profiles: page,
+      total: scored.length,
+      hasMore: offset + page.length < scored.length,
+      viewerHasQuiz: hasLifestyleAnswers(viewerProfile),
+    })
   } catch (error) {
     console.error('Get housemates error:', error)
     res.status(500).json({ error: { message: 'Failed to get housemates' } })
@@ -156,10 +221,16 @@ router.get('/me', authenticate, async (req, res) => {
   }
 })
 
-// PUT /api/housemates/me - create or update current user's profile (upsert)
+// PUT /api/housemates/me - create or update current user's profile (upsert).
+// Also accepts { active: false } to pause discoverability without losing data.
 router.put('/me', authenticate, async (req, res) => {
   try {
     const data = buildProfileData(req.body)
+
+    const existing = await prisma.housemateProfile.findUnique({
+      where: { userId: req.user.id },
+      select: { id: true },
+    })
 
     const profile = await prisma.housemateProfile.upsert({
       where: { userId: req.user.id },
@@ -173,13 +244,131 @@ router.put('/me', authenticate, async (req, res) => {
     })
 
     res.json({ message: 'Profile saved', profile })
+
+    // New-housemate alerts: only on first creation of a scoreable, active
+    // profile, and fanned out AFTER responding so saving is never slowed or
+    // failed by notification work. Best-effort by design.
+    if (!existing && profile.active && hasLifestyleAnswers(profile)) {
+      notifyNewHousemateMatches(profile).catch(err =>
+        console.error('New-housemate alert fan-out failed:', err?.message)
+      )
+    }
   } catch (error) {
     console.error('Save housemate profile error:', error)
     res.status(400).json({ error: { message: 'Failed to save profile' } })
   }
 })
 
-// GET /api/housemates/:id - single housemate profile with compatibility
+// DELETE /api/housemates/me - permanently remove the current user's profile.
+router.delete('/me', authenticate, async (req, res) => {
+  try {
+    await prisma.housemateProfile.deleteMany({
+      where: { userId: req.user.id },
+    })
+    res.json({ message: 'Profile deleted' })
+  } catch (error) {
+    console.error('Delete housemate profile error:', error)
+    res.status(500).json({ error: { message: 'Failed to delete profile' } })
+  }
+})
+
+// POST /api/housemates/:id/block - block the user behind a profile. Removes
+// both people from each other's discovery and stops messaging between them.
+router.post('/:id/block', authenticate, async (req, res) => {
+  try {
+    const profile = await prisma.housemateProfile.findUnique({
+      where: { id: req.params.id },
+      select: { userId: true },
+    })
+
+    if (!profile || profile.userId === req.user.id) {
+      return res.status(404).json({ error: { message: 'Profile not found' } })
+    }
+
+    await prisma.userBlock.upsert({
+      where: {
+        blockerId_blockedId: {
+          blockerId: req.user.id,
+          blockedId: profile.userId,
+        },
+      },
+      update: {},
+      create: { blockerId: req.user.id, blockedId: profile.userId },
+    })
+
+    res.json({ message: 'Blocked' })
+  } catch (error) {
+    console.error('Block housemate error:', error)
+    res.status(500).json({ error: { message: 'Failed to block' } })
+  }
+})
+
+// DELETE /api/housemates/:id/block - undo a block the current user placed.
+router.delete('/:id/block', authenticate, async (req, res) => {
+  try {
+    const profile = await prisma.housemateProfile.findUnique({
+      where: { id: req.params.id },
+      select: { userId: true },
+    })
+
+    if (!profile) {
+      return res.status(404).json({ error: { message: 'Profile not found' } })
+    }
+
+    await prisma.userBlock.deleteMany({
+      where: { blockerId: req.user.id, blockedId: profile.userId },
+    })
+
+    res.json({ message: 'Unblocked' })
+  } catch (error) {
+    console.error('Unblock housemate error:', error)
+    res.status(500).json({ error: { message: 'Failed to unblock' } })
+  }
+})
+
+// POST /api/housemates/:id/report - report the user behind a profile.
+router.post('/:id/report', authenticate, async (req, res) => {
+  try {
+    const { reason, details } = req.body
+
+    if (!REPORT_REASONS.includes(reason)) {
+      return res
+        .status(400)
+        .json({ error: { message: 'A valid reason is required' } })
+    }
+
+    const profile = await prisma.housemateProfile.findUnique({
+      where: { id: req.params.id },
+      select: { userId: true },
+    })
+
+    if (!profile || profile.userId === req.user.id) {
+      return res.status(404).json({ error: { message: 'Profile not found' } })
+    }
+
+    await prisma.userReport.create({
+      data: {
+        reason,
+        details:
+          typeof details === 'string' && details.trim()
+            ? details.trim().slice(0, 1000)
+            : null,
+        reporterId: req.user.id,
+        reportedId: profile.userId,
+      },
+    })
+
+    res.status(201).json({ message: 'Report received' })
+  } catch (error) {
+    console.error('Report housemate error:', error)
+    res.status(500).json({ error: { message: 'Failed to report' } })
+  }
+})
+
+// GET /api/housemates/:id - single housemate profile with compatibility.
+// Applies the same consent rules as the list: a profile hidden from this
+// viewer (block in either direction, or the owner's preferences exclude
+// them) is a 404, not a leak.
 router.get('/:id', optionalAuth, async (req, res) => {
   try {
     const { id } = req.params
@@ -195,9 +384,22 @@ router.get('/:id', optionalAuth, async (req, res) => {
 
     let viewerProfile = null
     if (req.user) {
+      if (profile.userId !== req.user.id) {
+        const excluded = await blockedUserIds(req.user.id)
+        if (excluded.includes(profile.userId)) {
+          return res
+            .status(404)
+            .json({ error: { message: 'Profile not found' } })
+        }
+      }
       viewerProfile = await prisma.housemateProfile.findUnique({
         where: { userId: req.user.id },
       })
+    }
+
+    const isOwner = req.user && profile.userId === req.user.id
+    if (!isOwner && !satisfiesPreferencesOf(profile, viewerProfile)) {
+      return res.status(404).json({ error: { message: 'Profile not found' } })
     }
 
     res.json({
@@ -211,5 +413,42 @@ router.get('/:id', optionalAuth, async (req, res) => {
     res.status(500).json({ error: { message: 'Failed to get profile' } })
   }
 })
+
+/**
+ * Email everyone who would be a strong mutual match with a newly created
+ * profile. Mirrors the saved-search listing alerts: one best-effort email per
+ * user, respecting blocks, mutual preferences, locality, and a score floor.
+ */
+async function notifyNewHousemateMatches(newProfile) {
+  const [recipients, excluded] = await Promise.all([
+    prisma.housemateProfile.findMany({
+      where: { active: true, userId: { not: newProfile.userId } },
+      include: {
+        user: { select: { id: true, email: true, firstName: true } },
+      },
+    }),
+    blockedUserIds(newProfile.userId),
+  ])
+  const excludedSet = new Set(excluded)
+
+  for (const recipient of recipients) {
+    if (excludedSet.has(recipient.userId)) continue
+    // The recipient needs quiz answers of their own for a real score.
+    if (!hasLifestyleAnswers(recipient)) continue
+    // Both directions of consent, plus rough locality.
+    if (!satisfiesPreferencesOf(recipient, newProfile)) continue
+    if (!satisfiesPreferencesOf(newProfile, recipient)) continue
+    if (!locationsCompatible(recipient.location, newProfile.location)) continue
+
+    const score = computeCompatibility(recipient, newProfile)
+    if (score == null || score < ALERT_MIN_SCORE) continue
+
+    if (recipient.user?.email) {
+      sendNewHousemateAlert(recipient.user, newProfile, score).catch(err =>
+        console.error('New-housemate alert email failed:', err?.message)
+      )
+    }
+  }
+}
 
 export default router

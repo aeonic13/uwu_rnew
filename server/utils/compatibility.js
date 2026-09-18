@@ -67,26 +67,40 @@ const DEALBREAKERS = [
   { key: 'pets', pair: ['love', 'none'], cap: 55 },
 ]
 
+// Budget overlap is scored as one extra dimension. It is the most objective
+// compatibility signal we collect: two people whose budgets never overlap
+// cannot realistically split a place.
+const BUDGET_WEIGHT = 1.0
+
 /**
  * Returns true when a profile has at least one lifestyle answer filled in.
  */
-function hasLifestyleAnswers(profile) {
+export function hasLifestyleAnswers(profile) {
   if (!profile) return false
   return DIMENSIONS.some(d => Boolean(profile[d.key]))
 }
 
 /**
- * Deterministic fallback score used when the viewer has not completed their own
- * lifestyle quiz yet. Based purely on how complete the candidate profile is, so
- * the value is stable across requests (no randomness).
- *
- * @param {object} candidate - The candidate housemate profile
- * @returns {number} A score between 70 and 95
+ * Fraction (0-1) of budget-range overlap relative to the narrower range, or
+ * null when either side hasn't shared a usable budget.
  */
-function fallbackScore(candidate) {
-  const tagCount = Array.isArray(candidate?.tags) ? candidate.tags.length : 0
-  const score = 70 + tagCount * 5
-  return Math.min(95, score)
+function budgetOverlap(viewer, candidate) {
+  const a = normalizeBudget(viewer)
+  const b = normalizeBudget(candidate)
+  if (!a || !b) return null
+  const overlap = Math.min(a.max, b.max) - Math.max(a.min, b.min)
+  if (overlap <= 0) return 0
+  const narrower = Math.min(a.max - a.min, b.max - b.min)
+  // Identical point budgets (zero-width ranges) that overlap are a full match.
+  if (narrower <= 0) return 1
+  return Math.min(1, overlap / narrower)
+}
+
+function normalizeBudget(profile) {
+  const min = profile?.budgetMin
+  const max = profile?.budgetMax
+  if (min == null || max == null || max < min) return null
+  return { min, max }
 }
 
 /** Match quality for one dimension: 1 exact, 0.5 adjacent, 0 opposed. */
@@ -99,19 +113,21 @@ function dimensionMatch(dim, a, b) {
 }
 
 /**
- * Compute a 0-100 compatibility score between a viewer and a candidate profile.
+ * Compute a 0-100 compatibility score between a viewer and a candidate
+ * profile, or null when a real comparison is impossible (viewer has no quiz
+ * answers, or the two profiles share no answered dimensions). Callers should
+ * treat null as "unknown" and never invent a number for it — an honest
+ * "take the quiz" beats a fabricated percentage.
  *
  * @param {object|null} viewer - The current user's housemate profile (or null)
  * @param {object} candidate - The candidate housemate profile to score
- * @returns {number} Compatibility score from 0 to 100
+ * @returns {number|null} Compatibility score from 0 to 100, or null if unknown
  */
 export function computeCompatibility(viewer, candidate) {
-  if (!candidate) return 0
+  if (!candidate) return null
 
-  // If the viewer has not answered any lifestyle questions, we cannot compare
-  // directly, so fall back to a stable completeness-based score.
   if (!hasLifestyleAnswers(viewer)) {
-    return fallbackScore(candidate)
+    return null
   }
 
   let earned = 0
@@ -128,9 +144,15 @@ export function computeCompatibility(viewer, candidate) {
     }
   }
 
-  // If there were no overlapping answers, fall back rather than reporting 0%.
+  const budget = budgetOverlap(viewer, candidate)
+  if (budget != null) {
+    comparableWeight += BUDGET_WEIGHT
+    earned += BUDGET_WEIGHT * budget
+  }
+
+  // No overlapping answers at all: the score is unknown, not zero.
   if (comparableWeight === 0) {
-    return fallbackScore(candidate)
+    return null
   }
 
   let score = Math.round((earned / comparableWeight) * 100)
@@ -149,4 +171,4 @@ export function computeCompatibility(viewer, candidate) {
   return Math.max(0, Math.min(100, score))
 }
 
-export default { computeCompatibility }
+export default { computeCompatibility, hasLifestyleAnswers }

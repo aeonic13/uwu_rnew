@@ -516,6 +516,42 @@ export async function sendNewListingAlert(recipient, listing) {
   })
 }
 
+/**
+ * Alert a user that a compatible new housemate joined. Only sent when the
+ * pair passes mutual discovery preferences and scores well, so this stays a
+ * "good news" email rather than churny noise.
+ */
+export async function sendNewHousemateAlert(recipient, profile, score) {
+  const hubUrl = `${process.env.CLIENT_URL}/housemates`
+  const name = profile.user?.firstName || 'A new housemate'
+  const where = profile.location ? ` in ${profile.location}` : ''
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+      <h2 style="color: #fc6a03;">A new housemate matches you 🏡</h2>
+      <p>Hi ${recipient.firstName},</p>
+      <p><strong>${name}</strong>${where} just joined Housemates and you two look like a strong fit:</p>
+      <div style="background: #f9fafb; padding: 15px; border-radius: 6px; margin: 20px 0;">
+        <strong>${score}% Compatibility Score</strong><br>
+        ${profile.occupation ? `${profile.occupation}<br>` : ''}
+        ${
+          profile.budgetMin && profile.budgetMax
+            ? `Budget $${profile.budgetMin.toLocaleString()}–$${profile.budgetMax.toLocaleString()}/mo`
+            : ''
+        }
+      </div>
+      <p style="margin-top: 24px;"><a href="${hubUrl}" style="background: #fc6a03; color: #fff; padding: 10px 18px; border-radius: 6px; text-decoration: none;">See your match</a></p>
+      <p style="color: #888; font-size: 13px; margin-top: 24px;">You get these because your housemate profile is active. Pause it from the Housemates tab to stop.</p>
+      <p style="color: #888; font-size: 13px;">— The Rentra Team</p>
+    </div>
+  `
+  return sendEmail({
+    to: recipient.email,
+    subject: `New housemate match${where}: ${name} (${score}% fit)`,
+    html,
+    text: `Hi ${recipient.firstName}, ${name}${where} just joined Rentra Housemates and matches you at ${score}%. ${hubUrl}`,
+  })
+}
+
 export default {
   sendEmail,
   sendVerificationEmail,
@@ -526,6 +562,7 @@ export default {
   sendCosignerInvitation,
   sendRentReminderEmail,
   sendNewListingAlert,
+  sendNewHousemateAlert,
 }
 
 /**

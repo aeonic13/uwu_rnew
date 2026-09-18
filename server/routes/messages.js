@@ -5,6 +5,24 @@ import { sendMessageNotification } from '../utils/email.js'
 
 const router = express.Router()
 
+/**
+ * True when a block exists in either direction between two users. Used to
+ * refuse new conversations and further messages; the wording stays neutral so
+ * a blocked user can't tell whether they were blocked or blocked someone.
+ */
+async function blockExistsBetween(userIdA, userIdB) {
+  const block = await prisma.userBlock.findFirst({
+    where: {
+      OR: [
+        { blockerId: userIdA, blockedId: userIdB },
+        { blockerId: userIdB, blockedId: userIdA },
+      ],
+    },
+    select: { id: true },
+  })
+  return Boolean(block)
+}
+
 /** Escape HTML special chars so message text is safe inside the email body. */
 function escapeHtml(text) {
   return String(text)
@@ -291,6 +309,19 @@ router.post('/', authenticate, async (req, res) => {
       })
     }
 
+    // A block placed mid-conversation stops further messages both ways.
+    const participants = await prisma.conversationUser.findMany({
+      where: { conversationId, userId: { not: userId } },
+      select: { userId: true },
+    })
+    for (const participant of participants) {
+      if (await blockExistsBetween(userId, participant.userId)) {
+        return res.status(403).json({
+          error: { message: 'You can no longer message this person' },
+        })
+      }
+    }
+
     // Create the message
     const message = await prisma.message.create({
       data: {
@@ -413,6 +444,13 @@ router.post('/start-conversation', authenticate, async (req, res) => {
     if (!recipient) {
       return res.status(404).json({
         error: { message: 'Recipient not found' },
+      })
+    }
+
+    // Blocks (either direction) prevent starting a conversation at all.
+    if (await blockExistsBetween(userId, recipientId)) {
+      return res.status(403).json({
+        error: { message: 'You cannot message this person' },
       })
     }
 

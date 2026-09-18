@@ -31,6 +31,11 @@ import {
   Cake,
   User,
   X,
+  Flag,
+  Pause,
+  Play,
+  Trash2,
+  Search,
 } from 'lucide-react'
 import { housematesService } from '../../services/housematesService'
 import { messagingService } from '../../services/messagingService'
@@ -57,22 +62,29 @@ const categories = [
   },
 ]
 
-// Hinge-style discovery preferences. Instead of life-stage buckets, people
-// filter the feed by the age range and gender they want in a housemate.
+// Hinge-style discovery preferences. People filter the feed by the age range
+// and gender(s) they want in a housemate; the same preferences also control
+// who gets to see THEM (mutual filtering, enforced server-side).
 const AGE_FLOOR = 18
 const AGE_CEIL = 75
 const DEFAULT_AGE_PREF = { min: AGE_FLOOR, max: 45 }
 
-// Desired-roommate gender options (what the viewer wants to see).
-const genderPreferences = [
-  { id: 'everyone', label: 'Everyone' },
+// How long to wait after a filter change before hitting the API, so dragging
+// the age slider fires one request instead of one per tick.
+const FILTER_DEBOUNCE_MS = 300
+
+// Discovery page size; more loads via the Load more button.
+const PAGE_SIZE = 24
+
+// Desired-roommate gender options (multi-select; empty selection = everyone).
+const genderPreferenceOptions = [
   { id: 'men', label: 'Men' },
   { id: 'women', label: 'Women' },
   { id: 'nonbinary', label: 'Nonbinary' },
 ]
 
 // The viewer's own gender identity (stored on their profile so others can
-// filter). Values match the backend and genderPreferences mapping.
+// filter). Values match the backend and gender preference mapping.
 const genderIdentities = [
   { id: 'man', label: 'Man' },
   { id: 'woman', label: 'Woman' },
@@ -86,9 +98,26 @@ const genderPrefToIdentity = {
   nonbinary: 'nonbinary',
 }
 
+// "Has a place" vs "looking for a place" discovery filter.
+const lookingFilterOptions = [
+  { id: 'any', label: 'Everyone', icon: Users },
+  { id: 'true', label: 'Looking for a place', icon: Search },
+  { id: 'false', label: 'Has a place', icon: Home },
+]
+
+// Report reasons; ids match the backend's accepted set.
+const reportReasons = [
+  { id: 'spam', label: 'Spam or scam' },
+  { id: 'inappropriate', label: 'Inappropriate content' },
+  { id: 'harassment', label: 'Harassment' },
+  { id: 'fake', label: 'Fake profile' },
+  { id: 'other', label: 'Something else' },
+]
+
 /**
  * Dual-handle age range slider (min–max), styled like a dating app. Two
  * overlaid range inputs share a track; only the thumbs are interactive.
+ * At the ceiling the range is open-ended (75+), not capped at 75.
  */
 function AgeRangeSlider({ value, onChange }) {
   const span = AGE_CEIL - AGE_FLOOR
@@ -141,6 +170,7 @@ function AgeRangeSlider({ value, onChange }) {
 
 // Sample housemate profiles used as a fallback when the API is unavailable.
 // Shaped exactly like the API response so the same render code works for both.
+// Their scores are illustrative and always labeled "Example".
 const sampleHousemates = [
   {
     id: 'sample-1',
@@ -349,18 +379,26 @@ const safetyTips = [
   'Verify that profile details stay consistent across your conversations.',
   'Watch for urgency pressure or any request for payment before a viewing.',
   'Meet potential housemates in a public place first.',
+  'Use Block or Report on any profile — blocked people can no longer see or message you.',
   'Trust your instincts — stop replying to anyone who makes you uncomfortable.',
 ]
 
 // Client-side mirror of the backend discovery filter, used for the offline
-// sample fallback. Candidates without an age still pass the age filter.
-function filterSample(agePref, genderPref) {
-  const wantGender = genderPrefToIdentity[genderPref]
+// sample fallback. Candidates without an age still pass the age filter, and
+// an age preference at the ceiling is open-ended (75+).
+function filterSample(agePref, genderPrefs, location) {
+  const wantIdentities = genderPrefs.map(g => genderPrefToIdentity[g])
+  const locationNeedle = (location || '').trim().toLowerCase()
   return sampleHousemates.filter(h => {
     const ageOk =
-      h.age == null || (h.age >= agePref.min && h.age <= agePref.max)
-    const genderOk = !wantGender || h.gender === wantGender
-    return ageOk && genderOk
+      h.age == null ||
+      (h.age >= agePref.min &&
+        (agePref.max >= AGE_CEIL || h.age <= agePref.max))
+    const genderOk =
+      wantIdentities.length === 0 || wantIdentities.includes(h.gender)
+    const locationOk =
+      !locationNeedle || h.location.toLowerCase().includes(locationNeedle)
+    return ageOk && genderOk && locationOk
   })
 }
 
@@ -388,16 +426,30 @@ function lifestyleSummary(profile) {
 /**
  * Full housemate profile view, shown as a modal when a card is opened. Renders
  * everything the card summarizes plus the lifestyle answers, and hosts the
- * "Message for free" action.
+ * "Message for free" action alongside Block and Report safety controls.
  */
 function HousemateProfileModal({
   profile,
   onClose,
   onMessage,
+  onBlock,
+  onReport,
+  onTakeQuiz,
   messaging,
   error,
   preview = false,
 }) {
+  // Safety-control UI state. The parent renders this modal with
+  // key={profile.id}, so a different profile remounts it and resets all of
+  // this naturally — no effect needed.
+  const [blockConfirm, setBlockConfirm] = useState(false)
+  const [blocking, setBlocking] = useState(false)
+  const [reportOpen, setReportOpen] = useState(false)
+  const [reportReason, setReportReason] = useState('spam')
+  const [reportDetails, setReportDetails] = useState('')
+  const [reportSent, setReportSent] = useState(false)
+  const [reporting, setReporting] = useState(false)
+
   if (!profile) return null
   const u = profile.user || {}
   const lifestyle = lifestyleSummary(profile)
@@ -405,6 +457,33 @@ function HousemateProfileModal({
     profile.budgetMin && profile.budgetMax
       ? `$${profile.budgetMin}–$${profile.budgetMax}/mo`
       : null
+  // Sample profiles have no real user behind them, so safety controls and
+  // messaging don't apply.
+  const isReal = !preview && !profile.isSample && Boolean(u.id)
+
+  const handleBlockClick = async () => {
+    if (!blockConfirm) {
+      setBlockConfirm(true)
+      return
+    }
+    setBlocking(true)
+    await onBlock(profile)
+    setBlocking(false)
+  }
+
+  const handleReportSubmit = async () => {
+    setReporting(true)
+    try {
+      await onReport(profile, {
+        reason: reportReason,
+        details: reportDetails.trim() || undefined,
+      })
+      setReportSent(true)
+    } catch {
+      // Leave the form open; the shared error line explains.
+    }
+    setReporting(false)
+  }
 
   return (
     <div
@@ -462,11 +541,18 @@ function HousemateProfileModal({
               <div className="mt-1 inline-flex items-center bg-white/20 rounded-full px-2 py-0.5 text-sm font-medium">
                 {preview ? (
                   'This is how others see you'
-                ) : (
+                ) : profile.compatibilityScore != null ? (
                   <>
                     <Star size={13} className="fill-current mr-1" />
                     {profile.compatibilityScore}% match
                   </>
+                ) : (
+                  <button
+                    onClick={onTakeQuiz}
+                    className="underline underline-offset-2"
+                  >
+                    Take the quiz to see your match
+                  </button>
                 )}
               </div>
             </div>
@@ -553,6 +639,87 @@ function HousemateProfileModal({
               Message for free
             </button>
           )}
+
+          {/* Safety controls — real profiles only */}
+          {isReal && (
+            <div className="pt-2 border-t border-gray-100">
+              {reportSent ? (
+                <p className="text-sm text-green-700">
+                  Thanks — our team will review this report.
+                </p>
+              ) : reportOpen ? (
+                <div className="space-y-2">
+                  <label
+                    htmlFor="report-reason"
+                    className="text-sm font-medium text-gray-700 block"
+                  >
+                    Why are you reporting this profile?
+                  </label>
+                  <select
+                    id="report-reason"
+                    value={reportReason}
+                    onChange={e => setReportReason(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {reportReasons.map(r => (
+                      <option key={r.id} value={r.id}>
+                        {r.label}
+                      </option>
+                    ))}
+                  </select>
+                  <textarea
+                    rows={2}
+                    value={reportDetails}
+                    maxLength={1000}
+                    placeholder="Anything that helps us review (optional)"
+                    onChange={e => setReportDetails(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleReportSubmit}
+                      disabled={reporting}
+                      className="flex-1 bg-red-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors disabled:opacity-50"
+                    >
+                      {reporting ? 'Sending…' : 'Submit report'}
+                    </button>
+                    <button
+                      onClick={() => setReportOpen(false)}
+                      className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center gap-6 text-sm">
+                  <button
+                    onClick={handleBlockClick}
+                    disabled={blocking}
+                    className={`flex items-center gap-1 transition-colors disabled:opacity-50 ${
+                      blockConfirm
+                        ? 'text-red-600 font-semibold hover:text-red-700'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    <Ban size={14} />
+                    {blocking
+                      ? 'Blocking…'
+                      : blockConfirm
+                        ? 'Confirm block'
+                        : 'Block'}
+                  </button>
+                  <button
+                    onClick={() => setReportOpen(true)}
+                    className="flex items-center gap-1 text-gray-500 hover:text-gray-700 transition-colors"
+                  >
+                    <Flag size={14} />
+                    Report
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -568,25 +735,41 @@ function HousematesHub() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [activeCategory, setActiveCategory] = useState('discover')
-  // Hinge-style discovery preferences.
+  // Discovery preferences. genderPref is a multi-select (empty = everyone),
+  // and the same values are saved as consent settings on the profile.
   const [agePref, setAgePref] = useState(DEFAULT_AGE_PREF)
-  const [genderPref, setGenderPref] = useState('everyone')
+  const [genderPref, setGenderPref] = useState([])
+  const [locationFilter, setLocationFilter] = useState('')
+  const [lookingFilter, setLookingFilter] = useState('any')
   const [quizAnswers, setQuizAnswers] = useState({})
   // Editable "About you" fields: identity (age/gender) + the display profile
-  // (occupation, location, budget, bio) others see.
+  // (occupation, location, budget, bio) others see. age and lookingForRoom
+  // stay null until the user actually sets them — we never invent a value.
   const [aboutYou, setAboutYou] = useState({
-    age: 25,
+    age: null,
     gender: '',
     occupation: '',
     location: '',
     budgetMin: '',
     budgetMax: '',
     bio: '',
+    lookingForRoom: null,
   })
   const [profiles, setProfiles] = useState([])
+  const [hasMore, setHasMore] = useState(false)
+  const [viewerHasQuiz, setViewerHasQuiz] = useState(true)
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [saving, setSaving] = useState(false)
   const [reloadFlag, setReloadFlag] = useState(false)
+  // Whether the user has a saved profile and whether it is discoverable.
+  const [myProfileMeta, setMyProfileMeta] = useState({
+    exists: false,
+    active: true,
+  })
+  const [togglingActive, setTogglingActive] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   // Profile view (modal) + its messaging state. isPreview flips the same modal
   // into a read-only preview of the current user's own profile.
   const [selectedProfile, setSelectedProfile] = useState(null)
@@ -594,38 +777,58 @@ function HousematesHub() {
   const [messaging, setMessaging] = useState(false)
   const [messageError, setMessageError] = useState('')
 
-  // Load matches whenever the discovery preferences change or a save triggers a
-  // refresh. Falls back to sample data on error or empty results.
+  // The filter set sent with every discovery request.
+  const buildFilterParams = () => ({
+    ageMin: agePref.min,
+    // At the ceiling the range is open-ended (75+), so no upper bound.
+    ageMax: agePref.max >= AGE_CEIL ? null : agePref.max,
+    genders: genderPref,
+    location: locationFilter,
+    lookingForRoom: lookingFilter === 'any' ? null : lookingFilter,
+  })
+
+  // Load matches whenever the discovery preferences change or a save triggers
+  // a refresh. Debounced so slider drags and typing fire one request, not
+  // dozens. Falls back to sample data on error or empty results.
   useEffect(() => {
     let active = true
+    setLoading(true)
 
-    const loadMatches = async () => {
-      setLoading(true)
+    const timer = setTimeout(async () => {
       try {
         const result = await housematesService.getMatches({
           ageMin: agePref.min,
-          ageMax: agePref.max,
-          gender: genderPref,
+          ageMax: agePref.max >= AGE_CEIL ? null : agePref.max,
+          genders: genderPref,
+          location: locationFilter,
+          lookingForRoom: lookingFilter === 'any' ? null : lookingFilter,
+          limit: PAGE_SIZE,
+          offset: 0,
         })
         if (!active) return
-        setProfiles(
-          result && result.length > 0
-            ? result
-            : filterSample(agePref, genderPref)
-        )
+        setViewerHasQuiz(result.viewerHasQuiz)
+        if (result.profiles.length > 0) {
+          setProfiles(result.profiles)
+          setHasMore(result.hasMore)
+        } else {
+          setProfiles(filterSample(agePref, genderPref, locationFilter))
+          setHasMore(false)
+        }
       } catch {
-        if (active) setProfiles(filterSample(agePref, genderPref))
+        if (active) {
+          setProfiles(filterSample(agePref, genderPref, locationFilter))
+          setHasMore(false)
+        }
       } finally {
         if (active) setLoading(false)
       }
-    }
-
-    loadMatches()
+    }, FILTER_DEBOUNCE_MS)
 
     return () => {
       active = false
+      clearTimeout(timer)
     }
-  }, [agePref, genderPref, reloadFlag])
+  }, [agePref, genderPref, locationFilter, lookingFilter, reloadFlag])
 
   // Preload any previously saved answers and preferences so returning users see
   // and can edit what they set before.
@@ -635,6 +838,7 @@ function HousematesHub() {
       .getMyProfile()
       .then(profile => {
         if (!active || !profile) return
+        setMyProfileMeta({ exists: true, active: profile.active !== false })
         const saved = {}
         for (const q of quizQuestions) {
           if (profile[q.id]) saved[q.id] = profile[q.id]
@@ -650,6 +854,7 @@ function HousematesHub() {
           budgetMin: profile.budgetMin ?? prev.budgetMin,
           budgetMax: profile.budgetMax ?? prev.budgetMax,
           bio: profile.bio ?? prev.bio,
+          lookingForRoom: profile.lookingForRoom ?? prev.lookingForRoom,
         }))
         if (
           profile.agePreferenceMin != null ||
@@ -660,8 +865,20 @@ function HousematesHub() {
             max: profile.agePreferenceMax ?? DEFAULT_AGE_PREF.max,
           })
         }
-        if (profile.genderPreference) {
-          setGenderPref(profile.genderPreference)
+        if (
+          profile.genderPreference &&
+          profile.genderPreference !== 'everyone'
+        ) {
+          setGenderPref(
+            profile.genderPreference
+              .split(',')
+              .map(part => part.trim())
+              .filter(id => genderPrefToIdentity[id])
+          )
+        }
+        // Default the location filter to where they said they live.
+        if (profile.location) {
+          setLocationFilter(prev => prev || profile.location)
         }
       })
       .catch(() => {})
@@ -670,7 +887,14 @@ function HousematesHub() {
     }
   }, [])
 
-  const quizComplete = Object.keys(quizAnswers).length === quizQuestions.length
+  const answeredCount = Object.keys(quizAnswers).length
+
+  // Toggle one gender preference chip; empty selection means everyone.
+  const toggleGenderPref = id => {
+    setGenderPref(prev =>
+      prev.includes(id) ? prev.filter(g => g !== id) : [...prev, id]
+    )
+  }
 
   // Open the full profile view for a housemate.
   const openProfile = profile => {
@@ -737,28 +961,101 @@ function HousematesHub() {
     }
   }
 
+  // Block the person behind a profile: they disappear from the feed and can
+  // no longer see or message the current user.
+  const handleBlock = async profile => {
+    setMessageError('')
+    try {
+      await housematesService.blockProfile(profile.id)
+      setProfiles(prev => prev.filter(p => p.id !== profile.id))
+      setSelectedProfile(null)
+    } catch {
+      setMessageError('Could not block this person. Please try again.')
+    }
+  }
+
+  // File a conduct report; the modal shows the confirmation.
+  const handleReport = (profile, report) =>
+    housematesService.reportProfile(profile.id, report)
+
+  // Save whatever is filled in so far — partial saves are fine, and the score
+  // logic only compares answered dimensions. All ten just scores better.
   const handleSaveQuiz = async () => {
     setSaving(true)
     try {
       await housematesService.saveMyProfile({
         ...quizAnswers,
-        age: aboutYou.age,
+        age: aboutYou.age ?? undefined,
         gender: aboutYou.gender || undefined,
         occupation: aboutYou.occupation || undefined,
         location: aboutYou.location || undefined,
         budgetMin: aboutYou.budgetMin === '' ? undefined : aboutYou.budgetMin,
         budgetMax: aboutYou.budgetMax === '' ? undefined : aboutYou.budgetMax,
         bio: aboutYou.bio || undefined,
+        lookingForRoom: aboutYou.lookingForRoom ?? undefined,
         agePreferenceMin: agePref.min,
-        agePreferenceMax: agePref.max,
-        genderPreference: genderPref,
+        agePreferenceMax: agePref.max >= AGE_CEIL ? null : agePref.max,
+        genderPreference:
+          genderPref.length > 0 ? genderPref.join(',') : 'everyone',
       })
+      setMyProfileMeta(prev => ({
+        exists: true,
+        active: prev.exists ? prev.active : true,
+      }))
     } catch {
       // Best-effort: in demo/offline mode we still continue to discovery.
     }
     setSaving(false)
     setReloadFlag(flag => !flag)
     setActiveCategory('discover')
+  }
+
+  // Pause/resume discoverability without touching any saved answers.
+  const handleToggleActive = async () => {
+    const next = !myProfileMeta.active
+    setTogglingActive(true)
+    try {
+      await housematesService.saveMyProfile({ active: next })
+      setMyProfileMeta({ exists: true, active: next })
+    } catch {
+      // Leave state as-is; the next attempt can retry.
+    }
+    setTogglingActive(false)
+  }
+
+  // Permanently delete the housemate profile (two-step confirm).
+  const handleDeleteProfile = async () => {
+    if (!deleteConfirm) {
+      setDeleteConfirm(true)
+      return
+    }
+    setDeleting(true)
+    try {
+      await housematesService.deleteMyProfile()
+      setMyProfileMeta({ exists: false, active: true })
+      setQuizAnswers({})
+      setDeleteConfirm(false)
+    } catch {
+      // Keep the confirm state so the user can retry.
+    }
+    setDeleting(false)
+  }
+
+  // Append the next page of matches (real data only; samples never paginate).
+  const loadMore = async () => {
+    setLoadingMore(true)
+    try {
+      const result = await housematesService.getMatches({
+        ...buildFilterParams(),
+        limit: PAGE_SIZE,
+        offset: profiles.length,
+      })
+      setProfiles(prev => [...prev, ...result.profiles])
+      setHasMore(result.hasMore)
+    } catch {
+      // Keep what we have; the button stays for a retry.
+    }
+    setLoadingMore(false)
   }
 
   return (
@@ -776,8 +1073,10 @@ function HousematesHub() {
         </p>
         <div className="grid grid-cols-3 gap-3 max-w-xl">
           <div className="bg-white/15 rounded-lg px-3 py-2 text-center">
-            <div className="text-xl sm:text-2xl font-bold">89%</div>
-            <div className="text-xs text-blue-50">Compatibility Score</div>
+            <div className="text-xl sm:text-2xl font-bold">10</div>
+            <div className="text-xs text-blue-50">
+              Research-backed questions
+            </div>
           </div>
           <div className="bg-white/15 rounded-lg px-3 py-2 text-center">
             <div className="text-xl sm:text-2xl font-bold">$0</div>
@@ -821,12 +1120,17 @@ function HousematesHub() {
           {/* Discover housemates */}
           {activeCategory === 'discover' && (
             <section>
-              {/* Discovery preferences — set who you want to live with */}
+              {/* Discovery preferences — set who you want to live with. These
+                  are mutual: they also control who can see you. */}
               <div className="rounded-xl border border-gray-200 bg-white p-5 mb-6">
-                <div className="flex items-center gap-2 mb-4">
+                <div className="flex items-center gap-2 mb-1">
                   <SlidersHorizontal size={18} className="text-blue-600" />
                   <h2 className="text-lg font-bold">Your preferences</h2>
                 </div>
+                <p className="text-xs text-gray-500 mb-4">
+                  Preferences work both ways — people outside someone&apos;s
+                  preferences never see their profile.
+                </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Age preference slider */}
@@ -838,19 +1142,29 @@ function HousematesHub() {
                     <AgeRangeSlider value={agePref} onChange={setAgePref} />
                   </div>
 
-                  {/* Desired-roommate gender preference */}
+                  {/* Desired-roommate gender preference (multi-select) */}
                   <div>
                     <div className="flex items-center gap-1.5 mb-2 text-gray-700">
                       <User size={16} />
                       <span className="text-sm font-medium">Show me</span>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {genderPreferences.map(g => (
+                      <button
+                        onClick={() => setGenderPref([])}
+                        className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                          genderPref.length === 0
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        Everyone
+                      </button>
+                      {genderPreferenceOptions.map(g => (
                         <button
                           key={g.id}
-                          onClick={() => setGenderPref(g.id)}
+                          onClick={() => toggleGenderPref(g.id)}
                           className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                            genderPref === g.id
+                            genderPref.includes(g.id)
                               ? 'bg-blue-600 text-white'
                               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                           }`}
@@ -860,8 +1174,69 @@ function HousematesHub() {
                       ))}
                     </div>
                   </div>
+
+                  {/* Location filter — the premise of a housemate match */}
+                  <div>
+                    <label
+                      htmlFor="location-filter"
+                      className="flex items-center gap-1.5 mb-2 text-gray-700"
+                    >
+                      <MapPin size={16} />
+                      <span className="text-sm font-medium">Near</span>
+                    </label>
+                    <input
+                      id="location-filter"
+                      type="text"
+                      value={locationFilter}
+                      placeholder="City or area, e.g. Seattle"
+                      maxLength={80}
+                      onChange={e => setLocationFilter(e.target.value)}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  {/* Has a place vs looking for a place */}
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-2 text-gray-700">
+                      <Home size={16} />
+                      <span className="text-sm font-medium">
+                        Show people who are
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {lookingFilterOptions.map(opt => (
+                        <button
+                          key={opt.id}
+                          onClick={() => setLookingFilter(opt.id)}
+                          className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                            lookingFilter === opt.id
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
+
+              {/* Honest matching CTA: no quiz means no scores, never fake ones */}
+              {!viewerHasQuiz && !loading && profiles.length > 0 && (
+                <div className="mb-4 rounded-lg border border-purple-200 bg-purple-50 px-4 py-3 text-sm text-purple-800 flex items-center justify-between gap-4">
+                  <span>
+                    Take the compatibility quiz to see your real match score
+                    with everyone here.
+                  </span>
+                  <button
+                    onClick={() => setActiveCategory('quiz')}
+                    className="flex-shrink-0 bg-purple-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
+                  >
+                    Take the quiz
+                  </button>
+                </div>
+              )}
 
               {loading && profiles.length === 0 ? (
                 <div className="flex justify-center py-16">
@@ -874,7 +1249,7 @@ function HousematesHub() {
                     No housemates yet
                   </h3>
                   <p className="text-gray-500 mb-4">
-                    Try a different group, or take the quiz to get matched.
+                    Try widening your filters, or take the quiz to get matched.
                   </p>
                   <button
                     onClick={() => setActiveCategory('quiz')}
@@ -949,14 +1324,31 @@ function HousematesHub() {
                               </div>
                             )}
                           </div>
-                          <div className="text-center">
-                            <div className="flex items-center text-green-600 font-bold">
-                              <Star size={14} className="fill-current mr-1" />
-                              {p.compatibilityScore}%
-                            </div>
-                            <div className="text-[10px] text-gray-500">
-                              Match
-                            </div>
+                          <div className="text-center max-w-[90px]">
+                            {p.compatibilityScore != null ? (
+                              <>
+                                <div className="flex items-center justify-center text-green-600 font-bold">
+                                  <Star
+                                    size={14}
+                                    className="fill-current mr-1"
+                                  />
+                                  {p.compatibilityScore}%
+                                </div>
+                                <div className="text-[10px] text-gray-500">
+                                  Match
+                                </div>
+                              </>
+                            ) : (
+                              <button
+                                onClick={e => {
+                                  e.stopPropagation()
+                                  setActiveCategory('quiz')
+                                }}
+                                className="text-[11px] font-medium leading-tight text-purple-600 hover:text-purple-700"
+                              >
+                                Take the quiz to see your match
+                              </button>
+                            )}
                           </div>
                         </div>
 
@@ -1011,6 +1403,21 @@ function HousematesHub() {
                       </div>
                     ))}
                   </div>
+
+                  {hasMore && (
+                    <div className="mt-6 text-center">
+                      <button
+                        onClick={loadMore}
+                        disabled={loadingMore}
+                        className="inline-flex items-center border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+                      >
+                        {loadingMore && (
+                          <Loader2 size={16} className="mr-1 animate-spin" />
+                        )}
+                        Load more
+                      </button>
+                    </div>
+                  )}
                 </>
               )}
             </section>
@@ -1038,15 +1445,19 @@ function HousematesHub() {
                     <span className="text-sm font-medium text-gray-700">
                       Your age
                     </span>
-                    <span className="text-sm font-semibold text-blue-600">
-                      {aboutYou.age}
+                    <span
+                      className={`text-sm font-semibold ${
+                        aboutYou.age != null ? 'text-blue-600' : 'text-gray-400'
+                      }`}
+                    >
+                      {aboutYou.age != null ? aboutYou.age : 'Not set'}
                     </span>
                   </div>
                   <input
                     type="range"
                     min={AGE_FLOOR}
                     max={AGE_CEIL}
-                    value={aboutYou.age}
+                    value={aboutYou.age ?? 25}
                     aria-label="Your age"
                     onChange={e =>
                       setAboutYou(prev => ({
@@ -1078,6 +1489,44 @@ function HousematesHub() {
                         {g.label}
                       </button>
                     ))}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-sm font-medium text-gray-700 mb-2">
+                    Your situation
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() =>
+                        setAboutYou(prev => ({
+                          ...prev,
+                          lookingForRoom: true,
+                        }))
+                      }
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                        aboutYou.lookingForRoom === true
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-100'
+                      }`}
+                    >
+                      I&apos;m looking for a place
+                    </button>
+                    <button
+                      onClick={() =>
+                        setAboutYou(prev => ({
+                          ...prev,
+                          lookingForRoom: false,
+                        }))
+                      }
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                        aboutYou.lookingForRoom === false
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-100'
+                      }`}
+                    >
+                      I have a place to fill
+                    </button>
                   </div>
                 </div>
 
@@ -1229,7 +1678,7 @@ function HousematesHub() {
               <div className="mt-6 flex items-center gap-4">
                 <button
                   onClick={handleSaveQuiz}
-                  disabled={!quizComplete || saving}
+                  disabled={saving}
                   className="bg-purple-600 text-white px-5 py-2.5 rounded-lg flex items-center font-medium hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {saving ? (
@@ -1241,10 +1690,70 @@ function HousematesHub() {
                   <ArrowRight size={16} className="ml-1" />
                 </button>
                 <span className="text-sm text-gray-500">
-                  {Object.keys(quizAnswers).length} of {quizQuestions.length}{' '}
-                  answered
+                  {answeredCount} of {quizQuestions.length} answered
+                  {answeredCount < quizQuestions.length
+                    ? ' — you can save any time; all ten gives the most accurate scores'
+                    : ''}
                 </span>
               </div>
+
+              {/* Profile visibility — pause or permanently delete */}
+              {myProfileMeta.exists && (
+                <div className="mt-8 rounded-xl border border-gray-200 bg-white p-4">
+                  <div className="font-semibold text-gray-800 mb-1">
+                    Profile visibility
+                  </div>
+                  <p className="text-sm text-gray-600 mb-3">
+                    {myProfileMeta.active
+                      ? 'Your profile is visible to people whose preferences you match.'
+                      : 'Your profile is paused — nobody can find you in discovery.'}
+                  </p>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button
+                      onClick={handleToggleActive}
+                      disabled={togglingActive}
+                      className="inline-flex items-center border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+                    >
+                      {togglingActive ? (
+                        <Loader2 size={14} className="mr-1 animate-spin" />
+                      ) : myProfileMeta.active ? (
+                        <Pause size={14} className="mr-1" />
+                      ) : (
+                        <Play size={14} className="mr-1" />
+                      )}
+                      {myProfileMeta.active
+                        ? 'Pause my profile'
+                        : 'Resume my profile'}
+                    </button>
+                    <button
+                      onClick={handleDeleteProfile}
+                      disabled={deleting}
+                      className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
+                        deleteConfirm
+                          ? 'bg-red-600 text-white hover:bg-red-700'
+                          : 'text-red-600 hover:bg-red-50'
+                      }`}
+                    >
+                      {deleting ? (
+                        <Loader2 size={14} className="mr-1 animate-spin" />
+                      ) : (
+                        <Trash2 size={14} className="mr-1" />
+                      )}
+                      {deleteConfirm
+                        ? 'Confirm permanent delete'
+                        : 'Delete my profile'}
+                    </button>
+                    {deleteConfirm && !deleting && (
+                      <button
+                        onClick={() => setDeleteConfirm(false)}
+                        className="text-sm text-gray-500 hover:text-gray-700"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
             </section>
           )}
         </div>
@@ -1278,11 +1787,19 @@ function HousematesHub() {
         </aside>
       </div>
 
-      {/* Full profile view */}
+      {/* Full profile view. Keyed by profile id so switching profiles
+          remounts the modal and resets its safety-control state. */}
       <HousemateProfileModal
+        key={selectedProfile?.id || 'closed'}
         profile={selectedProfile}
         onClose={() => setSelectedProfile(null)}
         onMessage={handleConnect}
+        onBlock={handleBlock}
+        onReport={handleReport}
+        onTakeQuiz={() => {
+          setSelectedProfile(null)
+          setActiveCategory('quiz')
+        }}
         messaging={messaging}
         error={messageError}
         preview={isPreview}

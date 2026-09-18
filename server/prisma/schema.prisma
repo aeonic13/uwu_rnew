@@ -108,6 +108,10 @@ model User {
   expenses             Expense[]
   documents            Document[]
   savedSearches        SavedSearch[]
+  blocksGiven          UserBlock[]         @relation("BlocksGiven")
+  blocksReceived       UserBlock[]         @relation("BlocksReceived")
+  reportsFiled         UserReport[]        @relation("ReportsFiled")
+  reportsReceived      UserReport[]        @relation("ReportsReceived")
 
   @@index([email])
   @@index([userType])
@@ -516,6 +520,41 @@ model HousemateProfile {
   @@index([userId])
   @@index([audience])
   @@index([active])
+}
+
+// User-level block. The blocker and blocked user disappear from each other's
+// housemate discovery, and neither can start (or continue) a conversation with
+// the other. Blocking is deliberately silent — the blocked user is never told.
+model UserBlock {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  blockerId String
+  blocker   User   @relation("BlocksGiven", fields: [blockerId], references: [id], onDelete: Cascade)
+  blockedId String
+  blocked   User   @relation("BlocksReceived", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId])
+  @@index([blockedId])
+}
+
+// User-conduct report filed from a housemate profile (or elsewhere later).
+// Kept even if the reporter later blocks or the profile is deleted, so the
+// moderation trail survives.
+model UserReport {
+  id        String   @id @default(cuid())
+  reason    String // spam, inappropriate, harassment, fake, other
+  details   String?
+  status    String   @default("open") // open, reviewed, actioned
+  createdAt DateTime @default(now())
+
+  reporterId String
+  reporter   User   @relation("ReportsFiled", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedId String
+  reported   User   @relation("ReportsReceived", fields: [reportedId], references: [id], onDelete: Cascade)
+
+  @@index([reportedId])
+  @@index([status])
 }
 
 // Cosigner model - links cosigners to tenant applications
