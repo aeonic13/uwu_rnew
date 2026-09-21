@@ -27,6 +27,10 @@ function normalizeConversation(apiConv) {
     listing: {
       title: apiConv.listing?.title || 'Listing',
       image: apiConv.listing?.images?.[0] || null,
+      images: Array.isArray(apiConv.listing?.images)
+        ? apiConv.listing.images
+        : [],
+      price: apiConv.listing?.price ?? null,
     },
     participant: {
       name: otherUser
@@ -193,6 +197,130 @@ ConversationCard.propTypes = {
       timestamp: PropTypes.string.isRequired,
       isRead: PropTypes.bool,
       sender: PropTypes.string,
+    }),
+    unreadCount: PropTypes.number,
+  }).isRequired,
+  viewerType: PropTypes.string,
+  onClick: PropTypes.func.isRequired,
+}
+
+/**
+ * Inquiry card — property-forward so a tenant juggling several inquiries
+ * can tell listings apart at a glance. A main photo plus up to two side
+ * thumbnails fill the row; the person is secondary.
+ */
+function InquiryCard({ conversation, viewerType, onClick }) {
+  const isUnread = conversation.unreadCount > 0
+  const lm = conversation.lastMessage
+  const images = conversation.listing.images || []
+  const extraCount = images.length - 3
+
+  return (
+    <button
+      onClick={() => onClick(conversation.id)}
+      className={`w-full p-4 flex items-start gap-3 hover:bg-gray-50 transition-colors text-left border-b border-gray-100 ${
+        isUnread ? 'bg-brand-50/50' : ''
+      }`}
+    >
+      {/* Property photos */}
+      <div className="relative flex gap-1 flex-shrink-0">
+        {images[0] ? (
+          <img
+            src={images[0]}
+            alt={conversation.listing.title}
+            className="w-28 h-24 rounded-lg object-cover"
+          />
+        ) : (
+          <div className="w-28 h-24 rounded-lg bg-gray-100 flex items-center justify-center">
+            <Home size={28} className="text-gray-300" />
+          </div>
+        )}
+        {images.length > 1 && (
+          <div className="flex flex-col gap-1">
+            <img
+              src={images[1]}
+              alt=""
+              className="w-12 h-[46px] rounded-lg object-cover"
+            />
+            {images[2] && (
+              <div className="relative">
+                <img
+                  src={images[2]}
+                  alt=""
+                  className="w-12 h-[46px] rounded-lg object-cover"
+                />
+                {extraCount > 0 && (
+                  <span className="absolute inset-0 rounded-lg bg-black/50 text-white text-xs font-semibold flex items-center justify-center">
+                    +{extraCount}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+        {isUnread && (
+          <div className="absolute -top-1.5 -left-1.5 min-w-[20px] h-5 px-1 bg-brand-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+            {conversation.unreadCount}
+          </div>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        <div className="flex justify-between items-start mb-0.5">
+          <span
+            className={`font-semibold truncate ${isUnread ? 'text-gray-900' : 'text-gray-700'}`}
+          >
+            {conversation.listing.title}
+          </span>
+          {lm && (
+            <span className="text-xs text-gray-500 flex-shrink-0 ml-2">
+              {formatRelativeTime(lm.timestamp)}
+            </span>
+          )}
+        </div>
+
+        {conversation.listing.price != null && (
+          <div className="text-sm font-semibold text-green-600 mb-1">
+            ${Number(conversation.listing.price).toLocaleString()}/mo
+          </div>
+        )}
+
+        <div className="flex items-center gap-2 mb-1 min-w-0">
+          <span className="text-sm text-gray-500 truncate">
+            {conversation.participant.name}
+          </span>
+          <RoleChip
+            userType={conversation.participant.userType}
+            viewerType={viewerType}
+          />
+        </div>
+
+        <p
+          className={`text-sm truncate ${isUnread ? 'text-gray-900 font-medium' : 'text-gray-600'}`}
+        >
+          {lm?.text || 'No messages yet'}
+        </p>
+      </div>
+    </button>
+  )
+}
+
+InquiryCard.propTypes = {
+  conversation: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    listing: PropTypes.shape({
+      title: PropTypes.string.isRequired,
+      images: PropTypes.array,
+      price: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    }).isRequired,
+    participant: PropTypes.shape({
+      name: PropTypes.string.isRequired,
+      userType: PropTypes.string,
+    }).isRequired,
+    lastMessage: PropTypes.shape({
+      text: PropTypes.string.isRequired,
+      timestamp: PropTypes.string.isRequired,
     }),
     unreadCount: PropTypes.number,
   }).isRequired,
@@ -465,7 +593,7 @@ function MessagesView() {
         ) : (
           <div>
             {filteredInquiries.map(conversation => (
-              <ConversationCard
+              <InquiryCard
                 key={conversation.id}
                 conversation={conversation}
                 viewerType={user?.userType}
