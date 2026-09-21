@@ -44,7 +44,9 @@ function normalizeConversationDetail(apiData, currentUserId) {
       id: conv.listing?.id,
       title: conv.listing?.title || 'Listing',
       price: conv.listing?.price,
+      location: conv.listing?.location || null,
       image: conv.listing?.images?.[0] || null,
+      images: Array.isArray(conv.listing?.images) ? conv.listing.images : [],
     },
     participant: {
       id: otherUser?.id,
@@ -296,6 +298,92 @@ ScheduleTourModal.propTypes = {
   onClose: PropTypes.func.isRequired,
   onSend: PropTypes.func.isRequired,
   sending: PropTypes.bool,
+}
+
+/**
+ * Property context card at the top of the thread. New inquiry threads are
+ * mostly empty space, and tenants juggling several inquiries forget which
+ * place a thread is about — so the property's photos fill that space. It
+ * scrolls away naturally once the conversation grows.
+ */
+function PropertyContextCard({ listing, onView }) {
+  const images = listing.images || []
+  const extraCount = images.length - 3
+
+  return (
+    <div className="mb-6 rounded-2xl border border-gray-200 overflow-hidden bg-white shadow-sm">
+      {images.length === 1 && (
+        <img
+          src={images[0]}
+          alt={listing.title}
+          className="w-full h-48 object-cover"
+        />
+      )}
+      {images.length === 2 && (
+        <div className="grid grid-cols-2 gap-1">
+          {images.slice(0, 2).map(src => (
+            <img
+              key={src}
+              src={src}
+              alt={listing.title}
+              className="w-full h-40 object-cover"
+            />
+          ))}
+        </div>
+      )}
+      {images.length >= 3 && (
+        <div className="grid grid-cols-3 gap-1">
+          <img
+            src={images[0]}
+            alt={listing.title}
+            className="col-span-2 row-span-2 w-full h-full max-h-[164px] object-cover"
+          />
+          <img src={images[1]} alt="" className="w-full h-20 object-cover" />
+          <div className="relative">
+            <img src={images[2]} alt="" className="w-full h-20 object-cover" />
+            {extraCount > 0 && (
+              <span className="absolute inset-0 bg-black/50 text-white text-sm font-semibold flex items-center justify-center">
+                +{extraCount}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="p-4 flex items-center gap-3">
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-gray-900 truncate">
+            {listing.title}
+          </p>
+          {listing.location && (
+            <p className="text-sm text-gray-500 truncate">{listing.location}</p>
+          )}
+          {listing.price != null && (
+            <p className="text-sm font-semibold text-green-600 mt-0.5">
+              ${Number(listing.price).toLocaleString()}/mo
+            </p>
+          )}
+        </div>
+        <button
+          onClick={onView}
+          className="px-4 py-2 border border-brand-500 text-brand-500 rounded-lg text-sm font-semibold hover:bg-brand-50 transition-colors flex-shrink-0"
+        >
+          View listing
+        </button>
+      </div>
+    </div>
+  )
+}
+
+PropertyContextCard.propTypes = {
+  listing: PropTypes.shape({
+    id: PropTypes.string,
+    title: PropTypes.string,
+    location: PropTypes.string,
+    price: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    images: PropTypes.array,
+  }).isRequired,
+  onView: PropTypes.func.isRequired,
 }
 
 /**
@@ -551,6 +639,12 @@ function ConversationView() {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4">
+        {conversation.listing.id && (
+          <PropertyContextCard
+            listing={conversation.listing}
+            onView={() => navigate(`/listings/${conversation.listing.id}`)}
+          />
+        )}
         {Object.entries(groupedMessages).map(([date, messages]) => (
           <div key={date}>
             <DateSeparator date={messages[0].timestamp} />
