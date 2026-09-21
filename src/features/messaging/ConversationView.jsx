@@ -1,10 +1,18 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import PropTypes from 'prop-types'
-import { ArrowLeft, Send, Calendar, MoreVertical, Info } from 'lucide-react'
+import {
+  ArrowLeft,
+  Send,
+  Calendar,
+  MoreVertical,
+  Info,
+  Shield,
+} from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { messagingService } from '../../services/messagingService'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
+import PhotoLightbox from '../../components/common/PhotoLightbox'
 
 /**
  * Normalize API message shape to component shape
@@ -47,6 +55,15 @@ function normalizeConversationDetail(apiData, currentUserId) {
       location: conv.listing?.location || null,
       image: conv.listing?.images?.[0] || null,
       images: Array.isArray(conv.listing?.images) ? conv.listing.images : [],
+      owner: conv.listing?.owner
+        ? {
+            name: [conv.listing.owner.firstName, conv.listing.owner.lastName]
+              .filter(Boolean)
+              .join(' '),
+            avatar: conv.listing.owner.avatarUrl || null,
+            verified: !!conv.listing.owner.verified,
+          }
+        : null,
     },
     participant: {
       id: otherUser?.id,
@@ -306,47 +323,49 @@ ScheduleTourModal.propTypes = {
  * place a thread is about — so the property's photos fill that space. It
  * scrolls away naturally once the conversation grows.
  */
-function PropertyContextCard({ listing, onView }) {
+function PropertyContextCard({ listing, onView, onPhotoClick }) {
   const images = listing.images || []
   const extraCount = images.length - 3
 
+  const photo = (src, index, className, overlay = null) => (
+    <button
+      type="button"
+      onClick={() => onPhotoClick(index)}
+      className={`relative block ${className}`}
+      aria-label={`Open photo ${index + 1} of ${images.length}`}
+    >
+      <img
+        src={src}
+        alt={index === 0 ? listing.title : ''}
+        className="w-full h-full object-cover"
+      />
+      {overlay}
+    </button>
+  )
+
   return (
     <div className="mb-6 rounded-2xl border border-gray-200 overflow-hidden bg-white shadow-sm">
-      {images.length === 1 && (
-        <img
-          src={images[0]}
-          alt={listing.title}
-          className="w-full h-48 object-cover"
-        />
-      )}
+      {images.length === 1 && photo(images[0], 0, 'w-full h-48')}
       {images.length === 2 && (
         <div className="grid grid-cols-2 gap-1">
-          {images.slice(0, 2).map(src => (
-            <img
-              key={src}
-              src={src}
-              alt={listing.title}
-              className="w-full h-40 object-cover"
-            />
-          ))}
+          {photo(images[0], 0, 'h-40')}
+          {photo(images[1], 1, 'h-40')}
         </div>
       )}
       {images.length >= 3 && (
         <div className="grid grid-cols-3 gap-1">
-          <img
-            src={images[0]}
-            alt={listing.title}
-            className="col-span-2 row-span-2 w-full h-full max-h-[164px] object-cover"
-          />
-          <img src={images[1]} alt="" className="w-full h-20 object-cover" />
-          <div className="relative">
-            <img src={images[2]} alt="" className="w-full h-20 object-cover" />
-            {extraCount > 0 && (
+          {photo(images[0], 0, 'col-span-2 row-span-2 h-full max-h-[164px]')}
+          {photo(images[1], 1, 'h-20')}
+          {photo(
+            images[2],
+            2,
+            'h-20',
+            extraCount > 0 ? (
               <span className="absolute inset-0 bg-black/50 text-white text-sm font-semibold flex items-center justify-center">
                 +{extraCount}
               </span>
-            )}
-          </div>
+            ) : null
+          )}
         </div>
       )}
 
@@ -362,6 +381,23 @@ function PropertyContextCard({ listing, onView }) {
             <p className="text-sm font-semibold text-green-600 mt-0.5">
               ${Number(listing.price).toLocaleString()}/mo
             </p>
+          )}
+          {listing.owner?.name && (
+            <div className="flex items-center gap-1.5 mt-1.5 min-w-0">
+              <img
+                src={listing.owner.avatar || 'https://via.placeholder.com/24'}
+                alt={listing.owner.name}
+                className="w-5 h-5 rounded-full object-cover bg-gray-100 flex-shrink-0"
+              />
+              <span className="text-sm text-gray-600 truncate">
+                Listed by {listing.owner.name}
+              </span>
+              {listing.owner.verified && (
+                <span title="Email confirmed" className="flex-shrink-0">
+                  <Shield size={13} className="text-brand-500" />
+                </span>
+              )}
+            </div>
           )}
         </div>
         <button
@@ -382,8 +418,14 @@ PropertyContextCard.propTypes = {
     location: PropTypes.string,
     price: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     images: PropTypes.array,
+    owner: PropTypes.shape({
+      name: PropTypes.string,
+      avatar: PropTypes.string,
+      verified: PropTypes.bool,
+    }),
   }).isRequired,
   onView: PropTypes.func.isRequired,
+  onPhotoClick: PropTypes.func.isRequired,
 }
 
 /**
@@ -421,6 +463,8 @@ function ConversationView() {
   const [showTourModal, setShowTourModal] = useState(false)
   const [tourSending, setTourSending] = useState(false)
   const [tourResponding, setTourResponding] = useState(false)
+  // Index of the photo the gallery opened on; null = closed.
+  const [galleryIndex, setGalleryIndex] = useState(null)
 
   // Shared fetcher: initial load shows the spinner; silent refreshes
   // (polling, post-action) never do.
@@ -643,6 +687,7 @@ function ConversationView() {
           <PropertyContextCard
             listing={conversation.listing}
             onView={() => navigate(`/listings/${conversation.listing.id}`)}
+            onPhotoClick={setGalleryIndex}
           />
         )}
         {Object.entries(groupedMessages).map(([date, messages]) => (
@@ -743,6 +788,16 @@ function ConversationView() {
           onClose={() => setShowTourModal(false)}
           onSend={handleSendTourRequest}
           sending={tourSending}
+        />
+      )}
+
+      {/* Property photo gallery */}
+      {galleryIndex !== null && (
+        <PhotoLightbox
+          images={conversation.listing.images}
+          startIndex={galleryIndex}
+          alt={conversation.listing.title}
+          onClose={() => setGalleryIndex(null)}
         />
       )}
     </div>

@@ -222,6 +222,15 @@ router.get('/conversation/:conversationId', authenticate, async (req, res) => {
             images: true,
             price: true,
             location: true,
+            // For the "Listed by …" line on the thread's property card.
+            owner: {
+              select: {
+                firstName: true,
+                lastName: true,
+                avatarUrl: true,
+                verified: true,
+              },
+            },
           },
         },
         users: {
