@@ -18,7 +18,7 @@ import {
   Users,
   Sparkles,
   LogIn,
-  ShieldCheck,
+  FileText,
 } from 'lucide-react'
 
 export default function Header() {
@@ -57,12 +57,14 @@ export default function Header() {
 
   const isActive = path => location.pathname === path
 
-  // Student navigation items
+  // Student navigation items. Pre-qualification lives in the Profile menu
+  // and as a contextual CTA (applications page, payments) rather than here.
   const studentNavItems = [
     { path: '/', label: 'Browse', icon: Home },
     { path: '/favorites', label: 'Saved', icon: Heart },
     { path: '/housemates', label: 'Housemates', icon: Sparkles },
-    { path: '/pre-qualify', label: 'Pre-Qualify', icon: ShieldCheck },
+    { path: '/groups', label: 'Groups', icon: Users },
+    { path: '/applications', label: 'Applications', icon: FileText },
     { path: '/messages', label: 'Messages', icon: MessageSquare },
     { path: '/profile', label: 'Profile', icon: User },
   ]

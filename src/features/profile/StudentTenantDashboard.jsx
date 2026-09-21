@@ -652,6 +652,17 @@ function LeasesTab() {
               <Eye size={18} className="mr-2" />
               {lease.status === 'active' ? 'View Lease' : 'View & Sign'}
             </button>
+            <button
+              onClick={() =>
+                agreementsService
+                  .downloadPdf(lease.id)
+                  .catch(err => console.error('Lease PDF download failed', err))
+              }
+              className="flex items-center justify-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
+            >
+              <Download size={18} className="mr-2" />
+              PDF
+            </button>
           </div>
 
           {lease.status === 'active' && (

@@ -2,20 +2,17 @@ import { useNavigate } from 'react-router-dom'
 import {
   User,
   Mail,
-  Phone,
   School,
   Shield,
+  ShieldCheck,
   Edit,
   Heart,
   FileText,
   CreditCard,
-  Bell,
-  Lock,
-  HelpCircle,
+  Users,
   LogOut,
   ChevronRight,
   Home,
-  Settings,
   DollarSign,
   Instagram,
   Linkedin,
@@ -152,7 +149,8 @@ function ProfileView() {
           </button>
         </div>
 
-        {/* Verification Badge */}
+        {/* Verification Badge — identity verification happens during
+            pre-qualification (Plaid), so that's where the CTA points. */}
         {user?.verified ? (
           <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-3 flex items-center">
             <Shield size={18} className="text-green-600 mr-2" />
@@ -161,13 +159,17 @@ function ProfileView() {
             </span>
           </div>
         ) : (
-          <button
-            onClick={() => navigate('/profile/verify')}
-            className="mt-4 w-full bg-brand-50 border border-brand-200 rounded-lg p-3 flex items-center justify-center text-brand-600 hover:bg-brand-100 transition-colors"
-          >
-            <Shield size={18} className="mr-2" />
-            <span className="text-sm font-medium">Verify your account</span>
-          </button>
+          !isOwner && (
+            <button
+              onClick={() => navigate('/pre-qualify')}
+              className="mt-4 w-full bg-brand-50 border border-brand-200 rounded-lg p-3 flex items-center justify-center text-brand-600 hover:bg-brand-100 transition-colors"
+            >
+              <Shield size={18} className="mr-2" />
+              <span className="text-sm font-medium">
+                Verify your identity with pre-qualification
+              </span>
+            </button>
+          )
         )}
       </div>
 
@@ -188,73 +190,61 @@ function ProfileView() {
                 onClick={() => navigate('/profile/tenant-dashboard')}
               />
               <MenuItem
+                icon={FileText}
+                label="My Applications"
+                onClick={() => navigate('/applications')}
+              />
+              <MenuItem
+                icon={Users}
+                label="My Groups"
+                onClick={() => navigate('/groups')}
+              />
+              <MenuItem
                 icon={Heart}
                 label="Saved Properties"
                 badge={favoritesCount > 0 ? favoritesCount : null}
-                onClick={() => navigate('/profile/favorites')}
+                onClick={() => navigate('/favorites')}
+              />
+              <MenuItem
+                icon={ShieldCheck}
+                label="Pre-Qualification"
+                onClick={() => navigate('/pre-qualify')}
               />
             </>
           )}
           {isOwner && (
-            <MenuItem
-              icon={Home}
-              label="My Listings"
-              onClick={() => navigate('/dashboard/listings')}
-            />
+            <>
+              <MenuItem
+                icon={Home}
+                label="My Listings"
+                onClick={() => navigate('/dashboard')}
+              />
+              <MenuItem
+                icon={FileText}
+                label="Applications Inbox"
+                onClick={() => navigate('/dashboard/inbox')}
+              />
+            </>
           )}
-          <MenuItem
-            icon={FileText}
-            label="Application History"
-            onClick={() => navigate('/profile/applications')}
-          />
         </MenuSection>
 
         {/* Payments Section */}
         <MenuSection title="Payments">
           <MenuItem
             icon={CreditCard}
-            label="Payment Methods"
+            label={isOwner ? 'Payments' : 'Payments & Payment Methods'}
             onClick={() => navigate('/payments')}
-          />
-          {isOwner && (
-            <MenuItem
-              icon={CreditCard}
-              label="Payout Settings"
-              onClick={() => navigate('/dashboard/payouts')}
-            />
-          )}
-        </MenuSection>
-
-        {/* Settings Section */}
-        <MenuSection title="Settings">
-          <MenuItem
-            icon={Bell}
-            label="Notifications"
-            onClick={() => navigate('/profile/notifications')}
-          />
-          <MenuItem
-            icon={Lock}
-            label="Privacy & Security"
-            onClick={() => navigate('/profile/privacy')}
-          />
-          <MenuItem
-            icon={Settings}
-            label="Preferences"
-            onClick={() => navigate('/profile/preferences')}
           />
         </MenuSection>
 
         {/* Support Section */}
         <MenuSection title="Support">
           <MenuItem
-            icon={HelpCircle}
-            label="Help Center"
-            onClick={() => navigate('/help')}
-          />
-          <MenuItem
             icon={Mail}
             label="Contact Support"
-            onClick={() => navigate('/support')}
+            onClick={() => {
+              window.location.href = 'mailto:support@myrentra.com'
+            }}
           />
         </MenuSection>
 

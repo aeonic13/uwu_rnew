@@ -27,6 +27,9 @@ const PaymentsView = lazy(() => import('../features/payments/PaymentsView'))
 const ApplicationFlow = lazy(
   () => import('../features/applications/ApplicationFlow')
 )
+const MyApplications = lazy(
+  () => import('../features/applications/MyApplications')
+)
 const AgreementView = lazy(
   () => import('../features/applications/AgreementView')
 )
@@ -389,6 +392,18 @@ const routeConfig = [
       },
 
       // Application routes (auth required)
+      {
+        path: '/applications',
+        element: (
+          <ProtectedRoute>
+            <RoleRoute allowedRoles={['student']}>
+              <Suspense fallback={<SuspenseFallback />}>
+                <MyApplications />
+              </Suspense>
+            </RoleRoute>
+          </ProtectedRoute>
+        ),
+      },
       {
         path: '/apply/:listingId',
         element: (

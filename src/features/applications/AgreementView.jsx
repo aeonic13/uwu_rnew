@@ -70,9 +70,17 @@ function AgreementView() {
     }
   }
 
-  const handleDownload = () => {
-    // TODO: Generate and download PDF
-    alert('Download functionality will be implemented')
+  const [isDownloading, setIsDownloading] = useState(false)
+
+  const handleDownload = async () => {
+    setIsDownloading(true)
+    try {
+      await agreementsService.downloadPdf(agreementId)
+    } catch (err) {
+      console.error('Failed to download lease PDF:', err)
+    } finally {
+      setIsDownloading(false)
+    }
   }
 
   if (isLoading) {
@@ -120,8 +128,9 @@ function AgreementView() {
           </div>
           <button
             onClick={handleDownload}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            aria-label="Download"
+            disabled={isDownloading}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors disabled:opacity-50"
+            aria-label="Download lease PDF"
           >
             <Download size={20} className="text-gray-600" />
           </button>
