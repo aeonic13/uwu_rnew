@@ -35,6 +35,21 @@ export const uploadService = {
   },
 
   /**
+   * Upload a user avatar. The server stores it on the profile and
+   * returns the new URL.
+   * @param {File} file - Avatar image file
+   * @returns {Promise<string>} - The uploaded avatar URL
+   */
+  async uploadAvatar(file) {
+    const formData = new FormData()
+    formData.append('avatar', file)
+    const response = await apiClient.post('/uploads/avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return response.avatarUrl
+  },
+
+  /**
    * Upload a single image and return just the URL
    * Convenience method for simple use cases
    * @param {File} file - Single file to upload

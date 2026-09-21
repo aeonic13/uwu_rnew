@@ -573,6 +573,9 @@ router.get('/history', authenticate, async (req, res) => {
     res.json({
       payments: transactions.map(t => ({
         id: t.id,
+        // Rent charges are tied to an application/lease; the only
+        // application-less charge today is the $50 pre-qualification fee.
+        type: t.applicationId ? 'rent' : 'fee',
         amount: t.amount,
         serviceFee: t.serviceFee,
         total: t.total,

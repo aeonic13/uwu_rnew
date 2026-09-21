@@ -489,6 +489,36 @@ export async function sendRentReminderEmail({
 }
 
 /**
+ * Invite someone to join a housing group. The recipient may not have a
+ * Rentra account yet — the groups page prompts sign-in/registration, and
+ * the invitation is matched by email on join.
+ */
+export async function sendGroupInviteEmail({ email, inviterName, group }) {
+  const groupsUrl = `${process.env.CLIENT_URL}/groups`
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+      <h2 style="color: #fc6a03;">You're invited to a housing group 🏠</h2>
+      <p>Hi,</p>
+      <p><strong>${inviterName}</strong> invited you to join their group on Rentra so you can search for housing and apply together.</p>
+      <div style="background: #f9fafb; padding: 15px; border-radius: 6px; margin: 20px 0;">
+        <strong>${group.name}</strong><br>
+        ${group.description ? `${group.description}<br>` : ''}
+        Up to ${group.maxMembers} members
+      </div>
+      <p style="margin-top: 24px;"><a href="${groupsUrl}" style="background: #fc6a03; color: #fff; padding: 10px 18px; border-radius: 6px; text-decoration: none;">View invitation</a></p>
+      <p style="color: #888; font-size: 13px; margin-top: 24px;">Sign in with this email address (${email}) to accept or decline.</p>
+      <p style="color: #888; font-size: 13px;">— The Rentra Team</p>
+    </div>
+  `
+  return sendEmail({
+    to: email,
+    subject: `${inviterName} invited you to join "${group.name}" on Rentra`,
+    html,
+    text: `${inviterName} invited you to join their housing group "${group.name}" on Rentra. Sign in with this email at ${groupsUrl} to accept.`,
+  })
+}
+
+/**
  * Alert a tenant that a newly posted listing matches their saved search.
  */
 export async function sendNewListingAlert(recipient, listing) {

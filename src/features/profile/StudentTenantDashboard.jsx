@@ -20,6 +20,7 @@ import {
   Eye,
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
+import UtilityBillSplit from '../utilities/UtilityBillSplit'
 
 /**
  * Student Tenant Dashboard - Comprehensive dashboard for student tenants
@@ -76,7 +77,7 @@ function StudentTenantDashboard() {
       {/* Tab Content */}
       <div className="p-4">
         {activeTab === 'rent' && <PayRentTab user={user} />}
-        {activeTab === 'utilities' && <UtilitiesTab user={user} />}
+        {activeTab === 'utilities' && <UtilitiesTab />}
         {activeTab === 'maintenance' && <MaintenanceTab user={user} />}
         {activeTab === 'leases' && <LeasesTab user={user} />}
         {activeTab === 'history' && <PaymentHistoryTab user={user} />}
@@ -89,9 +90,10 @@ function StudentTenantDashboard() {
  * Pay Rent Tab - Handle rent payments
  */
 function PayRentTab() {
-  const [paymentMethod, setPaymentMethod] = useState('bank')
+  const navigate = useNavigate()
   const [isProcessing, setIsProcessing] = useState(false)
   const [currentLease, setCurrentLease] = useState(null)
+  const [bankAccount, setBankAccount] = useState(null)
   const [paid, setPaid] = useState(false)
   const [payError, setPayError] = useState(null)
 
@@ -114,6 +116,11 @@ function PayRentTab() {
         }
       })
       .catch(() => {})
+    // 400s when no bank is linked — treat as none.
+    paymentsService
+      .getPlaidAccounts()
+      .then(res => active && setBankAccount(res?.accounts?.[0] || null))
+      .catch(() => {})
     return () => {
       active = false
     }
@@ -123,7 +130,9 @@ function PayRentTab() {
     setIsProcessing(true)
     setPayError(null)
     try {
-      await paymentsService.payRent({ paymentMethod })
+      await paymentsService.payRent({
+        paymentMethod: bankAccount ? 'ach' : 'recorded',
+      })
       setPaid(true)
     } catch (err) {
       setPayError(err.message || 'Payment failed. Please try again.')
@@ -194,46 +203,33 @@ function PayRentTab() {
         </p>
       </div>
 
-      {/* Payment Method Selection */}
+      {/* Payment Method */}
       <div className="bg-white rounded-lg border border-gray-200 p-4">
         <h3 className="font-semibold mb-3">Payment Method</h3>
-        <div className="space-y-3">
-          <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
-            <input
-              type="radio"
-              name="payment"
-              value="bank"
-              checked={paymentMethod === 'bank'}
-              onChange={e => setPaymentMethod(e.target.value)}
-              className="mr-3"
-            />
+        {bankAccount ? (
+          <div className="flex items-center p-3 border rounded-lg">
             <div className="flex-1">
-              <div className="font-medium">Bank Account</div>
-              <div className="text-sm text-gray-600">****1234</div>
+              <div className="font-medium">
+                {bankAccount.name || bankAccount.official_name || 'Bank'}
+              </div>
+              <div className="text-sm text-gray-600">
+                •••• {bankAccount.mask || '····'} · linked with Plaid
+              </div>
             </div>
             <CreditCard size={20} className="text-gray-400" />
-          </label>
-
-          <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
-            <input
-              type="radio"
-              name="payment"
-              value="card"
-              checked={paymentMethod === 'card'}
-              onChange={e => setPaymentMethod(e.target.value)}
-              className="mr-3"
-            />
-            <div className="flex-1">
-              <div className="font-medium">Debit/Credit Card</div>
-              <div className="text-sm text-gray-600">****5678</div>
-            </div>
-            <CreditCard size={20} className="text-gray-400" />
-          </label>
-
-          <button className="w-full text-brand-500 py-2 text-sm font-medium hover:bg-brand-50 rounded-lg">
-            + Add Payment Method
-          </button>
-        </div>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500">
+            No bank linked yet — you can link one securely with Plaid during{' '}
+            <button
+              onClick={() => navigate('/pre-qualify')}
+              className="text-brand-500 font-medium hover:underline"
+            >
+              pre-qualification
+            </button>
+            . Your payment is recorded on the ledger either way.
+          </p>
+        )}
       </div>
 
       {/* Pay Button */}
@@ -260,146 +256,18 @@ function PayRentTab() {
         roll. In-app bank payments (ACH) are coming soon.
       </p>
       {payError && <p className="text-sm text-red-600">{payError}</p>}
-
-      {/* Auto-pay Option */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h4 className="font-medium">Enable Auto-Pay</h4>
-            <p className="text-sm text-gray-600">
-              Never miss a payment - we'll automatically charge your account on
-              the due date
-            </p>
-          </div>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" className="sr-only peer" />
-            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
-          </label>
-        </div>
-      </div>
     </div>
   )
 }
 
 /**
- * Utilities Tab - Manage utility payments
+ * Utilities Tab - Split utility bills with roommates (real feature,
+ * backed by server/routes/utilities.js).
  */
-function UtilitiesTab({ user }) {
-  const utilities = [
-    {
-      id: 1,
-      name: 'Electricity',
-      provider: 'City Electric',
-      amount: 85.5,
-      dueDate: '2026-03-05',
-      status: 'pending',
-    },
-    {
-      id: 2,
-      name: 'Water',
-      provider: 'City Water Dept',
-      amount: 45.0,
-      dueDate: '2026-03-10',
-      status: 'pending',
-    },
-    {
-      id: 3,
-      name: 'Internet',
-      provider: 'Fast Internet Co',
-      amount: 60.0,
-      dueDate: '2026-02-28',
-      status: 'paid',
-    },
-    {
-      id: 4,
-      name: 'Gas',
-      provider: 'City Gas',
-      amount: 32.75,
-      dueDate: '2026-03-08',
-      status: 'pending',
-    },
-  ]
-
+function UtilitiesTab() {
   return (
-    <div className="space-y-4">
-      {/* Total Due Summary */}
-      <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg p-6">
-        <p className="text-brand-100 text-sm mb-2">Total Utilities Due</p>
-        <p className="text-4xl font-bold mb-1">
-          $
-          {utilities
-            .filter(u => u.status === 'pending')
-            .reduce((sum, u) => sum + u.amount, 0)
-            .toFixed(2)}
-        </p>
-        <p className="text-brand-100 text-sm">
-          {utilities.filter(u => u.status === 'pending').length} bills pending
-        </p>
-      </div>
-
-      {/* Utilities List */}
-      <div className="space-y-3">
-        {utilities.map(utility => (
-          <div
-            key={utility.id}
-            className="bg-white rounded-lg border border-gray-200 p-4"
-          >
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex items-center">
-                <div className="w-10 h-10 bg-brand-100 rounded-full flex items-center justify-center mr-3">
-                  <Zap size={20} className="text-brand-500" />
-                </div>
-                <div>
-                  <h4 className="font-semibold">{utility.name}</h4>
-                  <p className="text-sm text-gray-600">{utility.provider}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="font-bold text-lg">${utility.amount}</p>
-                <span
-                  className={`text-xs px-2 py-1 rounded-full ${
-                    utility.status === 'paid'
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-yellow-100 text-yellow-700'
-                  }`}
-                >
-                  {utility.status === 'paid' ? 'Paid' : 'Pending'}
-                </span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600 flex items-center">
-                <Calendar size={14} className="mr-1" />
-                Due: {new Date(utility.dueDate).toLocaleDateString()}
-              </span>
-              {utility.status === 'pending' && (
-                <button className="text-brand-500 font-medium hover:underline">
-                  Pay Now
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Split Utilities Info */}
-      <div className="bg-brand-50 border border-brand-200 rounded-lg p-4">
-        <div className="flex items-start">
-          <AlertCircle size={20} className="text-brand-500 mr-3 mt-0.5" />
-          <div>
-            <h4 className="font-medium text-blue-900 mb-1">
-              Split with Roommates
-            </h4>
-            <p className="text-sm text-brand-600">
-              If you have roommates, utility costs can be automatically split
-              and charged separately.
-            </p>
-            <button className="mt-2 text-sm text-brand-500 font-medium hover:underline">
-              Set up split payments →
-            </button>
-          </div>
-        </div>
-      </div>
+    <div className="bg-white rounded-lg border border-gray-200 p-4">
+      <UtilityBillSplit />
     </div>
   )
 }
@@ -840,10 +708,12 @@ function PaymentHistoryTab() {
         setPayments(
           (res?.payments || []).map(p => ({
             id: p.id,
-            type: 'rent',
+            type: p.type || 'rent',
             description: p.listing?.title
               ? `Payment — ${p.listing.title}`
-              : 'Payment',
+              : p.type === 'fee'
+                ? 'Application fee'
+                : 'Payment',
             amount: p.total ?? p.amount ?? 0,
             date: p.date,
             status: p.status,
@@ -877,7 +747,7 @@ function PaymentHistoryTab() {
 
       {/* Filter Buttons */}
       <div className="flex space-x-2 overflow-x-auto pb-2">
-        {['all', 'rent', 'utility', 'deposit'].map(type => (
+        {['all', 'rent', 'fee'].map(type => (
           <button
             key={type}
             onClick={() => setFilterType(type)}

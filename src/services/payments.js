@@ -71,6 +71,14 @@ export const paymentsService = {
     })
   },
 
+  /**
+   * Linked bank accounts via the server-held Plaid token.
+   * Rejects with a 400 when no bank is connected.
+   */
+  getPlaidAccounts: async () => {
+    return api.get('/payments/plaid/accounts')
+  },
+
   /** Verify income via the server-held Plaid token. Returns { income }. */
   verifyIncome: async () => {
     return api.post('/payments/plaid/verify-income', {})

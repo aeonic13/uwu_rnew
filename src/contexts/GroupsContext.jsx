@@ -158,13 +158,17 @@ export function GroupsProvider({ children }) {
     }
   }, [])
 
-  // Fetch user's groups
+  // Fetch user's groups and pending invitations
   const fetchUserGroups = useCallback(async () => {
     dispatch({ type: GROUPS_ACTIONS.SET_LOADING, payload: true })
 
     try {
-      const groups = await groupsService.listMy()
+      const [groups, invitations] = await Promise.all([
+        groupsService.listMy(),
+        groupsService.listInvitations().catch(() => []),
+      ])
       dispatch({ type: GROUPS_ACTIONS.SET_USER_GROUPS, payload: groups })
+      dispatch({ type: GROUPS_ACTIONS.SET_INVITATIONS, payload: invitations })
     } catch (error) {
       dispatch({ type: GROUPS_ACTIONS.SET_ERROR, payload: error.message })
     }
@@ -200,83 +204,28 @@ export function GroupsProvider({ children }) {
     }
   }, [])
 
-  // Accept group invitation
-  const acceptInvitation = useCallback(
-    async (invitationId, userId) => {
-      try {
-        // TODO: Replace with API call
-        const invitation = state.groupInvitations.find(
-          inv => inv.id === invitationId
-        )
-
-        if (!invitation) {
-          return { success: false, error: 'Invitation not found' }
-        }
-
-        const newMember = {
-          userId,
-          role: 'member',
-          joinedAt: new Date().toISOString(),
-          status: 'active',
-        }
-
-        dispatch({ type: GROUPS_ACTIONS.ADD_MEMBER, payload: newMember })
-        dispatch({
-          type: GROUPS_ACTIONS.UPDATE_INVITATION,
-          payload: { ...invitation, status: 'accepted' },
-        })
-
-        return { success: true }
-      } catch (error) {
-        return { success: false, error: error.message }
-      }
-    },
-    [state.groupInvitations]
-  )
-
-  // Decline group invitation
-  const declineInvitation = useCallback(
-    async invitationId => {
-      try {
-        const invitation = state.groupInvitations.find(
-          inv => inv.id === invitationId
-        )
-
-        if (!invitation) {
-          return { success: false, error: 'Invitation not found' }
-        }
-
-        dispatch({
-          type: GROUPS_ACTIONS.UPDATE_INVITATION,
-          payload: { ...invitation, status: 'declined' },
-        })
-
-        return { success: true }
-      } catch (error) {
-        return { success: false, error: error.message }
-      }
-    },
-    [state.groupInvitations]
-  )
-
-  // Remove member from group
-  const removeMember = useCallback(async (groupId, userId) => {
+  // Accept a group invitation (the invitation object from listInvitations)
+  const acceptInvitation = useCallback(async invitation => {
     try {
-      // TODO: Replace with API call
-      dispatch({ type: GROUPS_ACTIONS.REMOVE_MEMBER, payload: userId })
-      return { success: true }
+      const group = await groupsService.join(invitation.groupId)
+      dispatch({ type: GROUPS_ACTIONS.ADD_GROUP, payload: group })
+      dispatch({
+        type: GROUPS_ACTIONS.UPDATE_INVITATION,
+        payload: { ...invitation, status: 'accepted' },
+      })
+      return { success: true, group }
     } catch (error) {
       return { success: false, error: error.message }
     }
   }, [])
 
-  // Update member role
-  const updateMemberRole = useCallback(async (groupId, userId, role) => {
+  // Decline a group invitation
+  const declineInvitation = useCallback(async invitation => {
     try {
-      // TODO: Replace with API call
+      await groupsService.decline(invitation.groupId)
       dispatch({
-        type: GROUPS_ACTIONS.UPDATE_MEMBER_ROLE,
-        payload: { userId, role },
+        type: GROUPS_ACTIONS.UPDATE_INVITATION,
+        payload: { ...invitation, status: 'declined' },
       })
       return { success: true }
     } catch (error) {
@@ -284,40 +233,48 @@ export function GroupsProvider({ children }) {
     }
   }, [])
 
-  // Add listing to group interests
-  const addListingInterest = useCallback(
-    async (groupId, listingId) => {
+  // Resolve a user's member-row id within the currently selected group.
+  const findMemberId = useCallback(
+    userId =>
+      state.selectedGroup?.members?.find(m => m.userId === userId)?.id || null,
+    [state.selectedGroup]
+  )
+
+  // Remove member from group (admin) — identified by userId in the UI
+  const removeMember = useCallback(
+    async (groupId, userId) => {
       try {
-        // TODO: Replace with API call
-        const group = state.userGroups.find(g => g.id === groupId)
-        if (!group) {
-          return { success: false, error: 'Group not found' }
+        const memberId = findMemberId(userId)
+        if (!memberId) {
+          return { success: false, error: 'Member not found' }
         }
-
-        const updatedGroup = {
-          ...group,
-          interestedListings: [...group.interestedListings, listingId],
-        }
-
-        dispatch({ type: GROUPS_ACTIONS.UPDATE_GROUP, payload: updatedGroup })
+        await groupsService.removeMember(groupId, memberId)
+        dispatch({ type: GROUPS_ACTIONS.REMOVE_MEMBER, payload: userId })
         return { success: true }
       } catch (error) {
         return { success: false, error: error.message }
       }
     },
-    [state.userGroups]
+    [findMemberId]
   )
 
-  // Leave group
-  const leaveGroup = useCallback(async (groupId, userId) => {
-    try {
-      // TODO: Replace with API call
-      dispatch({ type: GROUPS_ACTIONS.REMOVE_MEMBER, payload: userId })
-      return { success: true }
-    } catch (error) {
-      return { success: false, error: error.message }
-    }
-  }, [])
+  // Leave group (removes own member row and drops the group locally)
+  const leaveGroup = useCallback(
+    async (groupId, userId) => {
+      try {
+        const memberId = findMemberId(userId)
+        if (!memberId) {
+          return { success: false, error: 'Member not found' }
+        }
+        await groupsService.removeMember(groupId, memberId)
+        dispatch({ type: GROUPS_ACTIONS.REMOVE_GROUP, payload: groupId })
+        return { success: true }
+      } catch (error) {
+        return { success: false, error: error.message }
+      }
+    },
+    [findMemberId]
+  )
 
   // Delete group (creator only)
   const deleteGroup = useCallback(async groupId => {
@@ -339,8 +296,6 @@ export function GroupsProvider({ children }) {
     acceptInvitation,
     declineInvitation,
     removeMember,
-    updateMemberRole,
-    addListingInterest,
     leaveGroup,
     deleteGroup,
   }

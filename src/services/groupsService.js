@@ -32,6 +32,28 @@ export const groupsService = {
     return res.member
   },
 
+  /** Pending invitations for the current user. */
+  async listInvitations() {
+    const res = await apiClient.get('/groups/invitations')
+    return res.invitations || []
+  },
+
+  /** Accept an invitation; returns the joined group (UI shape). */
+  async join(groupId) {
+    const res = await apiClient.post(`/groups/${groupId}/join`)
+    return res.group
+  },
+
+  /** Decline an invitation. */
+  async decline(groupId) {
+    return apiClient.post(`/groups/${groupId}/decline`)
+  },
+
+  /** Remove a member (admin) or leave the group (own member row). */
+  async removeMember(groupId, memberId) {
+    return apiClient.delete(`/groups/${groupId}/members/${memberId}`)
+  },
+
   /** Creator: delete the group. */
   async deleteGroup(groupId) {
     return apiClient.delete(`/groups/${groupId}`)

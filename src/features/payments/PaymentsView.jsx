@@ -14,70 +14,8 @@ import {
   Building,
   AlertCircle,
 } from 'lucide-react'
-import { useAuth } from '../../contexts/AuthContext'
+import { paymentsService } from '../../services/payments'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
-
-// Sample transactions data
-const sampleTransactions = [
-  {
-    id: 1,
-    type: 'rent',
-    amount: 1200,
-    serviceFee: 36,
-    total: 1236,
-    status: 'completed',
-    date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    property: 'Cozy 1BR near USC Campus',
-    landlord: 'Sarah Chen',
-    paymentMethod: '**** 4242',
-  },
-  {
-    id: 2,
-    type: 'deposit',
-    amount: 2400,
-    serviceFee: 0,
-    total: 2400,
-    status: 'completed',
-    date: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-    property: 'Cozy 1BR near USC Campus',
-    landlord: 'Sarah Chen',
-    paymentMethod: '**** 4242',
-  },
-  {
-    id: 3,
-    type: 'rent',
-    amount: 1200,
-    serviceFee: 36,
-    total: 1236,
-    status: 'pending',
-    date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-    property: 'Cozy 1BR near USC Campus',
-    landlord: 'Sarah Chen',
-    paymentMethod: '**** 4242',
-    dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-]
-
-// Sample payment methods
-const samplePaymentMethods = [
-  {
-    id: 1,
-    type: 'card',
-    brand: 'Visa',
-    lastFour: '4242',
-    expiryMonth: 12,
-    expiryYear: 2025,
-    isDefault: true,
-  },
-  {
-    id: 2,
-    type: 'bank',
-    bankName: 'Chase',
-    lastFour: '6789',
-    accountType: 'Checking',
-    isDefault: false,
-  },
-]
 
 /**
  * Format date
@@ -142,7 +80,7 @@ function TransactionCard({ transaction, onClick }) {
   const typeLabels = {
     rent: 'Rent Payment',
     deposit: 'Security Deposit',
-    fee: 'Service Fee',
+    fee: 'Application Fee',
     refund: 'Refund',
   }
 
@@ -239,7 +177,6 @@ PaymentMethodCard.propTypes = {
  */
 function PaymentsView() {
   const navigate = useNavigate()
-  const { user } = useAuth()
 
   const [activeTab, setActiveTab] = useState('transactions')
   const [transactions, setTransactions] = useState([])
@@ -248,16 +185,49 @@ function PaymentsView() {
   const [selectedTransaction, setSelectedTransaction] = useState(null)
 
   useEffect(() => {
+    let active = true
     const fetchData = async () => {
       setIsLoading(true)
-      // TODO: Replace with actual API calls
-      await new Promise(resolve => setTimeout(resolve, 500))
-      setTransactions(sampleTransactions)
-      setPaymentMethods(samplePaymentMethods)
+
+      const [history, accounts] = await Promise.all([
+        paymentsService.getHistory().catch(() => null),
+        // Rejects with a 400 when no bank is linked yet — treat as none.
+        paymentsService.getPlaidAccounts().catch(() => null),
+      ])
+      if (!active) return
+
+      setTransactions(
+        (history?.payments || []).map(p => ({
+          id: p.id,
+          type: p.type || 'rent',
+          amount: p.amount ?? 0,
+          serviceFee: p.serviceFee ?? 0,
+          total: p.total ?? p.amount ?? 0,
+          status: p.status,
+          date: p.date,
+          property: p.listing?.title || null,
+          paymentMethod: p.method || 'ach',
+        }))
+      )
+      setPaymentMethods(
+        (accounts?.accounts || []).map((a, idx) => ({
+          id: a.account_id || a.accountId || String(idx),
+          type: 'bank',
+          bankName: a.name || a.official_name || 'Linked bank',
+          lastFour: a.mask || '····',
+          accountType: a.subtype
+            ? a.subtype.charAt(0).toUpperCase() + a.subtype.slice(1)
+            : 'Bank account',
+          isDefault: idx === 0,
+        }))
+      )
       setIsLoading(false)
     }
 
     fetchData()
+    return () => {
+      active = false
+    }
   }, [])
 
   const pendingPayments = transactions.filter(t => t.status === 'pending')
@@ -328,7 +298,10 @@ function PaymentsView() {
                 {pendingPayments.length > 1 ? 's' : ''} totaling $
                 {totalPending.toFixed(2)}
               </p>
-              <button className="mt-2 text-sm font-medium text-yellow-800 underline">
+              <button
+                onClick={() => navigate('/profile/tenant-dashboard')}
+                className="mt-2 text-sm font-medium text-yellow-800 underline"
+              >
                 Pay Now
               </button>
             </div>
@@ -363,6 +336,19 @@ function PaymentsView() {
         </div>
       ) : (
         <div className="p-4 space-y-3">
+          {paymentMethods.length === 0 && (
+            <div className="text-center py-10 px-4">
+              <Building size={48} className="mx-auto text-gray-300 mb-3" />
+              <h3 className="text-lg font-semibold text-gray-600 mb-2">
+                No bank linked yet
+              </h3>
+              <p className="text-gray-500 text-sm">
+                Link your bank securely with Plaid during pre-qualification to
+                verify income and pay through Rentra.
+              </p>
+            </div>
+          )}
+
           {paymentMethods.map(method => (
             <PaymentMethodCard
               key={method.id}
@@ -371,9 +357,14 @@ function PaymentsView() {
             />
           ))}
 
-          <button className="w-full flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-brand-300 hover:text-brand-500 transition-colors">
+          <button
+            onClick={() => navigate('/pre-qualify')}
+            className="w-full flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-brand-300 hover:text-brand-500 transition-colors"
+          >
             <Plus size={20} className="mr-2" />
-            Add Payment Method
+            {paymentMethods.length === 0
+              ? 'Link a bank account'
+              : 'Manage bank connection'}
           </button>
         </div>
       )}
@@ -407,18 +398,14 @@ function PaymentsView() {
               </div>
 
               <div className="space-y-4">
-                <div className="flex justify-between py-2 border-b">
-                  <span className="text-gray-500">Property</span>
-                  <span className="font-medium">
-                    {selectedTransaction.property}
-                  </span>
-                </div>
-                <div className="flex justify-between py-2 border-b">
-                  <span className="text-gray-500">Landlord</span>
-                  <span className="font-medium">
-                    {selectedTransaction.landlord}
-                  </span>
-                </div>
+                {selectedTransaction.property && (
+                  <div className="flex justify-between py-2 border-b">
+                    <span className="text-gray-500">Property</span>
+                    <span className="font-medium">
+                      {selectedTransaction.property}
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between py-2 border-b">
                   <span className="text-gray-500">Date</span>
                   <span className="font-medium">

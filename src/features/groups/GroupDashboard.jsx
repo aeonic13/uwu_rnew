@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Users, Plus, MessageSquare, Home, Crown, Calendar } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
@@ -7,9 +7,17 @@ import LoadingSpinner from '../../components/common/LoadingSpinner'
 
 export default function GroupDashboard() {
   const { user } = useAuth()
-  const { userGroups, groupInvitations, fetchUserGroups, isLoading } =
-    useGroups()
+  const {
+    userGroups,
+    groupInvitations,
+    fetchUserGroups,
+    acceptInvitation,
+    declineInvitation,
+    isLoading,
+  } = useGroups()
   const navigate = useNavigate()
+  const [inviteError, setInviteError] = useState(null)
+  const [respondingId, setRespondingId] = useState(null)
 
   useEffect(() => {
     if (user) {
@@ -25,8 +33,16 @@ export default function GroupDashboard() {
     navigate(`/groups/${groupId}`)
   }
 
-  const handleInvitationClick = invitationId => {
-    navigate(`/groups/invitations/${invitationId}`)
+  const respondToInvitation = async (invitation, accept) => {
+    setInviteError(null)
+    setRespondingId(invitation.id)
+    const result = accept
+      ? await acceptInvitation(invitation)
+      : await declineInvitation(invitation)
+    setRespondingId(null)
+    if (!result.success) {
+      setInviteError(result.error || 'Could not respond to the invitation')
+    }
   }
 
   if (isLoading) {
@@ -64,22 +80,44 @@ export default function GroupDashboard() {
       {pendingInvitations.length > 0 && (
         <div className="mb-8">
           <h2 className="text-xl font-semibold mb-4">Pending Invitations</h2>
+          {inviteError && (
+            <p className="text-sm text-red-600 mb-3">{inviteError}</p>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {pendingInvitations.map(invitation => (
               <div
                 key={invitation.id}
-                onClick={() => handleInvitationClick(invitation.id)}
-                className="bg-brand-50 border-2 border-brand-200 rounded-lg p-4 cursor-pointer hover:bg-brand-100 transition-colors"
+                className="bg-brand-50 border-2 border-brand-200 rounded-lg p-4"
               >
                 <div className="flex items-center gap-3 mb-2">
                   <Users size={20} className="text-brand-500" />
                   <span className="font-semibold text-blue-900">
-                    Group Invitation
+                    {invitation.groupName}
                   </span>
                 </div>
-                <p className="text-sm text-gray-700">
-                  You've been invited to join a group
+                <p className="text-sm text-gray-700 mb-1">
+                  {invitation.invitedBy} invited you to join
+                  {invitation.description ? ` — ${invitation.description}` : ''}
                 </p>
+                <p className="text-xs text-gray-500 mb-3">
+                  {invitation.memberCount}/{invitation.maxMembers} members
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => respondToInvitation(invitation, true)}
+                    disabled={respondingId === invitation.id}
+                    className="flex-1 py-2 bg-brand-500 text-white rounded-lg text-sm font-semibold hover:bg-brand-600 transition-colors disabled:opacity-50"
+                  >
+                    Accept
+                  </button>
+                  <button
+                    onClick={() => respondToInvitation(invitation, false)}
+                    disabled={respondingId === invitation.id}
+                    className="flex-1 py-2 border border-gray-300 text-gray-600 rounded-lg text-sm font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  >
+                    Decline
+                  </button>
+                </div>
               </div>
             ))}
           </div>

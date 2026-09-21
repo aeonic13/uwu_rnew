@@ -1,6 +1,7 @@
 import express from 'express'
 import prisma from '../utils/prisma.js'
 import { authenticate } from '../middleware/authenticate.js'
+import { sendGroupInviteEmail } from '../utils/email.js'
 
 const router = express.Router()
 
@@ -12,10 +13,20 @@ const memberInclude = {
       },
     },
   },
+  // Listings shared into the group chat drive the "N saved" stat.
+  messages: {
+    where: { type: 'listing' },
+    select: { metadata: true },
+  },
 }
 
 // Shape a group for the frontend GroupsContext.
 function shape(group) {
+  const interested = new Set()
+  for (const m of group.messages || []) {
+    const listingId = m.metadata?.listingData?.id || m.metadata?.listingId
+    if (listingId) interested.add(listingId)
+  }
   return {
     id: group.id,
     name: group.name,
@@ -24,7 +35,7 @@ function shape(group) {
     status: group.status,
     createdAt: group.createdAt,
     createdById: group.createdById,
-    interestedListings: [],
+    interestedListings: [...interested],
     members: (group.members || []).map(m => ({
       id: m.id,
       userId: m.userId,
@@ -112,6 +123,50 @@ router.get('/my', authenticate, async (req, res) => {
 })
 
 /**
+ * GET /api/groups/invitations — pending invitations for the current user
+ * (matched by linked userId or by the email the invite was sent to).
+ * Registered before /:id so "invitations" isn't captured as an id.
+ */
+router.get('/invitations', authenticate, async (req, res) => {
+  try {
+    const invites = await prisma.groupMember.findMany({
+      where: {
+        status: 'invited',
+        OR: [
+          { userId: req.user.id },
+          { inviteEmail: req.user.email.toLowerCase() },
+        ],
+      },
+      include: {
+        group: {
+          include: {
+            members: { where: { status: 'active' }, select: { id: true } },
+            createdBy: { select: { firstName: true, lastName: true } },
+          },
+        },
+      },
+      orderBy: { joinedAt: 'desc' },
+    })
+    res.json({
+      invitations: invites.map(i => ({
+        id: i.id,
+        groupId: i.groupId,
+        groupName: i.group.name,
+        description: i.group.description,
+        memberCount: i.group.members.length,
+        maxMembers: i.group.maxMembers,
+        invitedBy: `${i.group.createdBy.firstName} ${i.group.createdBy.lastName}`,
+        invitedAt: i.joinedAt,
+        status: 'pending',
+      })),
+    })
+  } catch (error) {
+    console.error('List invitations error:', error)
+    res.status(500).json({ error: { message: 'Failed to list invitations' } })
+  }
+})
+
+/**
  * GET /api/groups/:id — group detail (members only).
  */
 router.get('/:id', authenticate, async (req, res) => {
@@ -171,6 +226,18 @@ router.post('/:id/invite', authenticate, async (req, res) => {
         status: 'invited',
       },
     })
+
+    // Fire-and-forget: the invite is valid even if the email fails.
+    sendGroupInviteEmail({
+      email: email.toLowerCase(),
+      inviterName: `${req.user.firstName} ${req.user.lastName}`,
+      group: {
+        name: group.name,
+        description: group.description,
+        maxMembers: group.maxMembers,
+      },
+    }).catch(err => console.error('Group invite email error:', err))
+
     res.status(201).json({ member })
   } catch (error) {
     console.error('Invite member error:', error)
@@ -205,6 +272,34 @@ router.post('/:id/join', authenticate, async (req, res) => {
   } catch (error) {
     console.error('Join group error:', error)
     res.status(500).json({ error: { message: 'Failed to join group' } })
+  }
+})
+
+/**
+ * POST /api/groups/:id/decline — decline an invitation (current user).
+ * Mirrors the join lookup so email-only invites (no linked account at
+ * invite time) can also be declined.
+ */
+router.post('/:id/decline', authenticate, async (req, res) => {
+  try {
+    const invite = await prisma.groupMember.findFirst({
+      where: {
+        groupId: req.params.id,
+        status: 'invited',
+        OR: [
+          { userId: req.user.id },
+          { inviteEmail: req.user.email.toLowerCase() },
+        ],
+      },
+    })
+    if (!invite) {
+      return res.status(404).json({ error: { message: 'No invitation found' } })
+    }
+    await prisma.groupMember.delete({ where: { id: invite.id } })
+    res.json({ success: true })
+  } catch (error) {
+    console.error('Decline invitation error:', error)
+    res.status(500).json({ error: { message: 'Failed to decline invitation' } })
   }
 })
 

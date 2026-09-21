@@ -809,6 +809,26 @@ router.post('/tour-request', authenticate, async (req, res) => {
       data: { unreadCount: { increment: 1 } },
     })
 
+    // Reflect the request on the sender's application for this listing so
+    // the landlord inbox shows real tour state. Best-effort: tours can
+    // precede applying, and only forward moves (never downgrading an
+    // already-scheduled tour).
+    if (listingId) {
+      try {
+        await prisma.application.updateMany({
+          where: {
+            applicantId: userId,
+            listingId,
+            status: { in: ['pending', 'approved'] },
+            tourStatus: 'not-requested',
+          },
+          data: { tourStatus: 'requested' },
+        })
+      } catch (err) {
+        console.error('Tour request application sync error:', err)
+      }
+    }
+
     res.status(201).json({
       message: {
         id: message.id,
@@ -932,6 +952,38 @@ router.put('/:messageId/tour-response', authenticate, async (req, res) => {
       },
       data: { unreadCount: { increment: 1 } },
     })
+
+    // Sync the requester's application tour state (best-effort).
+    const requestListingId = tourRequest.metadata?.listingId
+    if (requestListingId) {
+      try {
+        if (status === 'confirmed') {
+          const when = confirmedTime ? new Date(confirmedTime) : null
+          await prisma.application.updateMany({
+            where: {
+              applicantId: tourRequest.senderId,
+              listingId: requestListingId,
+              status: { in: ['pending', 'approved'] },
+            },
+            data: {
+              tourStatus: 'scheduled',
+              ...(when && !isNaN(when) && { tourDate: when }),
+            },
+          })
+        } else if (status === 'declined') {
+          await prisma.application.updateMany({
+            where: {
+              applicantId: tourRequest.senderId,
+              listingId: requestListingId,
+              tourStatus: 'requested',
+            },
+            data: { tourStatus: 'not-requested', tourDate: null },
+          })
+        }
+      } catch (err) {
+        console.error('Tour response application sync error:', err)
+      }
+    }
 
     res.json({
       message: {

@@ -1,5 +1,6 @@
 import express from 'express'
 import multer from 'multer'
+import prisma from '../utils/prisma.js'
 import { authenticate } from '../middleware/authenticate.js'
 import {
   upload,
@@ -66,8 +67,13 @@ router.post(
         })
       }
 
-      // Upload to Cloudinary
+      // Upload to Cloudinary and persist on the user so the new avatar
+      // survives the next profile fetch.
       const avatarUrl = await uploadAvatar(req.file.buffer, req.user.id)
+      await prisma.user.update({
+        where: { id: req.user.id },
+        data: { avatarUrl },
+      })
 
       res.status(201).json({
         message: 'Avatar uploaded successfully',

@@ -12,6 +12,7 @@ import {
   Linkedin,
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
+import { uploadService } from '../../services/uploadService'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 
 /**
@@ -148,7 +149,12 @@ function EditProfile() {
     setIsLoading(true)
 
     try {
-      // TODO: Handle avatar upload separately
+      // Upload the new avatar first so the profile update below returns
+      // the fresh avatarUrl into auth state.
+      if (avatarFile) {
+        await uploadService.uploadAvatar(avatarFile)
+      }
+
       const result = await updateUser(formData)
 
       if (result.success) {
