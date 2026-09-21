@@ -128,6 +128,47 @@ router.get('/conversations', authenticate, async (req, res) => {
       }
     })
 
+    // Classify each listing conversation as an inquiry until an application
+    // exists between the two parties for that listing — derived live, so a
+    // thread moves from Inquiries to Direct the moment the tenant applies
+    // (and back if the application is withdrawn).
+    const listingIds = [
+      ...new Set(conversations.map(c => c.listing?.id).filter(Boolean)),
+    ]
+    if (listingIds.length > 0) {
+      let appliedKeys
+      if (req.user.userType === 'student') {
+        const apps = await prisma.application.findMany({
+          where: { applicantId: userId, listingId: { in: listingIds } },
+          select: { listingId: true },
+        })
+        appliedKeys = new Set(apps.map(a => a.listingId))
+        for (const c of conversations) {
+          c.isInquiry = !!c.listing?.id && !appliedKeys.has(c.listing.id)
+        }
+      } else {
+        const otherIds = [
+          ...new Set(conversations.flatMap(c => c.otherUsers.map(u => u.id))),
+        ]
+        const apps = await prisma.application.findMany({
+          where: {
+            ownerId: userId,
+            listingId: { in: listingIds },
+            applicantId: { in: otherIds },
+          },
+          select: { listingId: true, applicantId: true },
+        })
+        appliedKeys = new Set(apps.map(a => `${a.listingId}:${a.applicantId}`))
+        for (const c of conversations) {
+          c.isInquiry =
+            !!c.listing?.id &&
+            !c.otherUsers.some(u => appliedKeys.has(`${c.listing.id}:${u.id}`))
+        }
+      }
+    } else {
+      for (const c of conversations) c.isInquiry = false
+    }
+
     res.json({
       conversations,
       pagination: {

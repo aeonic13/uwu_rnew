@@ -8,6 +8,7 @@ import {
   CheckCheck,
   Users,
   Home,
+  Inbox,
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { messagingService } from '../../services/messagingService'
@@ -43,6 +44,9 @@ function normalizeConversation(apiConv) {
         }
       : null,
     unreadCount: apiConv.unreadCount || 0,
+    // Listing thread with no application yet — lives in the Inquiries tab
+    // until the tenant applies, then moves to Direct automatically.
+    isInquiry: !!apiConv.isInquiry,
   }
 }
 
@@ -280,10 +284,20 @@ function MessagesView() {
           isStudent ? groupsService.listMy().catch(() => []) : [],
         ])
         if (!active) return
-        setConversations(
-          (convData.conversations || []).map(normalizeConversation)
+        const normalized = (convData.conversations || []).map(
+          normalizeConversation
         )
+        setConversations(normalized)
         setGroups(groupData || [])
+        // First load: land on Inquiries when that's all there is, so the
+        // list doesn't open on an empty Direct tab.
+        if (
+          !silent &&
+          normalized.length > 0 &&
+          normalized.every(c => c.isInquiry)
+        ) {
+          setActiveTab('inquiries')
+        }
       } catch (err) {
         console.error('Failed to load conversations:', err)
       } finally {
@@ -309,14 +323,18 @@ function MessagesView() {
   }
 
   const term = searchTerm.toLowerCase()
-  const filteredConversations = conversations.filter(conversation => {
+  const matchesSearch = conversation => {
     if (!term) return true
     return (
       conversation.participant.name.toLowerCase().includes(term) ||
       conversation.listing.title.toLowerCase().includes(term) ||
       (conversation.lastMessage?.text || '').toLowerCase().includes(term)
     )
-  })
+  }
+  const inquiries = conversations.filter(c => c.isInquiry)
+  const directConversations = conversations.filter(c => !c.isInquiry)
+  const filteredInquiries = inquiries.filter(matchesSearch)
+  const filteredDirect = directConversations.filter(matchesSearch)
   const filteredGroups = groups.filter(group => {
     if (!term) return true
     return (
@@ -325,10 +343,11 @@ function MessagesView() {
     )
   })
 
-  const unreadCount = conversations.reduce(
-    (sum, c) => sum + (c.unreadCount || 0),
-    0
-  )
+  const unreadOf = list =>
+    list.reduce((sum, c) => sum + (c.unreadCount || 0), 0)
+  const unreadCount = unreadOf(conversations)
+  const inquiryUnread = unreadOf(inquiries)
+  const directUnread = unreadOf(directConversations)
 
   if (isLoading) {
     return (
@@ -339,6 +358,7 @@ function MessagesView() {
   }
 
   const showGroupsTab = isStudent
+  const tabUnread = { inquiries: inquiryUnread, direct: directUnread }
 
   return (
     <div className="min-h-screen bg-white pb-20">
@@ -367,52 +387,71 @@ function MessagesView() {
           </div>
         </div>
 
-        {/* Direct vs Rental Groups */}
-        {showGroupsTab && (
-          <div className="flex border-t">
-            <button
-              onClick={() => setActiveTab('direct')}
-              className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors flex items-center justify-center gap-2 ${
-                activeTab === 'direct'
-                  ? 'border-brand-500 text-brand-500'
-                  : 'border-transparent text-gray-500'
-              }`}
-            >
-              <MessageCircle size={16} />
-              Direct ({conversations.length})
-              {unreadCount > 0 && (
-                <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-brand-500 text-white text-[11px] font-bold flex items-center justify-center">
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab('groups')}
-              className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors flex items-center justify-center gap-2 ${
-                activeTab === 'groups'
-                  ? 'border-brand-500 text-brand-500'
-                  : 'border-transparent text-gray-500'
-              }`}
-            >
-              <Users size={16} />
-              Rental Groups ({groups.length})
-            </button>
-          </div>
-        )}
+        {/* Inquiries vs Direct vs Rental Groups */}
+        <div className="flex border-t">
+          {[
+            {
+              id: 'inquiries',
+              label: 'Inquiries',
+              icon: Inbox,
+              count: inquiries.length,
+            },
+            {
+              id: 'direct',
+              label: 'Direct',
+              icon: MessageCircle,
+              count: directConversations.length,
+            },
+            ...(showGroupsTab
+              ? [
+                  {
+                    id: 'groups',
+                    label: 'Rental Groups',
+                    icon: Users,
+                    count: groups.length,
+                  },
+                ]
+              : []),
+          ].map(tab => {
+            const Icon = tab.icon
+            const badge = tabUnread[tab.id] || 0
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors flex items-center justify-center gap-2 ${
+                  activeTab === tab.id
+                    ? 'border-brand-500 text-brand-500'
+                    : 'border-transparent text-gray-500'
+                }`}
+              >
+                <Icon size={16} />
+                {tab.label} ({tab.count})
+                {badge > 0 && (
+                  <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-brand-500 text-white text-[11px] font-bold flex items-center justify-center">
+                    {badge > 9 ? '9+' : badge}
+                  </span>
+                )}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
-      {/* Direct conversations */}
-      {(!showGroupsTab || activeTab === 'direct') &&
-        (filteredConversations.length === 0 ? (
+      {/* Inquiries — listing threads with no application yet */}
+      {activeTab === 'inquiries' &&
+        (filteredInquiries.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 px-4">
-            <MessageCircle size={64} className="text-gray-300 mb-4" />
+            <Inbox size={64} className="text-gray-300 mb-4" />
             <h3 className="text-lg font-semibold text-gray-600 mb-2">
-              {searchTerm ? 'No conversations found' : 'No messages yet'}
+              {searchTerm ? 'No inquiries found' : 'No open inquiries'}
             </h3>
-            <p className="text-gray-500 text-center">
+            <p className="text-gray-500 text-center max-w-sm">
               {searchTerm
                 ? 'Try a different search term'
-                : 'Start a conversation by messaging a property owner'}
+                : isStudent
+                  ? 'Message a landlord from any listing to ask questions. Once you apply, the conversation moves to Direct.'
+                  : 'When renters message you about a listing before applying, they show up here. Once they apply, the thread moves to Direct.'}
             </p>
             {!searchTerm && isStudent && (
               <button
@@ -425,7 +464,36 @@ function MessagesView() {
           </div>
         ) : (
           <div>
-            {filteredConversations.map(conversation => (
+            {filteredInquiries.map(conversation => (
+              <ConversationCard
+                key={conversation.id}
+                conversation={conversation}
+                viewerType={user?.userType}
+                onClick={handleConversationClick}
+              />
+            ))}
+          </div>
+        ))}
+
+      {/* Direct — applied conversations and everything non-listing */}
+      {activeTab === 'direct' &&
+        (filteredDirect.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 px-4">
+            <MessageCircle size={64} className="text-gray-300 mb-4" />
+            <h3 className="text-lg font-semibold text-gray-600 mb-2">
+              {searchTerm ? 'No conversations found' : 'No direct messages yet'}
+            </h3>
+            <p className="text-gray-500 text-center max-w-sm">
+              {searchTerm
+                ? 'Try a different search term'
+                : isStudent
+                  ? 'Conversations move here automatically once you apply to a place. Housemate chats live here too.'
+                  : 'Conversations with your applicants and tenants appear here.'}
+            </p>
+          </div>
+        ) : (
+          <div>
+            {filteredDirect.map(conversation => (
               <ConversationCard
                 key={conversation.id}
                 conversation={conversation}
