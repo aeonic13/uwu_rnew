@@ -115,7 +115,33 @@ router.get('/my', authenticate, async (req, res) => {
       include: memberInclude,
       orderBy: { createdAt: 'desc' },
     })
-    res.json({ groups: groups.map(shape) })
+
+    // Latest chat message per group, for list previews (Messages tab).
+    const latest = groups.length
+      ? await prisma.groupMessage.findMany({
+          where: { groupId: { in: groups.map(g => g.id) } },
+          orderBy: { createdAt: 'desc' },
+          distinct: ['groupId'],
+          include: { sender: { select: { firstName: true } } },
+        })
+      : []
+    const latestByGroup = new Map(latest.map(m => [m.groupId, m]))
+
+    res.json({
+      groups: groups.map(g => {
+        const shaped = shape(g)
+        const m = latestByGroup.get(g.id)
+        shaped.lastMessage = m
+          ? {
+              content: m.type === 'listing' ? 'Shared a listing' : m.content,
+              type: m.type,
+              senderName: m.sender?.firstName || 'Member',
+              timestamp: m.createdAt,
+            }
+          : null
+        return shaped
+      }),
+    })
   } catch (error) {
     console.error('List groups error:', error)
     res.status(500).json({ error: { message: 'Failed to list groups' } })

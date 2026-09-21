@@ -65,9 +65,17 @@ export const groupsService = {
     return res.messages || []
   },
 
-  /** Send a chat message; returns the created message. */
-  async sendMessage(groupId, content) {
-    const res = await apiClient.post(`/groups/${groupId}/messages`, { content })
+  /**
+   * Send a chat message; returns the created message. Pass
+   * `{ type: 'listing', metadata: { listingData } }` to share a listing
+   * card into the chat.
+   */
+  async sendMessage(groupId, content, { type, metadata } = {}) {
+    const res = await apiClient.post(`/groups/${groupId}/messages`, {
+      content,
+      ...(type && { type }),
+      ...(metadata && { metadata }),
+    })
     return res.message
   },
 }

@@ -1,9 +1,17 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import PropTypes from 'prop-types'
-import { Search, MessageCircle, Clock, Check, CheckCheck } from 'lucide-react'
+import {
+  Search,
+  MessageCircle,
+  Check,
+  CheckCheck,
+  Users,
+  Home,
+} from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { messagingService } from '../../services/messagingService'
+import { groupsService } from '../../services/groupsService'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 
 /**
@@ -24,6 +32,7 @@ function normalizeConversation(apiConv) {
         ? `${otherUser.firstName} ${otherUser.lastName}`
         : 'Unknown',
       avatar: otherUser?.avatarUrl || null,
+      userType: otherUser?.userType || null,
     },
     lastMessage: lm
       ? {
@@ -56,9 +65,40 @@ function formatRelativeTime(timestamp) {
 }
 
 /**
+ * Who-am-I-talking-to chip: landlord threads look different from
+ * tenant/housemate threads at a glance.
+ */
+function RoleChip({ userType, viewerType }) {
+  if (!userType) return null
+  const isLandlord = userType === 'owner'
+  const label = isLandlord
+    ? 'Landlord'
+    : viewerType === 'owner'
+      ? 'Tenant'
+      : 'Housemate'
+  return (
+    <span
+      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium flex-shrink-0 ${
+        isLandlord
+          ? 'bg-brand-100 text-brand-600'
+          : 'bg-purple-100 text-purple-700'
+      }`}
+    >
+      <Home size={10} className="mr-1" />
+      {label}
+    </span>
+  )
+}
+
+RoleChip.propTypes = {
+  userType: PropTypes.string,
+  viewerType: PropTypes.string,
+}
+
+/**
  * Conversation card component
  */
-function ConversationCard({ conversation, onClick }) {
+function ConversationCard({ conversation, viewerType, onClick }) {
   const isUnread = conversation.unreadCount > 0
   const lm = conversation.lastMessage
   const isFromMe = lm?.sender === 'me'
@@ -89,10 +129,16 @@ function ConversationCard({ conversation, onClick }) {
       {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex justify-between items-start mb-1">
-          <span
-            className={`font-semibold ${isUnread ? 'text-gray-900' : 'text-gray-700'}`}
-          >
-            {conversation.participant.name}
+          <span className="flex items-center gap-2 min-w-0">
+            <span
+              className={`font-semibold truncate ${isUnread ? 'text-gray-900' : 'text-gray-700'}`}
+            >
+              {conversation.participant.name}
+            </span>
+            <RoleChip
+              userType={conversation.participant.userType}
+              viewerType={viewerType}
+            />
           </span>
           {lm && (
             <span className="text-xs text-gray-500 flex-shrink-0 ml-2">
@@ -136,44 +182,108 @@ ConversationCard.propTypes = {
     participant: PropTypes.shape({
       name: PropTypes.string.isRequired,
       avatar: PropTypes.string,
+      userType: PropTypes.string,
     }).isRequired,
     lastMessage: PropTypes.shape({
       text: PropTypes.string.isRequired,
       timestamp: PropTypes.string.isRequired,
       isRead: PropTypes.bool,
       sender: PropTypes.string,
-    }).isRequired,
+    }),
     unreadCount: PropTypes.number,
+  }).isRequired,
+  viewerType: PropTypes.string,
+  onClick: PropTypes.func.isRequired,
+}
+
+/**
+ * Rental group chat card — distinct look from direct threads.
+ */
+function GroupChatCard({ group, onClick }) {
+  const lm = group.lastMessage
+  return (
+    <button
+      onClick={() => onClick(group.id)}
+      className="w-full p-4 flex items-start gap-3 hover:bg-gray-50 transition-colors text-left border-b border-gray-100"
+    >
+      <div className="w-14 h-14 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0">
+        <Users size={24} className="text-brand-500" />
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <div className="flex justify-between items-start mb-1">
+          <span className="flex items-center gap-2 min-w-0">
+            <span className="font-semibold text-gray-700 truncate">
+              {group.name}
+            </span>
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-purple-100 text-purple-700 flex-shrink-0">
+              <Users size={10} className="mr-1" />
+              Rental group
+            </span>
+          </span>
+          {lm && (
+            <span className="text-xs text-gray-500 flex-shrink-0 ml-2">
+              {formatRelativeTime(lm.timestamp)}
+            </span>
+          )}
+        </div>
+
+        <div className="text-sm text-gray-500 mb-1">
+          {group.members?.length || 0} members
+        </div>
+
+        <p className="text-sm text-gray-600 truncate">
+          {lm ? `${lm.senderName}: ${lm.content}` : 'No messages yet'}
+        </p>
+      </div>
+    </button>
+  )
+}
+
+GroupChatCard.propTypes = {
+  group: PropTypes.shape({
+    id: PropTypes.string.isRequired,
+    name: PropTypes.string.isRequired,
+    members: PropTypes.array,
+    lastMessage: PropTypes.shape({
+      content: PropTypes.string,
+      senderName: PropTypes.string,
+      timestamp: PropTypes.string,
+    }),
   }).isRequired,
   onClick: PropTypes.func.isRequired,
 }
 
 /**
- * Messages View - List of conversations
+ * Messages View - direct conversations and rental-group chats
  */
 function MessagesView() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const isStudent = user?.userType === 'student'
 
+  const [activeTab, setActiveTab] = useState('direct')
   const [conversations, setConversations] = useState([])
+  const [groups, setGroups] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
   const [isLoading, setIsLoading] = useState(true)
-
-  // Note: listing pages now start conversations directly via
-  // startConversation and navigate straight to the thread, so the old
-  // ?listingId=… redirect flow (which dead-ended at a nonexistent
-  // /messages/new route) is gone.
 
   useEffect(() => {
     let active = true
 
-    const fetchConversations = async (silent = false) => {
+    const fetchAll = async (silent = false) => {
       if (!silent) setIsLoading(true)
       try {
-        const data = await messagingService.getConversations()
+        const [convData, groupData] = await Promise.all([
+          messagingService.getConversations(),
+          // Groups are a tenant feature; owners only have direct threads.
+          isStudent ? groupsService.listMy().catch(() => []) : [],
+        ])
         if (!active) return
-        const normalized = (data.conversations || []).map(normalizeConversation)
-        setConversations(normalized)
+        setConversations(
+          (convData.conversations || []).map(normalizeConversation)
+        )
+        setGroups(groupData || [])
       } catch (err) {
         console.error('Failed to load conversations:', err)
       } finally {
@@ -181,26 +291,37 @@ function MessagesView() {
       }
     }
 
-    fetchConversations()
-    // Refresh the list quietly so new conversations/unreads show up.
-    const timer = setInterval(() => fetchConversations(true), 30000)
+    fetchAll()
+    // Refresh the lists quietly so new conversations/unreads show up.
+    const timer = setInterval(() => fetchAll(true), 30000)
     return () => {
       active = false
       clearInterval(timer)
     }
-  }, [])
+  }, [isStudent])
 
   const handleConversationClick = conversationId => {
     navigate(`/messages/${conversationId}`)
   }
 
+  const handleGroupClick = groupId => {
+    navigate(`/groups/${groupId}/chat`)
+  }
+
+  const term = searchTerm.toLowerCase()
   const filteredConversations = conversations.filter(conversation => {
-    if (!searchTerm) return true
-    const term = searchTerm.toLowerCase()
+    if (!term) return true
     return (
       conversation.participant.name.toLowerCase().includes(term) ||
       conversation.listing.title.toLowerCase().includes(term) ||
       (conversation.lastMessage?.text || '').toLowerCase().includes(term)
+    )
+  })
+  const filteredGroups = groups.filter(group => {
+    if (!term) return true
+    return (
+      group.name.toLowerCase().includes(term) ||
+      (group.lastMessage?.content || '').toLowerCase().includes(term)
     )
   })
 
@@ -217,11 +338,13 @@ function MessagesView() {
     )
   }
 
+  const showGroupsTab = isStudent
+
   return (
     <div className="min-h-screen bg-white pb-20">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-white border-b">
-        <div className="p-4">
+        <div className="p-4 pb-0">
           <div className="flex justify-between items-center mb-4">
             <h1 className="text-2xl font-bold">Messages</h1>
             {unreadCount > 0 && (
@@ -232,7 +355,7 @@ function MessagesView() {
           </div>
 
           {/* Search */}
-          <div className="relative">
+          <div className="relative mb-3">
             <Search className="absolute left-3 top-3 text-gray-400" size={20} />
             <input
               type="text"
@@ -243,40 +366,110 @@ function MessagesView() {
             />
           </div>
         </div>
+
+        {/* Direct vs Rental Groups */}
+        {showGroupsTab && (
+          <div className="flex border-t">
+            <button
+              onClick={() => setActiveTab('direct')}
+              className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors flex items-center justify-center gap-2 ${
+                activeTab === 'direct'
+                  ? 'border-brand-500 text-brand-500'
+                  : 'border-transparent text-gray-500'
+              }`}
+            >
+              <MessageCircle size={16} />
+              Direct ({conversations.length})
+              {unreadCount > 0 && (
+                <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-brand-500 text-white text-[11px] font-bold flex items-center justify-center">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab('groups')}
+              className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors flex items-center justify-center gap-2 ${
+                activeTab === 'groups'
+                  ? 'border-brand-500 text-brand-500'
+                  : 'border-transparent text-gray-500'
+              }`}
+            >
+              <Users size={16} />
+              Rental Groups ({groups.length})
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Conversations List */}
-      {filteredConversations.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 px-4">
-          <MessageCircle size={64} className="text-gray-300 mb-4" />
-          <h3 className="text-lg font-semibold text-gray-600 mb-2">
-            {searchTerm ? 'No conversations found' : 'No messages yet'}
-          </h3>
-          <p className="text-gray-500 text-center">
-            {searchTerm
-              ? 'Try a different search term'
-              : 'Start a conversation by messaging a property owner'}
-          </p>
-          {!searchTerm && user?.userType === 'student' && (
-            <button
-              onClick={() => navigate('/listings')}
-              className="mt-4 bg-brand-500 text-white px-6 py-2 rounded-lg hover:bg-brand-600 transition-colors"
-            >
-              Browse Listings
-            </button>
-          )}
-        </div>
-      ) : (
-        <div>
-          {filteredConversations.map(conversation => (
-            <ConversationCard
-              key={conversation.id}
-              conversation={conversation}
-              onClick={handleConversationClick}
-            />
-          ))}
-        </div>
-      )}
+      {/* Direct conversations */}
+      {(!showGroupsTab || activeTab === 'direct') &&
+        (filteredConversations.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 px-4">
+            <MessageCircle size={64} className="text-gray-300 mb-4" />
+            <h3 className="text-lg font-semibold text-gray-600 mb-2">
+              {searchTerm ? 'No conversations found' : 'No messages yet'}
+            </h3>
+            <p className="text-gray-500 text-center">
+              {searchTerm
+                ? 'Try a different search term'
+                : 'Start a conversation by messaging a property owner'}
+            </p>
+            {!searchTerm && isStudent && (
+              <button
+                onClick={() => navigate('/listings')}
+                className="mt-4 bg-brand-500 text-white px-6 py-2 rounded-lg hover:bg-brand-600 transition-colors"
+              >
+                Browse Listings
+              </button>
+            )}
+          </div>
+        ) : (
+          <div>
+            {filteredConversations.map(conversation => (
+              <ConversationCard
+                key={conversation.id}
+                conversation={conversation}
+                viewerType={user?.userType}
+                onClick={handleConversationClick}
+              />
+            ))}
+          </div>
+        ))}
+
+      {/* Rental group chats */}
+      {showGroupsTab &&
+        activeTab === 'groups' &&
+        (filteredGroups.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 px-4">
+            <Users size={64} className="text-gray-300 mb-4" />
+            <h3 className="text-lg font-semibold text-gray-600 mb-2">
+              {searchTerm ? 'No groups found' : 'No rental groups yet'}
+            </h3>
+            <p className="text-gray-500 text-center">
+              {searchTerm
+                ? 'Try a different search term'
+                : 'Create a group with friends to chat, share listings, and apply together'}
+            </p>
+            {!searchTerm && (
+              <button
+                onClick={() => navigate('/groups/create')}
+                className="mt-4 bg-brand-500 text-white px-6 py-2 rounded-lg hover:bg-brand-600 transition-colors"
+              >
+                Create a Group
+              </button>
+            )}
+          </div>
+        ) : (
+          <div>
+            {filteredGroups.map(group => (
+              <GroupChatCard
+                key={group.id}
+                group={group}
+                onClick={handleGroupClick}
+              />
+            ))}
+          </div>
+        ))}
     </div>
   )
 }

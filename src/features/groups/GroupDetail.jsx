@@ -6,7 +6,6 @@ import {
   UserPlus,
   Mail,
   MessageSquare,
-  Settings,
   LogOut,
   Trash2,
   Shield,
@@ -127,16 +126,6 @@ export default function GroupDetail() {
               </p>
             </div>
           </div>
-
-          {isAdmin && (
-            <button
-              onClick={() => navigate(`/groups/${id}/settings`)}
-              className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-              aria-label="Group settings"
-            >
-              <Settings size={20} />
-            </button>
-          )}
         </div>
 
         {selectedGroup.description && (

@@ -69,6 +69,8 @@ router.get('/conversations', authenticate, async (req, res) => {
                     lastName: true,
                     avatarUrl: true,
                     verified: true,
+                    // Lets the client label a thread "Landlord" vs "Housemate".
+                    userType: true,
                   },
                 },
               },

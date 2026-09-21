@@ -1,15 +1,20 @@
 import { useState, useEffect, useRef } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import PropTypes from 'prop-types'
-import { Send, Image, Heart, ThumbsUp, Home, Users } from 'lucide-react'
+import { Send, Home, Users, ArrowLeft } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useGroups } from '../../contexts/GroupsContext'
 import { groupsService } from '../../services/groupsService'
 
-export default function GroupChat({ groupId }) {
+export default function GroupChat({ groupId: groupIdProp }) {
+  const { id: routeGroupId } = useParams()
+  const groupId = groupIdProp || routeGroupId
+  const navigate = useNavigate()
   const { user } = useAuth()
-  const { selectedGroup } = useGroups()
+  const { selectedGroup, getGroupById } = useGroups()
   const [messages, setMessages] = useState([])
   const [newMessage, setNewMessage] = useState('')
+  const [loadError, setLoadError] = useState(null)
   const messagesEndRef = useRef(null)
 
   // Scroll to bottom of messages
@@ -21,16 +26,23 @@ export default function GroupChat({ groupId }) {
     scrollToBottom()
   }, [messages])
 
+  // Load the group (for the header) when arriving directly at the URL.
+  useEffect(() => {
+    if (groupId && selectedGroup?.id !== groupId) {
+      getGroupById(groupId)
+    }
+  }, [groupId, selectedGroup?.id, getGroupById])
+
   // Load group messages
   useEffect(() => {
-    if (!groupId) return
+    if (!groupId) return undefined
     let active = true
     groupsService
       .getMessages(groupId)
       .then(msgs => {
         if (active) setMessages(msgs)
       })
-      .catch(() => {})
+      .catch(err => active && setLoadError(err.message))
     return () => {
       active = false
     }
@@ -56,16 +68,6 @@ export default function GroupChat({ groupId }) {
     }
   }
 
-  const handleReaction = (messageId, reaction) => {
-    // TODO: Add reaction via API
-    console.log(`Add reaction ${reaction} to message ${messageId}`)
-  }
-
-  const handleShareListing = listingId => {
-    // TODO: Share listing in chat
-    console.log(`Share listing ${listingId}`)
-  }
-
   const formatTime = timestamp => {
     const date = new Date(timestamp)
     const now = new Date()
@@ -81,10 +83,17 @@ export default function GroupChat({ groupId }) {
   }
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col bg-white h-[calc(100vh-4rem)]">
       {/* Group Header */}
       <div className="bg-brand-500 text-white p-4 border-b">
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate(`/groups/${groupId}`)}
+            className="p-1 -ml-1 hover:bg-brand-600 rounded-full transition-colors"
+            aria-label="Back to group"
+          >
+            <ArrowLeft size={22} />
+          </button>
           <Users size={24} />
           <div>
             <h2 className="font-semibold">
@@ -99,6 +108,16 @@ export default function GroupChat({ groupId }) {
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {loadError && <p className="text-sm text-red-600">{loadError}</p>}
+        {!loadError && messages.length === 0 && (
+          <div className="text-center text-gray-400 py-12">
+            <Users size={40} className="mx-auto mb-3 text-gray-300" />
+            <p className="text-sm">
+              No messages yet — say hi, or share a listing from any property
+              page.
+            </p>
+          </div>
+        )}
         {messages.map(message => {
           const isOwnMessage = message.senderId === user.id
 
@@ -139,14 +158,22 @@ export default function GroupChat({ groupId }) {
                   </div>
                 )}
 
-                {/* Listing share */}
+                {/* Listing share — opens the listing */}
                 {message.type === 'listing' && message.listingData && (
-                  <div className="max-w-sm border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow cursor-pointer">
-                    <img
-                      src={message.listingData.image}
-                      alt={message.listingData.title}
-                      className="w-full h-32 object-cover"
-                    />
+                  <button
+                    onClick={() =>
+                      message.listingData.id &&
+                      navigate(`/listings/${message.listingData.id}`)
+                    }
+                    className="max-w-sm text-left border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow"
+                  >
+                    {message.listingData.image && (
+                      <img
+                        src={message.listingData.image}
+                        alt={message.listingData.title}
+                        className="w-full h-32 object-cover"
+                      />
+                    )}
                     <div className="p-3">
                       <div className="flex items-start justify-between gap-2">
                         <h4 className="font-semibold text-sm line-clamp-2">
@@ -160,39 +187,21 @@ export default function GroupChat({ groupId }) {
                       <p className="text-xs text-gray-600 mt-1">
                         {message.listingData.location}
                       </p>
-                      <p className="text-lg font-bold text-green-600 mt-2">
-                        ${message.listingData.price}/mo
-                      </p>
+                      {message.listingData.price != null && (
+                        <p className="text-lg font-bold text-green-600 mt-2">
+                          ${message.listingData.price}/mo
+                        </p>
+                      )}
                     </div>
-                  </div>
+                  </button>
                 )}
 
-                {/* Timestamp and reactions */}
-                <div
-                  className={`flex items-center gap-2 mt-1 ${isOwnMessage ? 'flex-row-reverse' : ''}`}
+                {/* Timestamp */}
+                <span
+                  className={`text-xs text-gray-500 mt-1 ${isOwnMessage ? 'text-right' : ''}`}
                 >
-                  <span className="text-xs text-gray-500">
-                    {formatTime(message.timestamp)}
-                  </span>
-
-                  {/* Quick reactions */}
-                  <div className="flex gap-1">
-                    <button
-                      onClick={() => handleReaction(message.id, 'like')}
-                      className="p-1 hover:bg-gray-100 rounded transition-colors"
-                      aria-label="Like"
-                    >
-                      <ThumbsUp size={14} className="text-gray-400" />
-                    </button>
-                    <button
-                      onClick={() => handleReaction(message.id, 'heart')}
-                      className="p-1 hover:bg-gray-100 rounded transition-colors"
-                      aria-label="Love"
-                    >
-                      <Heart size={14} className="text-gray-400" />
-                    </button>
-                  </div>
-                </div>
+                  {formatTime(message.timestamp)}
+                </span>
               </div>
             </div>
           )
@@ -203,13 +212,6 @@ export default function GroupChat({ groupId }) {
       {/* Input Area */}
       <div className="border-t p-4 bg-gray-50">
         <div className="flex gap-2">
-          <button
-            className="p-2 text-gray-500 hover:bg-gray-200 rounded-lg transition-colors"
-            aria-label="Attach image"
-          >
-            <Image size={20} />
-          </button>
-
           <input
             type="text"
             value={newMessage}
@@ -234,5 +236,5 @@ export default function GroupChat({ groupId }) {
 }
 
 GroupChat.propTypes = {
-  groupId: PropTypes.string.isRequired,
+  groupId: PropTypes.string,
 }

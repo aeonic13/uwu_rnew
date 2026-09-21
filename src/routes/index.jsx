@@ -481,7 +481,7 @@ const routeConfig = [
           <ProtectedRoute>
             <RoleRoute allowedRoles={['student']}>
               <Suspense fallback={<SuspenseFallback />}>
-                <GroupChat groupId="" />
+                <GroupChat />
               </Suspense>
             </RoleRoute>
           </ProtectedRoute>

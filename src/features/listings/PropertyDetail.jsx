@@ -16,6 +16,7 @@ import {
   ChevronLeft,
   ChevronRight,
   CheckCircle2,
+  Users,
 } from 'lucide-react'
 import { useListings } from '../../contexts/ListingsContext'
 import { useFavorites } from '../../contexts/FavoritesContext'
@@ -23,6 +24,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { usePreQualification } from '../../hooks/usePreQualification'
 import { messagingService } from '../../services/messagingService'
 import { reviewsService } from '../../services/reviewsService'
+import ShareToGroupModal from '../groups/ShareToGroupModal'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 
 /**
@@ -350,6 +352,7 @@ function PropertyDetail() {
   const { isPreQualified } = usePreQualification()
 
   const [showShareModal, setShowShareModal] = useState(false)
+  const [showGroupShare, setShowGroupShare] = useState(false)
   const [contacting, setContacting] = useState(false)
   const [contactError, setContactError] = useState('')
 
@@ -486,6 +489,15 @@ function PropertyDetail() {
               >
                 <Share2 size={24} className="text-gray-600" />
               </button>
+              {user?.userType === 'student' && (
+                <button
+                  onClick={() => setShowGroupShare(true)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  aria-label="Share with your rental group"
+                >
+                  <Users size={24} className="text-gray-600" />
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -517,6 +529,15 @@ function PropertyDetail() {
                 <Share2 size={20} className="text-gray-600" />
                 Share
               </button>
+              {user?.userType === 'student' && (
+                <button
+                  onClick={() => setShowGroupShare(true)}
+                  className="flex-1 flex items-center justify-center gap-2 p-3 border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <Users size={20} className="text-gray-600" />
+                  Share to Group
+                </button>
+              )}
             </div>
           </div>
 
@@ -662,6 +683,14 @@ function PropertyDetail() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Share to rental group */}
+      {showGroupShare && (
+        <ShareToGroupModal
+          listing={listing}
+          onClose={() => setShowGroupShare(false)}
+        />
       )}
 
       {/* Share Modal */}
