@@ -13,6 +13,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { messagingService } from '../../services/messagingService'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import PhotoLightbox from '../../components/common/PhotoLightbox'
+import HousemateMatchCard from '../housemates/HousemateMatchCard'
 
 /**
  * Normalize API message shape to component shape
@@ -659,26 +660,28 @@ function ConversationView() {
           </div>
         </div>
 
-        {/* Property Info Bar */}
-        <div
-          className="flex items-center px-4 py-2 bg-gray-50 border-t cursor-pointer hover:bg-gray-100 transition-colors"
-          onClick={() => navigate(`/listings/${conversation.listing.id}`)}
-        >
-          <img
-            src={conversation.listing.image}
-            alt={conversation.listing.title}
-            className="w-12 h-12 rounded-lg object-cover mr-3"
-          />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">
-              {conversation.listing.title}
-            </p>
-            <p className="text-sm text-green-600 font-semibold">
-              ${conversation.listing.price}/mo
-            </p>
+        {/* Property Info Bar (listing threads only) */}
+        {conversation.listing.id && (
+          <div
+            className="flex items-center px-4 py-2 bg-gray-50 border-t cursor-pointer hover:bg-gray-100 transition-colors"
+            onClick={() => navigate(`/listings/${conversation.listing.id}`)}
+          >
+            <img
+              src={conversation.listing.image}
+              alt={conversation.listing.title}
+              className="w-12 h-12 rounded-lg object-cover mr-3"
+            />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">
+                {conversation.listing.title}
+              </p>
+              <p className="text-sm text-green-600 font-semibold">
+                ${conversation.listing.price}/mo
+              </p>
+            </div>
+            <Info size={16} className="text-gray-400" />
           </div>
-          <Info size={16} className="text-gray-400" />
-        </div>
+        )}
       </div>
 
       {/* Messages */}
@@ -689,6 +692,9 @@ function ConversationView() {
             onView={() => navigate(`/listings/${conversation.listing.id}`)}
             onPhotoClick={setGalleryIndex}
           />
+        )}
+        {!conversation.listing.id && (
+          <HousemateMatchCard userId={conversation.participant.id} />
         )}
         {Object.entries(groupedMessages).map(([date, messages]) => (
           <div key={date}>
