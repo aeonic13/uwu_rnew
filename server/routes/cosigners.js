@@ -130,10 +130,11 @@ router.post('/invite', authenticate, async (req, res) => {
         cosignerEmail,
         cosignerName: cosignerName || 'there',
         tenantName: `${req.user.firstName} ${req.user.lastName}`,
-        listingTitle:
-          application?.listing.title || 'their upcoming rental applications',
-        listingLocation: application?.listing.location || 'Rentra',
-        monthlyRent: application?.listing.price || null,
+        // Floating pre-qual invites have no listing; the template renders a
+        // "backs every application" box instead of property details.
+        listingTitle: application?.listing?.title || null,
+        listingLocation: application?.listing?.location || null,
+        monthlyRent: application?.listing?.price ?? null,
         inviteToken,
         inviteUrl: `${process.env.CLIENT_URL}/cosigner/accept/${inviteToken}`,
       })

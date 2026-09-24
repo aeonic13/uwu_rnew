@@ -413,13 +413,23 @@ export async function sendCosignerInvitation({
       <div class="container">
         <h2>Cosigner Invitation for Rental Application 🏠</h2>
         <p>Hi ${cosignerName},</p>
-        <p><strong>${tenantName}</strong> has invited you to be a cosigner for their rental application.</p>
+        <p><strong>${tenantName}</strong> has invited you to be a cosigner for their rental application${listingTitle ? '' : 's on Rentra'}.</p>
         
-        <div class="info-box">
+        ${
+          listingTitle
+            ? `<div class="info-box">
           <strong>Property:</strong> ${listingTitle}<br>
-          <strong>Location:</strong> ${listingLocation}<br>
-          <strong>Monthly Rent:</strong> $${monthlyRent.toFixed(2)}
-        </div>
+          <strong>Location:</strong> ${listingLocation || 'See listing'}<br>
+          <strong>Monthly Rent:</strong> ${
+            typeof monthlyRent === 'number'
+              ? `$${monthlyRent.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+              : 'See listing'
+          }
+        </div>`
+            : `<div class="info-box">
+          ${tenantName} is pre-qualifying for housing on Rentra. Accepting once backs every application they submit, and each landlord will see your verified income alongside theirs.
+        </div>`
+        }
 
         <div class="highlight">
           <strong>What is a cosigner?</strong><br>
@@ -428,9 +438,9 @@ export async function sendCosignerInvitation({
 
         <p><strong>Next Steps:</strong></p>
         <ul>
-          <li>Review the property and lease details</li>
-          <li>Create your cosigner account or link your existing account</li>
-          <li>Complete the cosigner agreement</li>
+          <li>Review the ${listingTitle ? 'property' : 'invitation'} details</li>
+          <li>Create your cosigner account</li>
+          <li>Verify your income securely through Plaid (takes about a minute)</li>
         </ul>
 
         <a href="${inviteUrl}" class="button">Review Invitation</a>
