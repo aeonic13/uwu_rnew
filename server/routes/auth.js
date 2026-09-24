@@ -1,4 +1,5 @@
 import express from 'express'
+import { authenticate } from '../middleware/authenticate.js'
 import prisma from '../utils/prisma.js'
 import {
   hashPassword,
@@ -323,6 +324,41 @@ router.post('/reset-password', async (req, res) => {
 
 // POST /api/auth/logout
 // JWTs are stateless; this exists so the client call succeeds cleanly.
+/**
+ * POST /api/auth/resend-verification
+ * Signed-in, unverified users get a fresh 48-hour verification link. The
+ * old token stops working. Rate-limited in index.js.
+ */
+router.post('/resend-verification', authenticate, async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { id: true, email: true, firstName: true, verified: true },
+    })
+    if (!user) {
+      return res.status(404).json({ error: { message: 'User not found' } })
+    }
+    if (user.verified) {
+      return res.json({ message: 'Email is already verified', verified: true })
+    }
+    const verifyToken = generateSecureToken()
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        verifyToken,
+        verifyTokenExp: new Date(Date.now() + 48 * 60 * 60 * 1000),
+      },
+    })
+    await sendVerificationEmail(user, verifyToken)
+    res.json({ message: 'Verification email sent' })
+  } catch (error) {
+    console.error('Resend verification error:', error)
+    res
+      .status(500)
+      .json({ error: { message: 'Failed to send verification email' } })
+  }
+})
+
 router.post('/logout', (req, res) => {
   res.json({ message: 'Logged out' })
 })

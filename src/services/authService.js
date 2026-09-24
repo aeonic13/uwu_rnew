@@ -73,6 +73,11 @@ export const authService = {
     return response
   },
 
+  /** Signed-in, unverified user: send a fresh verification link. */
+  async resendVerification() {
+    return apiClient.post('/auth/resend-verification')
+  },
+
   /**
    * Request password reset
    * @param {string} email - User email

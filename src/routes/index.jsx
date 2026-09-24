@@ -40,6 +40,13 @@ const HousematesHub = lazy(() => import('../features/housemates/HousematesHub'))
 // Auth pages
 const LoginPage = lazy(() => import('../features/auth/LoginPage'))
 const RegisterPage = lazy(() => import('../features/auth/RegisterPage'))
+const ForgotPasswordPage = lazy(
+  () => import('../features/auth/ForgotPasswordPage')
+)
+const ResetPasswordPage = lazy(
+  () => import('../features/auth/ResetPasswordPage')
+)
+const VerifyEmailPage = lazy(() => import('../features/auth/VerifyEmailPage'))
 const CosignerAcceptPage = lazy(
   () => import('../features/cosigner/CosignerAcceptPage')
 )
@@ -233,6 +240,32 @@ const routeConfig = [
     element: (
       <Suspense fallback={<SuspenseFallback />}>
         <PrivacyPage />
+      </Suspense>
+    ),
+  },
+
+  // Password reset and email verification (public; reached from emails)
+  {
+    path: '/forgot-password',
+    element: (
+      <Suspense fallback={<SuspenseFallback />}>
+        <ForgotPasswordPage />
+      </Suspense>
+    ),
+  },
+  {
+    path: '/reset-password',
+    element: (
+      <Suspense fallback={<SuspenseFallback />}>
+        <ResetPasswordPage />
+      </Suspense>
+    ),
+  },
+  {
+    path: '/verify-email',
+    element: (
+      <Suspense fallback={<SuspenseFallback />}>
+        <VerifyEmailPage />
       </Suspense>
     ),
   },

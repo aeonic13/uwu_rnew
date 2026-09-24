@@ -1,4 +1,10 @@
-import { createContext, useContext, useReducer, useEffect } from 'react'
+import {
+  createContext,
+  useContext,
+  useReducer,
+  useEffect,
+  useCallback,
+} from 'react'
 import PropTypes from 'prop-types'
 import { authService } from '../services/authService'
 
@@ -164,15 +170,29 @@ export function AuthProvider({ children }) {
     dispatch({ type: AUTH_ACTIONS.CLEAR_ERROR })
   }
 
+  // Re-fetch the signed-in user (e.g. after email verification flips a
+  // flag server-side). Silent no-op when signed out or the token is stale.
+  const refreshUser = useCallback(async () => {
+    const token = localStorage.getItem('authToken')
+    if (!token) return null
+    try {
+      const user = await authService.validateToken(token)
+      dispatch({ type: AUTH_ACTIONS.LOGIN_SUCCESS, payload: user })
+      return user
+    } catch {
+      return null
+    }
+  }, [])
+
   const value = {
     ...state,
     login,
     register,
     logout,
     updateUser,
+    refreshUser,
     clearError,
   }
-
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 

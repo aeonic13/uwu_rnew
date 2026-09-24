@@ -8,6 +8,8 @@ process.on('unhandledRejection', err => {
   process.exit(1)
 })
 
+// Must be the first import so Sentry initialises before anything else.
+import Sentry, { sentryEnabled } from './instrument.js'
 import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
@@ -92,6 +94,7 @@ app.use('/api/auth/login', strictLimiter)
 app.use('/api/auth/register', strictLimiter)
 app.use('/api/auth/forgot-password', strictLimiter)
 app.use('/api/auth/reset-password', strictLimiter)
+app.use('/api/auth/resend-verification', strictLimiter)
 app.use('/api/cosigners/invitation', strictLimiter)
 app.use('/api/cosigners/accept', strictLimiter)
 app.use('/api/cosigners/decline', strictLimiter)
@@ -146,6 +149,12 @@ app.use('/api/expenses', expensesRoutes)
 app.use('/api/documents', documentsRoutes)
 app.use('/api/reviews', reviewsRoutes)
 app.use('/api/saved-searches', savedSearchesRoutes)
+
+// Sentry sees every error that reaches Express before our handler formats
+// the response. No-op without SENTRY_DSN.
+if (sentryEnabled) {
+  Sentry.setupExpressErrorHandler(app)
+}
 
 // Error handling middleware
 app.use((err, req, res, next) => {
