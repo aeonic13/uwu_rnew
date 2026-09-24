@@ -7,12 +7,15 @@ import { rentalProfileService } from '../../services/rentalProfileService'
  * Universal rental application questionnaire.
  *
  * Covers the sections every standard rental application asks for
- * (residence history, employment & income, occupants/pets/vehicles,
+ * (residence history, employment & income, vehicles,
  * references, emergency contact, and standard disclosures) so tenants
  * answer them ONCE at pre-qualification instead of per property.
  *
  * Deliberately excludes SSN and date of birth — those are only needed by a
  * credit/background-check provider and should never sit in our database.
+ * Also excludes "who will live with you" and pets: co-tenants come from
+ * Rentra's roommate-group applications (one application per member), so
+ * asking here would duplicate that and drift out of sync.
  */
 
 // Section → fields. Kept flat so answers serialize as simple JSON.
@@ -58,21 +61,11 @@ const SECTIONS = [
     ],
   },
   {
-    title: 'Household',
+    title: 'Vehicles',
     fields: [
       {
-        id: 'occupants',
-        label: 'Who will live with you?',
-        placeholder: 'Names, or "just me"',
-      },
-      {
-        id: 'pets',
-        label: 'Pets (type, breed, weight)',
-        placeholder: 'e.g. 1 cat — or "none"',
-      },
-      {
         id: 'vehicles',
-        label: 'Vehicles (make, model, plate)',
+        label: 'Vehicle(s) — make, model, plate',
         placeholder: 'or "none"',
       },
     ],
@@ -110,6 +103,13 @@ const DISCLOSURES = [
 const REQUIRED_IDS = SECTIONS.flatMap(s =>
   s.fields.filter(f => f.required).map(f => f.id)
 )
+
+// Every id the questionnaire currently asks. Saves are filtered to this set
+// so answers to questions we've since removed don't linger in the JSON.
+const KNOWN_IDS = new Set([
+  ...SECTIONS.flatMap(s => s.fields.map(f => f.id)),
+  ...DISCLOSURES.map(d => d.id),
+])
 
 export default function RentalProfileForm({ onSaved }) {
   const [answers, setAnswers] = useState({})
@@ -155,7 +155,10 @@ export default function RentalProfileForm({ onSaved }) {
     setSaving(true)
     setError(null)
     try {
-      const saved = await rentalProfileService.save(answers)
+      const payload = Object.fromEntries(
+        Object.entries(answers).filter(([key]) => KNOWN_IDS.has(key))
+      )
+      const saved = await rentalProfileService.save(payload)
       setSavedAt(true)
       onSaved?.(saved)
     } catch (err) {
