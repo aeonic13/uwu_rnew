@@ -79,6 +79,8 @@ function ProfileView() {
   }
 
   const isOwner = user?.userType === 'owner'
+  const isCosigner = user?.userType === 'cosigner'
+  const isStudent = !isOwner && !isCosigner
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -155,11 +157,12 @@ function ProfileView() {
           <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-3 flex items-center">
             <Shield size={18} className="text-green-600 mr-2" />
             <span className="text-green-700 text-sm font-medium">
-              Verified {isOwner ? 'Property Owner' : 'Student'}
+              Verified{' '}
+              {isOwner ? 'Property Owner' : isCosigner ? 'Cosigner' : 'Student'}
             </span>
           </div>
         ) : (
-          !isOwner && (
+          isStudent && (
             <button
               onClick={() => navigate('/pre-qualify')}
               className="mt-4 w-full bg-brand-50 border border-brand-200 rounded-lg p-3 flex items-center justify-center text-brand-600 hover:bg-brand-100 transition-colors"
@@ -182,7 +185,14 @@ function ProfileView() {
             label="Edit Profile"
             onClick={() => navigate('/profile/edit')}
           />
-          {!isOwner && (
+          {isCosigner && (
+            <MenuItem
+              icon={Shield}
+              label="Cosigner Dashboard"
+              onClick={() => navigate('/cosigner')}
+            />
+          )}
+          {isStudent && (
             <>
               <MenuItem
                 icon={DollarSign}

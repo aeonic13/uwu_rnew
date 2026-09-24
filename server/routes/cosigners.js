@@ -1,7 +1,12 @@
 import express from 'express'
 import prisma from '../utils/prisma.js'
 import { authenticate } from '../middleware/authenticate.js'
-import { generateSecureToken } from '../utils/auth.js'
+import {
+  generateSecureToken,
+  verifyPassword,
+  verifyToken,
+  extractTokenFromHeader,
+} from '../utils/auth.js'
 import {
   sendCosignerInvitation,
   sendCosignerDeclinedEmail,
@@ -260,10 +265,19 @@ router.get('/invitation/:token', async (req, res) => {
       })
     }
 
+    // If the invited email already belongs to a Rentra user (a parent who
+    // is also a landlord, say) the accept page asks them to sign in rather
+    // than create a duplicate account.
+    const existingAccount = await prisma.user.findUnique({
+      where: { email: cosigner.inviteEmail },
+      select: { id: true },
+    })
+
     res.json({
       invitation: {
         id: cosigner.id,
         email: cosigner.inviteEmail,
+        hasAccount: Boolean(existingAccount),
         tenant: cosigner.tenant,
         // Floating (pre-qualification) invites have no application yet.
         listing: cosigner.application?.listing || null,
@@ -285,20 +299,20 @@ router.get('/invitation/:token', async (req, res) => {
 
 /**
  * POST /api/cosigners/accept/:token
- * Accept a cosigner invitation (creates/links cosigner account)
+ * Accept a cosigner invitation.
+ *
+ * Two paths, chosen by whether the invited email already has an account:
+ *  - New account: body carries firstName/lastName/password (+ optional
+ *    phone); a `cosigner` user is created.
+ *  - Existing account: the caller proves ownership either with a valid
+ *    session token for that user (Authorization header) or with the
+ *    account password in the body. No new user is created and their
+ *    userType is left alone.
  */
 router.post('/accept/:token', async (req, res) => {
   try {
     const { token } = req.params
-    const {
-      email,
-      password,
-      firstName,
-      lastName,
-      phone,
-      // If user already has account, provide their userId
-      existingUserId,
-    } = req.body
+    const { email, password, firstName, lastName, phone } = req.body
 
     // Find the invitation
     const cosigner = await prisma.cosigner.findUnique({
@@ -340,26 +354,35 @@ router.post('/accept/:token', async (req, res) => {
 
     let cosignerUserId
 
-    if (existingUserId) {
-      // Link existing user as cosigner
-      const existingUser = await prisma.user.findUnique({
-        where: { id: existingUserId },
-      })
+    const existingUser = await prisma.user.findUnique({
+      where: { email: cosigner.inviteEmail },
+    })
 
-      if (!existingUser) {
-        return res.status(404).json({
-          error: { message: 'User not found' },
+    if (existingUser) {
+      // Existing account: session token for that user, or their password.
+      let authorised = false
+      const bearer = extractTokenFromHeader(req.headers.authorization)
+      if (bearer) {
+        const decoded = verifyToken(bearer)
+        authorised = decoded?.userId === existingUser.id
+      }
+      if (!authorised && password) {
+        authorised = await verifyPassword(password, existingUser.passwordHash)
+      }
+      if (!authorised) {
+        // 403 rather than 401: the web client drops its stored session on
+        // any 401, which would silently sign out a different logged-in user
+        // who simply mistyped the invitee's password.
+        return res.status(403).json({
+          error: {
+            message:
+              'This email already has a Rentra account. Enter the password for that account to accept.',
+            code: 'EXISTING_ACCOUNT',
+          },
         })
       }
 
-      // Verify email matches
-      if (existingUser.email.toLowerCase() !== cosigner.inviteEmail) {
-        return res.status(400).json({
-          error: { message: 'Email does not match invitation' },
-        })
-      }
-
-      cosignerUserId = existingUserId
+      cosignerUserId = existingUser.id
     } else {
       // Create new cosigner account
       if (!email || !password || !firstName || !lastName) {
@@ -374,20 +397,6 @@ router.post('/accept/:token', async (req, res) => {
       if (email.toLowerCase() !== cosigner.inviteEmail) {
         return res.status(400).json({
           error: { message: 'Email must match the invitation email' },
-        })
-      }
-
-      // Check if user already exists with this email
-      const existingUser = await prisma.user.findUnique({
-        where: { email: email.toLowerCase() },
-      })
-
-      if (existingUser) {
-        return res.status(400).json({
-          error: {
-            message:
-              'An account with this email already exists. Please log in instead.',
-          },
         })
       }
 
@@ -648,13 +657,25 @@ router.get('/my-responsibilities', authenticate, async (req, res) => {
     })
 
     res.json({
+      // application is null for a floating pre-qual cosigner (backs every
+      // application the tenant submits), so everything below is optional.
       responsibilities: cosignedApplications.map(cs => ({
         id: cs.id,
         tenant: cs.tenant,
-        listing: cs.application.listing,
-        agreement: cs.application.agreement,
+        listing: cs.application?.listing || null,
+        application: cs.application
+          ? {
+              id: cs.application.id,
+              status: cs.application.status,
+              startDate: cs.application.startDate,
+              endDate: cs.application.endDate,
+            }
+          : null,
+        agreement: cs.application?.agreement || null,
         relationshipType: cs.relationshipType,
         acceptedAt: cs.respondedAt,
+        verifiedMonthlyIncome: cs.verifiedMonthlyIncome,
+        incomeVerifiedAt: cs.incomeVerifiedAt,
       })),
     })
   } catch (error) {

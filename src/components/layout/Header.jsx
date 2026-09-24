@@ -19,6 +19,7 @@ import {
   Sparkles,
   LogIn,
   FileText,
+  Shield,
 } from 'lucide-react'
 
 export default function Header() {
@@ -85,6 +86,12 @@ export default function Header() {
   ]
 
   // Guest users see Browse and List Your Property
+  // Guarantors: just their dashboard and profile.
+  const cosignerNavItems = [
+    { path: '/cosigner', label: 'Cosigning', icon: Shield },
+    { path: '/profile', label: 'Profile', icon: User },
+  ]
+
   const guestNavItems = [
     { path: '/listings', label: 'Browse', icon: Home },
     { path: '/register', label: 'List Your Property', icon: Building2 },
@@ -94,7 +101,9 @@ export default function Header() {
     ? guestNavItems
     : user.userType === 'owner'
       ? ownerNavItems
-      : studentNavItems
+      : user.userType === 'cosigner'
+        ? cosignerNavItems
+        : studentNavItems
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">

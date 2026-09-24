@@ -43,6 +43,9 @@ const RegisterPage = lazy(() => import('../features/auth/RegisterPage'))
 const CosignerAcceptPage = lazy(
   () => import('../features/cosigner/CosignerAcceptPage')
 )
+const CosignerDashboard = lazy(
+  () => import('../features/cosigner/CosignerDashboard')
+)
 
 // Legal pages (public)
 const TermsPage = lazy(() =>
@@ -100,6 +103,10 @@ function HomePage() {
 
   if (user?.userType === 'owner') {
     return <Navigate to="/dashboard" replace />
+  }
+
+  if (user?.userType === 'cosigner') {
+    return <Navigate to="/cosigner" replace />
   }
 
   if (user) {
@@ -260,6 +267,18 @@ const routeConfig = [
           <Suspense fallback={<SuspenseFallback />}>
             <BrowseView />
           </Suspense>
+        ),
+      },
+      // Guarantor landing page. Any signed-in user can cosign (a parent may
+      // already be a landlord or tenant), so this is role-agnostic.
+      {
+        path: '/cosigner',
+        element: (
+          <ProtectedRoute>
+            <Suspense fallback={<SuspenseFallback />}>
+              <CosignerDashboard />
+            </Suspense>
+          </ProtectedRoute>
         ),
       },
       {

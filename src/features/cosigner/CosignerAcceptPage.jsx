@@ -11,6 +11,7 @@ import {
   Loader2,
 } from 'lucide-react'
 import { cosignerService } from '../../services/cosignerService'
+import { useAuth } from '../../contexts/AuthContext'
 import CosignerIncomeStep from './CosignerIncomeStep'
 
 /**
@@ -37,6 +38,9 @@ export default function CosignerAcceptPage() {
   const [submitError, setSubmitError] = useState(null)
   const [declined, setDeclined] = useState(false)
   const [accepted, setAccepted] = useState(false)
+  // If the invitee is already signed in, accepting links the invitation to
+  // that account without asking for a password again.
+  const { user: currentUser } = useAuth()
 
   useEffect(() => {
     let active = true
@@ -64,10 +68,12 @@ export default function CosignerAcceptPage() {
     setSubmitting(true)
     setSubmitError(null)
     try {
-      const result = await cosignerService.accept(token, {
-        email: invitation.email,
-        ...form,
-      })
+      // Existing account: only the password travels (or nothing, when the
+      // invitee is already signed in — the session token proves ownership).
+      const payload = invitation.hasAccount
+        ? { email: invitation.email, password: form.password }
+        : { email: invitation.email, ...form }
+      const result = await cosignerService.accept(token, payload)
       // Establish the session, then move to the income-verification step.
       // The api client reads authToken from localStorage on each request, so
       // the authenticated Plaid calls work without a full reload.
@@ -136,10 +142,17 @@ export default function CosignerAcceptPage() {
   }
 
   if (accepted) {
-    return <CosignerIncomeStep onDone={() => window.location.assign('/')} />
+    return (
+      <CosignerIncomeStep onDone={() => window.location.assign('/cosigner')} />
+    )
   }
 
   const { tenant, listing } = invitation
+  const hasAccount = Boolean(invitation.hasAccount)
+  const signedInAsInvitee = Boolean(
+    currentUser &&
+      currentUser.email?.toLowerCase() === invitation.email?.toLowerCase()
+  )
 
   return (
     <CenteredCard wide>
@@ -205,40 +218,68 @@ export default function CosignerAcceptPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <Field
-            label="First name"
-            name="firstName"
-            value={form.firstName}
-            onChange={handleChange}
-            required
-          />
-          <Field
-            label="Last name"
-            name="lastName"
-            value={form.lastName}
-            onChange={handleChange}
-            required
-          />
-        </div>
+        {hasAccount ? (
+          signedInAsInvitee ? (
+            <p className="text-sm text-gray-700 bg-brand-50 rounded-lg p-3 text-left">
+              You&apos;re signed in as {currentUser.firstName}. Accepting links
+              this invitation to your existing account.
+            </p>
+          ) : (
+            <>
+              <p className="text-sm text-gray-700 bg-brand-50 rounded-lg p-3 text-left">
+                This email already has a Rentra account. Enter its password to
+                accept as that account — no new account is created.
+              </p>
+              <Field
+                label="Your Rentra password"
+                name="password"
+                type="password"
+                value={form.password}
+                onChange={handleChange}
+                autoComplete="current-password"
+                required
+              />
+            </>
+          )
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-3">
+              <Field
+                label="First name"
+                name="firstName"
+                value={form.firstName}
+                onChange={handleChange}
+                required
+              />
+              <Field
+                label="Last name"
+                name="lastName"
+                value={form.lastName}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-        <Field
-          label="Phone (optional)"
-          name="phone"
-          type="tel"
-          value={form.phone}
-          onChange={handleChange}
-        />
+            <Field
+              label="Phone (optional)"
+              name="phone"
+              type="tel"
+              value={form.phone}
+              onChange={handleChange}
+            />
 
-        <Field
-          label="Create a password"
-          name="password"
-          type="password"
-          value={form.password}
-          onChange={handleChange}
-          required
-          minLength={8}
-        />
+            <Field
+              label="Create a password"
+              name="password"
+              type="password"
+              value={form.password}
+              onChange={handleChange}
+              autoComplete="new-password"
+              required
+              minLength={8}
+            />
+          </>
+        )}
 
         {submitError && (
           <div className="flex items-start text-sm text-red-600 bg-red-50 rounded-lg p-3">
@@ -254,6 +295,12 @@ export default function CosignerAcceptPage() {
         >
           {submitting ? (
             <Loader2 className="w-5 h-5 animate-spin" />
+          ) : hasAccount ? (
+            signedInAsInvitee ? (
+              'Accept invitation'
+            ) : (
+              'Sign in & Accept'
+            )
           ) : (
             'Accept & Create Account'
           )}
