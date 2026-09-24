@@ -51,6 +51,15 @@ export const cosignerService = {
     return apiClient.post('/cosigners/invite', payload)
   },
 
+  /**
+   * Tenant: re-send a pending invitation with a fresh 7-day link.
+   * @param {string} cosignerId
+   * @returns {Promise<{emailSent:boolean,cosigner:object}>}
+   */
+  async resend(cosignerId) {
+    return apiClient.post(`/cosigners/resend/${cosignerId}`)
+  },
+
   /** Tenant: their floating (pre-qualification) cosigner invites. */
   async mine() {
     const res = await apiClient.get('/cosigners/mine')

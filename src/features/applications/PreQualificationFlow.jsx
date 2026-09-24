@@ -19,6 +19,9 @@ import { paymentsService } from '../../services/payments'
 import { cosignerService } from '../../services/cosignerService'
 import RentalProfileForm from './RentalProfileForm'
 import InviteCosignerForm from '../cosigner/InviteCosignerForm'
+import ResendCosignerInvite, {
+  inviteExpired,
+} from '../cosigner/ResendCosignerInvite'
 
 /**
  * Standalone Pre-Qualification Flow
@@ -299,7 +302,9 @@ export default function PreQualificationFlow() {
                       ? myCosigner.verifiedMonthlyIncome
                         ? `accepted, $${Math.round(myCosigner.verifiedMonthlyIncome).toLocaleString()}/mo verified`
                         : 'accepted'
-                      : 'invited'}{' '}
+                      : inviteExpired(myCosigner.expiresAt)
+                        ? 'invite link expired'
+                        : 'invited'}{' '}
                     · attaches to every application
                   </p>
                 ) : (
@@ -322,6 +327,20 @@ export default function PreQualificationFlow() {
               />
             </div>
           )}
+          {cosignerOpen &&
+            myCosigner?.status === 'pending' &&
+            myCosigner.id && (
+              <div className="mt-4 border-t pt-4">
+                <ResendCosignerInvite
+                  cosignerId={myCosigner.id}
+                  expiresAt={myCosigner.expiresAt}
+                  onResent={c =>
+                    c &&
+                    setMyCosigner(prev => ({ ...prev, expiresAt: c.expiresAt }))
+                  }
+                />
+              </div>
+            )}
         </div>
 
         {/* Step 2: Bank Connection */}

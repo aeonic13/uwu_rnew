@@ -626,3 +626,35 @@ export async function sendCosignerDeclinedEmail(tenant, cosignerEmail) {
     text: `Hi ${tenant.firstName}, ${cosignerEmail} declined your co-signer invitation. You can invite a different co-signer from ${process.env.CLIENT_URL}/pre-qualify`,
   })
 }
+
+/**
+ * Tell the tenant their co-signer accepted. Sent from the accept route so
+ * they don't have to keep checking pre-qualification.
+ */
+export async function sendCosignerAcceptedEmail(
+  tenant,
+  cosigner,
+  listingTitle
+) {
+  const name =
+    `${cosigner.firstName} ${cosigner.lastName}`.trim() || cosigner.email
+  const scope = listingTitle
+    ? `your application for <strong>${listingTitle}</strong>`
+    : 'every application you submit'
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+      <h2 style="color: #fc6a03;">Your co-signer accepted</h2>
+      <p>Hi ${tenant.firstName},</p>
+      <p><strong>${name}</strong> accepted your co-signer invitation and now backs ${scope}.</p>
+      <p>Landlords will see their name on your application right away. Once they finish income verification, their verified income counts toward your qualification too.</p>
+      <p style="margin-top: 24px;"><a href="${process.env.CLIENT_URL}/pre-qualify" style="background: #fc6a03; color: #fff; padding: 10px 18px; border-radius: 6px; text-decoration: none;">View pre-qualification</a></p>
+      <p style="color: #888; font-size: 13px; margin-top: 24px;">— The Rentra Team</p>
+    </div>
+  `
+  return sendEmail({
+    to: tenant.email,
+    subject: `${name} accepted your co-signer invitation`,
+    html,
+    text: `Hi ${tenant.firstName}, ${name} accepted your co-signer invitation and now backs ${listingTitle ? `your application for ${listingTitle}` : 'every application you submit'}. ${process.env.CLIENT_URL}/pre-qualify`,
+  })
+}

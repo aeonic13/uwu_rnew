@@ -20,6 +20,7 @@ import { rentalProfileService } from '../../services/rentalProfileService'
 import { groupsService } from '../../services/groupsService'
 import { cosignerService } from '../../services/cosignerService'
 import InviteCosignerForm from '../cosigner/InviteCosignerForm'
+import ResendCosignerInvite from '../cosigner/ResendCosignerInvite'
 
 // Verify step removed — now handled once via /pre-qualify
 const STEPS = [
@@ -82,6 +83,14 @@ function ApplicationSubmitted({ applicationId, onDone }) {
                     : 'Accepted — their details show on this application.'
                   : 'Invitation pending — once they accept, their info appears on this application automatically.'}
               </p>
+              {attachedCosigner.status === 'pending' && attachedCosigner.id && (
+                <div className="mt-2">
+                  <ResendCosignerInvite
+                    cosignerId={attachedCosigner.id}
+                    expiresAt={attachedCosigner.expiresAt}
+                  />
+                </div>
+              )}
             </div>
           </div>
         ) : (

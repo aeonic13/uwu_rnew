@@ -95,6 +95,7 @@ app.use('/api/auth/reset-password', strictLimiter)
 app.use('/api/cosigners/invitation', strictLimiter)
 app.use('/api/cosigners/accept', strictLimiter)
 app.use('/api/cosigners/decline', strictLimiter)
+app.use('/api/cosigners/resend', strictLimiter)
 
 // Health check
 app.get('/health', (req, res) => {

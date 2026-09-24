@@ -10,7 +10,18 @@ import {
 import {
   sendCosignerInvitation,
   sendCosignerDeclinedEmail,
+  sendCosignerAcceptedEmail,
 } from '../utils/email.js'
+
+const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000
+
+/** Fresh token + 7-day expiry for a new or re-sent invitation. */
+function newInviteToken() {
+  return {
+    inviteToken: generateSecureToken(48),
+    tokenExpires: new Date(Date.now() + INVITE_TTL_MS),
+  }
+}
 
 const router = express.Router()
 
@@ -92,8 +103,7 @@ router.post('/invite', authenticate, async (req, res) => {
     }
 
     // Generate invitation token (expires in 7 days)
-    const inviteToken = generateSecureToken(48)
-    const tokenExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    const { inviteToken, tokenExpires } = newInviteToken()
 
     // Create cosigner invitation
     const cosigner = await prisma.cosigner.create({
@@ -195,6 +205,7 @@ router.get('/mine', authenticate, async (req, res) => {
         status: c.status,
         verifiedMonthlyIncome: c.verifiedMonthlyIncome,
         invitedAt: c.invitedAt,
+        expiresAt: c.tokenExpires,
       })),
     })
   } catch (error) {
@@ -320,6 +331,7 @@ router.post('/accept/:token', async (req, res) => {
       include: {
         tenant: {
           select: {
+            email: true,
             firstName: true,
             lastName: true,
           },
@@ -327,6 +339,7 @@ router.post('/accept/:token', async (req, res) => {
         application: {
           select: {
             id: true,
+            listing: { select: { title: true } },
           },
         },
       },
@@ -458,6 +471,21 @@ router.post('/accept/:token', async (req, res) => {
       where: { id: cosignerUserId },
     })
     const tokens = generateTokens(user)
+
+    // Tell the tenant. Failure here must not fail the accept.
+    try {
+      await sendCosignerAcceptedEmail(
+        cosigner.tenant,
+        {
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+        },
+        cosigner.application?.listing?.title || null
+      )
+    } catch (emailError) {
+      console.error('Failed to send cosigner accepted email:', emailError)
+    }
 
     res.json({
       message: 'Cosigner invitation accepted successfully',
@@ -683,6 +711,82 @@ router.get('/my-responsibilities', authenticate, async (req, res) => {
     res.status(500).json({
       error: { message: 'Failed to get responsibilities' },
     })
+  }
+})
+
+/**
+ * POST /api/cosigners/resend/:cosignerId
+ * Tenant re-sends a pending invitation. The token is rotated with a fresh
+ * 7-day expiry, so the previous link stops working. Rate-limited in
+ * index.js alongside the other cosigner token routes.
+ */
+router.post('/resend/:cosignerId', authenticate, async (req, res) => {
+  try {
+    const cosigner = await prisma.cosigner.findUnique({
+      where: { id: req.params.cosignerId },
+      include: {
+        application: {
+          include: {
+            listing: { select: { title: true, location: true, price: true } },
+          },
+        },
+      },
+    })
+    if (!cosigner) {
+      return res.status(404).json({ error: { message: 'Cosigner not found' } })
+    }
+    if (cosigner.tenantId !== req.user.id) {
+      return res.status(403).json({
+        error: { message: 'You can only resend your own cosigner invitations' },
+      })
+    }
+    if (cosigner.status !== 'pending') {
+      return res.status(400).json({
+        error: {
+          message: `Cannot resend an invitation that has been ${cosigner.status}`,
+        },
+      })
+    }
+
+    const fresh = newInviteToken()
+    const updated = await prisma.cosigner.update({
+      where: { id: cosigner.id },
+      data: { ...fresh, invitedAt: new Date() },
+    })
+    const inviteUrl = `${process.env.CLIENT_URL}/cosigner/accept/${fresh.inviteToken}`
+
+    let emailSent = false
+    try {
+      const result = await sendCosignerInvitation({
+        cosignerEmail: cosigner.inviteEmail,
+        cosignerName: 'there',
+        tenantName: `${req.user.firstName} ${req.user.lastName}`,
+        listingTitle: cosigner.application?.listing?.title || null,
+        listingLocation: cosigner.application?.listing?.location || null,
+        monthlyRent: cosigner.application?.listing?.price ?? null,
+        inviteUrl,
+      })
+      emailSent = Boolean(result?.success)
+    } catch (emailError) {
+      console.error('Failed to resend cosigner invitation:', emailError)
+    }
+
+    res.json({
+      message: emailSent
+        ? 'Invitation resent'
+        : 'Invitation refreshed, but the email could not be sent',
+      emailSent,
+      cosigner: {
+        id: updated.id,
+        email: updated.inviteEmail,
+        status: updated.status,
+        invitedAt: updated.invitedAt,
+        expiresAt: updated.tokenExpires,
+      },
+    })
+  } catch (error) {
+    console.error('Resend cosigner invitation error:', error)
+    res.status(500).json({ error: { message: 'Failed to resend invitation' } })
   }
 })
 

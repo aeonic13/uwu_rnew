@@ -7,7 +7,8 @@ beforeEach(() => {
   vi.spyOn(console, 'log').mockImplementation(() => {})
 })
 
-const { sendCosignerInvitation } = await import('../utils/email.js')
+const emailModule = await import('../utils/email.js')
+const { sendCosignerInvitation, sendCosignerAcceptedEmail } = emailModule
 
 describe('sendCosignerInvitation', () => {
   it('does not throw for a floating pre-qual invite with no listing', async () => {
@@ -35,6 +36,27 @@ describe('sendCosignerInvitation', () => {
         monthlyRent: 1850,
         inviteUrl: 'https://myrentra.com/cosigner/accept/abc',
       })
+    ).resolves.toMatchObject({ success: false })
+  })
+})
+
+describe('sendCosignerAcceptedEmail', () => {
+  const tenant = { email: 'sam@ucsd.edu', firstName: 'Sam' }
+  const cosigner = {
+    firstName: 'Pat',
+    lastName: 'Parent',
+    email: 'pat@example.com',
+  }
+
+  it('renders for a floating cosigner (no listing)', async () => {
+    await expect(
+      sendCosignerAcceptedEmail(tenant, cosigner, null)
+    ).resolves.toMatchObject({ success: false })
+  })
+
+  it('renders for an application-bound cosigner', async () => {
+    await expect(
+      sendCosignerAcceptedEmail(tenant, cosigner, '2BR near campus')
     ).resolves.toMatchObject({ success: false })
   })
 })
