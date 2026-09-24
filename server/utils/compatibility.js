@@ -171,4 +171,49 @@ export function computeCompatibility(viewer, candidate) {
   return Math.max(0, Math.min(100, score))
 }
 
-export default { computeCompatibility, hasLifestyleAnswers }
+/**
+ * Explain a score: which answered dimensions the two people share, which
+ * are adjacent (partial credit), and which are opposed. Each list is ordered
+ * heaviest-weight first so the client can show the two or three reasons that
+ * matter most. Budget overlap is reported separately as 'full' | 'partial' |
+ * 'none' | null (unknown). Returns null when no comparison is possible, the
+ * same condition under which computeCompatibility returns null.
+ *
+ * @param {object|null} viewer
+ * @param {object} candidate
+ * @returns {{shared: Array, partial: Array, differs: Array, budget: string|null}|null}
+ */
+export function explainCompatibility(viewer, candidate) {
+  if (!candidate || !hasLifestyleAnswers(viewer)) return null
+
+  const shared = []
+  const partial = []
+  const differs = []
+  for (const dim of DIMENSIONS) {
+    const a = viewer[dim.key]
+    const b = candidate[dim.key]
+    if (!a || !b) continue
+    const match = dimensionMatch(dim, a, b)
+    if (match === 1) shared.push({ key: dim.key, value: a })
+    else if (match === 0.5)
+      partial.push({ key: dim.key, viewer: a, candidate: b })
+    else differs.push({ key: dim.key, viewer: a, candidate: b })
+  }
+
+  const overlap = budgetOverlap(viewer, candidate)
+  let budget = null
+  if (overlap != null) {
+    budget = overlap >= 0.999 ? 'full' : overlap > 0 ? 'partial' : 'none'
+  }
+
+  if (shared.length + partial.length + differs.length === 0 && budget == null) {
+    return null
+  }
+  return { shared, partial, differs, budget }
+}
+
+export default {
+  computeCompatibility,
+  explainCompatibility,
+  hasLifestyleAnswers,
+}

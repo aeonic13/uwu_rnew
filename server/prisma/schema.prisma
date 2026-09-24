@@ -504,6 +504,11 @@ model HousemateProfile {
   audience       String? // professional, student, parent, remote, retiree
   occupation     String?
   location       String?
+  // Rentra's strongest locality signal for students. Defaults from the
+  // user's own university on first save; editable for non-students.
+  university     String?
+  // When they want to move in: "YYYY-MM" or "flexible".
+  moveInMonth    String?
   budgetMin      Int?
   budgetMax      Int?
   bio            String?
@@ -520,6 +525,7 @@ model HousemateProfile {
   @@index([userId])
   @@index([audience])
   @@index([active])
+  @@index([university])
 }
 
 // User-level block. The blocker and blocked user disappear from each other's

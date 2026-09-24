@@ -219,9 +219,27 @@ router.get('/:id', authenticate, async (req, res) => {
  */
 router.post('/:id/invite', authenticate, async (req, res) => {
   try {
-    const { email } = req.body
+    // Invite by email, or by userId (from a housemate profile, where the
+    // inviter never sees the other person's email).
+    let { email } = req.body
+    const { userId } = req.body
+    if (!email && userId) {
+      const target = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { email: true },
+      })
+      if (!target) {
+        return res.status(404).json({ error: { message: 'User not found' } })
+      }
+      email = target.email
+    }
     if (!email) {
       return res.status(400).json({ error: { message: 'Email required' } })
+    }
+    if (email.toLowerCase() === req.user.email.toLowerCase()) {
+      return res
+        .status(400)
+        .json({ error: { message: 'You are already in this group' } })
     }
     const group = await loadGroup(req.params.id)
     if (!group) {
@@ -236,13 +254,28 @@ router.post('/:id/invite', authenticate, async (req, res) => {
     if (group.members.length >= group.maxMembers) {
       return res.status(400).json({ error: { message: 'Group is full' } })
     }
-
+    const wanted = email.toLowerCase()
+    const already = group.members.find(
+      m =>
+        (m.inviteEmail && m.inviteEmail.toLowerCase() === wanted) ||
+        (m.user?.email && m.user.email.toLowerCase() === wanted) ||
+        (userId && m.userId === userId)
+    )
+    if (already) {
+      return res.status(400).json({
+        error: {
+          message:
+            already.status === 'invited'
+              ? 'That person already has an invitation to this group'
+              : 'That person is already in this group',
+        },
+      })
+    }
     // Link to an existing user if one has this email.
     const existing = await prisma.user.findUnique({
       where: { email: email.toLowerCase() },
       select: { id: true },
     })
-
     const member = await prisma.groupMember.create({
       data: {
         groupId: group.id,

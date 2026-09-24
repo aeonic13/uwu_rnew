@@ -3,6 +3,7 @@ import prisma from '../utils/prisma.js'
 import { authenticate, optionalAuth } from '../middleware/authenticate.js'
 import {
   computeCompatibility,
+  explainCompatibility,
   hasLifestyleAnswers,
 } from '../utils/compatibility.js'
 import {
@@ -41,6 +42,8 @@ const editableFields = [
   'audience',
   'occupation',
   'location',
+  'university',
+  'moveInMonth',
   'bio',
   'tags',
   'lookingForRoom',
@@ -64,6 +67,36 @@ const ALERT_MIN_SCORE = 70
 const DEFAULT_LIMIT = 24
 const MAX_LIMIT = 100
 
+// Same-university candidates rank ahead of otherwise-equal matches. This is
+// an ordering boost only: the displayed score stays the honest lifestyle
+// number.
+const SAME_UNIVERSITY_RANK_BOOST = 10
+
+/** The university a profile is associated with: its own, else its user's. */
+function universityOf(profile) {
+  return (profile?.university || profile?.user?.university || '').trim()
+}
+
+/** Case-insensitive equality on non-empty university names. */
+function sameUniversity(a, b) {
+  const x = universityOf(a).toLowerCase()
+  const y = universityOf(b).toLowerCase()
+  return Boolean(x) && x === y
+}
+
+/** Score + explanation + university flag for one candidate. */
+function scoreCandidate(viewerProfile, viewerUser, candidate) {
+  const viewerForUni =
+    viewerProfile || (viewerUser ? { user: viewerUser } : null)
+  return {
+    ...candidate,
+    compatibilityScore: computeCompatibility(viewerProfile, candidate),
+    matchBreakdown: explainCompatibility(viewerProfile, candidate),
+    sameUniversity: viewerForUni
+      ? sameUniversity(viewerForUni, candidate)
+      : false,
+  }
+}
 // Accepted report reasons (mirrors the client's report form).
 const REPORT_REASONS = ['spam', 'inappropriate', 'harassment', 'fake', 'other']
 
@@ -110,10 +143,26 @@ async function blockedUserIds(userId) {
 // GET /api/housemates - list housemate profiles ranked by compatibility
 router.get('/', optionalAuth, async (req, res) => {
   try {
-    const { lookingForRoom, ageMin, ageMax, gender, location } = req.query
+    const { lookingForRoom, ageMin, ageMax, gender, location, university } =
+      req.query
 
     const where = { active: true }
-
+    // University filter: matches the profile's own university or, when the
+    // profile hasn't set one, the user's account university.
+    if (university && university.trim()) {
+      const needle = university.trim()
+      where.AND = [
+        {
+          OR: [
+            { university: { contains: needle, mode: 'insensitive' } },
+            {
+              university: null,
+              user: { university: { contains: needle, mode: 'insensitive' } },
+            },
+          ],
+        },
+      ]
+    }
     // "Has a place" vs "looking for a place" filter (omit for everyone).
     if (lookingForRoom === 'true') where.lookingForRoom = true
     if (lookingForRoom === 'false') where.lookingForRoom = false
@@ -173,18 +222,17 @@ router.get('/', optionalAuth, async (req, res) => {
       satisfiesPreferencesOf(profile, viewerProfile)
     )
 
-    // Attach compatibility (null = unknown, never fabricated) and sort by it.
-    // The stable sort keeps the updatedAt ordering inside each score band, so
-    // unscored feeds (viewer hasn't taken the quiz) stay freshest-first.
+    // Attach compatibility (null = unknown, never fabricated) plus the
+    // reasons behind it, then rank. Same-university candidates get an
+    // ordering boost; the stable sort keeps updatedAt order inside each
+    // band, so unscored feeds (viewer hasn't taken the quiz) stay
+    // freshest-first.
+    const rankOf = p =>
+      (p.compatibilityScore ?? -1) +
+      (p.sameUniversity ? SAME_UNIVERSITY_RANK_BOOST : 0)
     const scored = visible
-      .map(profile => ({
-        ...profile,
-        compatibilityScore: computeCompatibility(viewerProfile, profile),
-      }))
-      .sort(
-        (a, b) => (b.compatibilityScore ?? -1) - (a.compatibilityScore ?? -1)
-      )
-
+      .map(profile => scoreCandidate(viewerProfile, req.user, profile))
+      .sort((a, b) => rankOf(b) - rankOf(a))
     // Post-score pagination: scoring needs the full candidate set, so we
     // slice afterwards. Fine at current scale; revisit with a real ranker.
     const limit = Math.min(
@@ -231,6 +279,11 @@ router.put('/me', authenticate, async (req, res) => {
       where: { userId: req.user.id },
       select: { id: true },
     })
+    // First save: inherit the account's university so students are
+    // discoverable by campus without retyping it.
+    if (!existing && data.university === undefined && req.user.university) {
+      data.university = req.user.university
+    }
 
     const profile = await prisma.housemateProfile.upsert({
       where: { userId: req.user.id },
@@ -369,10 +422,46 @@ router.post('/:id/report', authenticate, async (req, res) => {
 // Applies the same consent rules as the list: a profile hidden from this
 // viewer (block in either direction, or the owner's preferences exclude
 // them) is a 404, not a leak.
+/**
+ * GET /api/housemates/by-user/:userId
+ * The housemate profile behind a user the viewer is already talking to,
+ * scored against the viewer. Powers the match card at the top of a direct
+ * message thread. Consent filtering is skipped on purpose: the two people
+ * already share a conversation. Blocks still apply.
+ */
+router.get('/by-user/:userId', authenticate, async (req, res) => {
+  try {
+    const { userId } = req.params
+    if (userId === req.user.id) {
+      return res.json({ profile: null })
+    }
+    const excluded = await blockedUserIds(req.user.id)
+    if (excluded.includes(userId)) {
+      return res.json({ profile: null })
+    }
+    const [profile, viewerProfile] = await Promise.all([
+      prisma.housemateProfile.findUnique({
+        where: { userId },
+        include: { user: { select: publicUserSelect } },
+      }),
+      prisma.housemateProfile.findUnique({ where: { userId: req.user.id } }),
+    ])
+    if (!profile || !profile.active) {
+      return res.json({ profile: null })
+    }
+    res.json({
+      profile: scoreCandidate(viewerProfile, req.user, profile),
+      viewerHasProfile: Boolean(viewerProfile),
+    })
+  } catch (error) {
+    console.error('Get housemate by user error:', error)
+    res.status(500).json({ error: { message: 'Failed to get profile' } })
+  }
+})
+
 router.get('/:id', optionalAuth, async (req, res) => {
   try {
     const { id } = req.params
-
     const profile = await prisma.housemateProfile.findUnique({
       where: { id },
       include: { user: { select: publicUserSelect } },
@@ -403,10 +492,7 @@ router.get('/:id', optionalAuth, async (req, res) => {
     }
 
     res.json({
-      profile: {
-        ...profile,
-        compatibilityScore: computeCompatibility(viewerProfile, profile),
-      },
+      profile: scoreCandidate(viewerProfile, req.user, profile),
     })
   } catch (error) {
     console.error('Get housemate profile error:', error)
