@@ -30,7 +30,7 @@ const api = axios.create({
 })
 
 // Add auth token to requests
-api.interceptors.request.use((config) => {
+api.interceptors.request.use(config => {
   const token = localStorage.getItem('token')
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
@@ -40,8 +40,8 @@ api.interceptors.request.use((config) => {
 
 // Handle token expiration
 api.interceptors.response.use(
-  (response) => response,
-  (error) => {
+  response => response,
+  error => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token')
       window.location.href = '/login'
@@ -60,34 +60,36 @@ export default api
 import api from './api'
 
 export const authService = {
-  register: (data) => api.post('/auth/register', data),
-  login: (data) => api.post('/auth/login', data),
-  verifyEmail: (token) => api.post('/auth/verify-email', { token }),
+  register: data => api.post('/auth/register', data),
+  login: data => api.post('/auth/login', data),
+  verifyEmail: token => api.post('/auth/verify-email', { token }),
 }
 
 // src/services/listings.js
 export const listingsService = {
-  getAll: (filters) => api.get('/listings', { params: filters }),
-  getById: (id) => api.get(`/listings/${id}`),
-  create: (data) => api.post('/listings', data),
+  getAll: filters => api.get('/listings', { params: filters }),
+  getById: id => api.get(`/listings/${id}`),
+  create: data => api.post('/listings', data),
   update: (id, data) => api.put(`/listings/${id}`, data),
-  delete: (id) => api.delete(`/listings/${id}`),
-  toggleFavorite: (id) => api.post(`/listings/${id}/favorite`),
+  delete: id => api.delete(`/listings/${id}`),
+  toggleFavorite: id => api.post(`/listings/${id}/favorite`),
 }
 
 // src/services/applications.js
 export const applicationsService = {
-  submit: (data) => api.post('/applications', data),
-  getById: (id) => api.get(`/applications/${id}`),
-  updateStatus: (id, status) => api.put(`/applications/${id}/status`, { status }),
+  submit: data => api.post('/applications', data),
+  getById: id => api.get(`/applications/${id}`),
+  updateStatus: (id, status) =>
+    api.put(`/applications/${id}/status`, { status }),
 }
 
 // src/services/messages.js
 export const messagesService = {
   getConversations: () => api.get('/messages/conversations'),
-  getMessages: (userId) => api.get(`/messages/conversation/${userId}`),
-  send: (data) => api.post('/messages', data),
-  markRead: (conversationId) => api.put('/messages/mark-read', { conversationId }),
+  getMessages: userId => api.get(`/messages/conversation/${userId}`),
+  send: data => api.post('/messages', data),
+  markRead: conversationId =>
+    api.put('/messages/mark-read', { conversationId }),
 }
 ```
 
@@ -112,7 +114,7 @@ const handleLogin = async (email, password) => {
 }
 
 // Replace mock registration
-const handleRegister = async (userData) => {
+const handleRegister = async userData => {
   try {
     setLoading(true)
     const response = await authService.register(userData)
@@ -188,7 +190,7 @@ useEffect(() => {
 3. **Select repository**: `rentra` → Select `server/` as root directory
 4. **Set environment variables**:
    ```bash
-   DOTENV_PRIVATE_KEY=d0bc43c3f25f8a5bdd94409a8761cbb158e25a33eb4d93364b1bf786c8801059
+   DOTENV_PRIVATE_KEY=<your-private-key-from-.env.keys>
    NODE_ENV=production
    CLIENT_URL=https://your-frontend-url.vercel.app
    ```
@@ -241,6 +243,7 @@ Similar to Vercel, also has generous free tier.
 ### Testing Checklist
 
 #### Functionality Tests
+
 - [ ] User registration with .edu email
 - [ ] Email verification flow
 - [ ] Login/logout
@@ -253,23 +256,27 @@ Similar to Vercel, also has generous free tier.
 - [ ] Application approval workflow
 
 #### Cross-Browser Testing
+
 - [ ] Chrome (desktop & mobile)
 - [ ] Safari (desktop & mobile)
 - [ ] Firefox
 - [ ] Edge
 
 #### Mobile Testing
+
 - [ ] iPhone Safari
 - [ ] Android Chrome
 - [ ] Responsive layouts
 - [ ] Touch interactions
 
 #### Performance
+
 - [ ] Page load times < 3 seconds
 - [ ] Image optimization
 - [ ] API response times
 
 #### Security
+
 - [ ] HTTPS enabled
 - [ ] Auth tokens working
 - [ ] Rate limiting active
@@ -309,12 +316,14 @@ Both Vercel and Railway automatically provide SSL certificates (HTTPS).
 ### Pre-Launch Checklist
 
 #### Technical
+
 - [ ] All API endpoints working in production
 - [ ] Database backups configured (Supabase handles this)
 - [ ] Error monitoring setup (optional: Sentry)
 - [ ] Analytics setup (optional: Google Analytics, Plausible)
 
 #### Content
+
 - [ ] Homepage with clear value proposition
 - [ ] About page
 - [ ] Contact information
@@ -322,6 +331,7 @@ Both Vercel and Railway automatically provide SSL certificates (HTTPS).
 - [ ] Terms of service
 
 #### Marketing
+
 - [ ] Landing page optimized
 - [ ] Meta tags for SEO
 - [ ] Social media preview images
@@ -380,7 +390,7 @@ npm run preview
 
 ```bash
 # Required
-DOTENV_PRIVATE_KEY=d0bc43c3f25f8a5bdd94409a8761cbb158e25a33eb4d93364b1bf786c8801059
+DOTENV_PRIVATE_KEY=<your-private-key-from-.env.keys>
 NODE_ENV=production
 CLIENT_URL=https://rentra.vercel.app
 PORT=5001
@@ -404,12 +414,14 @@ VITE_API_URL=https://your-backend-url.railway.app/api
 ## Cost Breakdown (Monthly)
 
 ### Minimal Setup (Free Tier)
+
 - **Backend**: Render Free ($0) - sleeps after inactivity
 - **Frontend**: Vercel Free ($0)
 - **Database**: Supabase Free ($0) - 500MB limit
 - **Total**: **$0/month**
 
 ### Recommended Setup (Always On)
+
 - **Backend**: Railway Hobby ($5)
 - **Frontend**: Vercel Pro ($20) - optional, free tier is fine for MVP
 - **Database**: Supabase Free ($0) or Pro ($25) if you need more
@@ -417,6 +429,7 @@ VITE_API_URL=https://your-backend-url.railway.app/api
 - **Total**: **$5-30/month**
 
 ### Production Setup (Scale)
+
 - **Backend**: Railway Pro ($20)
 - **Frontend**: Vercel Pro ($20)
 - **Database**: Supabase Pro ($25)
@@ -428,11 +441,11 @@ VITE_API_URL=https://your-backend-url.railway.app/api
 
 ## Timeline Summary
 
-| Week | Focus | Tasks |
-|------|-------|-------|
-| 1 | Frontend Integration | API layer, auth, listings, apps, messages |
-| 2 | Deployment | Deploy backend + frontend, configure domains |
-| 3 | Testing & Launch | Cross-browser testing, bug fixes, go live |
+| Week | Focus                | Tasks                                        |
+| ---- | -------------------- | -------------------------------------------- |
+| 1    | Frontend Integration | API layer, auth, listings, apps, messages    |
+| 2    | Deployment           | Deploy backend + frontend, configure domains |
+| 3    | Testing & Launch     | Cross-browser testing, bug fixes, go live    |
 
 ---
 

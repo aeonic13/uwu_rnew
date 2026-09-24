@@ -12,17 +12,21 @@ Your `.env` file is now encrypted for security! 🔒
 ## Important Files
 
 ### `.env` (Safe to commit ✅)
+
 Contains encrypted environment variables. This can be committed to git.
 
 ### `.env.keys` (DO NOT COMMIT ❌)
+
 Contains the private key needed to decrypt `.env`. This file is gitignored.
 
 **Private Key:**
+
 ```
-DOTENV_PRIVATE_KEY=d0bc43c3f25f8a5bdd94409a8761cbb158e25a33eb4d93364b1bf786c8801059
+DOTENV_PRIVATE_KEY=<your-private-key-from-.env.keys>
 ```
 
 ⚠️ **IMPORTANT**: Store this key securely! Save it in:
+
 - Your password manager (1Password, LastPass, etc.)
 - Team secrets manager (Doppler, Vault, etc.)
 - Secure note shared with team members
@@ -30,6 +34,7 @@ DOTENV_PRIVATE_KEY=d0bc43c3f25f8a5bdd94409a8761cbb158e25a33eb4d93364b1bf786c8801
 ## How It Works
 
 When you run `npm run dev`, dotenvx automatically:
+
 1. Reads the encrypted `.env` file
 2. Uses the private key from `.env.keys` to decrypt
 3. Loads decrypted values into environment variables
@@ -38,6 +43,7 @@ When you run `npm run dev`, dotenvx automatically:
 ## Development Usage
 
 ### Running the Server
+
 ```bash
 # Development mode (auto-decrypts)
 npm run dev
@@ -52,6 +58,7 @@ npm start
 
 1. Get the private key from the team lead
 2. Create `.env.keys` file in `server/` directory:
+
 ```bash
 cat > .env.keys << 'EOF'
 #/------------------!DOTENV_PRIVATE_KEYS!-------------------/
@@ -59,13 +66,14 @@ cat > .env.keys << 'EOF'
 #/----------------------------------------------------------/
 
 # .env
-DOTENV_PRIVATE_KEY=d0bc43c3f25f8a5bdd94409a8761cbb158e25a33eb4d93364b1bf786c8801059
+DOTENV_PRIVATE_KEY=<your-private-key-from-.env.keys>
 EOF
 ```
 
 3. Run the server: `npm run dev`
 
 ### Manual Decryption (if needed)
+
 ```bash
 # Test decryption manually
 dotenvx get DATABASE_URL
@@ -77,25 +85,30 @@ dotenvx run -- node index.js
 ## Production Deployment
 
 ### Option 1: Use Environment Variables
+
 Set `DOTENV_PRIVATE_KEY` as an environment variable on your hosting platform:
 
 **Railway/Render/Heroku:**
+
 ```bash
-DOTENV_PRIVATE_KEY=d0bc43c3f25f8a5bdd94409a8761cbb158e25a33eb4d93364b1bf786c8801059
+DOTENV_PRIVATE_KEY=<your-private-key-from-.env.keys>
 ```
 
 ### Option 2: Inject at Build Time
+
 ```bash
 # In CI/CD or deployment
-DOTENV_PRIVATE_KEY='d0bc43c3f25f8a5bdd94409a8761cbb158e25a33eb4d93364b1bf786c8801059' npm start
+DOTENV_PRIVATE_KEY='<your-private-key-from-.env.keys>' npm start
 ```
 
 ### Option 3: Use Unencrypted .env
+
 For production, you can also use a standard unencrypted `.env` file with secrets from your hosting platform's secret manager.
 
 ## Managing Secrets
 
 ### Adding New Secrets
+
 ```bash
 # Edit .env (will be encrypted on save if using dotenvx edit)
 dotenvx set NEW_SECRET=value
@@ -106,6 +119,7 @@ dotenvx encrypt
 ```
 
 ### Rotating Keys
+
 ```bash
 # Generate new encryption key
 dotenvx rekey
@@ -115,6 +129,7 @@ dotenvx rekey
 ```
 
 ### Viewing Current Values
+
 ```bash
 # View all decrypted values
 dotenvx get
@@ -135,6 +150,7 @@ dotenvx get DATABASE_URL
 ## Backup & Recovery
 
 ### Backup the Private Key
+
 ```bash
 # Option 1: Copy to password manager
 cat .env.keys
@@ -144,7 +160,9 @@ dotenvx ops backup
 ```
 
 ### Recovery
+
 If you lose `.env.keys`:
+
 1. Get the private key from team lead or backup
 2. Recreate `.env.keys` file with the key
 3. Run `npm run dev` to verify it works
@@ -152,10 +170,13 @@ If you lose `.env.keys`:
 ## Troubleshooting
 
 ### Error: "Missing DOTENV_PRIVATE_KEY"
+
 **Solution**: Create `.env.keys` file with the private key
 
 ### Error: "Failed to decrypt"
+
 **Causes**:
+
 - Wrong private key
 - Corrupted .env file
 - Missing DOTENV_PUBLIC_KEY in .env
@@ -163,7 +184,9 @@ If you lose `.env.keys`:
 **Solution**: Verify private key matches, check .env has DOTENV_PUBLIC_KEY at top
 
 ### Server won't start
+
 **Solution**: Temporarily use unencrypted .env for debugging:
+
 ```bash
 # Rename encrypted .env
 mv .env .env.encrypted
@@ -180,6 +203,7 @@ node index.js
 ## Migration Back (if needed)
 
 To remove encryption:
+
 ```bash
 # Decrypt .env to plain text
 dotenvx decrypt .env > .env.plain
