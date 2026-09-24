@@ -32,6 +32,12 @@ export const groupsService = {
     return res.member
   },
 
+  /** Admin: invite a Rentra user by id (no email exposed). */
+  async inviteUser(groupId, userId) {
+    const res = await apiClient.post(`/groups/${groupId}/invite`, { userId })
+    return res.member
+  },
+
   /** Pending invitations for the current user. */
   async listInvitations() {
     const res = await apiClient.get('/groups/invitations')

@@ -25,6 +25,9 @@ export const housematesService = {
     if (params.location && params.location.trim()) {
       queryParams.append('location', params.location.trim())
     }
+    if (params.university && params.university.trim()) {
+      queryParams.append('university', params.university.trim())
+    }
     if (params.lookingForRoom === 'true' || params.lookingForRoom === 'false') {
       queryParams.append('lookingForRoom', params.lookingForRoom)
     }
@@ -44,6 +47,20 @@ export const housematesService = {
       total: response.total ?? (response.profiles || []).length,
       hasMore: Boolean(response.hasMore),
       viewerHasQuiz: Boolean(response.viewerHasQuiz),
+    }
+  },
+
+  /**
+   * The housemate profile behind a user you already talk to, scored against
+   * you. Null when they have none, it is paused, or a block exists.
+   * @param {string} userId
+   * @returns {Promise<{profile: object|null, viewerHasProfile: boolean}>}
+   */
+  async getByUser(userId) {
+    const response = await apiClient.get(`/housemates/by-user/${userId}`)
+    return {
+      profile: response.profile || null,
+      viewerHasProfile: Boolean(response.viewerHasProfile),
     }
   },
 

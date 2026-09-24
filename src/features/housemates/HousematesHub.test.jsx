@@ -3,8 +3,8 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import HousematesHub from './HousematesHub'
 import { housematesService } from '../../services/housematesService'
+import { groupsService } from '../../services/groupsService'
 
-// Mock the API service so tests are deterministic and offline.
 vi.mock('../../services/housematesService', () => ({
   housematesService: {
     getMatches: vi.fn(),
@@ -17,35 +17,72 @@ vi.mock('../../services/housematesService', () => ({
   },
 }))
 
-// Provide a stable current user without needing the real AuthProvider.
+vi.mock('../../services/groupsService', () => ({
+  groupsService: {
+    listMy: vi.fn(),
+    create: vi.fn(),
+    inviteUser: vi.fn(),
+  },
+}))
+
+vi.mock('../../services/messagingService', () => ({
+  messagingService: { startConversation: vi.fn() },
+}))
+
 vi.mock('../../contexts/AuthContext', () => ({
   useAuth: () => ({
-    user: { firstName: 'Test', lastName: 'User', verified: false },
+    user: {
+      id: 'me',
+      firstName: 'Test',
+      lastName: 'User',
+      verified: false,
+      university: 'UC San Diego',
+    },
   }),
 }))
 
-// A realistic "real" API profile (has a user id, unlike the local samples).
 const realProfile = {
   id: 'profile-1',
   age: 27,
   gender: 'woman',
   occupation: 'Architect',
-  location: 'Seattle, WA',
+  location: 'La Jolla, CA',
+  university: 'UC San Diego',
+  moveInMonth: '2026-10',
+  lookingForRoom: true,
   budgetMin: 900,
   budgetMax: 1400,
   bio: 'Quiet, tidy, and usually cooking something.',
   tags: ['Tidy'],
   compatibilityScore: 88,
+  sameUniversity: true,
+  matchBreakdown: {
+    shared: [
+      { key: 'cleanliness', value: 'very' },
+      { key: 'sleepSchedule', value: 'morning' },
+    ],
+    partial: [{ key: 'pets', viewer: 'okay', candidate: 'love' }],
+    differs: [{ key: 'guestFrequency', viewer: 'rarely', candidate: 'often' }],
+    budget: 'full',
+  },
   user: {
     id: 'user-real-1',
     firstName: 'Priya',
     lastName: 'Sharma',
     verified: true,
     avatarUrl: null,
+    university: 'UC San Diego',
   },
 }
 
-const emptyMatches = {
+const scoredFeed = {
+  profiles: [realProfile],
+  total: 1,
+  hasMore: false,
+  viewerHasQuiz: true,
+}
+
+const emptyFeed = {
   profiles: [],
   total: 0,
   hasMore: false,
@@ -54,12 +91,20 @@ const emptyMatches = {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  housematesService.getMatches.mockResolvedValue(emptyMatches)
+  try {
+    localStorage.clear()
+  } catch {
+    // ignore
+  }
+  housematesService.getMatches.mockResolvedValue(emptyFeed)
   housematesService.getMyProfile.mockResolvedValue(null)
   housematesService.saveMyProfile.mockResolvedValue({})
   housematesService.deleteMyProfile.mockResolvedValue()
   housematesService.blockProfile.mockResolvedValue()
   housematesService.reportProfile.mockResolvedValue()
+  groupsService.listMy.mockResolvedValue([])
+  groupsService.create.mockResolvedValue({ id: 'g1', name: 'Test & Priya' })
+  groupsService.inviteUser.mockResolvedValue({ id: 'm1' })
 })
 
 function renderHub() {
@@ -70,152 +115,135 @@ function renderHub() {
   )
 }
 
+async function openFirstProfile() {
+  await screen.findByText('Priya Sharma')
+  fireEvent.click(screen.getAllByRole('button', { name: /view profile/i })[0])
+  return screen.findByRole('dialog')
+}
+
 describe('HousematesHub', () => {
-  it('renders the hero and the simple clickable categories', async () => {
+  it('shows an honest empty state instead of example profiles', async () => {
     renderHub()
 
+    expect(await screen.findByText('You are early')).toBeInTheDocument()
+    expect(screen.queryByText('Example')).not.toBeInTheDocument()
+    expect(screen.queryByText(/%/)).not.toBeInTheDocument()
+    // The account's university is the default filter and shows in the copy.
+    expect(screen.getByText(/near UC San Diego/)).toBeInTheDocument()
     expect(
-      screen.getByRole('heading', { name: 'Housemates' })
-    ).toBeInTheDocument()
-    expect(screen.getByText('Find a Housemate')).toBeInTheDocument()
-    expect(screen.getByText('Compatibility Quiz')).toBeInTheDocument()
-    // The hero no longer shows a fabricated compatibility percentage.
-    expect(screen.queryByText('89%')).not.toBeInTheDocument()
-
-    // Flush the async match load so state updates settle within act().
-    await screen.findByText('Jordan Avery')
-  })
-
-  it('always shows the Safe Search sidebar, in every section', async () => {
-    renderHub()
-    await screen.findByText('Jordan Avery')
-
-    // Visible on discover…
-    expect(
-      screen.getByRole('complementary', { name: 'Safe Search' })
-    ).toBeInTheDocument()
-
-    // …and still visible after switching to the quiz.
-    fireEvent.click(screen.getByText('Compatibility Quiz'))
-    expect(
-      screen.getByRole('complementary', { name: 'Safe Search' })
+      screen.getByRole('button', { name: /take the 2-minute quiz/i })
     ).toBeInTheDocument()
   })
 
-  it('shows the expanded ten-question compatibility quiz', async () => {
+  it('walks through the quiz one question at a time and saves', async () => {
     renderHub()
-    await screen.findByText('Jordan Avery')
+    await screen.findByText('You are early')
 
-    fireEvent.click(screen.getByText('Compatibility Quiz'))
+    fireEvent.click(
+      screen.getByRole('button', { name: /take the 2-minute quiz/i })
+    )
 
     expect(
       await screen.findByText('How tidy is your ideal home?')
     ).toBeInTheDocument()
+    expect(screen.getByText('Step 1 of 11')).toBeInTheDocument()
     expect(
-      screen.getByText('What is your relationship with smoking or vaping?')
-    ).toBeInTheDocument()
-    expect(
-      screen.getByText('How do you feel about pets in the home?')
-    ).toBeInTheDocument()
-    expect(
-      screen.getByText('When something bothers you at home, you…')
-    ).toBeInTheDocument()
-    expect(screen.getByText(/0 of 10 answered/)).toBeInTheDocument()
-  })
+      screen.queryByText('When are you most active?')
+    ).not.toBeInTheDocument()
 
-  it('allows saving a partial quiz instead of gating on all ten answers', async () => {
-    renderHub()
-    await screen.findByText('Jordan Avery')
-
-    fireEvent.click(screen.getByText('Compatibility Quiz'))
-    await screen.findByText('How tidy is your ideal home?')
-
-    // Save is enabled even with zero answers (partial saves are welcome).
-    const save = screen.getByRole('button', { name: /save & see who fits/i })
-    expect(save).not.toBeDisabled()
-
+    // Choosing an answer advances immediately.
     fireEvent.click(screen.getByRole('button', { name: 'Very tidy' }))
-    fireEvent.click(save)
+    expect(screen.getByText('When are you most active?')).toBeInTheDocument()
+    expect(screen.getByText('Step 2 of 11')).toBeInTheDocument()
+    expect(screen.getByText('1 of 10 answered')).toBeInTheDocument()
+
+    // Back returns to the previous question with the answer kept.
+    fireEvent.click(screen.getByRole('button', { name: /back/i }))
+    expect(screen.getByRole('button', { name: 'Very tidy' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    )
+
+    // Skip through the rest to the closing step.
+    for (let i = 0; i < 10; i += 1) {
+      fireEvent.click(screen.getByRole('button', { name: 'Skip' }))
+    }
+    expect(screen.getByText('Two quick things')).toBeInTheDocument()
+    expect(screen.getByLabelText(/university or area/i)).toHaveValue(
+      'UC San Diego'
+    )
+
+    fireEvent.change(screen.getByLabelText(/when do you want to move in/i), {
+      target: { value: 'flexible' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /see my matches/i }))
 
     await waitFor(() =>
       expect(housematesService.saveMyProfile).toHaveBeenCalledWith(
-        expect.objectContaining({ cleanliness: 'very' })
+        expect.objectContaining({
+          cleanliness: 'very',
+          university: 'UC San Diego',
+          moveInMonth: 'flexible',
+        })
       )
     )
     // The untouched age slider must not fabricate an age.
-    const payload = housematesService.saveMyProfile.mock.calls[0][0]
-    expect(payload.age).toBeUndefined()
-  })
-
-  it('falls back to sample housemates when the API returns none', async () => {
-    renderHub()
-
-    // Sample fallback data should render, clearly labeled as examples.
-    expect(await screen.findByText('Jordan Avery')).toBeInTheDocument()
-    expect(screen.getAllByText('Example').length).toBeGreaterThan(0)
-  })
-
-  it('shows discovery preferences including location and situation filters', async () => {
-    renderHub()
-    await screen.findByText('Jordan Avery')
-
-    expect(screen.getByText('Your preferences')).toBeInTheDocument()
-    expect(screen.getByText('Preferred age')).toBeInTheDocument()
-    expect(screen.getByLabelText('Minimum age')).toBeInTheDocument()
-    expect(screen.getByLabelText('Maximum age')).toBeInTheDocument()
-    expect(screen.getByPlaceholderText(/city or area/i)).toBeInTheDocument()
+    expect(housematesService.saveMyProfile.mock.calls[0][0].age).toBeUndefined()
+    // Back on the feed afterwards.
     expect(
-      screen.getByRole('button', { name: 'Looking for a place' })
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole('button', { name: 'Has a place' })
+      await screen.findByText('Who you want to live with')
     ).toBeInTheDocument()
   })
 
-  it('filters the sample feed by gender preference (multi-select)', async () => {
+  it('saves partial answers with "Save and finish later"', async () => {
     renderHub()
-    // Alex Johnson (man) and Maria Delgado (woman) both start visible.
-    await screen.findByText('Alex Johnson')
-    expect(screen.getByText('Maria Delgado')).toBeInTheDocument()
+    await screen.findByText('You are early')
+    fireEvent.click(screen.getByRole('tab', { name: /compatibility quiz/i }))
+    await screen.findByText('How tidy is your ideal home?')
 
-    // Choosing "Women" hides the men and keeps the women.
-    fireEvent.click(screen.getByRole('button', { name: 'Women' }))
-    await waitFor(() =>
-      expect(screen.queryByText('Alex Johnson')).not.toBeInTheDocument()
+    // Nothing answered yet: no early-save link.
+    expect(screen.queryByText(/save and finish later/i)).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Relaxed' }))
+    fireEvent.click(
+      screen.getByRole('button', { name: /save and finish later/i })
     )
-    expect(screen.getByText('Maria Delgado')).toBeInTheDocument()
 
-    // Adding "Nonbinary" widens the selection again (multi-select).
-    fireEvent.click(screen.getByRole('button', { name: 'Nonbinary' }))
-    expect(await screen.findByText('Jordan Avery')).toBeInTheDocument()
-    expect(screen.queryByText('Alex Johnson')).not.toBeInTheDocument()
+    await waitFor(() =>
+      expect(housematesService.saveMyProfile).toHaveBeenCalledWith(
+        expect.objectContaining({ cleanliness: 'relaxed' })
+      )
+    )
   })
 
-  it('filters the sample feed by location', async () => {
+  it('shows why you match on a scored card', async () => {
+    housematesService.getMatches.mockResolvedValue(scoredFeed)
     renderHub()
-    await screen.findByText('Jordan Avery')
 
-    fireEvent.change(screen.getByPlaceholderText(/city or area/i), {
-      target: { value: 'Seattle' },
-    })
-
-    await waitFor(() =>
-      expect(screen.queryByText('Maria Delgado')).not.toBeInTheDocument()
-    )
-    expect(screen.getByText('Jordan Avery')).toBeInTheDocument()
+    await screen.findByText('Priya Sharma')
+    expect(screen.getByText('88%')).toBeInTheDocument()
+    expect(screen.getByText('You both:')).toBeInTheDocument()
+    expect(
+      screen.getByText(/Very tidy · Early riser · Budget overlap/)
+    ).toBeInTheDocument()
+    expect(screen.getByText('Differs:')).toBeInTheDocument()
+    expect(screen.getByText(/Guests/)).toBeInTheDocument()
+    expect(screen.getByText('Same university')).toBeInTheDocument()
+    expect(screen.getByText('Move in Oct 2026')).toBeInTheDocument()
+    // Once on the card, once as a filter chip.
+    expect(screen.getAllByText('Looking for a place')).toHaveLength(2)
   })
 
   it('shows a take-the-quiz CTA instead of a fabricated score when unscored', async () => {
     housematesService.getMatches.mockResolvedValue({
-      profiles: [{ ...realProfile, compatibilityScore: null }],
-      total: 1,
-      hasMore: false,
+      ...scoredFeed,
+      profiles: [
+        { ...realProfile, compatibilityScore: null, matchBreakdown: null },
+      ],
       viewerHasQuiz: false,
     })
     renderHub()
 
     await screen.findByText('Priya Sharma')
-    // No percentage anywhere on the card; an honest CTA instead.
     expect(screen.queryByText(/%/)).not.toBeInTheDocument()
     expect(
       screen.getAllByRole('button', {
@@ -224,69 +252,92 @@ describe('HousematesHub', () => {
     ).toBeGreaterThan(0)
   })
 
-  it('opens a full profile view when a card is clicked', async () => {
+  it('sends the university filter to the API', async () => {
+    housematesService.getMatches.mockResolvedValue(scoredFeed)
     renderHub()
-    await screen.findByText('Jordan Avery')
+    await screen.findByText('Priya Sharma')
+    await waitFor(() =>
+      expect(housematesService.getMatches).toHaveBeenCalledWith(
+        expect.objectContaining({ university: 'UC San Diego' })
+      )
+    )
+    expect(screen.getByLabelText(/university or area/i)).toHaveValue(
+      'UC San Diego'
+    )
+    expect(screen.getByLabelText('Minimum age')).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Has a place' })
+    ).toBeInTheDocument()
+  })
 
-    // Open Jordan's profile via the card's View profile button.
-    fireEvent.click(screen.getAllByRole('button', { name: /view profile/i })[0])
+  it('opens the profile view with the match breakdown and both actions', async () => {
+    housematesService.getMatches.mockResolvedValue(scoredFeed)
+    renderHub()
 
-    // The modal opens with the person's details and the full message action
-    // (cards only say "Message"; the profile view says "Message for free").
-    const dialog = await screen.findByRole('dialog')
-    expect(dialog).toHaveTextContent('Jordan Avery')
-    expect(dialog).toHaveTextContent('Software Engineer')
+    const dialog = await openFirstProfile()
+    expect(dialog).toHaveTextContent('Priya Sharma')
+    expect(dialog).toHaveTextContent('88% match')
+    expect(dialog).toHaveTextContent('Why you match')
+    expect(dialog).toHaveTextContent('Tidiness')
+    expect(dialog).toHaveTextContent('Guests')
+    expect(dialog).toHaveTextContent('same as you')
     expect(dialog).toHaveTextContent('Message for free')
-    // Sample profiles have no real user, so no Block/Report controls.
-    expect(dialog).not.toHaveTextContent('Block')
-    expect(dialog).not.toHaveTextContent('Report')
+    expect(dialog).toHaveTextContent('Invite to a group')
+    expect(dialog).toHaveTextContent('Block')
+    expect(dialog).toHaveTextContent('Report')
+  })
+
+  it('invites a match to a new group from their profile', async () => {
+    housematesService.getMatches.mockResolvedValue(scoredFeed)
+    renderHub()
+    await openFirstProfile()
+
+    fireEvent.click(screen.getByRole('button', { name: /invite to a group/i }))
+    // No groups yet, so the picker goes straight to creating one.
+    const nameInput = await screen.findByLabelText(/new group name/i)
+    expect(nameInput).toHaveAttribute('placeholder', 'Test & Priya')
+    fireEvent.click(
+      screen.getByRole('button', { name: /create group & invite/i })
+    )
+
+    await waitFor(() =>
+      expect(groupsService.inviteUser).toHaveBeenCalledWith('g1', 'user-real-1')
+    )
+    expect(groupsService.create).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'Test & Priya' })
+    )
+    expect(
+      await screen.findByText(/Invited Priya to Test & Priya/)
+    ).toBeInTheDocument()
   })
 
   it('lets you block a real profile with a two-step confirm', async () => {
-    housematesService.getMatches.mockResolvedValue({
-      profiles: [realProfile],
-      total: 1,
-      hasMore: false,
-      viewerHasQuiz: true,
-    })
+    housematesService.getMatches.mockResolvedValue(scoredFeed)
     renderHub()
+    await openFirstProfile()
 
-    await screen.findByText('Priya Sharma')
-    fireEvent.click(screen.getAllByRole('button', { name: /view profile/i })[0])
-
-    const dialog = await screen.findByRole('dialog')
-    expect(dialog).toHaveTextContent('88% match')
-
-    // First click arms the confirm; second click blocks.
     fireEvent.click(screen.getByRole('button', { name: /^block$/i }))
     fireEvent.click(screen.getByRole('button', { name: /confirm block/i }))
 
     await waitFor(() =>
       expect(housematesService.blockProfile).toHaveBeenCalledWith('profile-1')
     )
-    // Blocked person disappears from the feed and the modal closes.
     await waitFor(() =>
       expect(screen.queryByText('Priya Sharma')).not.toBeInTheDocument()
     )
   })
 
   it('lets you report a real profile with a reason', async () => {
-    housematesService.getMatches.mockResolvedValue({
-      profiles: [realProfile],
-      total: 1,
-      hasMore: false,
-      viewerHasQuiz: true,
-    })
+    housematesService.getMatches.mockResolvedValue(scoredFeed)
     renderHub()
+    await openFirstProfile()
 
-    await screen.findByText('Priya Sharma')
-    fireEvent.click(screen.getAllByRole('button', { name: /view profile/i })[0])
-    await screen.findByRole('dialog')
-
-    fireEvent.click(screen.getByRole('button', { name: /report/i }))
+    fireEvent.click(screen.getByRole('button', { name: /^report$/i }))
     fireEvent.change(
       screen.getByLabelText(/why are you reporting this profile/i),
-      { target: { value: 'harassment' } }
+      {
+        target: { value: 'harassment' },
+      }
     )
     fireEvent.click(screen.getByRole('button', { name: /submit report/i }))
 
@@ -299,52 +350,38 @@ describe('HousematesHub', () => {
     expect(await screen.findByText(/our team will review/i)).toBeInTheDocument()
   })
 
-  it('explains that sample profiles cannot be messaged instead of leaving the page', async () => {
+  it('edits the bio and previews your own profile from My profile', async () => {
     renderHub()
-    await screen.findByText('Jordan Avery')
+    await screen.findByText('You are early')
 
-    // Sample profiles have no real user; messaging should explain, not navigate.
-    fireEvent.click(screen.getAllByRole('button', { name: /^message$/i })[0])
-
-    expect(
-      await screen.findByText(/sample profile, so messaging is disabled/i)
-    ).toBeInTheDocument()
-  })
-
-  it('lets you edit a bio and preview your own profile', async () => {
-    renderHub()
-    await screen.findByText('Jordan Avery')
-
-    fireEvent.click(screen.getByText('Compatibility Quiz'))
-
-    // Edit the short bio.
+    fireEvent.click(screen.getByRole('tab', { name: /my profile/i }))
     const bio = await screen.findByPlaceholderText(/couple of sentences/i)
     fireEvent.change(bio, {
       target: { value: 'Tidy night owl who loves to cook.' },
     })
-
-    // Preview shows the bio back in a read-only, self-view modal.
     fireEvent.click(screen.getByRole('button', { name: /preview my profile/i }))
 
     const dialog = await screen.findByRole('dialog')
     expect(dialog).toHaveTextContent('This is how others see you')
     expect(dialog).toHaveTextContent('Tidy night owl who loves to cook.')
-    // No messaging action on your own profile.
+    expect(dialog).toHaveTextContent('UC San Diego')
     expect(dialog).not.toHaveTextContent('Message for free')
+    expect(dialog).not.toHaveTextContent('Why you match')
   })
 
   it('offers pause and delete once a saved profile exists', async () => {
     housematesService.getMyProfile.mockResolvedValue({
       cleanliness: 'very',
       active: true,
-      location: 'Austin, TX',
+      university: 'UC San Diego',
     })
     renderHub()
-    await screen.findByText('Maria Delgado')
+    await screen.findByText('No housemates here yet')
 
-    fireEvent.click(screen.getByText('Compatibility Quiz'))
-
+    fireEvent.click(screen.getByRole('tab', { name: /my profile/i }))
     expect(await screen.findByText('Profile visibility')).toBeInTheDocument()
+    expect(screen.getByText(/1 of 10 answered/)).toBeInTheDocument()
+
     fireEvent.click(screen.getByRole('button', { name: /pause my profile/i }))
     await waitFor(() =>
       expect(housematesService.saveMyProfile).toHaveBeenCalledWith({
@@ -352,7 +389,6 @@ describe('HousematesHub', () => {
       })
     )
 
-    // Delete is a two-step confirm.
     fireEvent.click(screen.getByRole('button', { name: /delete my profile/i }))
     fireEvent.click(
       screen.getByRole('button', { name: /confirm permanent delete/i })
@@ -360,5 +396,18 @@ describe('HousematesHub', () => {
     await waitFor(() =>
       expect(housematesService.deleteMyProfile).toHaveBeenCalled()
     )
+  })
+
+  it('shows the safety reminder once and lets you dismiss it', async () => {
+    renderHub()
+    await screen.findByText('You are early')
+    const note = screen.getByRole('note', { name: /safety reminders/i })
+    expect(note).toHaveTextContent('Your contact info stays private.')
+    fireEvent.click(
+      screen.getByRole('button', { name: /dismiss safety reminders/i })
+    )
+    expect(
+      screen.queryByRole('note', { name: /safety reminders/i })
+    ).not.toBeInTheDocument()
   })
 })
