@@ -13,9 +13,13 @@ import {
   ChevronRight,
   Building,
   AlertCircle,
+  Repeat,
 } from 'lucide-react'
 import { paymentsService } from '../../services/payments'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
+import { useRentPlan } from './useRentPlan'
+import AutopayCard from './AutopayCard'
+import RentSplitCard from './RentSplitCard'
 
 /**
  * Format date
@@ -230,6 +234,9 @@ function PaymentsView() {
     }
   }, [])
 
+  // Lease + household split + autopay, for the Autopay tab.
+  const rentPlan = useRentPlan()
+
   const pendingPayments = transactions.filter(t => t.status === 'pending')
   const totalPending = pendingPayments.reduce((sum, t) => sum + t.total, 0)
 
@@ -277,6 +284,16 @@ function PaymentsView() {
             }`}
           >
             Payment Methods
+          </button>
+          <button
+            onClick={() => setActiveTab('autopay')}
+            className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'autopay'
+                ? 'border-brand-500 text-brand-500'
+                : 'border-transparent text-gray-500'
+            }`}
+          >
+            Autopay
           </button>
         </div>
       </div>
@@ -332,6 +349,45 @@ function PaymentsView() {
                 />
               ))}
             </div>
+          )}
+        </div>
+      ) : activeTab === 'autopay' ? (
+        <div className="p-4 space-y-4">
+          {rentPlan.loading ? (
+            <div className="py-10 flex justify-center">
+              <LoadingSpinner />
+            </div>
+          ) : !rentPlan.plan ? (
+            <div className="text-center py-10 px-4">
+              <Repeat size={48} className="mx-auto text-gray-300 mb-3" />
+              <h3 className="text-lg font-semibold text-gray-600 mb-2">
+                No lease to automate yet
+              </h3>
+              <p className="text-gray-500 text-sm">
+                Once your application is approved and the lease is ready, set up
+                autopay and a household rent split here.
+              </p>
+            </div>
+          ) : (
+            <>
+              <AutopayCard
+                agreementId={rentPlan.plan.agreementId}
+                autopay={rentPlan.plan.autopay}
+                defaultAmount={
+                  rentPlan.plan.myShare ?? rentPlan.plan.monthlyRent
+                }
+                onChange={autopay =>
+                  rentPlan.setPlan(prev => ({ ...prev, autopay }))
+                }
+              />
+              <RentSplitCard
+                agreementId={rentPlan.plan.agreementId}
+                plan={rentPlan.plan}
+                onChange={patch =>
+                  rentPlan.setPlan(prev => ({ ...prev, ...patch }))
+                }
+              />
+            </>
           )}
         </div>
       ) : (

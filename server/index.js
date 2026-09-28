@@ -34,6 +34,8 @@ import agreementsRoutes from './routes/agreements.js'
 import maintenanceRoutes from './routes/maintenance.js'
 import groupsRoutes from './routes/groups.js'
 import utilitiesRoutes from './routes/utilities.js'
+import rentRoutes from './routes/rent.js'
+import { startAutopayRunner } from './utils/autopay.js'
 import depositsRoutes from './routes/deposits.js'
 import expensesRoutes from './routes/expenses.js'
 import documentsRoutes from './routes/documents.js'
@@ -144,6 +146,7 @@ app.use('/api/agreements', agreementsRoutes)
 app.use('/api/maintenance', maintenanceRoutes)
 app.use('/api/groups', groupsRoutes)
 app.use('/api/utilities', utilitiesRoutes)
+app.use('/api/rent', rentRoutes)
 app.use('/api/deposits', depositsRoutes)
 app.use('/api/expenses', expensesRoutes)
 app.use('/api/documents', documentsRoutes)
@@ -178,6 +181,9 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`)
   console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`)
   console.log(`🔗 API available at http://localhost:${PORT}/api`)
+  // Rent autopay: hourly check for schedules whose run day has arrived.
+  // Set AUTOPAY_RUNNER=false to disable (tests, local dev without email).
+  startAutopayRunner()
 })
 
 export default app

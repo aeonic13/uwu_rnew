@@ -65,6 +65,7 @@ Push to `main` deploys both sides automatically.
 - Prisma client is generated at build; after editing the schema run `npx prisma generate` in `server/`.
 - The frontend vitest config excludes `server/`, `e2e/` and `.claude/`.
 - Repo is a git remote named `uwu_rnew`; the product is Rentra.
+- The rent autopay runner (`server/utils/autopay.js`) starts with the server, checks hourly, and emails a run-day reminder. It moves no money until Moov is live. Set `AUTOPAY_RUNNER=false` to disable it locally.
 
 ## Codebase questions
 

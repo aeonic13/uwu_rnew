@@ -404,8 +404,29 @@ router.post('/rent', authenticate, async (req, res) => {
       })
     }
 
-    const amount =
-      application.agreement?.monthlyRent || application.listing?.price || 0
+    // With a household rent split (routes/rent.js) the tenant owes their
+    // share, not the whole lease. Group leases hold one agreement per
+    // member, so the split can sit on a sibling application's agreement.
+    const myShare = await prisma.rentSplitShare.findFirst({
+      where: {
+        userId: req.user.id,
+        split: {
+          agreement: {
+            application: application.groupId
+              ? {
+                  groupId: application.groupId,
+                  listingId: application.listingId,
+                }
+              : { id: application.id },
+          },
+        },
+      },
+      select: { amount: true },
+    })
+
+    const amount = myShare
+      ? Math.round(myShare.amount)
+      : application.agreement?.monthlyRent || application.listing?.price || 0
     if (amount <= 0) {
       return res
         .status(400)

@@ -43,6 +43,30 @@ export const upload = multer({
   fileFilter: imageFileFilter,
 })
 
+// Bills and other paperwork: PDFs plus images, single file, 15MB.
+const DOCUMENT_MIMES = [
+  'application/pdf',
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+]
+
+export const documentUpload = multer({
+  storage,
+  limits: { fileSize: 15 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (DOCUMENT_MIMES.includes(file.mimetype)) {
+      cb(null, true)
+    } else {
+      cb(
+        new Error('Invalid file type. PDF and image files are allowed.'),
+        false
+      )
+    }
+  },
+})
+
 /**
  * Upload a file buffer to Cloudinary
  * @param {Buffer} fileBuffer - The file buffer from multer

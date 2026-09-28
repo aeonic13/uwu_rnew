@@ -592,6 +592,88 @@ export async function sendNewHousemateAlert(recipient, profile, score) {
   })
 }
 
+/**
+ * Tell a roommate their share of a utility bill was posted. The bill's
+ * creator paid the provider, so the share is owed back to them.
+ */
+export async function sendUtilityShareEmail({
+  recipient,
+  creatorName,
+  bill,
+  share,
+}) {
+  const url = `${process.env.CLIENT_URL}/profile/tenant-dashboard`
+  const due = bill.dueDate
+    ? new Date(bill.dueDate).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+      })
+    : null
+  const label = bill.provider
+    ? `${bill.utilityType} (${bill.provider})`
+    : bill.utilityType
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+      <h2 style="color: #fc6a03;">Your share of a bill 💡</h2>
+      <p>Hi ${recipient.firstName},</p>
+      <p><strong>${creatorName}</strong> uploaded a ${label} bill and split it with the household.</p>
+      <div style="background: #f9fafb; padding: 15px; border-radius: 6px; margin: 20px 0;">
+        <strong>Bill total:</strong> $${Number(bill.total).toFixed(2)}<br>
+        <strong>Your share:</strong> $${Number(share.amount).toFixed(2)}<br>
+        ${due ? `<strong>Due:</strong> ${due}` : ''}
+      </div>
+      <p>Pay ${creatorName} back and mark your share as paid in Rentra so the household ledger stays current.</p>
+      <p style="margin-top: 24px;"><a href="${url}" style="background: #fc6a03; color: #fff; padding: 10px 18px; border-radius: 6px; text-decoration: none;">View the bill</a></p>
+      <p style="color: #888; font-size: 13px; margin-top: 24px;">— The Rentra Team</p>
+    </div>
+  `
+  return sendEmail({
+    to: recipient.email,
+    subject: `${creatorName} split a ${bill.utilityType} bill with you`,
+    html,
+    text: `Hi ${recipient.firstName}, ${creatorName} split a ${label} bill ($${Number(bill.total).toFixed(2)}). Your share is $${Number(share.amount).toFixed(2)}. ${url}`,
+  })
+}
+
+/**
+ * Autopay run-day notice. Until ACH is live this is the whole "payment":
+ * it tells the tenant the schedule fired and asks them to settle rent.
+ */
+export async function sendAutopayReminderEmail({
+  tenant,
+  amount,
+  listingTitle,
+  dayOfMonth,
+}) {
+  const url = `${process.env.CLIENT_URL}/profile/tenant-dashboard`
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+      <h2 style="color: #fc6a03;">Rent autopay day 🏠</h2>
+      <p>Hi ${tenant.firstName},</p>
+      <p>Your rent autopay for <strong>${listingTitle}</strong> is scheduled for the ${ordinal(dayOfMonth)} of each month, and today is the day.</p>
+      <div style="background: #f9fafb; padding: 15px; border-radius: 6px; margin: 20px 0;">
+        <strong>Scheduled amount:</strong> $${Number(amount).toLocaleString()}
+      </div>
+      <p>Bank transfers through Rentra are not live yet, so nothing has been charged. Pay your landlord the usual way and record it on your dashboard; once ACH launches this schedule will pay automatically.</p>
+      <p style="margin-top: 24px;"><a href="${url}" style="background: #fc6a03; color: #fff; padding: 10px 18px; border-radius: 6px; text-decoration: none;">Open my dashboard</a></p>
+      <p style="color: #888; font-size: 13px; margin-top: 24px;">— The Rentra Team</p>
+    </div>
+  `
+  return sendEmail({
+    to: tenant.email,
+    subject: `Rent autopay day: $${Number(amount).toLocaleString()} for ${listingTitle}`,
+    html,
+    text: `Hi ${tenant.firstName}, your rent autopay ($${amount}) for ${listingTitle} is scheduled today. Bank transfers are not live yet, so nothing was charged — record your payment at ${url}`,
+  })
+}
+
+function ordinal(n) {
+  const v = Number(n) % 100
+  const suffix =
+    v >= 11 && v <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][Number(n) % 10] || 'th'
+  return `${n}${suffix}`
+}
+
 export default {
   sendEmail,
   sendVerificationEmail,

@@ -20,7 +20,10 @@ import {
   Eye,
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
+import { rentService } from '../../services/rentService'
 import UtilityBillSplit from '../utilities/UtilityBillSplit'
+import RentSplitCard from '../payments/RentSplitCard'
+import AutopayCard from '../payments/AutopayCard'
 
 /**
  * Student Tenant Dashboard - Comprehensive dashboard for student tenants
@@ -96,6 +99,8 @@ function PayRentTab() {
   const [bankAccount, setBankAccount] = useState(null)
   const [paid, setPaid] = useState(false)
   const [payError, setPayError] = useState(null)
+  // Household split + autopay for the lease (server/routes/rent.js).
+  const [plan, setPlan] = useState(null)
 
   useEffect(() => {
     let active = true
@@ -108,11 +113,16 @@ function PayRentTab() {
           agreements.find(a => a.status === 'signed') || agreements[0]
         if (lease) {
           setCurrentLease({
+            id: lease.id,
             property: lease.property?.description || lease.property?.address,
             monthlyRent: lease.terms?.monthlyRent || 0,
             landlord: lease.landlord?.name,
             endDate: lease.terms?.endDate,
           })
+          return rentService
+            .getPlan(lease.id)
+            .then(p => active && setPlan(p))
+            .catch(() => {})
         }
       })
       .catch(() => {})
@@ -154,14 +164,21 @@ function PayRentTab() {
     )
   }
 
+  // With a household split, the tenant only owes their share.
+  const hasSplit = !!plan?.split
+  const amountDue =
+    hasSplit && plan.myShare != null ? plan.myShare : currentLease.monthlyRent
+  const amountLabel = Number.isInteger(amountDue)
+    ? amountDue.toLocaleString()
+    : amountDue.toFixed(2)
+
   if (paid) {
     return (
       <div className="text-center text-gray-700 py-12">
         <CheckCircle size={40} className="mx-auto mb-3 text-green-500" />
         <h3 className="text-lg font-semibold">Rent paid</h3>
         <p className="text-sm text-gray-500">
-          Your ${currentLease.monthlyRent} payment was recorded. See it in
-          Payment History.
+          Your ${amountLabel} payment was recorded. See it in Payment History.
         </p>
       </div>
     )
@@ -194,14 +211,33 @@ function PayRentTab() {
 
       {/* Payment Amount */}
       <div className="bg-brand-50 border border-brand-200 rounded-lg p-6 text-center">
-        <p className="text-gray-600 text-sm mb-2">Amount Due</p>
-        <p className="text-4xl font-bold text-brand-500">
-          ${currentLease.monthlyRent}
+        <p className="text-gray-600 text-sm mb-2">
+          {hasSplit ? 'Your share due' : 'Amount Due'}
         </p>
+        <p className="text-4xl font-bold text-brand-500">${amountLabel}</p>
         <p className="text-gray-500 text-sm mt-2">
-          + 2% service fee at checkout
+          {hasSplit && plan.myShare == null
+            ? 'You are not in the household split yet — edit it below.'
+            : '+ 2% service fee at checkout'}
         </p>
       </div>
+
+      {/* Split + autopay: the plan that decides who pays what, and when */}
+      {plan && (
+        <>
+          <RentSplitCard
+            agreementId={plan.agreementId}
+            plan={plan}
+            onChange={patch => setPlan(prev => ({ ...prev, ...patch }))}
+          />
+          <AutopayCard
+            agreementId={plan.agreementId}
+            autopay={plan.autopay}
+            defaultAmount={amountDue}
+            onChange={autopay => setPlan(prev => ({ ...prev, autopay }))}
+          />
+        </>
+      )}
 
       {/* Payment Method */}
       <div className="bg-white rounded-lg border border-gray-200 p-4">
@@ -248,7 +284,7 @@ function PayRentTab() {
             Processing...
           </span>
         ) : (
-          `Record rent payment — $${currentLease.monthlyRent}`
+          `Record rent payment — $${amountLabel}`
         )}
       </button>
       <p className="text-xs text-gray-400 text-center">

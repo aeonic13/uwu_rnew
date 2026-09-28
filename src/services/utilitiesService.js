@@ -1,22 +1,52 @@
 import { apiClient } from './api'
 
 /**
- * Utility bill split service. Backed by server/routes/utilities.js.
+ * Household utility bills: upload, store, split and settle.
+ * Backed by server/routes/utilities.js.
  */
 export const utilitiesService = {
-  /** List the user's bill splits. */
+  /** Bills the user uploaded or owes a share on. */
   async listBills() {
     const res = await apiClient.get('/utilities/bills')
     return res.bills || []
   },
 
-  /** Create a bill split; returns the created bill (UI shape). */
-  async createBill(data) {
-    const res = await apiClient.post('/utilities/bills', data)
+  /**
+   * Consolidated view across every bill: who owes the user, who the user
+   * owes, and monthly totals.
+   */
+  async getSummary() {
+    return apiClient.get('/utilities/summary')
+  },
+
+  /**
+   * Upload a bill (optional file) and split it. `shares` carries
+   * { name, userId?, percent? } per participant; the server does the
+   * cent-exact math.
+   */
+  async createBill(data, file = null) {
+    const form = new FormData()
+    for (const key of [
+      'utilityType',
+      'provider',
+      'dueDate',
+      'total',
+      'notes',
+      'splitMode',
+    ]) {
+      if (data[key] !== undefined && data[key] !== null && data[key] !== '') {
+        form.append(key, data[key])
+      }
+    }
+    form.append('shares', JSON.stringify(data.shares || []))
+    if (file) form.append('file', file)
+    const res = await apiClient.post('/utilities/bills', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
     return res.bill
   },
 
-  /** Toggle a participant's paid flag. */
+  /** Mark a share paid/unpaid (uploader: any share; roommate: their own). */
   async toggleShare(billId, shareId, paid) {
     const res = await apiClient.put(
       `/utilities/bills/${billId}/shares/${shareId}`,
@@ -25,7 +55,7 @@ export const utilitiesService = {
     return res.share
   },
 
-  /** Delete a bill split. */
+  /** Delete a bill (uploader only). */
   async deleteBill(billId) {
     return apiClient.delete(`/utilities/bills/${billId}`)
   },

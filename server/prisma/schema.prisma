@@ -103,6 +103,9 @@ model User {
   groupMessages        GroupMessage[]      @relation("GroupMessages")
   utilityBills         UtilityBill[]       @relation("UtilityBills")
   utilityShares        UtilityBillShare[]  @relation("UtilityShares")
+  rentSplits           RentSplit[]         @relation("RentSplitCreator")
+  rentSplitShares      RentSplitShare[]    @relation("RentSplitShares")
+  autopaySchedules     AutopaySchedule[]
   screeningReports     ScreeningReport[]
   securityDeposits     SecurityDeposit[]   @relation("OwnerDeposits")
   expenses             Expense[]
@@ -231,7 +234,10 @@ model GroupMember {
   @@index([userId])
 }
 
-// Utility bill split among roommates
+// Utility bill split among roommates. The creator is the person who pays
+// the provider; every other share is money owed back to them. The uploaded
+// bill (PDF/image) is kept on Cloudinary so the household has one place to
+// find it.
 model UtilityBill {
   id          String    @id @default(cuid())
   utilityType String
@@ -239,6 +245,12 @@ model UtilityBill {
   dueDate     DateTime?
   total       Float
   splitMode   String    @default("equal") // equal, custom
+  // Billing month (YYYY-MM) used to consolidate bills into a monthly view.
+  period      String?
+  notes       String?
+  fileUrl     String?
+  fileName    String?
+  mimeType    String?
   createdAt   DateTime  @default(now())
 
   createdById String
@@ -246,14 +258,16 @@ model UtilityBill {
   shares      UtilityBillShare[]
 
   @@index([createdById])
+  @@index([period])
 }
 
 // One person's share of a utility bill
 model UtilityBillShare {
-  id     String  @id @default(cuid())
+  id     String    @id @default(cuid())
   name   String
   amount Float
-  paid   Boolean @default(false)
+  paid   Boolean   @default(false)
+  paidAt DateTime?
 
   billId String
   bill   UtilityBill @relation(fields: [billId], references: [id], onDelete: Cascade)
@@ -366,10 +380,72 @@ model Agreement {
   updatedAt        DateTime  @updatedAt
 
   // Relations
-  applicationId String      @unique
-  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  applicationId String            @unique
+  application   Application       @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   // Compliance record for the deposit money this lease holds (see SecurityDeposit).
   deposit       SecurityDeposit?
+  // How the household divides this rent (see RentSplit). Group leases hold
+  // one Agreement per member, so the split is looked up across siblings.
+  rentSplit     RentSplit?
+  autopays      AutopaySchedule[]
+}
+
+// How a household divides monthly rent. One split per lease; for a group
+// lease the split lives on whichever member's agreement created it and is
+// resolved for the others through the shared application groupId.
+model RentSplit {
+  id        String   @id @default(cuid())
+  total     Float
+  splitMode String   @default("equal") // equal, custom
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  agreementId String           @unique
+  agreement   Agreement        @relation(fields: [agreementId], references: [id], onDelete: Cascade)
+  createdById String
+  createdBy   User             @relation("RentSplitCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  shares      RentSplitShare[]
+
+  @@index([createdById])
+}
+
+// One person's monthly rent share.
+model RentSplitShare {
+  id     String @id @default(cuid())
+  name   String
+  amount Float
+
+  splitId String
+  split   RentSplit @relation(fields: [splitId], references: [id], onDelete: Cascade)
+  userId  String?
+  user    User?     @relation("RentSplitShares", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([splitId])
+  @@index([userId])
+}
+
+// A tenant's standing instruction to pay their rent share on a day of the
+// month. Money movement waits on Moov going live: until then the runner in
+// utils/autopay.js sends a reminder on each run day and rolls nextRunAt
+// forward, and that runner is where the ACH transfer will be created.
+model AutopaySchedule {
+  id            String    @id @default(cuid())
+  amount        Int // dollars
+  dayOfMonth    Int // 1-28
+  paymentMethod String    @default("ach")
+  status        String    @default("active") // active, paused
+  nextRunAt     DateTime
+  lastRunAt     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agreementId String
+  agreement   Agreement @relation(fields: [agreementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, agreementId])
+  @@index([status, nextRunAt])
 }
 
 // Conversation model
@@ -478,45 +554,45 @@ model Review {
 // Stores how a user actually lives so we can compute a Compatibility Score
 // between any two users before they message each other.
 model HousemateProfile {
-  id             String   @id @default(cuid())
+  id               String   @id @default(cuid())
   // Lifestyle answers (kept as simple strings so the quiz can evolve freely).
   // Weights in server/utils/compatibility.js reflect roommate-conflict
   // research: cleanliness is the #1 friction source, then noise/sleep,
   // then guests; smoking/pets act as near-dealbreakers.
-  sleepSchedule  String? // morning, night
-  cleanliness    String? // very, relaxed
-  noiseTolerance String? // quiet, lively
-  guestFrequency String? // rarely, sometimes, often
-  smoking        String? // no, outdoor, yes
-  pets           String? // love, okay, none
-  socialStyle    String? // friends, friendly, private
-  sharing        String? // share, ask, separate
-  chores         String? // schedule, flexible
-  conflictStyle  String? // direct, gentle
+  sleepSchedule    String? // morning, night
+  cleanliness      String? // very, relaxed
+  noiseTolerance   String? // quiet, lively
+  guestFrequency   String? // rarely, sometimes, often
+  smoking          String? // no, outdoor, yes
+  pets             String? // love, okay, none
+  socialStyle      String? // friends, friendly, private
+  sharing          String? // share, ask, separate
+  chores           String? // schedule, flexible
+  conflictStyle    String? // direct, gentle
   // About-you fields used for Hinge-style discovery filtering
-  age    Int? // the housemate's own age
-  gender String? // man, woman, nonbinary
+  age              Int? // the housemate's own age
+  gender           String? // man, woman, nonbinary
   // Desired-roommate preferences (who this person wants to see / be seen by)
   agePreferenceMin Int? // desired roommate minimum age
   agePreferenceMax Int? // desired roommate maximum age
   genderPreference String? // everyone, men, women, nonbinary
   // Discovery / display fields
-  audience       String? // professional, student, parent, remote, retiree
-  occupation     String?
-  location       String?
+  audience         String? // professional, student, parent, remote, retiree
+  occupation       String?
+  location         String?
   // Rentra's strongest locality signal for students. Defaults from the
   // user's own university on first save; editable for non-students.
-  university     String?
+  university       String?
   // When they want to move in: "YYYY-MM" or "flexible".
-  moveInMonth    String?
-  budgetMin      Int?
-  budgetMax      Int?
-  bio            String?
-  tags           String[]
-  lookingForRoom Boolean  @default(false)
-  active         Boolean  @default(true)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  moveInMonth      String?
+  budgetMin        Int?
+  budgetMax        Int?
+  bio              String?
+  tags             String[]
+  lookingForRoom   Boolean  @default(false)
+  active           Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   // Relations
   userId String @unique

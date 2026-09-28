@@ -16,7 +16,11 @@ import {
   Clock,
   Trash2,
   SplitSquareHorizontal,
+  Paperclip,
+  ArrowDownLeft,
+  ArrowUpRight,
 } from 'lucide-react'
+import PropTypes from 'prop-types'
 import { utilitiesService } from '../../services/utilitiesService'
 
 const UTILITY_TYPES = [
@@ -101,17 +105,143 @@ function StepIndicator({ currentStep }) {
   )
 }
 
+function formatPeriod(period) {
+  const [y, m] = String(period).split('-').map(Number)
+  if (!y || !m) return period
+  return new Date(y, m - 1, 1).toLocaleDateString('en-US', {
+    month: 'long',
+    year: 'numeric',
+  })
+}
+
+/**
+ * Consolidated balances across every bill the user is part of: what
+ * roommates owe them, what they owe, and the latest month's totals.
+ */
+function BalancesPanel({ summary }) {
+  if (!summary || !summary.totalBills) return null
+  const { owedToMe, iOwe, totalOwedToMe, totalIOwe, byPeriod } = summary
+  const latest = byPeriod?.[0]
+  const label = type => UTILITY_TYPES.find(u => u.value === type)?.label || type
+
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 mb-6" data-testid="bill-balances">
+      <div className="rounded-xl border border-green-200 bg-green-50 p-4">
+        <div className="flex items-center gap-2 text-green-700 text-sm font-medium mb-1">
+          <ArrowDownLeft size={16} /> Owed to you
+        </div>
+        <p className="text-2xl font-bold text-green-800">
+          ${totalOwedToMe.toFixed(2)}
+        </p>
+        {owedToMe.length ? (
+          <ul className="mt-2 space-y-1 text-sm text-green-800">
+            {owedToMe.map(r => (
+              <li key={r.key} className="flex justify-between">
+                <span>
+                  {r.name}{' '}
+                  <span className="text-green-600 text-xs">
+                    ({r.bills} bill{r.bills === 1 ? '' : 's'})
+                  </span>
+                </span>
+                <span className="font-semibold">${r.amount.toFixed(2)}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-xs text-green-700 mt-1">Everyone is settled up.</p>
+        )}
+      </div>
+
+      <div className="rounded-xl border border-orange-200 bg-orange-50 p-4">
+        <div className="flex items-center gap-2 text-orange-700 text-sm font-medium mb-1">
+          <ArrowUpRight size={16} /> You owe
+        </div>
+        <p className="text-2xl font-bold text-orange-800">
+          ${totalIOwe.toFixed(2)}
+        </p>
+        {iOwe.length ? (
+          <ul className="mt-2 space-y-1 text-sm text-orange-800">
+            {iOwe.map(r => (
+              <li key={r.key} className="flex justify-between">
+                <span>
+                  {r.name}{' '}
+                  <span className="text-orange-600 text-xs">
+                    ({r.bills} bill{r.bills === 1 ? '' : 's'})
+                  </span>
+                </span>
+                <span className="font-semibold">${r.amount.toFixed(2)}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-xs text-orange-700 mt-1">Nothing outstanding.</p>
+        )}
+      </div>
+
+      {latest && (
+        <div className="sm:col-span-2 rounded-xl border border-gray-200 bg-white p-4 flex items-center justify-between gap-4">
+          <div>
+            <p className="text-xs text-gray-500">
+              {formatPeriod(latest.period)}
+            </p>
+            <p className="text-lg font-bold text-gray-900">
+              ${latest.total.toFixed(2)}{' '}
+              <span className="text-sm font-normal text-gray-500">
+                across {latest.count} bill{latest.count === 1 ? '' : 's'}
+              </span>
+            </p>
+          </div>
+          <div className="text-xs text-gray-500 text-right space-y-0.5">
+            {Object.entries(latest.byType).map(([type, amt]) => (
+              <div key={type}>
+                {label(type)}{' '}
+                <span className="font-medium text-gray-700">
+                  ${amt.toFixed(2)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+BalancesPanel.propTypes = {
+  summary: PropTypes.shape({
+    totalBills: PropTypes.number,
+    totalOwedToMe: PropTypes.number,
+    totalIOwe: PropTypes.number,
+    owedToMe: PropTypes.array,
+    iOwe: PropTypes.array,
+    byPeriod: PropTypes.array,
+  }),
+}
+
 export default function UtilityBillSplit() {
   const [step, setStep] = useState('upload')
   const [splits, setSplits] = useState([]) // completed splits
   const [showNewSplit, setShowNewSplit] = useState(false)
   const [contacts, setContacts] = useState([])
+  const [summary, setSummary] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState(null)
+
+  const refreshSummary = () =>
+    utilitiesService
+      .getSummary()
+      .then(setSummary)
+      .catch(() => {})
 
   useEffect(() => {
     let active = true
     utilitiesService
       .listBills()
       .then(bills => active && setSplits(bills))
+      .catch(() => {})
+    utilitiesService
+      .getSummary()
+      .then(s => active && setSummary(s))
       .catch(() => {})
     utilitiesService
       .getContacts()
@@ -129,6 +259,7 @@ export default function UtilityBillSplit() {
   const [totalAmount, setTotalAmount] = useState('')
   const [dueDate, setDueDate] = useState('')
   const [provider, setProvider] = useState('')
+  const [notes, setNotes] = useState('')
   const [participants, setParticipants] = useState([])
   const [splitMode, setSplitMode] = useState('equal') // 'equal' | 'custom'
   const [customShares, setCustomShares] = useState({})
@@ -143,10 +274,12 @@ export default function UtilityBillSplit() {
     setTotalAmount('')
     setDueDate('')
     setProvider('')
+    setNotes('')
     setParticipants([])
     setSplitMode('equal')
     setCustomShares({})
     setNewPersonName('')
+    setSaveError(null)
     setShowNewSplit(false)
   }
 
@@ -215,23 +348,36 @@ export default function UtilityBillSplit() {
     (splitMode === 'equal' || Math.abs(customTotal - 100) < 0.1)
 
   const finalizeSplit = async () => {
+    setSaving(true)
+    setSaveError(null)
     try {
-      const bill = await utilitiesService.createBill({
-        utilityType,
-        provider,
-        dueDate,
-        total: parseFloat(totalAmount),
-        splitMode,
-        shares: participants.map(p => ({
-          name: p.name,
-          amount: getShare(p.id),
-          userId: p.userId || null,
-        })),
-      })
+      // The server does the cent-exact math; we send who and (for custom)
+      // what percent, plus the bill file so it is stored with the split.
+      const bill = await utilitiesService.createBill(
+        {
+          utilityType,
+          provider,
+          dueDate,
+          notes,
+          total: parseFloat(totalAmount),
+          splitMode,
+          shares: participants.map(p => ({
+            name: p.name,
+            userId: p.userId || null,
+            ...(splitMode === 'custom' && {
+              percent: parseFloat(customShares[p.id]) || 0,
+            }),
+          })),
+        },
+        billFile
+      )
       setSplits(prev => [bill, ...prev])
       setStep('summary')
+      refreshSummary()
     } catch (err) {
-      console.error('Failed to create split:', err)
+      setSaveError(err.message || 'Failed to create the bill split.')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -254,6 +400,7 @@ export default function UtilityBillSplit() {
     apply(!current)
     try {
       await utilitiesService.toggleShare(splitId, participantId, !current)
+      refreshSummary()
     } catch {
       apply(!!current) // revert on failure
     }
@@ -263,6 +410,7 @@ export default function UtilityBillSplit() {
     setSplits(prev => prev.filter(s => s.id !== splitId))
     try {
       await utilitiesService.deleteBill(splitId)
+      refreshSummary()
     } catch (err) {
       console.error('Failed to delete split:', err)
     }
@@ -295,6 +443,8 @@ export default function UtilityBillSplit() {
             <Plus size={16} /> Split a Bill
           </button>
         </div>
+
+        <BalancesPanel summary={summary} />
 
         {splits.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -344,6 +494,9 @@ export default function UtilityBillSplit() {
                           {split.dueDate
                             ? `Due ${new Date(split.dueDate).toLocaleDateString()}`
                             : 'No due date'}
+                          {split.role === 'participant' && split.createdBy
+                            ? ` • Paid by ${split.createdBy.name}`
+                            : ''}
                         </p>
                       </div>
                     </div>
@@ -359,24 +512,46 @@ export default function UtilityBillSplit() {
                           ? 'Settled'
                           : `${paidCount}/${split.participants.length} paid`}
                       </span>
-                      <button
-                        onClick={() => deleteSplit(split.id)}
-                        className="p-1 text-gray-300 hover:text-red-400 transition-colors"
-                      >
-                        <Trash2 size={15} />
-                      </button>
+                      {split.role !== 'participant' && (
+                        <button
+                          onClick={() => deleteSplit(split.id)}
+                          className="p-1 text-gray-300 hover:text-red-400 transition-colors"
+                          aria-label="Delete bill"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      )}
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center justify-between mb-3 gap-3">
                     <span className="text-2xl font-bold text-gray-900">
                       ${split.total.toFixed(2)}
                     </span>
-                    <span className="text-sm text-gray-500">
-                      ${(split.total / split.participants.length).toFixed(2)} /
-                      person
-                    </span>
+                    <div className="flex items-center gap-3 text-sm">
+                      {split.myShare && (
+                        <span className="text-gray-500">
+                          Your share{' '}
+                          <span className="font-semibold text-gray-900">
+                            ${split.myShare.amount.toFixed(2)}
+                          </span>
+                        </span>
+                      )}
+                      {split.fileUrl && (
+                        <a
+                          href={split.fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-brand-600 font-medium hover:underline"
+                        >
+                          <Paperclip size={14} /> View bill
+                        </a>
+                      )}
+                    </div>
                   </div>
+                  {split.notes && (
+                    <p className="text-xs text-gray-500 mb-3">{split.notes}</p>
+                  )}
 
                   <div className="space-y-2">
                     {split.participants.map(p => (
@@ -396,7 +571,13 @@ export default function UtilityBillSplit() {
                           </span>
                           <button
                             onClick={() => togglePaid(split.id, p.id)}
-                            className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium transition-colors ${
+                            // Roommates can only settle their own share;
+                            // the uploader can update anyone's.
+                            disabled={
+                              split.role === 'participant' &&
+                              p.id !== split.myShare?.id
+                            }
+                            className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium transition-colors disabled:cursor-default disabled:hover:bg-inherit ${
                               p.paid
                                 ? 'bg-green-100 text-green-700 hover:bg-green-200'
                                 : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
@@ -516,6 +697,14 @@ export default function UtilityBillSplit() {
           >
             Next: Confirm Amount <ChevronRight size={16} />
           </button>
+          {!billFile && (
+            <button
+              onClick={() => setStep('confirm')}
+              className="w-full text-sm text-gray-500 hover:text-brand-600 underline"
+            >
+              No file handy? Enter the amounts by hand
+            </button>
+          )}
         </div>
       )}
 
@@ -602,6 +791,20 @@ export default function UtilityBillSplit() {
             </div>
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Note <span className="text-gray-400 font-normal">(optional)</span>
+            </label>
+            <input
+              type="text"
+              maxLength={500}
+              placeholder="e.g. Account ending 4421, paid from my checking"
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-brand-500 text-sm"
+            />
+          </div>
+
           <div className="flex gap-3">
             <button
               onClick={() => setStep('upload')}
@@ -658,8 +861,12 @@ export default function UtilityBillSplit() {
 
           {/* Contacts */}
           <div>
-            <p className="text-sm font-medium text-gray-700 mb-2">
+            <p className="text-sm font-medium text-gray-700 mb-1">
               Select roommates to split with
+            </p>
+            <p className="text-xs text-gray-400 mb-2">
+              You&apos;re paying the provider, so include yourself and your
+              share is marked settled. Everyone else pays you back.
             </p>
             {contacts.length === 0 && (
               <p className="text-xs text-gray-400 mb-2">
@@ -831,13 +1038,18 @@ export default function UtilityBillSplit() {
               Back
             </button>
             <button
-              disabled={!canProceedFromSplit}
+              disabled={!canProceedFromSplit || saving}
               onClick={finalizeSplit}
               className="flex-1 py-3 bg-brand-500 text-white rounded-xl font-semibold text-sm hover:bg-brand-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              Create Split
+              {saving ? (billFile ? 'Uploading…' : 'Saving…') : 'Create Split'}
             </button>
           </div>
+          {saveError && (
+            <p className="text-sm text-red-600" role="alert">
+              {saveError}
+            </p>
+          )}
         </div>
       )}
 
