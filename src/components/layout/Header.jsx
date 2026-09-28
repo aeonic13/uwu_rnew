@@ -115,7 +115,9 @@ export default function Header() {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-6">
+          {/* Icons only between md and xl so seven student links plus the
+              user menu never push the page into horizontal scroll. */}
+          <nav className="hidden md:flex items-center gap-1 xl:gap-4">
             {navItems.map(item => {
               const Icon = item.icon
               const showBadge = item.path === '/messages' && unreadTotal > 0
@@ -123,14 +125,16 @@ export default function Header() {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`relative flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  title={item.label}
+                  aria-label={item.label}
+                  className={`relative flex items-center gap-2 px-2 xl:px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                     isActive(item.path)
                       ? 'bg-brand-50 text-brand-500'
                       : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
                   }`}
                 >
                   <Icon size={18} />
-                  <span>{item.label}</span>
+                  <span className="hidden xl:inline">{item.label}</span>
                   {showBadge && (
                     <span
                       aria-label={`${unreadTotal} unread messages`}
@@ -148,7 +152,7 @@ export default function Header() {
           <div className="hidden md:flex items-center gap-3">
             {user ? (
               <>
-                <span className="text-sm text-gray-600">
+                <span className="hidden xl:inline text-sm text-gray-600">
                   {user.firstName} {user.lastName}
                 </span>
                 <button

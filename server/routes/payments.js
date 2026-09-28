@@ -100,10 +100,10 @@ router.get('/plaid/accounts', authenticate, async (req, res) => {
   try {
     const accessToken = await getPlaidToken(req.user.id)
 
+    // "No bank yet" is a normal state for most tenants, not an error: an
+    // empty list keeps every dashboard load from logging a 400.
     if (!accessToken) {
-      return res.status(400).json({
-        error: { message: 'No bank connection found. Connect a bank first.' },
-      })
+      return res.json({ accounts: [], linked: false })
     }
 
     // Get account information

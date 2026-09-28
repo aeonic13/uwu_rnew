@@ -21,9 +21,14 @@ export const UserShape = PropTypes.shape({
 })
 
 // Owner/Landlord shape
+// The API returns firstName/lastName; legacy mock screens used `name`.
 export const OwnerShape = PropTypes.shape({
-  name: PropTypes.string.isRequired,
+  id: PropTypes.string,
+  firstName: PropTypes.string,
+  lastName: PropTypes.string,
+  name: PropTypes.string,
   avatar: PropTypes.string,
+  avatarUrl: PropTypes.string,
   rating: PropTypes.number,
   verified: PropTypes.bool,
   bio: PropTypes.string,
@@ -41,11 +46,13 @@ export const ListingShape = PropTypes.shape({
   university: PropTypes.string,
   dates: PropTypes.string,
   moveInDate: PropTypes.string,
+  // 'SingleRoom' is the Prisma enum value; 'Single Room' is the UI label.
   propertyType: PropTypes.oneOf([
     'Apartment',
     'House',
     'Studio',
     'Single Room',
+    'SingleRoom',
     'Condo',
   ]),
   bedrooms: PropTypes.number,

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { Repeat, Pause, Play, Trash2, Pencil, Info } from 'lucide-react'
 import { rentService } from '../../services/rentService'
@@ -177,6 +177,14 @@ function AutopayEditor({
   const [amount, setAmount] = useState(
     String(autopay?.amount ?? (defaultAmount ? Math.round(defaultAmount) : ''))
   )
+  // Until the tenant types an amount, keep following their rent share so
+  // changing the split above updates this default too.
+  const [touched, setTouched] = useState(false)
+  useEffect(() => {
+    if (!touched && !autopay && defaultAmount) {
+      setAmount(String(Math.round(defaultAmount)))
+    }
+  }, [defaultAmount, touched, autopay])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
 
@@ -252,7 +260,10 @@ function AutopayEditor({
             min="1"
             step="1"
             value={amount}
-            onChange={e => setAmount(e.target.value)}
+            onChange={e => {
+              setTouched(true)
+              setAmount(e.target.value)
+            }}
             className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-brand-500"
           />
         </div>

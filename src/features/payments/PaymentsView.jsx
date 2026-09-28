@@ -497,7 +497,10 @@ function PaymentsView() {
               </div>
 
               {selectedTransaction.status === 'pending' && (
-                <button className="w-full bg-brand-500 text-white py-3 rounded-lg font-semibold mt-6 hover:bg-brand-600 transition-colors">
+                <button
+                  onClick={() => navigate('/profile/tenant-dashboard')}
+                  className="w-full bg-brand-500 text-white py-3 rounded-lg font-semibold mt-6 hover:bg-brand-600 transition-colors"
+                >
                   Pay Now
                 </button>
               )}

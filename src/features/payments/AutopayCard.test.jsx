@@ -125,4 +125,41 @@ describe('AutopayCard', () => {
     expect(await screen.findByText('No signed lease')).toBeInTheDocument()
     expect(onChange).not.toHaveBeenCalled()
   })
+
+  it('follows the rent share until the tenant types an amount', () => {
+    const { rerender } = render(
+      <AutopayCard
+        agreementId="ag1"
+        autopay={null}
+        defaultAmount={2950}
+        onChange={() => {}}
+      />
+    )
+    expect(screen.getByLabelText('Amount')).toHaveValue(2950)
+
+    // A split is saved above: the default drops to the tenant's share.
+    rerender(
+      <AutopayCard
+        agreementId="ag1"
+        autopay={null}
+        defaultAmount={1475}
+        onChange={() => {}}
+      />
+    )
+    expect(screen.getByLabelText('Amount')).toHaveValue(1475)
+
+    // Once edited by hand, later share changes leave it alone.
+    fireEvent.change(screen.getByLabelText('Amount'), {
+      target: { value: '1500' },
+    })
+    rerender(
+      <AutopayCard
+        agreementId="ag1"
+        autopay={null}
+        defaultAmount={900}
+        onChange={() => {}}
+      />
+    )
+    expect(screen.getByLabelText('Amount')).toHaveValue(1500)
+  })
 })

@@ -596,6 +596,7 @@ function LeasesTab() {
             id: a.id,
             property: a.property?.description || a.property?.address || 'Lease',
             landlord: a.landlord?.name || '—',
+            landlordEmail: a.landlord?.email || null,
             status: a.status === 'signed' ? 'active' : 'pending',
             startDate: a.terms?.startDate,
             endDate: a.terms?.endDate,
@@ -658,8 +659,13 @@ function LeasesTab() {
             <div>
               <span className="text-gray-600">Lease Period</span>
               <p className="font-medium mt-1">
-                {new Date(lease.startDate).toLocaleDateString()} -{' '}
-                {new Date(lease.endDate).toLocaleDateString()}
+                {new Date(lease.startDate).toLocaleDateString('en-US', {
+                  timeZone: 'UTC',
+                })}{' '}
+                -{' '}
+                {new Date(lease.endDate).toLocaleDateString('en-US', {
+                  timeZone: 'UTC',
+                })}
               </p>
             </div>
             <div>
@@ -728,9 +734,24 @@ function LeasesTab() {
                 Contact your landlord about lease renewal options. Early renewal
                 may come with benefits!
               </p>
-              <button className="text-sm text-green-600 font-medium hover:underline">
-                Contact Landlord →
-              </button>
+              {(() => {
+                const active = leases.find(l => l.status === 'active')
+                return active?.landlordEmail ? (
+                  <a
+                    href={`mailto:${active.landlordEmail}?subject=${encodeURIComponent(`Lease renewal — ${active.property}`)}`}
+                    className="text-sm text-green-600 font-medium hover:underline"
+                  >
+                    Email {active.landlord} →
+                  </a>
+                ) : (
+                  <button
+                    onClick={() => navigate('/messages')}
+                    className="text-sm text-green-600 font-medium hover:underline"
+                  >
+                    Message your landlord →
+                  </button>
+                )
+              })()}
             </div>
           </div>
         </div>
@@ -745,6 +766,7 @@ function LeasesTab() {
 function PaymentHistoryTab() {
   const [filterType, setFilterType] = useState('all')
   const [payments, setPayments] = useState([])
+  const [receiptId, setReceiptId] = useState(null)
 
   useEffect(() => {
     let active = true
@@ -762,6 +784,8 @@ function PaymentHistoryTab() {
                 ? 'Application fee'
                 : 'Payment',
             amount: p.total ?? p.amount ?? 0,
+            base: p.amount ?? p.total ?? 0,
+            serviceFee: p.serviceFee ?? 0,
             date: p.date,
             status: p.status,
             method: p.method || 'Bank Account',
@@ -839,18 +863,88 @@ function PaymentHistoryTab() {
                   year: 'numeric',
                 })}
               </span>
-              <button className="text-brand-500 font-medium hover:underline">
-                View Receipt
+              <button
+                onClick={() =>
+                  setReceiptId(receiptId === payment.id ? null : payment.id)
+                }
+                className="text-brand-500 font-medium hover:underline"
+              >
+                {receiptId === payment.id ? 'Hide Receipt' : 'View Receipt'}
               </button>
             </div>
+            {receiptId === payment.id && (
+              <dl
+                className="mt-3 grid grid-cols-2 gap-y-1 text-sm bg-gray-50 rounded-lg p-3"
+                data-testid="payment-receipt"
+              >
+                <dt className="text-gray-500">Receipt no.</dt>
+                <dd className="text-right font-mono text-xs break-all">
+                  {payment.id}
+                </dd>
+                <dt className="text-gray-500">Amount</dt>
+                <dd className="text-right">${payment.base.toFixed(2)}</dd>
+                <dt className="text-gray-500">Service fee</dt>
+                <dd className="text-right">${payment.serviceFee.toFixed(2)}</dd>
+                <dt className="text-gray-500 font-semibold">Total</dt>
+                <dd className="text-right font-semibold">
+                  ${payment.amount.toFixed(2)}
+                </dd>
+                <dt className="text-gray-500">Method</dt>
+                <dd className="text-right">{payment.method}</dd>
+                <dt className="text-gray-500">Status</dt>
+                <dd className="text-right capitalize">{payment.status}</dd>
+              </dl>
+            )}
           </div>
         ))}
       </div>
 
-      {/* Export Button */}
-      <button className="w-full bg-white border border-gray-300 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-50 flex items-center justify-center">
+      {/* Export: CSV of the rows currently shown, built in the browser */}
+      <button
+        disabled={filteredPayments.length === 0}
+        onClick={() => {
+          const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`
+          const rows = [
+            [
+              'Date',
+              'Description',
+              'Type',
+              'Amount',
+              'Service fee',
+              'Total',
+              'Method',
+              'Status',
+              'Receipt no.',
+            ],
+            ...filteredPayments.map(p => [
+              new Date(p.date).toISOString().slice(0, 10),
+              p.description,
+              p.type,
+              p.base.toFixed(2),
+              p.serviceFee.toFixed(2),
+              p.amount.toFixed(2),
+              p.method,
+              p.status,
+              p.id,
+            ]),
+          ]
+          const blob = new Blob(
+            [rows.map(r => r.map(esc).join(',')).join('\n')],
+            { type: 'text/csv;charset=utf-8' }
+          )
+          const url = URL.createObjectURL(blob)
+          const link = document.createElement('a')
+          link.href = url
+          link.download = `rentra-payments-${new Date().toISOString().slice(0, 10)}.csv`
+          document.body.appendChild(link)
+          link.click()
+          link.remove()
+          URL.revokeObjectURL(url)
+        }}
+        className="w-full bg-white border border-gray-300 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-50 flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
+      >
         <Download size={20} className="mr-2" />
-        Export Payment History
+        Export Payment History (CSV)
       </button>
     </div>
   )

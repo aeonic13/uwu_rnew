@@ -78,9 +78,13 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // Rate limiting
+// Tunable via RATE_LIMIT_WINDOW / RATE_LIMIT_MAX_REQUESTS (see .env.example).
+// The SPA fires several API calls per screen and students often share a
+// campus NAT address, so the default is per-15-minutes generous; the
+// credential endpoints below keep their own tight limit.
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  windowMs: Number(process.env.RATE_LIMIT_WINDOW) || 15 * 60 * 1000,
+  max: Number(process.env.RATE_LIMIT_MAX_REQUESTS) || 600,
   message: 'Too many requests from this IP, please try again later.',
 })
 app.use('/api/', limiter)

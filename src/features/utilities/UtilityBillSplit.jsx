@@ -492,7 +492,7 @@ export default function UtilityBillSplit() {
                         <p className="text-xs text-gray-400">
                           {split.provider || 'No provider'} •{' '}
                           {split.dueDate
-                            ? `Due ${new Date(split.dueDate).toLocaleDateString()}`
+                            ? `Due ${new Date(split.dueDate).toLocaleDateString('en-US', { timeZone: 'UTC' })}`
                             : 'No due date'}
                           {split.role === 'participant' && split.createdBy
                             ? ` • Paid by ${split.createdBy.name}`

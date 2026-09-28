@@ -96,7 +96,8 @@ function ListingCard({ listing, isFavorite, onToggleFavorite, onClick }) {
         </button>
         {/* Property type badge */}
         <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-gray-700 text-xs font-semibold px-2 py-1 rounded-full">
-          {listing.propertyType || 'Rental'}
+          {listing.propertyType?.replace(/([a-z])([A-Z])/g, '$1 $2') ||
+            'Rental'}
         </span>
         {/* Email-confirmed badge — honest label: this only certifies the
             owner confirmed their email address, not their identity. */}
@@ -206,7 +207,10 @@ function BrowseView() {
     if (priceRange.min > 0) payload.minPrice = priceRange.min
     if (priceRange.max !== Infinity) payload.maxPrice = priceRange.max
     if (minBeds !== 'Any Beds') payload.minBeds = parseInt(minBeds, 10)
-    if (propertyType !== 'Any Type') payload.propertyType = propertyType
+    // Saved searches and the API use the enum form ('SingleRoom').
+    if (propertyType !== 'Any Type') {
+      payload.propertyType = propertyType.replace(/\s+/g, '')
+    }
     return payload
   }
 
@@ -249,9 +253,13 @@ function BrowseView() {
     }
 
     if (propertyType !== 'Any Type') {
-      result = result.filter(
-        l => l.propertyType?.toLowerCase() === propertyType.toLowerCase()
-      )
+      // Listings carry the Prisma enum ('SingleRoom'); the dropdown shows
+      // the label ('Single Room'). Compare without spaces or case.
+      const key = s =>
+        String(s || '')
+          .replace(/\s+/g, '')
+          .toLowerCase()
+      result = result.filter(l => key(l.propertyType) === key(propertyType))
     }
 
     if (sortBy === 'price_asc') result.sort((a, b) => a.price - b.price)
