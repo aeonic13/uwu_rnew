@@ -432,7 +432,10 @@ router.post('/rent', authenticate, async (req, res) => {
         .status(400)
         .json({ error: { message: 'No rent amount on this lease.' } })
     }
-    const serviceFee = Math.round(amount * 0.02)
+    // No fee while nothing moves through Rentra: this endpoint only records
+    // a payment the tenant made outside the app. When Moov transfers go
+    // live, charge the platform fee on the transfer path, not here.
+    const serviceFee = 0
     const total = amount + serviceFee
 
     const transaction = await prisma.transaction.create({

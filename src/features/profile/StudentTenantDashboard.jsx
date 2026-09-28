@@ -218,7 +218,7 @@ function PayRentTab() {
         <p className="text-gray-500 text-sm mt-2">
           {hasSplit && plan.myShare == null
             ? 'You are not in the household split yet — edit it below.'
-            : '+ 2% service fee at checkout'}
+            : 'No service fee on recorded payments'}
         </p>
       </div>
 
