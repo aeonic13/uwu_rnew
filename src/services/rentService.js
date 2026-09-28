@@ -29,12 +29,20 @@ export const rentService = {
   },
 
   /** Create or replace the caller's autopay. Returns the schedule. */
-  async saveAutopay({ agreementId, dayOfMonth, amount, paymentMethod }) {
+  async saveAutopay({
+    agreementId,
+    dayOfMonth,
+    amount,
+    paymentMethod,
+    authorization,
+  }) {
     const res = await apiClient.put('/rent/autopay', {
       agreementId,
       dayOfMonth,
       amount,
       paymentMethod,
+      // Recurring-debit authorization; the server records it with the version.
+      authorization,
     })
     return res.autopay
   },

@@ -66,6 +66,7 @@ Push to `main` deploys both sides automatically.
 - The frontend vitest config excludes `server/`, `e2e/` and `.claude/`.
 - Repo is a git remote named `uwu_rnew`; the product is Rentra.
 - The rent autopay runner (`server/utils/autopay.js`) starts with the server, checks hourly, and emails a run-day reminder. It moves no money until Moov is live. Set `AUTOPAY_RUNNER=false` to disable it locally.
+- Legal text lives in `src/features/legal/LegalPages.jsx` (draft pending counsel). When a policy changes materially, bump its date in both `server/utils/policies.js` (gating) and `src/features/legal/policyVersions.js` (display); signed-in users are then asked to re-accept via `PolicyUpdateBanner`. Consents are rows in `PolicyAcceptance`: signup (terms+privacy), `screening` before Plaid, `esign` with a lease signature, `autopay` with a schedule.
 
 ## Codebase questions
 

@@ -16,9 +16,16 @@ export const agreementsService = {
     return res.agreements || []
   },
 
-  /** Record the viewer's signature; returns the updated agreement. */
-  async sign(id) {
-    const res = await apiClient.post(`/agreements/${id}/sign`)
+  /**
+   * Record the viewer's signature; returns the updated agreement.
+   * `signatureName` is the typed legal name and `esignConsent` the explicit
+   * E-SIGN/UETA consent, both stored with the signature on the server.
+   */
+  async sign(id, { signatureName, esignConsent } = {}) {
+    const res = await apiClient.post(`/agreements/${id}/sign`, {
+      signatureName,
+      esignConsent,
+    })
     return res.agreement
   },
 

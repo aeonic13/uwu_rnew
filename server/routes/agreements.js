@@ -2,6 +2,7 @@ import express from 'express'
 import PDFDocument from 'pdfkit'
 import prisma from '../utils/prisma.js'
 import { authenticate } from '../middleware/authenticate.js'
+import { recordAcceptances } from '../utils/policies.js'
 
 const router = express.Router()
 
@@ -325,11 +326,34 @@ router.post('/:id/sign', authenticate, async (req, res) => {
         .json({ error: { message: 'Not authorized to sign this agreement' } })
     }
 
+    // E-SIGN / UETA: the signer must affirmatively consent to electronic
+    // records and signatures, and we keep the typed name with that consent.
+    const { esignConsent, signatureName } = req.body || {}
+    const typedName = String(signatureName || '').trim()
+    if (esignConsent !== true || !typedName) {
+      return res.status(400).json({
+        error: {
+          message:
+            'Type your full legal name and consent to electronic signatures to sign.',
+        },
+      })
+    }
+
     const data = isTenant
       ? { tenantSigned: true, tenantSignedAt: new Date() }
       : { landlordSigned: true, landlordSignedAt: new Date() }
 
     await prisma.agreement.update({ where: { id: agreement.id }, data })
+    await recordAcceptances(prisma, {
+      userId,
+      policies: ['esign'],
+      req,
+      context: {
+        agreementId: agreement.id,
+        role: isTenant ? 'tenant' : 'landlord',
+        signatureName: typedName.slice(0, 120),
+      },
+    })
 
     const updated = await prisma.agreement.findUnique({
       where: { id: agreement.id },

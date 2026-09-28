@@ -35,6 +35,7 @@ import maintenanceRoutes from './routes/maintenance.js'
 import groupsRoutes from './routes/groups.js'
 import utilitiesRoutes from './routes/utilities.js'
 import rentRoutes from './routes/rent.js'
+import legalRoutes from './routes/legal.js'
 import { startAutopayRunner } from './utils/autopay.js'
 import depositsRoutes from './routes/deposits.js'
 import expensesRoutes from './routes/expenses.js'
@@ -151,6 +152,7 @@ app.use('/api/maintenance', maintenanceRoutes)
 app.use('/api/groups', groupsRoutes)
 app.use('/api/utilities', utilitiesRoutes)
 app.use('/api/rent', rentRoutes)
+app.use('/api/legal', legalRoutes)
 app.use('/api/deposits', depositsRoutes)
 app.use('/api/expenses', expensesRoutes)
 app.use('/api/documents', documentsRoutes)

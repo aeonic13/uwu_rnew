@@ -3,6 +3,7 @@ import prisma from '../utils/prisma.js'
 import { authenticate } from '../middleware/authenticate.js'
 import { computeShares } from '../utils/billSplit.js'
 import { computeNextRun, clampDay } from '../utils/autopay.js'
+import { recordAcceptances } from '../utils/policies.js'
 
 /**
  * Tenant rent tools: how a household splits rent, and each tenant's
@@ -293,11 +294,23 @@ router.put('/autopay', authenticate, async (req, res) => {
         .json({ error: { message: 'No signed lease to schedule' } })
     }
 
-    const { dayOfMonth, amount, paymentMethod = 'ach' } = req.body
+    const {
+      dayOfMonth,
+      amount,
+      paymentMethod = 'ach',
+      authorization,
+    } = req.body
     if (dayOfMonth === undefined || dayOfMonth === null) {
       return res
         .status(400)
         .json({ error: { message: 'dayOfMonth is required' } })
+    }
+    // Recurring-debit authorization (Reg E style) is captured now, with the
+    // schedule terms, so it is on file before any real ACH debit runs.
+    if (authorization !== true) {
+      return res.status(400).json({
+        error: { message: 'Please agree to the Autopay Authorization first' },
+      })
     }
     const day = clampDay(dayOfMonth)
     const fallback = myShareOf(household, req.user.id)
@@ -334,6 +347,18 @@ router.put('/autopay', authenticate, async (req, res) => {
         paymentMethod,
         status: 'active',
         nextRunAt,
+      },
+    })
+    await recordAcceptances(prisma, {
+      userId: req.user.id,
+      policies: ['autopay'],
+      req,
+      context: {
+        agreementId: household.myAgreementId,
+        autopayId: schedule.id,
+        amount: amt,
+        dayOfMonth: day,
+        paymentMethod,
       },
     })
     res.json({ autopay: shapeAutopay(schedule) })

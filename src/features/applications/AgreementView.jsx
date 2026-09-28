@@ -60,7 +60,10 @@ function AgreementView() {
 
     setIsSigning(true)
     try {
-      const updated = await agreementsService.sign(agreementId)
+      const updated = await agreementsService.sign(agreementId, {
+        signatureName: signature.trim(),
+        esignConsent: agreedToTerms,
+      })
       setAgreement(updated)
       setShowSignModal(false)
     } catch (err) {
@@ -349,9 +352,18 @@ function AgreementView() {
                   className="mt-1 mr-3"
                 />
                 <span className="text-sm text-gray-600">
-                  I have read and agree to the terms and conditions of this
-                  Lease Agreement. I understand this is a legally binding
-                  document.
+                  I have read and agree to the terms of this Lease Agreement, I
+                  understand it is legally binding, and I consent to signing and
+                  receiving records electronically under Rentra&apos;s{' '}
+                  <a
+                    href="/legal/esign"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-brand-500 underline"
+                  >
+                    Electronic Records &amp; Signatures Consent
+                  </a>
+                  .
                 </span>
               </label>
             </div>

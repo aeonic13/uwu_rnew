@@ -14,6 +14,7 @@ import {
   ClipboardList,
 } from 'lucide-react'
 import { usePlaidLink } from 'react-plaid-link'
+import { legalService } from '../../services/legalService'
 import { usePreQualification } from '../../hooks/usePreQualification'
 import { paymentsService } from '../../services/payments'
 import { cosignerService } from '../../services/cosignerService'
@@ -54,6 +55,38 @@ export default function PreQualificationFlow() {
     identity: null,
   })
   const [feeStatus, setFeeStatus] = useState('unpaid')
+  // FCRA / ICRAA: the screening disclosure must be accepted before Plaid
+  // runs. null = still loading the acceptance trail.
+  const [screeningAccepted, setScreeningAccepted] = useState(null)
+  const [screeningSaving, setScreeningSaving] = useState(false)
+
+  useEffect(() => {
+    let active = true
+    legalService
+      .acceptances()
+      .then(res => {
+        if (!active) return
+        const row = (res?.acceptances || []).find(a => a.policy === 'screening')
+        setScreeningAccepted(!!row?.current)
+      })
+      .catch(() => active && setScreeningAccepted(false))
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const acceptScreening = async () => {
+    setScreeningSaving(true)
+    setError(null)
+    try {
+      await legalService.accept('screening', { source: 'pre-qualification' })
+      setScreeningAccepted(true)
+    } catch (err) {
+      setError(err.message || 'Could not record your consent. Try again.')
+    } finally {
+      setScreeningSaving(false)
+    }
+  }
   const [error, setError] = useState(null)
   // The universal rental application (residence, employment, references,
   // disclosures) — saved once here, reused to prefill every application.
@@ -77,22 +110,30 @@ export default function PreQualificationFlow() {
     }
   }, [])
 
-  // Fetch Plaid link token
+  // Fetch Plaid link token — only once the screening disclosure is accepted
+  // (the server refuses a link token before that).
   useEffect(() => {
+    if (screeningAccepted !== true || linkToken) return
+    let active = true
     async function fetchLinkToken() {
       try {
         setPlaidStatus('loading')
         const data = await paymentsService.createPlaidLinkToken()
+        if (!active) return
         setLinkToken(data.linkToken)
         setPlaidStatus('idle')
       } catch (err) {
+        if (!active) return
         console.error('Failed to get link token:', err)
         setPlaidStatus('error')
         setError('Could not initialize bank verification. Please try again.')
       }
     }
     fetchLinkToken()
-  }, [])
+    return () => {
+      active = false
+    }
+  }, [screeningAccepted, linkToken])
 
   const onPlaidSuccess = useCallback(async (publicToken, metadata) => {
     setPlaidStatus('loading')
@@ -375,7 +416,9 @@ export default function PreQualificationFlow() {
             {!bankDone && (
               <button
                 onClick={() => openPlaid()}
-                disabled={!plaidReady || plaidStatus === 'loading'}
+                disabled={
+                  !screeningAccepted || !plaidReady || plaidStatus === 'loading'
+                }
                 className="px-3 py-1.5 bg-brand-500 text-white text-sm font-medium rounded-lg hover:bg-brand-600 disabled:opacity-50 flex items-center gap-1.5"
               >
                 {plaidStatus === 'loading' ? (
@@ -388,6 +431,41 @@ export default function PreQualificationFlow() {
               </button>
             )}
           </div>
+
+          {/* Screening disclosure: FCRA / ICRAA consent before any pull */}
+          {!bankDone && screeningAccepted !== null && (
+            <label
+              className="mt-4 flex items-start gap-3 text-sm text-gray-600 border-t border-gray-100 pt-4"
+              data-testid="screening-consent"
+            >
+              <input
+                type="checkbox"
+                checked={!!screeningAccepted}
+                disabled={!!screeningAccepted || screeningSaving}
+                onChange={e => e.target.checked && acceptScreening()}
+                className="mt-1"
+              />
+              <span>
+                I have read the{' '}
+                <a
+                  href="/legal/screening"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-brand-500 underline"
+                >
+                  Tenant Screening Disclosure
+                </a>{' '}
+                and authorize Rentra and its verification providers to verify my
+                bank account, identity and income and share the results with
+                owners of properties I apply to.
+                {screeningAccepted && (
+                  <span className="block text-xs text-green-600 mt-1">
+                    Consent recorded.
+                  </span>
+                )}
+              </span>
+            </label>
+          )}
         </div>
 
         {/* Step 2: Income Verification */}

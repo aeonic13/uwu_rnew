@@ -16,6 +16,7 @@ import {
   DollarSign,
   Instagram,
   Linkedin,
+  Scale,
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useFavorites } from '../../contexts/FavoritesContext'
@@ -255,6 +256,11 @@ function ProfileView() {
             onClick={() => {
               window.location.href = 'mailto:support@myrentra.com'
             }}
+          />
+          <MenuItem
+            icon={Scale}
+            label="Legal & your rights"
+            onClick={() => navigate('/legal')}
           />
         </MenuSection>
 

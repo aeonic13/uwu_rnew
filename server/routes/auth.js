@@ -1,6 +1,7 @@
 import express from 'express'
 import { authenticate } from '../middleware/authenticate.js'
 import prisma from '../utils/prisma.js'
+import { SIGNUP_POLICIES, recordAcceptances } from '../utils/policies.js'
 import {
   hashPassword,
   verifyPassword,
@@ -27,12 +28,23 @@ router.post('/register', async (req, res) => {
       lastName,
       university,
       phone,
+      acceptedTerms,
     } = req.body
 
     // Validate required fields
     if (!email || !password || !userType || !firstName || !lastName) {
       return res.status(400).json({
         error: { message: 'All fields are required' },
+      })
+    }
+
+    // The signup checkbox is the legal acceptance of the Terms and Privacy
+    // Policy; it is recorded below with the version in force.
+    if (acceptedTerms !== true) {
+      return res.status(400).json({
+        error: {
+          message: 'You must accept the Terms of Service and Privacy Policy',
+        },
       })
     }
 
@@ -90,6 +102,15 @@ router.post('/register', async (req, res) => {
         createdAt: true,
       },
     })
+
+    // Consent trail for the signup policies (terms + privacy). Best-effort:
+    // a logging failure must not orphan the account that was just created.
+    recordAcceptances(prisma, {
+      userId: user.id,
+      policies: SIGNUP_POLICIES,
+      req,
+      context: { source: 'signup' },
+    }).catch(err => console.error('Signup policy acceptance error:', err))
 
     // Generate tokens
     const tokens = generateTokens(user)

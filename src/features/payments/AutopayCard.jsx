@@ -188,8 +188,12 @@ function AutopayEditor({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
 
+  // Recurring-debit authorization, recorded server-side with the schedule.
+  // An existing schedule was already authorized; edits keep it.
+  const [authorized, setAuthorized] = useState(!!autopay)
+
   const amountNum = Math.round(Number(amount))
-  const canSave = Number.isFinite(amountNum) && amountNum > 0
+  const canSave = Number.isFinite(amountNum) && amountNum > 0 && authorized
 
   const save = async () => {
     setBusy(true)
@@ -200,6 +204,7 @@ function AutopayEditor({
         dayOfMonth: day,
         amount: amountNum,
         paymentMethod: 'ach',
+        authorization: authorized,
       })
       onSaved(saved)
     } catch (err) {
@@ -272,6 +277,30 @@ function AutopayEditor({
         Defaults to your share of rent. Changing the split updates the default,
         not an autopay you already set.
       </p>
+
+      <label className="flex items-start gap-3 text-sm text-gray-600">
+        <input
+          type="checkbox"
+          checked={authorized}
+          onChange={e => setAuthorized(e.target.checked)}
+          aria-label="Autopay authorization"
+          className="mt-1"
+        />
+        <span>
+          I agree to the{' '}
+          <a
+            href="/legal/fees"
+            target="_blank"
+            rel="noreferrer"
+            className="text-brand-500 underline"
+          >
+            Autopay Authorization
+          </a>
+          : once bank payments launch, Rentra may initiate recurring debits from
+          my linked bank for this amount on this day each month until I pause or
+          cancel.
+        </span>
+      </label>
 
       {notice}
       {error && <p className="text-sm text-red-600">{error}</p>}

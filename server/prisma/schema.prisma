@@ -106,6 +106,7 @@ model User {
   rentSplits           RentSplit[]         @relation("RentSplitCreator")
   rentSplitShares      RentSplitShare[]    @relation("RentSplitShares")
   autopaySchedules     AutopaySchedule[]
+  policyAcceptances    PolicyAcceptance[]
   screeningReports     ScreeningReport[]
   securityDeposits     SecurityDeposit[]   @relation("OwnerDeposits")
   expenses             Expense[]
@@ -446,6 +447,25 @@ model AutopaySchedule {
 
   @@unique([userId, agreementId])
   @@index([status, nextRunAt])
+}
+
+// Versioned consent trail (see utils/policies.js): terms/privacy at signup,
+// screening disclosure before Plaid, e-sign consent with a lease signature,
+// autopay authorization. `context` holds action details such as the
+// agreementId and typed signature name.
+model PolicyAcceptance {
+  id         String   @id @default(cuid())
+  policy     String // terms | privacy | esign | screening | autopay
+  version    String // POLICY_VERSIONS value in force when accepted
+  acceptedAt DateTime @default(now())
+  ipAddress  String?
+  userAgent  String?
+  context    Json?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, policy])
 }
 
 // Conversation model

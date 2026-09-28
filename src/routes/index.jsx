@@ -61,6 +61,30 @@ const TermsPage = lazy(() =>
 const PrivacyPage = lazy(() =>
   import('../features/legal/LegalPages').then(m => ({ default: m.PrivacyPage }))
 )
+const LegalHub = lazy(() =>
+  import('../features/legal/LegalPages').then(m => ({ default: m.LegalHub }))
+)
+const EsignPage = lazy(() =>
+  import('../features/legal/LegalPages').then(m => ({ default: m.EsignPage }))
+)
+const ScreeningPage = lazy(() =>
+  import('../features/legal/LegalPages').then(m => ({
+    default: m.ScreeningPage,
+  }))
+)
+const FeesPage = lazy(() =>
+  import('../features/legal/LegalPages').then(m => ({ default: m.FeesPage }))
+)
+const TenantRightsPage = lazy(() =>
+  import('../features/legal/LegalPages').then(m => ({
+    default: m.TenantRightsPage,
+  }))
+)
+const CommunityPage = lazy(() =>
+  import('../features/legal/LegalPages').then(m => ({
+    default: m.CommunityPage,
+  }))
+)
 
 // Owner-specific pages
 const OwnerDashboard = lazy(() => import('../features/owner/OwnerDashboard'))
@@ -240,6 +264,54 @@ const routeConfig = [
     element: (
       <Suspense fallback={<SuspenseFallback />}>
         <PrivacyPage />
+      </Suspense>
+    ),
+  },
+  {
+    path: '/legal',
+    element: (
+      <Suspense fallback={<SuspenseFallback />}>
+        <LegalHub />
+      </Suspense>
+    ),
+  },
+  {
+    path: '/legal/esign',
+    element: (
+      <Suspense fallback={<SuspenseFallback />}>
+        <EsignPage />
+      </Suspense>
+    ),
+  },
+  {
+    path: '/legal/screening',
+    element: (
+      <Suspense fallback={<SuspenseFallback />}>
+        <ScreeningPage />
+      </Suspense>
+    ),
+  },
+  {
+    path: '/legal/fees',
+    element: (
+      <Suspense fallback={<SuspenseFallback />}>
+        <FeesPage />
+      </Suspense>
+    ),
+  },
+  {
+    path: '/legal/tenant-rights',
+    element: (
+      <Suspense fallback={<SuspenseFallback />}>
+        <TenantRightsPage />
+      </Suspense>
+    ),
+  },
+  {
+    path: '/legal/community',
+    element: (
+      <Suspense fallback={<SuspenseFallback />}>
+        <CommunityPage />
       </Suspense>
     ),
   },

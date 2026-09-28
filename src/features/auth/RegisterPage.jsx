@@ -69,6 +69,8 @@ function RegisterPage() {
     const result = await register({
       ...formData,
       userType,
+      // Recorded server-side with the policy versions in force.
+      acceptedTerms: agreedToTerms,
     })
 
     if (result.success) {

@@ -11,6 +11,7 @@ import {
   getPaymentMethods,
 } from '../utils/moov.js'
 import * as plaidUtils from '../utils/plaid.js'
+import { hasCurrent } from '../utils/policies.js'
 
 const router = express.Router()
 
@@ -28,6 +29,21 @@ async function getPlaidToken(userId) {
 router.post('/plaid/create-link-token', authenticate, async (req, res) => {
   try {
     const { products = ['auth', 'identity', 'income_verification'] } = req.body
+
+    // FCRA / CA ICRAA: the screening disclosure must be accepted (current
+    // version) before any verification data is pulled.
+    const acceptances = await prisma.policyAcceptance.findMany({
+      where: { userId: req.user.id, policy: 'screening' },
+    })
+    if (!hasCurrent(acceptances, 'screening')) {
+      return res.status(400).json({
+        error: {
+          code: 'SCREENING_CONSENT_REQUIRED',
+          message:
+            'Please review and accept the Tenant Screening Disclosure before connecting a bank.',
+        },
+      })
+    }
 
     const linkTokenData = await plaidUtils.createLinkToken({
       userId: req.user.id,

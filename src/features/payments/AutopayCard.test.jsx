@@ -54,6 +54,11 @@ describe('AutopayCard', () => {
     fireEvent.change(screen.getByLabelText('Day of month'), {
       target: { value: '5' },
     })
+    // The recurring-debit authorization gates the save.
+    expect(
+      screen.getByRole('button', { name: /turn on autopay/i })
+    ).toBeDisabled()
+    fireEvent.click(screen.getByLabelText('Autopay authorization'))
     fireEvent.click(screen.getByRole('button', { name: /turn on autopay/i }))
 
     await waitFor(() => expect(onChange).toHaveBeenCalledWith(schedule))
@@ -62,6 +67,7 @@ describe('AutopayCard', () => {
       dayOfMonth: 5,
       amount: 650,
       paymentMethod: 'ach',
+      authorization: true,
     })
   })
 
@@ -121,6 +127,7 @@ describe('AutopayCard', () => {
         onChange={onChange}
       />
     )
+    fireEvent.click(screen.getByLabelText('Autopay authorization'))
     fireEvent.click(screen.getByRole('button', { name: /turn on autopay/i }))
     expect(await screen.findByText('No signed lease')).toBeInTheDocument()
     expect(onChange).not.toHaveBeenCalled()
