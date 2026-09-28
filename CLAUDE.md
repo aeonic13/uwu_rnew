@@ -46,7 +46,7 @@ Husky runs lint-staged (eslint --fix + prettier) on commit. Before declaring wor
 - Landlord-facing emails and app notifications go through `server/utils/email.js` helpers, never raw SDK calls in routes.
 - Frontend calls the API only through `src/services/*`, never axios or fetch directly in components.
 - Honest UI over mock UI: if a feature has no backend, gate it behind `ComingSoon` or show an empty state, do not fake data.
-- Applications: group applications create one `Application` per member linked by `groupId`. Listing-inquiry conversations auto-promote from Inquiries to Direct once an application exists.
+- Applications: group applications create one `Application` per member linked by `groupId`. Approving any member approves the whole group and creates ONE `Agreement` for the household with an `AgreementSigner` row per tenant plus the landlord; every member's `Application.agreementId` points at it. A lease is "signed" only when every signer row is signed (`Agreement.tenantSigned/landlordSigned` are derived mirrors). Listing-inquiry conversations auto-promote from Inquiries to Direct once an application exists.
 - Blocks (`UserBlock`) are enforced in housemate matching and in messaging start/send.
 
 ## Deploy
