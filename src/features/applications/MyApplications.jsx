@@ -113,7 +113,9 @@ function ApplicationCard({ application, onWithdraw, withdrawingId }) {
             className="flex-1 flex items-center justify-center py-2 bg-brand-500 text-white rounded-lg text-sm font-medium hover:bg-brand-600 transition-colors"
           >
             <FileText size={15} className="mr-1.5" />
-            {agreement.tenantSigned ? 'View lease' : 'Review & sign lease'}
+            {(agreement.signers?.[0]?.signed ?? agreement.tenantSigned)
+              ? 'View lease'
+              : 'Review & sign lease'}
           </button>
         )}
         {isPending && (

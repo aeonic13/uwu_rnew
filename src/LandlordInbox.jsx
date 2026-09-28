@@ -22,6 +22,7 @@ import {
   Fingerprint,
   CircleDollarSign,
 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 // ─── Universal rental application (captured once at pre-qualification) ──────
 // Renders the tenant's standard-application answers when present. Older
@@ -156,166 +157,31 @@ const stageBadge = key => {
   )
 }
 
-// ─── Mock group applications data (Screen 8) ─────────────────────────────────
-const mockGroupApplications = [
-  {
-    id: 'ga-001',
-    propertyId: 1,
-    propertyTitle: 'Cozy 1BR near USC Campus',
-    groupName: 'The Senior Year Squad',
-    submittedAt: '2024-12-22T09:00:00Z',
-    // Pipeline status — all verifications done, ready to review
-    status: 'ready_for_review',
-    tourStatus: 'scheduled',
-    tourDate: '2024-12-26T15:00:00Z',
-    combinedMonthlyIncome: 14800,
-    rentRequired: 1200,
-    meetsRequirement: true,
-    members: [
-      {
-        name: 'Sarah Kim',
-        email: 'sarah.k@usc.edu',
-        university: 'USC',
-        applicationStatus: 'complete',
-        guarantor: {
-          name: 'Jane Kim',
-          email: 'jane@email.com',
-          verificationStatus: 'verified',
-        },
-        monthlyIncome: 3200,
-      },
-      {
-        name: 'Mike Torres',
-        email: 'mike.t@usc.edu',
-        university: 'USC',
-        applicationStatus: 'complete',
-        guarantor: {
-          name: 'Tom Torres',
-          email: 'tom@email.com',
-          verificationStatus: 'verified',
-        },
-        monthlyIncome: 2800,
-      },
-      {
-        name: 'David Park',
-        email: 'david.p@usc.edu',
-        university: 'USC',
-        applicationStatus: 'complete',
-        guarantor: null,
-        monthlyIncome: 8800,
-      },
-    ],
-  },
-  {
-    id: 'ga-002',
-    propertyId: 2,
-    propertyTitle: 'Shared House - UCLA Area',
-    groupName: 'UCLA Roomies',
-    submittedAt: '2024-12-21T14:30:00Z',
-    // Still waiting on one guarantor
-    status: 'pending_verifications',
-    tourStatus: 'requested',
-    combinedMonthlyIncome: 9600,
-    rentRequired: 850,
-    meetsRequirement: true,
-    members: [
-      {
-        name: 'Emma Chen',
-        email: 'emma.c@ucla.edu',
-        university: 'UCLA',
-        applicationStatus: 'complete',
-        guarantor: {
-          name: 'Wei Chen',
-          email: 'wei@email.com',
-          verificationStatus: 'verified',
-        },
-        monthlyIncome: 4800,
-      },
-      {
-        name: 'Lucas Rivera',
-        email: 'lucas.r@ucla.edu',
-        university: 'UCLA',
-        applicationStatus: 'pending',
-        guarantor: {
-          name: 'Maria Rivera',
-          email: 'maria@email.com',
-          verificationStatus: 'not_invited',
-        },
-        monthlyIncome: 4800,
-      },
-    ],
-  },
-  {
-    id: 'ga-003',
-    propertyId: 1,
-    propertyTitle: 'Cozy 1BR near USC Campus',
-    groupName: 'The Westside Five',
-    submittedAt: '2024-12-20T11:00:00Z',
-    status: 'pending_verifications',
-    tourStatus: 'not-requested',
-    combinedMonthlyIncome: 21000,
-    rentRequired: 1200,
-    meetsRequirement: true,
-    members: [
-      {
-        name: 'Aisha Johnson',
-        email: 'aisha.j@usc.edu',
-        university: 'USC',
-        applicationStatus: 'complete',
-        guarantor: {
-          name: 'Derek Johnson',
-          email: 'derek@email.com',
-          verificationStatus: 'verified',
-        },
-        monthlyIncome: 5000,
-      },
-      {
-        name: 'Priya Nair',
-        email: 'priya.n@usc.edu',
-        university: 'USC',
-        applicationStatus: 'complete',
-        guarantor: {
-          name: 'Anand Nair',
-          email: 'anand@email.com',
-          verificationStatus: 'pending',
-        },
-        monthlyIncome: 4200,
-      },
-      {
-        name: 'James Wu',
-        email: 'james.w@usc.edu',
-        university: 'USC',
-        applicationStatus: 'pending',
-        guarantor: null,
-        monthlyIncome: 11800,
-      },
-    ],
-  },
-]
-
-const GroupApplicationsTab = ({
-  onApproveGroup,
-  onNavigateToMultiPartyLease,
-  onOpenWaitingRoom,
-  onOpenChat,
-}) => {
-  const [groups, setGroups] = useState(mockGroupApplications)
+const GroupApplicationsTab = () => {
+  const navigate = useNavigate()
+  // Real grouped applications only (no demo rows): an empty inbox shows an
+  // honest empty state instead of example groups.
+  const [groups, setGroups] = useState([])
+  const [loading, setLoading] = useState(true)
   const [selectedGroup, setSelectedGroup] = useState(null)
+  const [approving, setApproving] = useState(false)
+  const [approveError, setApproveError] = useState(null)
 
-  // Replace demo data with the landlord's real grouped applications.
-  useEffect(() => {
-    let active = true
+  const loadGroups = () =>
     dashboardService
       .getInbox()
       .then(data => {
-        if (active && Array.isArray(data?.groups) && data.groups.length > 0) {
-          setGroups(data.groups)
-        }
+        const next = Array.isArray(data?.groups) ? data.groups : []
+        setGroups(next)
+        setSelectedGroup(prev =>
+          prev ? next.find(g => g.id === prev.id) || null : prev
+        )
       })
       .catch(() => {})
-    return () => {
-      active = false
-    }
+      .finally(() => setLoading(false))
+
+  useEffect(() => {
+    loadGroups()
   }, [])
 
   const guarStatus = v => {
@@ -332,11 +198,21 @@ const GroupApplicationsTab = ({
     )
   }
 
-  const handleApproveApplicants = app => {
-    const updated = { ...app, status: 'applicants_approved' }
-    setGroups(prev => prev.map(g => (g.id === app.id ? updated : g)))
-    setSelectedGroup(updated)
-    onApproveGroup(updated)
+  // Approving any member approves the whole group on the server and
+  // creates the single household lease with a signature block per member.
+  const handleApproveApplicants = async app => {
+    const lead = app.members.find(m => m.status === 'pending') || app.members[0]
+    if (!lead?.applicationId) return
+    setApproving(true)
+    setApproveError(null)
+    try {
+      await applicationsService.updateStatus(lead.applicationId, 'approved')
+      await loadGroups()
+    } catch (err) {
+      setApproveError(err.message || 'Could not approve the group.')
+    } finally {
+      setApproving(false)
+    }
   }
 
   if (selectedGroup) {
@@ -347,13 +223,9 @@ const GroupApplicationsTab = ({
     const allComplete = app.members.every(
       m => m.applicationStatus === 'complete'
     )
-    const readyToApprove = allVerified && allComplete && app.meetsRequirement
-    const alreadyApproved = [
-      'applicants_approved',
-      'lease_sent',
-      'pending_signatures',
-      'fully_executed',
-    ].includes(app.status)
+    // Every member must have submitted; income and guarantor shortfalls are
+    // shown as warnings, since the approval decision is the landlord's.
+    const readyToApprove = allComplete
 
     // Counts
     const guarantorCount = app.members.filter(m => m.guarantor).length
@@ -561,84 +433,99 @@ const GroupApplicationsTab = ({
           </span>
         </div>
 
-        {/* Action buttons — pipeline-aware */}
-        {app.status === 'pending_verifications' && (
-          <button
-            onClick={() => onOpenWaitingRoom(app)}
-            className="w-full py-3 rounded-xl font-semibold border-2 border-brand-500 text-brand-500 hover:bg-brand-50 flex items-center justify-center transition-colors"
-          >
-            <Clock size={18} className="mr-2" />
-            View Verification Waiting Room
-          </button>
-        )}
-
+        {/* Action buttons — real pipeline: review → approve → sign */}
         {app.status === 'ready_for_review' && (
-          <button
-            onClick={() => handleApproveApplicants(app)}
-            disabled={!readyToApprove}
-            className={`w-full py-3 rounded-xl font-semibold transition-colors flex items-center justify-center ${
-              readyToApprove
-                ? 'bg-green-600 text-white hover:bg-green-700'
-                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-            }`}
-          >
-            <CheckCircle size={18} className="mr-2" />
-            Approve Applicants
-          </button>
-        )}
-
-        {app.status === 'applicants_approved' && (
-          <div className="space-y-3">
-            <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-center">
-              <CheckCircle size={16} className="inline text-green-600 mr-1" />
-              <span className="text-sm font-semibold text-green-800">
-                Applicants approved!
-              </span>
-              <p className="text-xs text-green-700 mt-1">
-                Open the group chat to communicate and send the lease when
-                ready.
-              </p>
-            </div>
+          <div className="space-y-2">
             <button
-              onClick={() => onOpenChat(app)}
-              className="w-full py-3 rounded-xl font-semibold bg-brand-500 text-white hover:bg-brand-600 flex items-center justify-center transition-colors"
+              onClick={() => handleApproveApplicants(app)}
+              disabled={!readyToApprove || approving}
+              className={`w-full py-3 rounded-xl font-semibold transition-colors flex items-center justify-center ${
+                readyToApprove
+                  ? 'bg-green-600 text-white hover:bg-green-700'
+                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              } disabled:opacity-60`}
             >
-              <MessageCircle size={18} className="mr-2" />
-              Open Group Chat Thread
+              <CheckCircle size={18} className="mr-2" />
+              {approving
+                ? 'Approving…'
+                : `Approve group & send joint lease (${app.members.length})`}
             </button>
-          </div>
-        )}
-
-        {['lease_sent', 'pending_signatures'].includes(app.status) && (
-          <button
-            onClick={() => onNavigateToMultiPartyLease(app)}
-            className="w-full py-3 rounded-xl font-semibold bg-purple-600 text-white hover:bg-purple-700 flex items-center justify-center"
-          >
-            <FileText size={18} className="mr-2" />
-            View Lease Signatures
-          </button>
-        )}
-
-        {app.status === 'fully_executed' && (
-          <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
-            <CheckCircle size={24} className="mx-auto text-green-600 mb-2" />
-            <p className="font-semibold text-green-800">Lease Fully Executed</p>
-            <p className="text-xs text-green-700 mt-1">
-              All parties have signed. Property is now LEASED.
-            </p>
-          </div>
-        )}
-
-        {!alreadyApproved &&
-          !readyToApprove &&
-          app.status !== 'pending_verifications' && (
             <p className="text-center text-xs text-gray-500">
-              {!allComplete && 'Waiting for all applications to complete. '}
-              {!allVerified && 'Some guarantors have not yet verified. '}
+              Approves every member and creates one lease that each tenant signs
+              individually.
+              {!allVerified && ' Some guarantors have not verified yet.'}
               {!app.meetsRequirement &&
-                'Combined income does not meet the requirement.'}
+                ' Combined income is below your requirement.'}
             </p>
-          )}
+            {approveError && (
+              <p className="text-center text-xs text-red-600">{approveError}</p>
+            )}
+          </div>
+        )}
+
+        {[
+          'applicants_approved',
+          'pending_signatures',
+          'fully_executed',
+        ].includes(app.status) && (
+          <div className="space-y-3">
+            <div
+              className={`rounded-xl p-3 border ${
+                app.status === 'fully_executed'
+                  ? 'bg-green-50 border-green-200'
+                  : 'bg-orange-50 border-orange-200'
+              }`}
+            >
+              <p
+                className={`text-sm font-semibold ${
+                  app.status === 'fully_executed'
+                    ? 'text-green-800'
+                    : 'text-orange-800'
+                }`}
+              >
+                {app.status === 'fully_executed'
+                  ? 'Lease fully executed'
+                  : 'Joint lease sent — collecting signatures'}
+              </p>
+              {(app.signers || []).length > 0 && (
+                <ul className="mt-2 space-y-1 text-xs">
+                  {app.signers.map(s => (
+                    <li
+                      key={s.userId}
+                      className="flex items-center justify-between"
+                    >
+                      <span>
+                        {s.name}
+                        <span className="text-gray-400">
+                          {' '}
+                          · {s.role === 'landlord' ? 'landlord' : 'tenant'}
+                        </span>
+                      </span>
+                      <span
+                        className={
+                          s.signed ? 'text-green-700' : 'text-orange-700'
+                        }
+                      >
+                        {s.signed ? 'Signed' : 'Not signed'}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            {app.agreementId && (
+              <button
+                onClick={() => navigate(`/agreement/${app.agreementId}`)}
+                className="w-full py-3 rounded-xl font-semibold bg-purple-600 text-white hover:bg-purple-700 flex items-center justify-center"
+              >
+                <FileText size={18} className="mr-2" />
+                {app.signers?.some(s => s.role === 'landlord' && !s.signed)
+                  ? 'Review & sign lease'
+                  : 'View lease'}
+              </button>
+            )}
+          </div>
+        )}
       </div>
     )
   }
@@ -648,10 +535,24 @@ const GroupApplicationsTab = ({
       <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
         <p className="font-semibold text-purple-800 mb-1">Group Applications</p>
         <p className="text-sm text-purple-700">
-          Track verifications, review combined income &amp; guarantors, then
-          approve and send a joint lease.
+          Review combined income &amp; guarantors, approve the group, and one
+          joint lease goes out for every member to sign.
         </p>
       </div>
+
+      {loading && (
+        <p className="text-center text-sm text-gray-400 py-6">Loading…</p>
+      )}
+      {!loading && groups.length === 0 && (
+        <div className="text-center py-12 text-gray-500">
+          <Users size={32} className="mx-auto mb-3 text-gray-300" />
+          <p className="font-medium text-gray-600">No group applications yet</p>
+          <p className="text-sm">
+            Roommate groups that apply together to one of your listings show up
+            here.
+          </p>
+        </div>
+      )}
 
       {groups.map(app => {
         const totalGuarantors = app.members.filter(m => m.guarantor).length
@@ -712,10 +613,6 @@ const LandlordInbox = ({
   onSendLease,
   onNavigateToApprovals,
   onNavigateToUtilities,
-  onApproveGroupApplication,
-  onNavigateToMultiPartyLease,
-  onOpenWaitingRoom,
-  onOpenGroupChat,
 }) => {
   const [selectedProperty, setSelectedProperty] = useState(null)
   const [selectedApplicant, setSelectedApplicant] = useState(null)
@@ -1018,25 +915,13 @@ const LandlordInbox = ({
               }`}
             >
               <Users size={14} className="mr-1" /> Group
-              <span className="ml-1 bg-purple-100 text-purple-700 text-xs px-1.5 rounded-full">
-                {mockGroupApplications.length}
-              </span>
             </button>
           </div>
         </div>
         {/* end p-4 */}
 
         {/* Group Applications Tab */}
-        {activeTab === 'group' && (
-          <GroupApplicationsTab
-            onApproveGroup={app => onApproveGroupApplication?.(app)}
-            onNavigateToMultiPartyLease={app =>
-              onNavigateToMultiPartyLease?.(app)
-            }
-            onOpenWaitingRoom={app => onOpenWaitingRoom?.(app)}
-            onOpenChat={app => onOpenGroupChat?.(app)}
-          />
-        )}
+        {activeTab === 'group' && <GroupApplicationsTab />}
 
         {activeTab === 'individual' && (
           <div className="p-4">

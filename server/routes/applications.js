@@ -1,4 +1,5 @@
 import express from 'express'
+import { defaultLeaseTerms } from '../utils/agreements.js'
 import prisma from '../utils/prisma.js'
 import { authenticate, requireUserType } from '../middleware/authenticate.js'
 import { generateSecureToken } from '../utils/auth.js'
@@ -444,6 +445,11 @@ router.get('/', authenticate, async (req, res) => {
               id: true,
               tenantSigned: true,
               landlordSigned: true,
+              // The viewer's own signature block on the household lease.
+              signers: {
+                where: { userId: req.user.id },
+                select: { signed: true },
+              },
             },
           },
         },
@@ -630,70 +636,107 @@ router.put('/:id/status', authenticate, async (req, res) => {
       }
     }
 
-    // Update the application
-    const updatedApplication = await prisma.application.update({
-      where: { id },
-      data: {
-        status,
-        message: statusMessage || application.message,
-      },
-      include: {
-        listing: {
-          select: {
-            id: true,
-            title: true,
-            price: true,
+    // A roommate group applied together, so the landlord's decision covers
+    // every pending member: one approval creates one household lease with
+    // a signature block per member, one rejection declines the group.
+    const decisionForGroup =
+      (status === 'approved' || status === 'rejected') && !!application.groupId
+    const targets = decisionForGroup
+      ? await prisma.application.findMany({
+          where: {
+            groupId: application.groupId,
+            listingId: application.listingId,
+            status: 'pending',
           },
-        },
-        applicant: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-          },
-        },
-        owner: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
-      },
-    })
+          select: { id: true },
+        })
+      : [{ id }]
+    const targetIds = targets.map(t => t.id)
+    if (!targetIds.includes(id)) targetIds.push(id)
 
-    // If approved, create an agreement
-    if (status === 'approved') {
-      await prisma.agreement.create({
-        data: {
-          applicationId: id,
-          monthlyRent: updatedApplication.listing.price,
-          securityDeposit: updatedApplication.listing.price, // Default to 1 month
-          startDate: application.startDate,
-          endDate: application.endDate,
-          terms: {
-            petPolicy: 'No pets allowed',
-            utilities: 'Tenant responsible for utilities',
-            lateFee: '5% after 5 days',
-          },
-        },
+    const detailInclude = {
+      listing: { select: { id: true, title: true, price: true } },
+      applicant: {
+        select: { id: true, firstName: true, lastName: true, email: true },
+      },
+      owner: { select: { id: true, firstName: true, lastName: true } },
+    }
+
+    await prisma.application.updateMany({
+      where: { id: { in: targetIds } },
+      data: { status },
+    })
+    if (statusMessage) {
+      await prisma.application.update({
+        where: { id },
+        data: { message: statusMessage },
       })
     }
 
-    // Notify the applicant of the decision. Best-effort.
+    // If approved, create the household lease (idempotent: skip when one
+    // already exists for the lead application) and attach every member.
+    if (status === 'approved' && !application.agreementId) {
+      const listing = await prisma.listing.findUnique({
+        where: { id: application.listingId },
+        select: { price: true },
+      })
+      const members = await prisma.application.findMany({
+        where: { id: { in: targetIds } },
+        select: { id: true, applicantId: true },
+      })
+      const agreement = await prisma.agreement.create({
+        data: {
+          applicationId: id,
+          groupId: application.groupId || null,
+          ...defaultLeaseTerms(listing, application),
+          signers: {
+            create: [
+              ...members.map(m => ({
+                role: 'tenant',
+                userId: m.applicantId,
+                applicationId: m.id,
+              })),
+              { role: 'landlord', userId: application.ownerId },
+            ],
+          },
+        },
+      })
+      await prisma.application.updateMany({
+        where: { id: { in: targetIds } },
+        data: { agreementId: agreement.id },
+      })
+    }
+
+    const updatedApplication = await prisma.application.findUnique({
+      where: { id },
+      include: detailInclude,
+    })
+
+    // Notify every affected applicant of the decision. Best-effort.
     if (status === 'approved' || status === 'rejected') {
-      sendApplicationStatusEmail(
-        updatedApplication.applicant,
-        updatedApplication.listing,
-        status,
-        updatedApplication.owner
-      ).catch(err => console.error('Status notification error:', err))
+      prisma.application
+        .findMany({ where: { id: { in: targetIds } }, include: detailInclude })
+        .then(apps =>
+          Promise.all(
+            apps.map(a =>
+              sendApplicationStatusEmail(
+                a.applicant,
+                a.listing,
+                status,
+                a.owner
+              )
+            )
+          )
+        )
+        .catch(err => console.error('Status notification error:', err))
     }
 
     res.json({
-      message: `Application ${status}`,
+      message: decisionForGroup
+        ? `Group application ${status} (${targetIds.length} members)`
+        : `Application ${status}`,
       application: updatedApplication,
+      affectedApplicationIds: targetIds,
     })
   } catch (error) {
     console.error('Update application status error:', error)

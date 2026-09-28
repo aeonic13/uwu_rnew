@@ -524,7 +524,20 @@ router.get(
                 },
               },
               agreement: {
-                select: { tenantSigned: true, landlordSigned: true },
+                select: {
+                  id: true,
+                  tenantSigned: true,
+                  landlordSigned: true,
+                  signers: {
+                    select: {
+                      userId: true,
+                      role: true,
+                      signed: true,
+                      signedAt: true,
+                      user: { select: { firstName: true, lastName: true } },
+                    },
+                  },
+                },
               },
               group: { select: { id: true, name: true } },
               cosigners: {
@@ -574,8 +587,11 @@ router.get(
             name: `${app.applicant.firstName} ${app.applicant.lastName}`,
             email: app.applicant.email,
             university: app.applicant.university || null,
+            // Submitted applications are complete for review purposes;
+            // the group-level status below carries approval / signing.
             applicationStatus:
-              app.status === 'approved' ? 'complete' : 'pending',
+              app.status === 'rejected' ? 'rejected' : 'complete',
+            status: app.status,
             monthlyIncome,
             effectiveIncome,
             creditScore: app.applicant.creditScore ?? null,
@@ -618,9 +634,21 @@ router.get(
           listing.price,
           listing.incomeMultiplier
         )
-        const allComplete = members.every(
-          m => m.applicationStatus === 'complete'
-        )
+        // Real pipeline stage for the inbox: every member submitted →
+        // ready_for_review; approved → the household lease exists and is
+        // either collecting signatures or fully executed.
+        const lease = applications.map(a => a.agreement).find(Boolean) || null
+        const allApproved = applications.every(a => a.status === 'approved')
+        const leaseSigners = lease?.signers || []
+        const fullySigned =
+          leaseSigners.length > 0 && leaseSigners.every(s => s.signed)
+        const status = !allApproved
+          ? 'ready_for_review'
+          : !lease
+            ? 'applicants_approved'
+            : fullySigned
+              ? 'fully_executed'
+              : 'pending_signatures'
 
         return {
           id: realGroup ? `${listing.id}:${realGroup.id}` : listing.id,
@@ -632,7 +660,15 @@ router.get(
             : `${listing.title} — ${members.length} applicant${
                 members.length === 1 ? '' : 's'
               }`,
-          status: allComplete ? 'applicants_approved' : 'pending_verifications',
+          status,
+          agreementId: lease?.id || null,
+          signers: leaseSigners.map(s => ({
+            userId: s.userId,
+            role: s.role,
+            name: `${s.user.firstName} ${s.user.lastName}`,
+            signed: s.signed,
+            signedAt: s.signedAt,
+          })),
           submittedAt: applications.reduce(
             (earliest, a) => (a.createdAt < earliest ? a.createdAt : earliest),
             applications[0].createdAt

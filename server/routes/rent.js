@@ -17,23 +17,10 @@ const splitInclude = {
   createdBy: { select: { id: true, firstName: true, lastName: true } },
 }
 
-const memberSelect = {
-  id: true,
-  applicantId: true,
-  applicant: { select: { id: true, firstName: true, lastName: true } },
-  agreement: {
-    select: {
-      id: true,
-      monthlyRent: true,
-      rentSplit: { include: splitInclude },
-    },
-  },
-}
-
 /**
- * Every tenant on the same lease as `agreementId`. A group application
- * creates one Application (and Agreement) per member linked by groupId, so
- * siblings are the approved applications sharing that group and listing.
+ * The household on a lease: every tenant signer of the Agreement. A group
+ * application produces one Agreement with a signer per member, so the
+ * split and each member's autopay all hang off that one agreement.
  * Returns null when the agreement is missing and { forbidden } when the
  * caller is not a tenant on it.
  */
@@ -43,40 +30,34 @@ async function loadHousehold(agreementId, userId) {
     select: {
       id: true,
       monthlyRent: true,
-      application: {
+      application: { select: { listing: { select: { title: true } } } },
+      signers: {
+        where: { role: 'tenant' },
+        orderBy: { createdAt: 'asc' },
         select: {
-          id: true,
-          listingId: true,
-          groupId: true,
-          listing: { select: { title: true } },
+          userId: true,
+          user: { select: { firstName: true, lastName: true } },
         },
       },
+      rentSplit: { include: splitInclude },
     },
   })
   if (!agreement) return null
 
-  const app = agreement.application
-  const siblings = await prisma.application.findMany({
-    where: app.groupId
-      ? { groupId: app.groupId, listingId: app.listingId, status: 'approved' }
-      : { id: app.id },
-    select: memberSelect,
-  })
-
-  const members = siblings.map(s => ({
-    userId: s.applicant.id,
-    name: `${s.applicant.firstName} ${s.applicant.lastName}`,
-    agreementId: s.agreement?.id || null,
+  const members = agreement.signers.map(s => ({
+    userId: s.userId,
+    name: `${s.user.firstName} ${s.user.lastName}`,
+    agreementId: agreement.id,
   }))
   if (!members.some(m => m.userId === userId)) return { forbidden: true }
 
   return {
     agreementId,
     monthlyRent: agreement.monthlyRent,
-    listingTitle: app.listing?.title || null,
+    listingTitle: agreement.application?.listing?.title || null,
     members,
-    split: siblings.map(s => s.agreement?.rentSplit).find(Boolean) || null,
-    myAgreementId: members.find(m => m.userId === userId)?.agreementId,
+    split: agreement.rentSplit || null,
+    myAgreementId: agreement.id,
   }
 }
 

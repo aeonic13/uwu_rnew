@@ -603,6 +603,9 @@ function LeasesTab() {
             monthlyRent: a.terms?.monthlyRent,
             securityDeposit: a.terms?.securityDeposit,
             signedDate: a.createdAt,
+            viewerHasSigned: !!a.viewerHasSigned,
+            pendingSigners: (a.pendingSigners || []).map(p => p.name),
+            tenantCount: a.tenants?.length || 1,
           }))
         )
       })
@@ -654,6 +657,17 @@ function LeasesTab() {
               {lease.status.charAt(0).toUpperCase() + lease.status.slice(1)}
             </span>
           </div>
+          {lease.status === 'pending' && (
+            <p
+              className="text-xs text-yellow-700 bg-yellow-50 border border-yellow-100 rounded-lg px-3 py-2 mb-4"
+              data-testid="lease-waiting"
+            >
+              {lease.tenantCount > 1 ? 'Joint lease. ' : ''}
+              {lease.viewerHasSigned
+                ? `You've signed. Waiting on ${lease.pendingSigners.join(', ') || 'the other party'}.`
+                : 'Your signature is needed.'}
+            </p>
+          )}
 
           <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
             <div>

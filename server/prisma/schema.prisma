@@ -107,6 +107,7 @@ model User {
   rentSplitShares      RentSplitShare[]    @relation("RentSplitShares")
   autopaySchedules     AutopaySchedule[]
   policyAcceptances    PolicyAcceptance[]
+  agreementSignatures  AgreementSigner[]   @relation("AgreementSignatures")
   screeningReports     ScreeningReport[]
   securityDeposits     SecurityDeposit[]   @relation("OwnerDeposits")
   expenses             Expense[]
@@ -341,7 +342,12 @@ model Application {
   ownerId           String
   owner             User             @relation("OwnerApplications", fields: [ownerId], references: [id], onDelete: Cascade)
   transactions      Transaction[]
-  agreement         Agreement?
+  // The household lease this application is a party to. Every member of a
+  // group application points at the same Agreement; the Agreement's own
+  // applicationId is just the lead application it was created from.
+  agreementId       String?
+  agreement         Agreement?       @relation("LeaseMembers", fields: [agreementId], references: [id], onDelete: SetNull)
+  leadOf            Agreement?       @relation("LeadApplication")
   cosigners         Cosigner[]
   // Set when this application was submitted as part of a roommate group —
   // one Application row per member, linked by the shared groupId.
@@ -362,6 +368,7 @@ model Application {
   @@index([status])
   @@index([groupId])
   @@index([screeningReportId])
+  @@index([agreementId])
 }
 
 // Agreement/Contract model
@@ -381,8 +388,15 @@ model Agreement {
   updatedAt        DateTime  @updatedAt
 
   // Relations
+  // Lead application the lease was created from (solo tenant, or the
+  // group member whose approval created the household lease).
   applicationId String            @unique
-  application   Application       @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  application   Application       @relation("LeadApplication", fields: [applicationId], references: [id], onDelete: Cascade)
+  // Set for group leases; every member application links back via
+  // Application.agreementId and has its own AgreementSigner row.
+  groupId       String?
+  members       Application[]     @relation("LeaseMembers")
+  signers       AgreementSigner[]
   // Compliance record for the deposit money this lease holds (see SecurityDeposit).
   deposit       SecurityDeposit?
   // How the household divides this rent (see RentSplit). Group leases hold
@@ -466,6 +480,28 @@ model PolicyAcceptance {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, policy])
+}
+
+// One signature block on a household lease: every tenant on the lease and
+// the landlord. The lease is "signed" only when every row is signed.
+// Agreement.tenantSigned / landlordSigned are kept as derived mirrors.
+model AgreementSigner {
+  id            String    @id @default(cuid())
+  role          String // tenant | landlord
+  signed        Boolean   @default(false)
+  signedAt      DateTime?
+  signatureName String?
+  createdAt     DateTime  @default(now())
+
+  agreementId   String
+  agreement     Agreement @relation(fields: [agreementId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User      @relation("AgreementSignatures", fields: [userId], references: [id], onDelete: Cascade)
+  // The member application this tenant signer came from (null for landlord).
+  applicationId String?
+
+  @@unique([agreementId, userId])
+  @@index([userId])
 }
 
 // Conversation model

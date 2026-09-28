@@ -14,11 +14,14 @@ import { agreementsService } from '../../services/agreementsService'
 /**
  * Format date
  */
+// Lease dates are date-only values stored at UTC midnight; render them in
+// UTC so they do not shift a day earlier in US time zones.
 function formatDate(dateString) {
   return new Date(dateString).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
+    timeZone: 'UTC',
   })
 }
 
@@ -171,7 +174,14 @@ function AgreementView() {
                   You&apos;ve signed
                 </h3>
                 <p className="text-sm text-brand-600">
-                  Awaiting signature from the other party
+                  {agreement.pendingSigners?.length
+                    ? `Waiting on ${agreement.pendingSigners
+                        .map(p => p.name)
+                        .join(', ')}`
+                    : 'Awaiting the other signatures'}
+                  {agreement.signerCount
+                    ? ` · ${agreement.signedCount}/${agreement.signerCount} signed`
+                    : ''}
                 </p>
               </div>
             </>
@@ -217,21 +227,62 @@ function AgreementView() {
 
         {/* Parties */}
         <div className="bg-white rounded-lg border p-4">
-          <h3 className="font-semibold mb-3">Parties</h3>
-          <div className="space-y-4">
-            <div>
-              <p className="text-sm text-gray-500">Tenant (Sublessee)</p>
-              <p className="font-medium">{agreement.tenant.name}</p>
-              <p className="text-sm text-gray-600">{agreement.tenant.email}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Landlord (Sublessor)</p>
-              <p className="font-medium">{agreement.landlord.name}</p>
-              <p className="text-sm text-gray-600">
-                {agreement.landlord.email}
-              </p>
-            </div>
-          </div>
+          <h3 className="font-semibold mb-3">
+            Parties
+            {agreement.isGroupLease && (
+              <span className="ml-2 text-xs font-medium bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
+                Joint lease · {agreement.tenants.length} tenants
+              </span>
+            )}
+          </h3>
+          <ul className="divide-y divide-gray-100" data-testid="lease-parties">
+            {[...(agreement.tenants || []), agreement.landlord]
+              .filter(Boolean)
+              .map((party, idx) => (
+                <li
+                  key={party.userId || `${party.role}-${idx}`}
+                  className="flex items-center justify-between py-2"
+                >
+                  <div>
+                    <p className="text-xs text-gray-500">
+                      {party.role === 'landlord'
+                        ? 'Landlord'
+                        : agreement.isGroupLease
+                          ? `Tenant ${idx + 1}`
+                          : 'Tenant'}
+                    </p>
+                    <p className="font-medium">
+                      {party.name}
+                      {party.isViewer && (
+                        <span className="ml-2 text-xs bg-brand-100 text-brand-600 px-1.5 py-0.5 rounded">
+                          you
+                        </span>
+                      )}
+                    </p>
+                    {party.email && (
+                      <p className="text-sm text-gray-600">{party.email}</p>
+                    )}
+                  </div>
+                  <span
+                    className={`text-xs font-medium px-2 py-1 rounded-full ${
+                      party.signed
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-yellow-100 text-yellow-700'
+                    }`}
+                  >
+                    {party.signed
+                      ? `Signed${party.signedAt ? ` ${formatDate(party.signedAt)}` : ''}`
+                      : 'Not signed'}
+                  </span>
+                </li>
+              ))}
+          </ul>
+          {agreement.isGroupLease && (
+            <p className="text-xs text-gray-500 mt-3">
+              Every tenant signs the same lease. It takes effect once all
+              tenants and the landlord have signed.
+            </p>
+          )}
         </div>
 
         {/* Terms */}
@@ -292,7 +343,14 @@ function AgreementView() {
               <strong>Sublessor:</strong> {agreement.landlord.name}
             </p>
             <p>
-              <strong>Sublessee:</strong> {agreement.tenant.name}
+              <strong>
+                {agreement.isGroupLease ? 'Sublessees:' : 'Sublessee:'}
+              </strong>{' '}
+              {(agreement.tenants || [agreement.tenant])
+                .map(t => t.name)
+                .join(', ')}
+              {agreement.isGroupLease &&
+                ', jointly and severally responsible for the obligations of this lease'}
             </p>
             <p>
               The parties agree to the following terms and conditions for the

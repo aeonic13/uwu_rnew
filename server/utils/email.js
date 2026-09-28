@@ -667,6 +667,46 @@ export async function sendAutopayReminderEmail({
   })
 }
 
+/**
+ * Lease signature progress for a household lease. Sent to every other
+ * signer when someone signs; `fullySigned` flips the copy to "executed".
+ */
+export async function sendLeaseSignatureUpdate({
+  recipient,
+  signerName,
+  listingTitle,
+  agreementId,
+  fullySigned,
+  pendingNames = [],
+}) {
+  const url = `${process.env.CLIENT_URL}/agreement/${agreementId}`
+  const needsYou = pendingNames.includes(
+    `${recipient.firstName} ${recipient.lastName}`.trim()
+  )
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+      <h2 style="color: #fc6a03;">${fullySigned ? 'Your lease is fully signed ✅' : 'Lease signature update ✍️'}</h2>
+      <p>Hi ${recipient.firstName},</p>
+      <p><strong>${signerName}</strong> signed the lease for <strong>${listingTitle}</strong>.</p>
+      ${
+        fullySigned
+          ? '<p>Every party has now signed. The signed PDF is available in your Rentra account.</p>'
+          : `<p>${needsYou ? 'Your signature is still needed.' : `Still waiting on: ${pendingNames.join(', ')}.`}</p>`
+      }
+      <p style="margin-top: 24px;"><a href="${url}" style="background: #fc6a03; color: #fff; padding: 10px 18px; border-radius: 6px; text-decoration: none;">${fullySigned ? 'Download the lease' : needsYou ? 'Review and sign' : 'View the lease'}</a></p>
+      <p style="color: #888; font-size: 13px; margin-top: 24px;">— The Rentra Team</p>
+    </div>
+  `
+  return sendEmail({
+    to: recipient.email,
+    subject: fullySigned
+      ? `Lease fully signed: ${listingTitle}`
+      : `${signerName} signed the lease for ${listingTitle}`,
+    html,
+    text: `Hi ${recipient.firstName}, ${signerName} signed the lease for ${listingTitle}. ${fullySigned ? 'Every party has signed.' : needsYou ? 'Your signature is still needed.' : `Waiting on: ${pendingNames.join(', ')}.`} ${url}`,
+  })
+}
+
 function ordinal(n) {
   const v = Number(n) % 100
   const suffix =
