@@ -38,6 +38,8 @@ const EMPTY_ABOUT = {
   occupation: '',
   university: '',
   location: '',
+  city: '',
+  areas: [],
   moveInMonth: '',
   budgetMin: '',
   budgetMax: '',
@@ -57,13 +59,13 @@ const toInt = v => {
  */
 function DiscoverEmpty({
   hasProfile,
-  university,
+  where,
   filtersActive,
   onTakeQuiz,
   onWiden,
 }) {
-  const near = university ? ` near ${university}` : ''
-  const canWiden = filtersActive || Boolean(university)
+  const near = where ? ` in ${where}` : ''
+  const canWiden = filtersActive || Boolean(where)
   return (
     <div className="text-center py-12 px-4 rounded-xl border border-dashed border-gray-300 bg-white">
       <Users size={44} className="mx-auto text-gray-300 mb-4" />
@@ -124,7 +126,10 @@ function HousematesHub() {
   // Discovery preferences. Age and gender double as consent settings.
   const [agePref, setAgePref] = useState(DEFAULT_AGE_PREF)
   const [genderPref, setGenderPref] = useState([])
-  const [universityFilter, setUniversityFilter] = useState('')
+  // Where: a city plus the neighborhoods in it. Defaults from the viewer's
+  // own profile once it loads.
+  const [cityFilter, setCityFilter] = useState('')
+  const [areasFilter, setAreasFilter] = useState([])
   const [lookingFilter, setLookingFilter] = useState('any')
 
   const [quizAnswers, setQuizAnswers] = useState({})
@@ -155,7 +160,8 @@ function HousematesHub() {
     ageMin: agePref.min,
     ageMax: agePref.max >= AGE_CEIL ? null : agePref.max,
     genders: genderPref,
-    university: universityFilter,
+    city: cityFilter,
+    areas: areasFilter,
     lookingForRoom: lookingFilter === 'any' ? null : lookingFilter,
   })
 
@@ -171,7 +177,8 @@ function HousematesHub() {
           ageMin: agePref.min,
           ageMax: agePref.max >= AGE_CEIL ? null : agePref.max,
           genders: genderPref,
-          university: universityFilter,
+          city: cityFilter,
+          areas: areasFilter,
           lookingForRoom: lookingFilter === 'any' ? null : lookingFilter,
           limit: PAGE_SIZE,
           offset: 0,
@@ -193,7 +200,7 @@ function HousematesHub() {
       active = false
       clearTimeout(timer)
     }
-  }, [agePref, genderPref, universityFilter, lookingFilter, reloadFlag])
+  }, [agePref, genderPref, cityFilter, areasFilter, lookingFilter, reloadFlag])
 
   // Preload the saved profile so returning users edit what they set before.
   // The university filter defaults to their campus, from the profile or
@@ -204,8 +211,11 @@ function HousematesHub() {
       .getMyProfile()
       .then(profile => {
         if (!active) return
-        const campus = profile?.university || user?.university || ''
-        setUniversityFilter(prev => prev || campus)
+        // Default the feed to where they said they want to live.
+        if (profile?.city) {
+          setCityFilter(prev => prev || profile.city)
+          setAreasFilter(prev => (prev.length ? prev : profile.areas || []))
+        }
         if (!profile) return
         setMyProfileMeta({ exists: true, active: profile.active !== false })
         const saved = {}
@@ -219,6 +229,8 @@ function HousematesHub() {
           occupation: profile.occupation ?? prev.occupation,
           university: profile.university ?? prev.university,
           location: profile.location ?? prev.location,
+          city: profile.city ?? prev.city,
+          areas: Array.isArray(profile.areas) ? profile.areas : prev.areas,
           moveInMonth: profile.moveInMonth ?? prev.moveInMonth,
           budgetMin: profile.budgetMin ?? prev.budgetMin,
           budgetMax: profile.budgetMax ?? prev.budgetMax,
@@ -254,7 +266,6 @@ function HousematesHub() {
       active = false
     }
     // Mount-only: user is loaded before this page renders.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const answeredCount = quizQuestions.filter(q => quizAnswers[q.id]).length
@@ -275,7 +286,8 @@ function HousematesHub() {
     setGenderPref([])
     setLookingFilter('any')
     setAgePref(DEFAULT_AGE_PREF)
-    setUniversityFilter('')
+    setCityFilter('')
+    setAreasFilter([])
   }
 
   const openProfile = profile => {
@@ -296,6 +308,8 @@ function HousematesHub() {
       occupation: aboutYou.occupation || null,
       university: aboutYou.university || user?.university || null,
       location: aboutYou.location || null,
+      city: aboutYou.city || null,
+      areas: aboutYou.areas || [],
       moveInMonth: aboutYou.moveInMonth || null,
       budgetMin: toInt(aboutYou.budgetMin),
       budgetMax: toInt(aboutYou.budgetMax),
@@ -361,6 +375,8 @@ function HousematesHub() {
         occupation: text(about.occupation) ?? undefined,
         university: text(about.university),
         location: text(about.location),
+        city: text(about.city),
+        areas: Array.isArray(about.areas) ? about.areas : [],
         moveInMonth: text(about.moveInMonth),
         budgetMin: about.budgetMin === '' ? undefined : about.budgetMin,
         budgetMax: about.budgetMax === '' ? undefined : about.budgetMax,
@@ -387,8 +403,11 @@ function HousematesHub() {
     setQuizAnswers(answers)
     setAboutYou(merged)
     await saveProfile(answers, merged)
-    if (merged.university)
-      setUniversityFilter(prev => prev || merged.university)
+    // Point the feed at where they just said they want to live.
+    if (merged.city) {
+      setCityFilter(merged.city)
+      setAreasFilter(merged.areas || [])
+    }
     setActiveTab('discover')
   }
 
@@ -514,8 +533,12 @@ function HousematesHub() {
             genderPref={genderPref}
             onToggleGender={toggleGenderPref}
             onClearGender={() => setGenderPref([])}
-            university={universityFilter}
-            onUniversity={setUniversityFilter}
+            city={cityFilter}
+            areas={areasFilter}
+            onArea={({ city, areas }) => {
+              setCityFilter(city || '')
+              setAreasFilter(areas || [])
+            }}
             lookingFilter={lookingFilter}
             onLookingFilter={setLookingFilter}
           />
@@ -543,7 +566,11 @@ function HousematesHub() {
           ) : profiles.length === 0 ? (
             <DiscoverEmpty
               hasProfile={myProfileMeta.exists}
-              university={universityFilter}
+              where={
+                areasFilter.length
+                  ? `${areasFilter.join(', ')} · ${cityFilter}`
+                  : cityFilter
+              }
               filtersActive={filtersActive}
               onTakeQuiz={goQuiz}
               onWiden={widenFilters}

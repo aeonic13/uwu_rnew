@@ -6,13 +6,13 @@ import {
   CheckCircle,
   MessageCircle,
   User,
-  GraduationCap,
   CalendarDays,
   Search,
   Home,
 } from 'lucide-react'
 import MatchReasons from './MatchReasons'
 import { formatMoveIn } from './housemateConfig'
+import { formatLocality } from './areaConfig'
 
 /**
  * One person in the discovery feed. Leads with the things that decide
@@ -26,8 +26,9 @@ export default function HousemateCard({
 }) {
   const name =
     `${p.user?.firstName || 'Housemate'} ${p.user?.lastName || ''}`.trim()
-  const university = p.university || p.user?.university || null
   const moveIn = formatMoveIn(p.moveInMonth)
+  const locality = formatLocality(p)
+  const sharedAreas = Array.isArray(p.sharedAreas) ? p.sharedAreas : []
   const budget =
     p.budgetMin && p.budgetMax ? `$${p.budgetMin}–$${p.budgetMax}/mo` : null
 
@@ -70,16 +71,12 @@ export default function HousemateCard({
               {p.occupation}
             </div>
           )}
-          {university && (
-            <div
-              className={`mt-1 inline-flex items-center text-xs px-2 py-0.5 rounded-full ${
-                p.sameUniversity
-                  ? 'bg-green-50 text-green-700'
-                  : 'bg-gray-100 text-gray-600'
-              }`}
-            >
-              <GraduationCap size={12} className="mr-1" />
-              {p.sameUniversity ? 'Same university' : university}
+          {sharedAreas.length > 0 && (
+            <div className="mt-1 inline-flex items-center text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700">
+              <MapPin size={12} className="mr-1" />
+              {sharedAreas.length === 1
+                ? `Also wants ${sharedAreas[0]}`
+                : `${sharedAreas.length} areas in common`}
             </div>
           )}
         </div>
@@ -129,7 +126,7 @@ export default function HousemateCard({
           )}
           <span className="inline-flex items-center">
             <MapPin size={12} className="mr-1" />
-            {p.location || 'Location flexible'}
+            {locality || 'Location flexible'}
           </span>
           {budget && (
             <span className="font-medium text-gray-800">{budget}</span>

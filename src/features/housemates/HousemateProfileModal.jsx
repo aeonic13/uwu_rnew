@@ -18,6 +18,7 @@ import {
   Minus,
   ArrowLeftRight,
 } from 'lucide-react'
+import { formatLocality } from './areaConfig'
 import {
   genderLabels,
   lifestyleSummary,
@@ -259,19 +260,14 @@ export default function HousemateProfileModal({
         <div className="p-6 space-y-4">
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
             {university && (
-              <span
-                className={`flex items-center ${
-                  profile.sameUniversity ? 'text-green-700 font-medium' : ''
-                }`}
-              >
+              <span className="flex items-center">
                 <GraduationCap size={14} className="mr-1" />
                 {university}
-                {profile.sameUniversity ? ' · same as you' : ''}
               </span>
             )}
             <span className="flex items-center">
               <MapPin size={14} className="mr-1" />
-              {profile.location || 'Location flexible'}
+              {formatLocality(profile) || 'Location flexible'}
             </span>
             {moveIn && (
               <span className="flex items-center">

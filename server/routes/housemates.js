@@ -9,8 +9,14 @@ import {
 import {
   GENDER_PREF_TO_IDENTITY,
   satisfiesPreferencesOf,
-  locationsCompatible,
 } from '../utils/housemateMatch.js'
+import {
+  normalizeCity,
+  sanitizeAreas,
+  localityOf,
+  areaOverlap,
+  localityCompatible,
+} from '../utils/areas.js'
 import { sendNewHousemateAlert } from '../utils/email.js'
 
 const router = express.Router()
@@ -42,6 +48,8 @@ const editableFields = [
   'audience',
   'occupation',
   'location',
+  'city',
+  'areas',
   'university',
   'moveInMonth',
   'bio',
@@ -67,34 +75,30 @@ const ALERT_MIN_SCORE = 70
 const DEFAULT_LIMIT = 24
 const MAX_LIMIT = 100
 
-// Same-university candidates rank ahead of otherwise-equal matches. This is
-// an ordering boost only: the displayed score stays the honest lifestyle
-// number.
-const SAME_UNIVERSITY_RANK_BOOST = 10
+// Candidates who want the same neighborhoods rank ahead of otherwise-equal
+// matches. Ordering boosts only: the displayed score stays the honest
+// lifestyle number.
+const SHARED_AREA_RANK_BOOST = 8
+const MAX_AREA_BOOST = 24
 
-/** The university a profile is associated with: its own, else its user's. */
-function universityOf(profile) {
-  return (profile?.university || profile?.user?.university || '').trim()
-}
-
-/** Case-insensitive equality on non-empty university names. */
-function sameUniversity(a, b) {
-  const x = universityOf(a).toLowerCase()
-  const y = universityOf(b).toLowerCase()
-  return Boolean(x) && x === y
-}
-
-/** Score + explanation + university flag for one candidate. */
-function scoreCandidate(viewerProfile, viewerUser, candidate) {
-  const viewerForUni =
-    viewerProfile || (viewerUser ? { user: viewerUser } : null)
+/**
+ * Score + explanation + locality overlap for one candidate. `wanted` is the
+ * viewer's requested locality (filters, else their own profile).
+ */
+function scoreCandidate(viewerProfile, wanted, candidate) {
+  const locality = localityOf(candidate)
+  const sharedAreas = wanted?.areas?.length
+    ? locality.areas.filter(a =>
+        wanted.areas.some(w => w.toLowerCase() === a.toLowerCase())
+      )
+    : []
   return {
     ...candidate,
+    city: locality.city,
+    areas: locality.areas,
     compatibilityScore: computeCompatibility(viewerProfile, candidate),
     matchBreakdown: explainCompatibility(viewerProfile, candidate),
-    sameUniversity: viewerForUni
-      ? sameUniversity(viewerForUni, candidate)
-      : false,
+    sharedAreas,
   }
 }
 // Accepted report reasons (mirrors the client's report form).
@@ -112,11 +116,21 @@ function buildProfileData(body) {
 
     if (field === 'tags') {
       data.tags = Array.isArray(body.tags) ? body.tags : []
+    } else if (field === 'areas') {
+      data.areas = Array.isArray(body.areas) ? body.areas : []
+    } else if (field === 'city') {
+      data.city = normalizeCity(body.city)
     } else if (field === 'lookingForRoom' || field === 'active') {
       data[field] = Boolean(body[field])
     } else {
       data[field] = body[field]
     }
+  }
+  // Areas only mean something inside their city: drop unknown ones and
+  // clear them when the city is cleared.
+  if (data.areas !== undefined || data.city !== undefined) {
+    const city = data.city !== undefined ? data.city : body.city
+    data.areas = sanitizeAreas(city, data.areas ?? body.areas)
   }
 
   for (const field of integerFields) {
@@ -143,21 +157,26 @@ async function blockedUserIds(userId) {
 // GET /api/housemates - list housemate profiles ranked by compatibility
 router.get('/', optionalAuth, async (req, res) => {
   try {
-    const { lookingForRoom, ageMin, ageMax, gender, location, university } =
-      req.query
+    const { lookingForRoom, ageMin, ageMax, gender, city, areas } = req.query
 
     const where = { active: true }
-    // University filter: matches the profile's own university or, when the
-    // profile hasn't set one, the user's account university.
-    if (university && university.trim()) {
-      const needle = university.trim()
+    // City filter: the profile's city, or (profiles saved before the
+    // picker existed) a free-text location that mentions the city.
+    const wantedCity = normalizeCity(city)
+    const wantedAreas = wantedCity
+      ? sanitizeAreas(
+          wantedCity,
+          typeof areas === 'string' ? areas.split(',') : areas
+        )
+      : []
+    if (wantedCity) {
       where.AND = [
         {
           OR: [
-            { university: { contains: needle, mode: 'insensitive' } },
+            { city: { equals: wantedCity, mode: 'insensitive' } },
             {
-              university: null,
-              user: { university: { contains: needle, mode: 'insensitive' } },
+              city: null,
+              location: { contains: wantedCity, mode: 'insensitive' },
             },
           ],
         },
@@ -190,12 +209,6 @@ router.get('/', optionalAuth, async (req, res) => {
       }
     }
 
-    // Rough locality filter (v1): case-insensitive substring on the free-text
-    // location. A lifestyle match in another city is not a match.
-    if (location && location.trim()) {
-      where.location = { contains: location.trim(), mode: 'insensitive' }
-    }
-
     // Exclude the current user and anyone in a block with them.
     if (req.user) {
       const excluded = await blockedUserIds(req.user.id)
@@ -222,16 +235,30 @@ router.get('/', optionalAuth, async (req, res) => {
       satisfiesPreferencesOf(profile, viewerProfile)
     )
 
+    // Desired areas: someone who only wants other neighborhoods in the same
+    // city is not a match; someone with no areas set is flexible and stays,
+    // ranked below people who share an area.
+    const wanted = wantedCity
+      ? { city: wantedCity, areas: wantedAreas }
+      : localityOf(viewerProfile)
+    const inArea = wantedAreas.length
+      ? visible.filter(profile => {
+          const theirs = localityOf(profile).areas
+          return (
+            theirs.length === 0 || areaOverlap(wanted, { areas: theirs }) > 0
+          )
+        })
+      : visible
+
     // Attach compatibility (null = unknown, never fabricated) plus the
-    // reasons behind it, then rank. Same-university candidates get an
-    // ordering boost; the stable sort keeps updatedAt order inside each
-    // band, so unscored feeds (viewer hasn't taken the quiz) stay
-    // freshest-first.
+    // reasons behind it, then rank. Shared areas give an ordering boost; the
+    // stable sort keeps updatedAt order inside each band, so unscored feeds
+    // (viewer hasn't taken the quiz) stay freshest-first.
     const rankOf = p =>
       (p.compatibilityScore ?? -1) +
-      (p.sameUniversity ? SAME_UNIVERSITY_RANK_BOOST : 0)
-    const scored = visible
-      .map(profile => scoreCandidate(viewerProfile, req.user, profile))
+      Math.min(p.sharedAreas.length * SHARED_AREA_RANK_BOOST, MAX_AREA_BOOST)
+    const scored = inArea
+      .map(profile => scoreCandidate(viewerProfile, wanted, profile))
       .sort((a, b) => rankOf(b) - rankOf(a))
     // Post-score pagination: scoring needs the full candidate set, so we
     // slice afterwards. Fine at current scale; revisit with a real ranker.
@@ -524,7 +551,7 @@ async function notifyNewHousemateMatches(newProfile) {
     // Both directions of consent, plus rough locality.
     if (!satisfiesPreferencesOf(recipient, newProfile)) continue
     if (!satisfiesPreferencesOf(newProfile, recipient)) continue
-    if (!locationsCompatible(recipient.location, newProfile.location)) continue
+    if (!localityCompatible(recipient, newProfile)) continue
 
     const score = computeCompatibility(recipient, newProfile)
     if (score == null || score < ALERT_MIN_SCORE) continue

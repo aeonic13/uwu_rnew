@@ -1,12 +1,7 @@
 import PropTypes from 'prop-types'
-import {
-  SlidersHorizontal,
-  Cake,
-  User,
-  GraduationCap,
-  Home,
-} from 'lucide-react'
+import { SlidersHorizontal, Cake, User, Home } from 'lucide-react'
 import AgeRangeSlider from './AgeRangeSlider'
+import AreaPicker from './AreaPicker'
 import {
   genderPreferenceOptions,
   lookingFilterOptions,
@@ -21,7 +16,7 @@ const chip = active =>
 
 /**
  * Discovery preferences. Age and gender are mutual: they also decide who can
- * see the viewer. University is Rentra's locality signal for students.
+ * see the viewer. Where = a city plus the neighborhoods in it.
  */
 export default function DiscoverFilters({
   agePref,
@@ -29,8 +24,9 @@ export default function DiscoverFilters({
   genderPref,
   onToggleGender,
   onClearGender,
-  university,
-  onUniversity,
+  city,
+  areas,
+  onArea,
   lookingFilter,
   onLookingFilter,
 }) {
@@ -81,25 +77,6 @@ export default function DiscoverFilters({
         </div>
 
         <div>
-          <label
-            htmlFor="university-filter"
-            className="flex items-center gap-1.5 mb-2 text-gray-700"
-          >
-            <GraduationCap size={16} />
-            <span className="text-sm font-medium">University or area</span>
-          </label>
-          <input
-            id="university-filter"
-            type="text"
-            value={university}
-            placeholder="e.g. UC San Diego"
-            maxLength={80}
-            onChange={e => onUniversity(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <div>
           <div className="flex items-center gap-1.5 mb-2 text-gray-700">
             <Home size={16} />
             <span className="text-sm font-medium">Show people who are</span>
@@ -117,6 +94,17 @@ export default function DiscoverFilters({
             ))}
           </div>
         </div>
+
+        <div className="md:col-span-2">
+          <AreaPicker
+            idPrefix="discover-area"
+            label="Where"
+            city={city}
+            areas={areas}
+            onChange={onArea}
+            hint="Pick a city, then highlight the neighborhoods you would live in. People who are open to anywhere in the city still show up."
+          />
+        </div>
       </div>
     </div>
   )
@@ -129,8 +117,9 @@ DiscoverFilters.propTypes = {
   genderPref: PropTypes.arrayOf(PropTypes.string).isRequired,
   onToggleGender: PropTypes.func.isRequired,
   onClearGender: PropTypes.func.isRequired,
-  university: PropTypes.string.isRequired,
-  onUniversity: PropTypes.func.isRequired,
+  city: PropTypes.string,
+  areas: PropTypes.arrayOf(PropTypes.string),
+  onArea: PropTypes.func.isRequired,
   lookingFilter: PropTypes.string.isRequired,
   onLookingFilter: PropTypes.func.isRequired,
 }

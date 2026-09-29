@@ -47,6 +47,9 @@ const realProfile = {
   gender: 'woman',
   occupation: 'Architect',
   location: 'La Jolla, CA',
+  city: 'San Diego',
+  areas: ['La Jolla'],
+  sharedAreas: ['La Jolla'],
   university: 'UC San Diego',
   moveInMonth: '2026-10',
   lookingForRoom: true,
@@ -55,7 +58,6 @@ const realProfile = {
   bio: 'Quiet, tidy, and usually cooking something.',
   tags: ['Tidy'],
   compatibilityScore: 88,
-  sameUniversity: true,
   matchBreakdown: {
     shared: [
       { key: 'cleanliness', value: 'very' },
@@ -128,8 +130,10 @@ describe('HousematesHub', () => {
     expect(await screen.findByText('You are early')).toBeInTheDocument()
     expect(screen.queryByText('Example')).not.toBeInTheDocument()
     expect(screen.queryByText(/%/)).not.toBeInTheDocument()
-    // The account's university is the default filter and shows in the copy.
-    expect(screen.getByText(/near UC San Diego/)).toBeInTheDocument()
+    // No saved city yet, so the copy does not name a place.
+    expect(
+      screen.getByText(/everyone who joins\. We email you/)
+    ).toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: /take the 2-minute quiz/i })
     ).toBeInTheDocument()
@@ -169,9 +173,11 @@ describe('HousematesHub', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Skip' }))
     }
     expect(screen.getByText('Two quick things')).toBeInTheDocument()
-    expect(screen.getByLabelText(/university or area/i)).toHaveValue(
-      'UC San Diego'
-    )
+    // Where: city select, then neighborhood chips for that city.
+    fireEvent.change(screen.getByLabelText('Where do you want to live?'), {
+      target: { value: 'San Diego' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Pacific Beach' }))
 
     fireEvent.change(screen.getByLabelText(/when do you want to move in/i), {
       target: { value: 'flexible' },
@@ -182,7 +188,8 @@ describe('HousematesHub', () => {
       expect(housematesService.saveMyProfile).toHaveBeenCalledWith(
         expect.objectContaining({
           cleanliness: 'very',
-          university: 'UC San Diego',
+          city: 'San Diego',
+          areas: ['Pacific Beach'],
           moveInMonth: 'flexible',
         })
       )
@@ -227,7 +234,9 @@ describe('HousematesHub', () => {
     ).toBeInTheDocument()
     expect(screen.getByText('Differs:')).toBeInTheDocument()
     expect(screen.getByText(/Guests/)).toBeInTheDocument()
-    expect(screen.getByText('Same university')).toBeInTheDocument()
+    expect(screen.queryByText('Same university')).not.toBeInTheDocument()
+    expect(screen.getByText('Also wants La Jolla')).toBeInTheDocument()
+    expect(screen.getByText('La Jolla · San Diego')).toBeInTheDocument()
     expect(screen.getByText('Move in Oct 2026')).toBeInTheDocument()
     // Once on the card, once as a filter chip.
     expect(screen.getAllByText('Looking for a place')).toHaveLength(2)
@@ -252,22 +261,52 @@ describe('HousematesHub', () => {
     ).toBeGreaterThan(0)
   })
 
-  it('sends the university filter to the API', async () => {
+  it('filters by city and highlighted neighborhoods, never by university', async () => {
     housematesService.getMatches.mockResolvedValue(scoredFeed)
     renderHub()
     await screen.findByText('Priya Sharma')
+
+    // No university control anywhere on Discover.
+    expect(screen.queryByLabelText(/university/i)).not.toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText('Where'), {
+      target: { value: 'San Diego' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Pacific Beach' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Mission Beach' }))
+
     await waitFor(() =>
       expect(housematesService.getMatches).toHaveBeenCalledWith(
-        expect.objectContaining({ university: 'UC San Diego' })
+        expect.objectContaining({
+          city: 'San Diego',
+          areas: ['Pacific Beach', 'Mission Beach'],
+        })
       )
-    )
-    expect(screen.getByLabelText(/university or area/i)).toHaveValue(
-      'UC San Diego'
     )
     expect(screen.getByLabelText('Minimum age')).toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: 'Has a place' })
     ).toBeInTheDocument()
+  })
+
+  it('defaults the feed to the saved city and areas', async () => {
+    housematesService.getMyProfile.mockResolvedValue({
+      cleanliness: 'very',
+      active: true,
+      city: 'San Diego',
+      areas: ['Pacific Beach'],
+    })
+    housematesService.getMatches.mockResolvedValue(scoredFeed)
+    renderHub()
+    await screen.findByText('Priya Sharma')
+    await waitFor(() =>
+      expect(housematesService.getMatches).toHaveBeenCalledWith(
+        expect.objectContaining({ city: 'San Diego', areas: ['Pacific Beach'] })
+      )
+    )
+    expect(
+      screen.getByRole('button', { name: 'Pacific Beach' })
+    ).toHaveAttribute('aria-pressed', 'true')
   })
 
   it('opens the profile view with the match breakdown and both actions', async () => {
@@ -280,7 +319,8 @@ describe('HousematesHub', () => {
     expect(dialog).toHaveTextContent('Why you match')
     expect(dialog).toHaveTextContent('Tidiness')
     expect(dialog).toHaveTextContent('Guests')
-    expect(dialog).toHaveTextContent('same as you')
+    expect(dialog).toHaveTextContent('La Jolla · San Diego')
+    expect(dialog).not.toHaveTextContent('same as you')
     expect(dialog).toHaveTextContent('Message for free')
     expect(dialog).toHaveTextContent('Invite to a group')
     expect(dialog).toHaveTextContent('Block')

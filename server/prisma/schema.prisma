@@ -635,9 +635,14 @@ model HousemateProfile {
   // Discovery / display fields
   audience         String? // professional, student, parent, remote, retiree
   occupation       String?
+  // Legacy free-text locality; superseded by city + areas below and kept
+  // only as a fallback for profiles saved before the picker existed.
   location         String?
-  // Rentra's strongest locality signal for students. Defaults from the
-  // user's own university on first save; editable for non-students.
+  // Where they want to live: a city plus the neighborhoods they would
+  // consider (see utils/areas.js). Empty areas = anywhere in the city.
+  city             String?
+  areas            String[] @default([])
+  // Kept on the profile for display; no longer a discovery filter.
   university       String?
   // When they want to move in: "YYYY-MM" or "flexible".
   moveInMonth      String?
@@ -658,6 +663,7 @@ model HousemateProfile {
   @@index([audience])
   @@index([active])
   @@index([university])
+  @@index([city])
 }
 
 // User-level block. The blocker and blocked user disappear from each other's

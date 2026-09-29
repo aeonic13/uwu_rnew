@@ -34,7 +34,8 @@ describe('HousemateMatchCard', () => {
       viewerHasProfile: true,
       profile: {
         compatibilityScore: 91,
-        sameUniversity: true,
+        city: 'San Diego',
+        areas: ['Pacific Beach'],
         moveInMonth: '2026-09',
         lookingForRoom: true,
         matchBreakdown: {
@@ -50,7 +51,7 @@ describe('HousemateMatchCard', () => {
     })
     renderCard()
     expect(await screen.findByText('91%')).toBeInTheDocument()
-    expect(screen.getByText('Same university')).toBeInTheDocument()
+    expect(screen.getByText('Pacific Beach · San Diego')).toBeInTheDocument()
     expect(screen.getByText('Move in Sep 2026')).toBeInTheDocument()
     expect(screen.getByText(/Smoke-free home/)).toBeInTheDocument()
     expect(screen.getByText(/Chores/)).toBeInTheDocument()

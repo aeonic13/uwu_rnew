@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { Link } from 'react-router-dom'
-import { Star, Sparkles, GraduationCap, CalendarDays } from 'lucide-react'
+import { Star, Sparkles, CalendarDays, MapPin } from 'lucide-react'
+import { formatLocality } from './areaConfig'
 import { housematesService } from '../../services/housematesService'
 import MatchReasons from './MatchReasons'
 import { formatMoveIn } from './housemateConfig'
@@ -34,7 +35,7 @@ export default function HousemateMatchCard({ userId }) {
   const profile = data?.profile
   if (!profile) return null
 
-  const university = profile.university || profile.user?.university || null
+  const locality = formatLocality(profile)
   const moveIn = formatMoveIn(profile.moveInMonth)
   const firstName = profile.user?.firstName || 'They'
 
@@ -50,14 +51,10 @@ export default function HousemateMatchCard({ userId }) {
             Housemate match
           </p>
           <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-600">
-            {university && (
-              <span
-                className={`inline-flex items-center ${
-                  profile.sameUniversity ? 'text-green-700 font-medium' : ''
-                }`}
-              >
-                <GraduationCap size={12} className="mr-1" />
-                {profile.sameUniversity ? 'Same university' : university}
+            {locality && (
+              <span className="inline-flex items-center">
+                <MapPin size={12} className="mr-1" />
+                {locality}
               </span>
             )}
             {moveIn && (

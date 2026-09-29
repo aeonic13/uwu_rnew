@@ -4,13 +4,13 @@ import {
   ArrowLeft,
   ArrowRight,
   Loader2,
-  GraduationCap,
   CalendarDays,
   Search,
   Home,
   Sparkles,
 } from 'lucide-react'
 import { quizQuestions, moveInOptions } from './housemateConfig'
+import AreaPicker from './AreaPicker'
 
 const ABOUT_STEP = quizQuestions.length
 const TOTAL_STEPS = quizQuestions.length + 1
@@ -41,7 +41,8 @@ export default function QuizFlow({
   )
   const [answers, setAnswers] = useState(initialAnswers || {})
   const [about, setAbout] = useState({
-    university: initialAbout?.university || '',
+    city: initialAbout?.city || '',
+    areas: Array.isArray(initialAbout?.areas) ? initialAbout.areas : [],
     moveInMonth: initialAbout?.moveInMonth || '',
     lookingForRoom: initialAbout?.lookingForRoom ?? null,
   })
@@ -130,26 +131,16 @@ export default function QuizFlow({
               So the right people find you. Both are optional.
             </p>
             <div className="space-y-5">
-              <div>
-                <label
-                  htmlFor="quiz-university"
-                  className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-1"
-                >
-                  <GraduationCap size={16} />
-                  University or area
-                </label>
-                <input
-                  id="quiz-university"
-                  type="text"
-                  value={about.university}
-                  maxLength={80}
-                  placeholder="e.g. UC San Diego"
-                  onChange={e =>
-                    setAbout(prev => ({ ...prev, university: e.target.value }))
-                  }
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+              <AreaPicker
+                idPrefix="quiz-area"
+                label="Where do you want to live?"
+                city={about.city}
+                areas={about.areas}
+                onChange={({ city, areas }) =>
+                  setAbout(prev => ({ ...prev, city, areas }))
+                }
+                hint="Pick your city, then highlight the neighborhoods you would consider."
+              />
               <div>
                 <label
                   htmlFor="quiz-movein"
@@ -272,7 +263,8 @@ export default function QuizFlow({
 QuizFlow.propTypes = {
   initialAnswers: PropTypes.object,
   initialAbout: PropTypes.shape({
-    university: PropTypes.string,
+    city: PropTypes.string,
+    areas: PropTypes.arrayOf(PropTypes.string),
     moveInMonth: PropTypes.string,
     lookingForRoom: PropTypes.bool,
   }),

@@ -22,11 +22,12 @@ export const housematesService = {
     if (Array.isArray(params.genders) && params.genders.length > 0) {
       queryParams.append('gender', params.genders.join(','))
     }
-    if (params.location && params.location.trim()) {
-      queryParams.append('location', params.location.trim())
-    }
-    if (params.university && params.university.trim()) {
-      queryParams.append('university', params.university.trim())
+    // Where: a city plus optional neighborhoods within it.
+    if (params.city && params.city.trim()) {
+      queryParams.append('city', params.city.trim())
+      if (Array.isArray(params.areas) && params.areas.length > 0) {
+        queryParams.append('areas', params.areas.join(','))
+      }
     }
     if (params.lookingForRoom === 'true' || params.lookingForRoom === 'false') {
       queryParams.append('lookingForRoom', params.lookingForRoom)

@@ -15,6 +15,7 @@ import {
   moveInOptions,
   quizQuestions,
 } from './housemateConfig'
+import AreaPicker from './AreaPicker'
 
 const chip = active =>
   `px-4 py-2 rounded-full text-sm font-medium transition-colors ${
@@ -154,30 +155,14 @@ export default function ProfileEditor({
               className={input}
             />
           </div>
-          <div>
-            <label className="text-sm font-medium text-gray-700 mb-1 block">
-              University or area
-            </label>
-            <input
-              type="text"
-              value={value.university}
-              placeholder="e.g. UC San Diego"
-              maxLength={80}
-              onChange={e => set({ university: e.target.value })}
-              className={input}
-            />
-          </div>
-          <div>
-            <label className="text-sm font-medium text-gray-700 mb-1 block">
-              City or neighborhood
-            </label>
-            <input
-              type="text"
-              value={value.location}
-              placeholder="e.g. La Jolla, CA"
-              maxLength={80}
-              onChange={e => set({ location: e.target.value })}
-              className={input}
+          <div className="sm:col-span-2">
+            <AreaPicker
+              idPrefix="profile-area"
+              label="Where you want to live"
+              city={value.city}
+              areas={value.areas}
+              onChange={({ city, areas }) => set({ city, areas })}
+              hint="Highlight the neighborhoods you would consider. Leave them all off to be open to anywhere in the city."
             />
           </div>
           <div>
@@ -339,6 +324,8 @@ ProfileEditor.propTypes = {
     occupation: PropTypes.string,
     university: PropTypes.string,
     location: PropTypes.string,
+    city: PropTypes.string,
+    areas: PropTypes.arrayOf(PropTypes.string),
     moveInMonth: PropTypes.string,
     budgetMin: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     budgetMax: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
