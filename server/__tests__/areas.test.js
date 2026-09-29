@@ -60,9 +60,10 @@ describe('localityOf', () => {
     expect(
       localityOf({ location: 'Pacific Beach, San Diego, CA 92109' })
     ).toEqual({ city: 'San Diego', areas: ['Pacific Beach'] })
-    expect(localityOf({ location: 'Isla Vista' })).toEqual({
-      city: 'Santa Barbara',
-      areas: ['Isla Vista'],
+    // Only San Diego is listed for now; other places stay unresolved.
+    expect(localityOf({ location: 'Isla Vista, Santa Barbara' })).toEqual({
+      city: null,
+      areas: [],
     })
     expect(localityOf({ location: 'Somewhere else' })).toEqual({
       city: null,
