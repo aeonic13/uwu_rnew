@@ -496,7 +496,7 @@ function BrowseView() {
       >
         {/* Map column (desktop) */}
         {isDesktop && showMap && (
-          <div className="w-[52%] xl:w-[55%] min-h-0 relative">
+          <div className="w-[52%] xl:w-[55%] min-h-0 relative isolate z-0">
             {mapPanel}
             {searchAsMoveToggle}
           </div>
@@ -504,7 +504,7 @@ function BrowseView() {
 
         {/* Map (phones) */}
         {!isDesktop && mobileView === 'map' && (
-          <div className="flex-1 min-h-0 relative">
+          <div className="flex-1 min-h-0 relative isolate z-0">
             {mapPanel}
             {searchAsMoveToggle}
           </div>
