@@ -30,6 +30,9 @@ export default [
         crypto: 'readonly',
         // Fetch API global (Node 18+) — used by the Resend email provider
         fetch: 'readonly',
+        // WHATWG URL + AbortController globals (Node 18+) — used by geocoding
+        URL: 'readonly',
+        AbortController: 'readonly',
         // ES2022 globals
         Promise: 'readonly',
         // Test globals (for Vitest)

@@ -148,7 +148,13 @@ model Listing {
   title             String
   description       String
   price             Int
+  // Public locality shown on cards ("Pacific Beach, San Diego, CA 92109").
   location          String
+  // Exact street address (optional). Geocoded on save; coordinates feed the
+  // Browse map. Listings without one are pinned at their neighborhood center.
+  streetAddress     String?
+  latitude          Float?
+  longitude         Float?
   university        String?
   moveInDate        DateTime?
   moveOutDate       DateTime?
@@ -181,6 +187,7 @@ model Listing {
   @@index([university])
   @@index([price])
   @@index([active])
+  @@index([latitude, longitude])
 }
 
 // Roommate group - students teaming up to apply together

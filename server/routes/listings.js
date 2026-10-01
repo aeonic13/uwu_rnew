@@ -3,6 +3,7 @@ import prisma from '../utils/prisma.js'
 import { authenticate, optionalAuth } from '../middleware/authenticate.js'
 import { matchesSavedSearch } from '../utils/savedSearchMatcher.js'
 import { sendNewListingAlert } from '../utils/email.js'
+import { withMapPosition, resolveListingCoordinates } from '../utils/geocode.js'
 
 const router = express.Router()
 
@@ -86,7 +87,7 @@ router.get('/', optionalAuth, async (req, res) => {
     ])
 
     res.json({
-      listings,
+      listings: withMapPosition(listings),
       total,
       page: parseInt(page, 10),
       limit: parseInt(limit, 10),
@@ -169,10 +170,10 @@ router.get('/:id', optionalAuth, async (req, res) => {
     }
 
     res.json({
-      listing: {
+      listing: withMapPosition({
         ...listing,
         isFavorited,
-      },
+      }),
     })
   } catch (error) {
     console.error('Get listing error:', error)
@@ -188,6 +189,9 @@ router.post('/', authenticate, async (req, res) => {
       description,
       price,
       location,
+      streetAddress,
+      latitude,
+      longitude,
       university,
       moveInDate,
       moveOutDate,
@@ -206,6 +210,15 @@ router.post('/', authenticate, async (req, res) => {
       })
     }
 
+    // Exact address is optional; when given it is geocoded (best effort) so
+    // the Browse map can pin the listing precisely.
+    const address = streetAddress ? String(streetAddress).trim() : null
+    const coords = await resolveListingCoordinates({
+      streetAddress: address,
+      latitude,
+      longitude,
+    })
+
     // Create listing
     const listing = await prisma.listing.create({
       data: {
@@ -213,6 +226,8 @@ router.post('/', authenticate, async (req, res) => {
         description,
         price: parseInt(price, 10),
         location,
+        streetAddress: address || null,
+        ...coords,
         university,
         moveInDate: moveInDate ? new Date(moveInDate) : null,
         moveOutDate: moveOutDate ? new Date(moveOutDate) : null,
@@ -242,7 +257,7 @@ router.post('/', authenticate, async (req, res) => {
 
     res.status(201).json({
       message: 'Listing created successfully',
-      listing,
+      listing: withMapPosition(listing),
     })
 
     // Saved-search alerts: fan out AFTER responding so listing creation is
@@ -309,6 +324,9 @@ router.put('/:id', authenticate, async (req, res) => {
       description,
       price,
       location,
+      streetAddress,
+      latitude,
+      longitude,
       university,
       moveInDate,
       moveOutDate,
@@ -336,6 +354,27 @@ router.put('/:id', authenticate, async (req, res) => {
     if (images !== undefined) updateData.images = images
     if (active !== undefined) updateData.active = active
 
+    // Address changes re-geocode; an explicit lat/lng pair always wins.
+    if (streetAddress !== undefined) {
+      const address = streetAddress ? String(streetAddress).trim() : null
+      updateData.streetAddress = address || null
+      if (address !== existingListing.streetAddress) {
+        Object.assign(
+          updateData,
+          await resolveListingCoordinates({
+            streetAddress: address,
+            latitude,
+            longitude,
+          })
+        )
+      }
+    } else if (latitude !== undefined || longitude !== undefined) {
+      Object.assign(
+        updateData,
+        await resolveListingCoordinates({ latitude, longitude })
+      )
+    }
+
     // Update listing
     const listing = await prisma.listing.update({
       where: { id },
@@ -354,7 +393,7 @@ router.put('/:id', authenticate, async (req, res) => {
 
     res.json({
       message: 'Listing updated successfully',
-      listing,
+      listing: withMapPosition(listing),
     })
   } catch (error) {
     console.error('Update listing error:', error)
@@ -435,7 +474,7 @@ router.get('/my/listings', authenticate, async (req, res) => {
       },
     })
 
-    res.json({ listings })
+    res.json({ listings: withMapPosition(listings) })
   } catch (error) {
     console.error('Get my listings error:', error)
     res.status(500).json({ error: { message: 'Failed to get listings' } })
@@ -527,7 +566,7 @@ router.get('/favorites/all', authenticate, async (req, res) => {
 
     const listings = favorites.map(fav => fav.listing)
 
-    res.json({ listings })
+    res.json({ listings: withMapPosition(listings) })
   } catch (error) {
     console.error('Get favorites error:', error)
     res.status(500).json({ error: { message: 'Failed to get favorites' } })

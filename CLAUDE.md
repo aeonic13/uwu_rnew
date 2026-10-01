@@ -48,6 +48,7 @@ Husky runs lint-staged (eslint --fix + prettier) on commit. Before declaring wor
 - Honest UI over mock UI: if a feature has no backend, gate it behind `ComingSoon` or show an empty state, do not fake data.
 - Applications: group applications create one `Application` per member linked by `groupId`. Approving any member approves the whole group and creates ONE `Agreement` for the household with an `AgreementSigner` row per tenant plus the landlord; every member's `Application.agreementId` points at it. A lease is "signed" only when every signer row is signed (`Agreement.tenantSigned/landlordSigned` are derived mirrors). Listing-inquiry conversations auto-promote from Inquiries to Direct once an application exists.
 - Blocks (`UserBlock`) are enforced in housemate matching and in messaging start/send.
+- Browse map: `Listing.streetAddress` is optional and geocoded once on save (Nominatim, `server/utils/geocode.js`, `GEOCODER=off` disables). Every listing response carries `mapPosition` `{lat,lng,approximate}`; listings without coordinates fall back to the neighborhood center named in `location`. Leaflet is lazy-loaded only on `/listings`.
 
 ## Deploy
 

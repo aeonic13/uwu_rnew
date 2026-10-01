@@ -554,10 +554,22 @@ function PropertyDetail() {
                 </span>
               </div>
 
-              {/* Location */}
-              <div className="flex items-center text-gray-600 mb-2">
-                <MapPin size={18} className="mr-2 flex-shrink-0" />
-                <span>{listing.location}</span>
+              {/* Location: exact address when the landlord gave one, else
+                  the public neighborhood line */}
+              <div className="flex items-start text-gray-600 mb-2">
+                <MapPin size={18} className="mr-2 mt-0.5 flex-shrink-0" />
+                <span>
+                  {listing.streetAddress ? (
+                    <>
+                      <span className="block">{listing.streetAddress}</span>
+                      <span className="block text-sm text-gray-500">
+                        {listing.location}
+                      </span>
+                    </>
+                  ) : (
+                    listing.location
+                  )}
+                </span>
               </div>
 
               {/* Dates */}

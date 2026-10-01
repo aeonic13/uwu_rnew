@@ -281,6 +281,8 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
         description: listingData.description,
         price: parseInt(listingData.rent),
         location: listingData.address,
+        // The server geocodes this so the listing gets a precise map pin.
+        streetAddress: listingData.address,
         university: listingData.university || null,
         moveInDate: listingData.availableFrom || null,
         moveOutDate: listingData.availableTo || null,

@@ -43,6 +43,16 @@ export const ListingShape = PropTypes.shape({
   description: PropTypes.string,
   price: PropTypes.number.isRequired,
   location: PropTypes.string.isRequired,
+  // Optional exact address and geocoded coordinates; `mapPosition` is the
+  // server's pin for the Browse map (approximate = neighborhood center).
+  streetAddress: PropTypes.string,
+  latitude: PropTypes.number,
+  longitude: PropTypes.number,
+  mapPosition: PropTypes.shape({
+    lat: PropTypes.number.isRequired,
+    lng: PropTypes.number.isRequired,
+    approximate: PropTypes.bool,
+  }),
   university: PropTypes.string,
   dates: PropTypes.string,
   moveInDate: PropTypes.string,

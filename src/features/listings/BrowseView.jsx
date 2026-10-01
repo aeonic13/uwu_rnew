@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
 import PropTypes from 'prop-types'
 import {
@@ -6,13 +6,14 @@ import {
   MapPin,
   Heart,
   Shield,
-  Building2,
   ChevronDown,
   SlidersHorizontal,
   Bed,
   Bath,
   Tag,
   Bell,
+  Map as MapIcon,
+  List as ListIcon,
 } from 'lucide-react'
 import { useListings } from '../../contexts/ListingsContext'
 import { useFavorites } from '../../contexts/FavoritesContext'
@@ -20,6 +21,11 @@ import { useAuth } from '../../contexts/AuthContext'
 import { savedSearchesService } from '../../services/savedSearchesService'
 import { ListingShape } from '../../types/propTypes'
 import AdvancedFiltersModal from '../../components/AdvancedFiltersModal'
+import { visibleInBounds } from './mapUtils'
+import useMediaQuery from '../../hooks/useMediaQuery'
+
+// Leaflet is only needed on this page; keep it out of the main bundle.
+const ListingsMap = lazy(() => import('./ListingsMap'))
 
 const AREAS = [
   'All Areas',
@@ -59,14 +65,27 @@ const SORT_OPTIONS = [
 /**
  * Zillow-style Listing Card
  */
-function ListingCard({ listing, isFavorite, onToggleFavorite, onClick }) {
+function ListingCard({
+  listing,
+  isFavorite,
+  onToggleFavorite,
+  onClick,
+  highlighted = false,
+  onHoverChange,
+}) {
   const bedroomLabel =
     listing.bedrooms === 0 ? 'Studio' : `${listing.bedrooms} bd`
 
   return (
     <div
-      className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-200 cursor-pointer group border border-gray-100"
+      className={`bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-200 cursor-pointer group border ${
+        highlighted
+          ? 'border-brand-500 ring-2 ring-brand-200 shadow-lg'
+          : 'border-gray-100'
+      }`}
       onClick={onClick}
+      onMouseEnter={onHoverChange ? () => onHoverChange(listing.id) : undefined}
+      onMouseLeave={onHoverChange ? () => onHoverChange(null) : undefined}
     >
       {/* Image */}
       <div className="relative overflow-hidden">
@@ -141,10 +160,10 @@ function ListingCard({ listing, isFavorite, onToggleFavorite, onClick }) {
           )}
         </div>
 
-        {/* Address */}
+        {/* Address: exact street when the landlord gave one */}
         <p className="text-gray-500 text-sm flex items-center gap-1 truncate">
           <MapPin size={13} className="flex-shrink-0" />
-          {listing.location}
+          {listing.streetAddress || listing.location}
         </p>
 
         {/* Amenity pills */}
@@ -175,6 +194,8 @@ ListingCard.propTypes = {
   isFavorite: PropTypes.bool.isRequired,
   onToggleFavorite: PropTypes.func.isRequired,
   onClick: PropTypes.func.isRequired,
+  highlighted: PropTypes.bool,
+  onHoverChange: PropTypes.func,
 }
 
 /**
@@ -194,6 +215,16 @@ function BrowseView() {
   // Saved-search alert state: idle | saving | saved | error
   const [alertState, setAlertState] = useState('idle')
   const [alertMessage, setAlertMessage] = useState('')
+  // Map state. Desktop shows map + list side by side; phones toggle.
+  // Only one map is ever mounted: a display:none Leaflet map reports a
+  // zero-size viewport and would filter the list down to nothing.
+  const isDesktop = useMediaQuery('(min-width: 1024px)')
+  const [showMap, setShowMap] = useState(true)
+  const [mobileView, setMobileView] = useState('list') // list | map
+  const [searchAsMove, setSearchAsMove] = useState(true)
+  const [mapBounds, setMapBounds] = useState(null)
+  const [hoveredId, setHoveredId] = useState(null)
+  const onBoundsChange = useCallback(bounds => setMapBounds(bounds), [])
 
   // Snapshot the current UI filters as a saved-search payload. Area comes
   // from the dropdown or, failing that, the free-text search term.
@@ -268,10 +299,70 @@ function BrowseView() {
     return result
   }, [filteredListings, priceRange, minBeds, propertyType, sortBy])
 
+  // With the map open and "search as I move" on, the list follows the
+  // viewport. Pins always show every filter match so panning finds them.
+  const mapActive = isDesktop ? showMap : mobileView === 'map'
+  const visibleListings = useMemo(
+    () =>
+      mapActive && searchAsMove
+        ? visibleInBounds(displayedListings, mapBounds)
+        : displayedListings,
+    [displayedListings, mapActive, searchAsMove, mapBounds]
+  )
+
+  const resetFilters = () => {
+    clearFilters()
+    setPriceRange(PRICE_RANGES[0])
+    setMinBeds('Any Beds')
+    setPropertyType('Any Type')
+  }
+
+  const openListing = listing => navigate(`/listings/${listing.id}`)
+
+  const mapPanel = (
+    <Suspense
+      fallback={
+        <div className="w-full h-full flex items-center justify-center text-sm text-gray-400 bg-gray-100">
+          Loading map…
+        </div>
+      }
+    >
+      <ListingsMap
+        listings={displayedListings}
+        hoveredId={hoveredId}
+        onHover={setHoveredId}
+        onOpen={openListing}
+        onBoundsChange={onBoundsChange}
+      />
+    </Suspense>
+  )
+
+  const searchAsMoveToggle = (
+    <label className="absolute top-3 left-14 z-[1000] flex items-center gap-2 bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-700 shadow cursor-pointer">
+      <input
+        type="checkbox"
+        checked={searchAsMove}
+        onChange={e => setSearchAsMove(e.target.checked)}
+        className="accent-brand-500"
+      />
+      Search as I move the map
+    </label>
+  )
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div
+      className={
+        mapActive
+          ? 'h-[calc(100vh-4rem)] flex flex-col bg-gray-50'
+          : 'min-h-screen bg-gray-50'
+      }
+    >
       {/* ── Hero search bar ── */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-20 shadow-sm">
+      <div
+        className={`bg-white border-b border-gray-200 z-20 shadow-sm ${
+          mapActive ? 'flex-shrink-0' : 'sticky top-16'
+        }`}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center gap-3">
             {/* Search input */}
@@ -385,12 +476,7 @@ function BrowseView() {
               minBeds !== 'Any Beds' ||
               propertyType !== 'Any Type') && (
               <button
-                onClick={() => {
-                  clearFilters()
-                  setPriceRange(PRICE_RANGES[0])
-                  setMinBeds('Any Beds')
-                  setPropertyType('Any Type')
-                }}
+                onClick={resetFilters}
                 className="flex-shrink-0 pl-3 pr-4 py-1.5 border border-red-200 rounded-full text-xs font-medium text-red-500 bg-white hover:bg-red-50 transition-colors"
               >
                 Clear all
@@ -400,102 +486,178 @@ function BrowseView() {
         </div>
       </div>
 
-      {/* ── Results area ── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Results header */}
-        <div className="flex items-center justify-between mb-5">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">
-              {displayedListings.length.toLocaleString()} rental
-              {displayedListings.length !== 1 ? 's' : ''}
-            </h1>
-            {filters.searchTerm && (
-              <p className="text-sm text-gray-500 mt-0.5">
-                Results for &ldquo;{filters.searchTerm}&rdquo;
-              </p>
-            )}
+      {/* ── Results area: map + list (desktop) / toggle (phones) ── */}
+      <div
+        className={
+          mapActive
+            ? 'flex-1 min-h-0 flex'
+            : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6'
+        }
+      >
+        {/* Map column (desktop) */}
+        {isDesktop && showMap && (
+          <div className="w-[52%] xl:w-[55%] min-h-0 relative">
+            {mapPanel}
+            {searchAsMoveToggle}
           </div>
-
-          <div className="flex items-center gap-2">
-            {/* Save this search → email alerts on new matches */}
-            <button
-              onClick={handleSaveSearch}
-              disabled={alertState === 'saving'}
-              className="flex items-center gap-1.5 px-3 py-2 border border-brand-500 text-brand-500 rounded-lg text-sm font-medium hover:bg-brand-50 transition-colors disabled:opacity-50"
-            >
-              <Bell size={15} />
-              {alertState === 'saved' ? 'Alert on' : 'Get alerts'}
-            </button>
-
-            {/* Sort */}
-            <div className="relative">
-              <select
-                value={sortBy}
-                onChange={e => setSortBy(e.target.value)}
-                className="appearance-none pl-3 pr-8 py-2 border border-gray-300 rounded-lg text-sm bg-white cursor-pointer focus:outline-none focus:border-brand-500"
-              >
-                {SORT_OPTIONS.map(s => (
-                  <option key={s.value} value={s.value}>
-                    {s.label}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown
-                size={14}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-              />
-            </div>
-          </div>
-        </div>
-
-        {alertMessage && (
-          <p
-            className={`text-sm mb-4 -mt-2 ${
-              alertState === 'error' ? 'text-red-600' : 'text-green-700'
-            }`}
-          >
-            {alertMessage}
-          </p>
         )}
 
-        {/* Grid */}
-        {displayedListings.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="w-16 h-16 rounded-full bg-brand-50 flex items-center justify-center mb-4">
-              <Tag size={28} className="text-brand-400" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-700 mb-1">
-              No rentals found
-            </h3>
-            <p className="text-gray-400 text-sm max-w-xs">
-              Try widening your search or adjusting your filters.
-            </p>
-            <button
-              onClick={() => {
-                clearFilters()
-                setPriceRange(PRICE_RANGES[0])
-                setMinBeds('Any Beds')
-                setPropertyType('Any Type')
-              }}
-              className="mt-4 px-5 py-2 bg-brand-500 text-white rounded-lg text-sm font-medium hover:bg-brand-600 transition-colors"
-            >
-              Clear filters
-            </button>
+        {/* Map (phones) */}
+        {!isDesktop && mobileView === 'map' && (
+          <div className="flex-1 min-h-0 relative">
+            {mapPanel}
+            {searchAsMoveToggle}
           </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-            {displayedListings.map(listing => (
-              <ListingCard
-                key={listing.id}
-                listing={listing}
-                isFavorite={isFavorite(listing.id)}
-                onToggleFavorite={toggleFavorite}
-                onClick={() => navigate(`/listings/${listing.id}`)}
-              />
-            ))}
+        )}
+
+        {/* List column */}
+        {!(!isDesktop && mobileView === 'map') && (
+          <div
+            className={
+              mapActive
+                ? 'flex-1 min-w-0 min-h-0 overflow-y-auto px-4 sm:px-6 py-6'
+                : ''
+            }
+          >
+            {/* Results header */}
+            <div className="flex items-center justify-between mb-5 gap-3 flex-wrap">
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">
+                  {visibleListings.length.toLocaleString()} rental
+                  {visibleListings.length !== 1 ? 's' : ''}
+                  {mapActive &&
+                    searchAsMove &&
+                    visibleListings.length !== displayedListings.length && (
+                      <span className="text-sm font-normal text-gray-500">
+                        {' '}
+                        in view · {displayedListings.length} total
+                      </span>
+                    )}
+                </h1>
+                {filters.searchTerm && (
+                  <p className="text-sm text-gray-500 mt-0.5">
+                    Results for &ldquo;{filters.searchTerm}&rdquo;
+                  </p>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                {/* Save this search → email alerts on new matches */}
+                <button
+                  onClick={handleSaveSearch}
+                  disabled={alertState === 'saving'}
+                  className="flex items-center gap-1.5 px-3 py-2 border border-brand-500 text-brand-500 rounded-lg text-sm font-medium hover:bg-brand-50 transition-colors disabled:opacity-50"
+                >
+                  <Bell size={15} />
+                  {alertState === 'saved' ? 'Alert on' : 'Get alerts'}
+                </button>
+
+                {/* Map toggle (desktop) */}
+                <button
+                  onClick={() => setShowMap(v => !v)}
+                  className="hidden lg:flex items-center gap-1.5 px-3 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:border-brand-500 hover:text-brand-500 transition-colors"
+                  aria-pressed={showMap}
+                >
+                  <MapIcon size={15} />
+                  {showMap ? 'Hide map' : 'Show map'}
+                </button>
+
+                {/* Sort */}
+                <div className="relative">
+                  <select
+                    value={sortBy}
+                    onChange={e => setSortBy(e.target.value)}
+                    className="appearance-none pl-3 pr-8 py-2 border border-gray-300 rounded-lg text-sm bg-white cursor-pointer focus:outline-none focus:border-brand-500"
+                  >
+                    {SORT_OPTIONS.map(s => (
+                      <option key={s.value} value={s.value}>
+                        {s.label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    size={14}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {alertMessage && (
+              <p
+                className={`text-sm mb-4 -mt-2 ${
+                  alertState === 'error' ? 'text-red-600' : 'text-green-700'
+                }`}
+              >
+                {alertMessage}
+              </p>
+            )}
+
+            {/* Grid */}
+            {visibleListings.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-24 text-center">
+                <div className="w-16 h-16 rounded-full bg-brand-50 flex items-center justify-center mb-4">
+                  <Tag size={28} className="text-brand-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-700 mb-1">
+                  {displayedListings.length > 0
+                    ? 'No rentals in this part of the map'
+                    : 'No rentals found'}
+                </h3>
+                <p className="text-gray-400 text-sm max-w-xs">
+                  {displayedListings.length > 0
+                    ? 'Zoom out or pan to see the matches, or turn off "Search as I move the map".'
+                    : 'Try widening your search or adjusting your filters.'}
+                </p>
+                {displayedListings.length === 0 && (
+                  <button
+                    onClick={resetFilters}
+                    className="mt-4 px-5 py-2 bg-brand-500 text-white rounded-lg text-sm font-medium hover:bg-brand-600 transition-colors"
+                  >
+                    Clear filters
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div
+                className={`grid grid-cols-1 sm:grid-cols-2 gap-5 ${
+                  showMap
+                    ? 'xl:grid-cols-2 2xl:grid-cols-3'
+                    : 'lg:grid-cols-3 xl:grid-cols-4'
+                }`}
+              >
+                {visibleListings.map(listing => (
+                  <ListingCard
+                    key={listing.id}
+                    listing={listing}
+                    isFavorite={isFavorite(listing.id)}
+                    onToggleFavorite={toggleFavorite}
+                    onClick={() => openListing(listing)}
+                    highlighted={hoveredId === listing.id}
+                    onHoverChange={setHoveredId}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
+
+      {/* Phone: floating list/map switch */}
+      <button
+        onClick={() => setMobileView(v => (v === 'map' ? 'list' : 'map'))}
+        className="lg:hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white rounded-full text-sm font-semibold shadow-lg"
+      >
+        {mobileView === 'map' ? (
+          <>
+            <ListIcon size={16} /> List
+          </>
+        ) : (
+          <>
+            <MapIcon size={16} /> Map
+          </>
+        )}
+      </button>
 
       {/* Advanced Filters Modal */}
       <AdvancedFiltersModal
