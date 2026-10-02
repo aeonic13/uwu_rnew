@@ -21,6 +21,7 @@ import { fileURLToPath } from 'url'
 // Import routes
 import authRoutes from './routes/auth.js'
 import listingsRoutes from './routes/listings.js'
+import propertiesRoutes from './routes/properties.js'
 import applicationsRoutes from './routes/applications.js'
 import messagesRoutes from './routes/messages.js'
 import paymentsRoutes from './routes/payments.js'
@@ -120,6 +121,7 @@ app.get('/api', (req, res) => {
     endpoints: {
       auth: '/api/auth',
       listings: '/api/listings',
+      properties: '/api/properties',
       applications: '/api/applications',
       messages: '/api/messages',
       payments: '/api/payments',
@@ -138,6 +140,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
 // API Routes
 app.use('/api/auth', authRoutes)
 app.use('/api/listings', listingsRoutes)
+app.use('/api/properties', propertiesRoutes)
 app.use('/api/applications', applicationsRoutes)
 app.use('/api/messages', messagesRoutes)
 app.use('/api/payments', paymentsRoutes)

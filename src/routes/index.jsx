@@ -89,6 +89,9 @@ const CommunityPage = lazy(() =>
 // Owner-specific pages
 const OwnerDashboard = lazy(() => import('../features/owner/OwnerDashboard'))
 const LandlordInbox = lazy(() => import('../features/owner/LandlordInbox'))
+const PropertyWorkspace = lazy(
+  () => import('../features/owner/PropertyWorkspace')
+)
 const LandlordListingForm = lazy(
   () => import('../features/owner/LandlordListingForm')
 )
@@ -663,6 +666,11 @@ const routeConfig = [
       },
       // Live owner tools (wired to real APIs).
       ...[
+        { path: '/dashboard/properties/:id', Component: PropertyWorkspace },
+        {
+          path: '/dashboard/properties/:id/:tab',
+          Component: PropertyWorkspace,
+        },
         { path: '/dashboard/rent-collection', Component: RentCollection },
         { path: '/dashboard/security-deposits', Component: SecurityDeposits },
         { path: '/dashboard/banking', Component: Bookkeeping },
