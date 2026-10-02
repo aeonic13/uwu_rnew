@@ -1,6 +1,7 @@
 # Onboarding existing tenants to an existing property
 
-Status: plan, not started. Written 2026-10-01. Follows the property-centric
+Status: plan, approved for Phase 1, not started. Written 2026-10-01,
+all four decisions settled 2026-10-02 (see section 10). Follows the property-centric
 landlord dashboard (commit efc87da) and the competitive review of 2026-09-20,
 which flagged this as a category table stake Rentra lacks: most landlords
 adopt software mid-tenancy with tenants already in place, not at a vacancy.
@@ -275,13 +276,24 @@ roll-forward, lease amendments.
   for an imported lease with zero special-casing beyond wording.
 - Nothing presents an imported lease as e-signed on Rentra.
 
-## 10. Decisions needed before starting
+## 10. Decisions
 
-1. Tenants must confirm before a property reads "Leased" (recommended), or the
-   landlord's attestation alone is enough.
-2. Nullable `applicantId` for onboarded member rows versus an owner
-   placeholder until acceptance. Recommended: nullable, with the guard added
-   where `applicant` is joined.
-3. Month-to-month representation as described, or require an end date for v1.
-4. Any fee on onboarded tenants. Recommended: none; this is the acquisition
-   path, and the 2% rent fee question is already open.
+Settled 2026-10-02:
+
+1. **Tenants must confirm before a property reads "Leased."** The landlord's
+   signer row is signed at import; each tenant's row flips on confirmation.
+   Until the last tenant confirms the property shows `awaiting_tenants`
+   ("Invites sent, 2 of 3 confirmed"). The landlord's attestation alone is not
+   enough.
+2. **`Application.applicantId` becomes nullable.** Onboarded member rows are
+   created with no applicant and filled in when the tenant accepts. Every
+   place that joins `applicant` gets a null guard; Inbox, the Applications
+   tab and funnel stats already exclude onboarded rows by `source`.
+3. **Month-to-month is a flag, as written in 3.1 and section 7.**
+   `Agreement.monthToMonth: true`, `endDate` stored as the next anniversary so
+   the required column stays meaningful, tenant-facing copy shows
+   "Month-to-month" and hides the date, and a later job rolls the stand-in
+   date forward a year at a time.
+
+4. **No fee on onboarded tenants.** This is the acquisition path. The
+   separate 2% rent fee question is unchanged by this decision.
