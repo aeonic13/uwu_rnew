@@ -19,6 +19,9 @@ export const POLICY_VERSIONS = Object.freeze({
   esign: '2026-09-28',
   screening: '2026-09-28',
   autopay: '2026-09-28',
+  // A tenant's confirmation that an imported lease's recorded terms match
+  // the lease they signed off-platform (routes/tenantInvites.js accept).
+  lease_confirmation: '2026-10-02',
 })
 
 export const POLICY_TITLES = Object.freeze({
@@ -27,6 +30,7 @@ export const POLICY_TITLES = Object.freeze({
   esign: 'Electronic Records & Signatures Consent',
   screening: 'Tenant Screening Disclosure & Authorization',
   autopay: 'Autopay Authorization',
+  lease_confirmation: 'Imported Lease Confirmation',
 })
 
 // Policies every account must accept to use Rentra at all.

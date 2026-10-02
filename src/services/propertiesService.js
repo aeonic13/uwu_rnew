@@ -22,6 +22,17 @@ export const propertiesService = {
   async getProperty(id) {
     return apiClient.get(`/properties/${id}`)
   },
+
+  /**
+   * Record the lease that already exists on an occupied property and
+   * invite its current tenants by email.
+   * @param {string} id listing id
+   * @param {{lease: object, tenants: object[], attest: boolean}} body
+   * @returns {Promise<{agreementId: string, invites: object[]}>}
+   */
+  async onboard(id, body) {
+    return apiClient.post(`/properties/${id}/onboard`, body)
+  },
 }
 
 export default propertiesService

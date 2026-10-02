@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types'
+import { Link } from 'react-router-dom'
 import {
   Users,
   FileText,
@@ -64,7 +65,15 @@ export function attentionItems(data) {
   for (const lease of unsigned) {
     const waiting = lease.members
       .filter(m => !m.signed)
-      .map(m => fullName(m.user))
+      .map(m => fullName(m.user || m.invite))
+    if (lease.imported) {
+      items.push({
+        key: `lease-${lease.id}`,
+        tab: 'tenants',
+        text: `Waiting on ${waiting.join(', ')} to confirm the lease`,
+      })
+      continue
+    }
     if (!lease.landlordSigned) waiting.push('you')
     items.push({
       key: `lease-${lease.id}`,
@@ -108,6 +117,12 @@ export function attentionItems(data) {
       tab: null,
       text: 'Listed and waiting for the first application',
       quiet: true,
+    })
+    items.push({
+      key: 'onboard',
+      tab: null,
+      to: `/dashboard/properties/${data.property.id}/onboard`,
+      text: 'Already have tenants here? Add them',
     })
   }
   return items
@@ -184,7 +199,15 @@ export default function OverviewTab({ data, onGoTo }) {
             <ul className="divide-y divide-gray-100">
               {attention.map(item => (
                 <li key={item.key}>
-                  {item.tab ? (
+                  {item.to ? (
+                    <Link
+                      to={item.to}
+                      className="w-full flex items-center justify-between gap-3 py-2.5 text-sm text-left text-brand-600 font-medium hover:underline"
+                    >
+                      {item.text}
+                      <ChevronRight size={15} className="text-gray-400" />
+                    </Link>
+                  ) : item.tab ? (
                     <button
                       type="button"
                       onClick={() => onGoTo(item.tab)}
@@ -249,7 +272,10 @@ export default function OverviewTab({ data, onGoTo }) {
               <div className="flex justify-between">
                 <dt className="text-gray-500">Term</dt>
                 <dd className="text-gray-900 font-medium text-right">
-                  {shortDate(current.startDate)} – {shortDate(current.endDate)}
+                  {shortDate(current.startDate)} –{' '}
+                  {current.monthToMonth
+                    ? 'Month-to-month'
+                    : shortDate(current.endDate)}
                 </dd>
               </div>
               <div className="flex justify-between">

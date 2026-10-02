@@ -40,6 +40,14 @@ vi.mock('../../services/agreementsService', () => ({
 vi.mock('../../services/messagingService', () => ({
   messagingService: { startConversation: vi.fn() },
 }))
+vi.mock('../../services/tenantInvitesService', () => ({
+  tenantInvitesService: {
+    resend: vi.fn().mockResolvedValue({ emailSent: true }),
+    update: vi.fn(),
+    cancel: vi.fn(),
+  },
+}))
+import { tenantInvitesService } from '../../services/tenantInvitesService'
 
 const tenant = {
   id: 't1',
@@ -240,6 +248,98 @@ describe('PropertyWorkspace', () => {
         ''
       )
     )
+  })
+
+  it('shows an imported lease with invite progress and resends an invite', async () => {
+    const importedLease = {
+      id: 'ag2',
+      monthlyRent: 2600,
+      securityDeposit: 2600,
+      startDate: '2026-08-01T00:00:00.000Z',
+      endDate: '2027-08-01T00:00:00.000Z',
+      source: 'imported',
+      imported: true,
+      monthToMonth: true,
+      fullySigned: false,
+      current: false,
+      awaitingTenants: true,
+      confirmations: { confirmed: 1, total: 2 },
+      landlordSigned: true,
+      deposit: null,
+      rentSplit: null,
+      members: [
+        {
+          applicationId: 'm1',
+          user: tenant,
+          invite: { id: 'i1', status: 'accepted', email: tenant.email },
+          signed: true,
+          share: null,
+          autopay: null,
+          paidThisMonth: 0,
+          recentPayments: [],
+        },
+        {
+          applicationId: 'm2',
+          user: null,
+          invite: {
+            id: 'i2',
+            status: 'pending',
+            firstName: 'Alex',
+            lastName: 'Johnson',
+            email: 'alex@example.com',
+            expiresAt: '2026-10-16T00:00:00.000Z',
+          },
+          signed: false,
+          share: null,
+          autopay: null,
+          paidThisMonth: 0,
+          recentPayments: [],
+        },
+      ],
+    }
+    propertiesService.getProperty.mockResolvedValue({
+      ...workspace,
+      stats: {
+        ...workspace.stats,
+        status: 'awaiting_tenants',
+        tenants: 0,
+        invites: { confirmed: 1, total: 2 },
+      },
+      leases: [importedLease],
+      applications: [],
+    })
+    renderAt('/dashboard/properties/l1/tenants')
+    expect(await screen.findByText('1 of 2 confirmed')).toBeInTheDocument()
+    expect(screen.getByText('Invites sent')).toBeInTheDocument()
+    expect(
+      screen.getByText('Month-to-month', { exact: false })
+    ).toBeInTheDocument()
+    expect(screen.getByText('Confirmed')).toBeInTheDocument()
+    expect(screen.getByText('Invited')).toBeInTheDocument()
+    expect(screen.getByText('alex@example.com')).toBeInTheDocument()
+    // No "Add current tenants" while a lease is in progress.
+    expect(screen.queryByText('Add current tenants')).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: /resend/i }))
+    await waitFor(() =>
+      expect(tenantInvitesService.resend).toHaveBeenCalledWith('i2')
+    )
+    expect(await screen.findByText('Invitation resent.')).toBeInTheDocument()
+    expect(propertiesService.getProperty).toHaveBeenCalledTimes(2)
+  })
+
+  it('offers the onboarding flow when a listed property has no lease', async () => {
+    propertiesService.getProperty.mockResolvedValue({
+      ...workspace,
+      stats: { ...workspace.stats, status: 'listed', tenants: 0 },
+      leases: [],
+      applications: [],
+    })
+    renderAt('/dashboard/properties/l1/tenants')
+    expect(await screen.findByText('No tenants yet')).toBeInTheDocument()
+    const links = screen.getAllByRole('link', { name: /add current tenants/i })
+    expect(links.length).toBeGreaterThan(0)
+    expect(links[0]).toHaveAttribute('href', '/dashboard/properties/l1/onboard')
   })
 
   it('falls back to overview for an unknown tab', async () => {

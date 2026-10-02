@@ -3,6 +3,8 @@ import {
   leaseFullySigned,
   leasesOf,
   leaseIsCurrent,
+  leaseAwaitingTenants,
+  tenantConfirmations,
   propertyStatus,
   collectedThisMonth,
   summarizeProperty,
@@ -31,6 +33,21 @@ const unsigned = (over = {}) => ({
   signers: [
     { userId: 't2', signed: true },
     { userId: 'landlord', signed: false },
+  ],
+  ...over,
+})
+
+// An imported lease: landlord attested, one of two tenants confirmed.
+const imported = (over = {}) => ({
+  id: 'ag-imported',
+  source: 'imported',
+  monthlyRent: 3000,
+  startDate: '2026-01-01',
+  endDate: '2026-12-31',
+  signers: [
+    { userId: 't7', role: 'tenant', signed: true, applicationId: 'm1' },
+    { userId: null, role: 'tenant', signed: false, applicationId: 'm2' },
+    { userId: 'landlord', role: 'landlord', signed: true },
   ],
   ...over,
 })
@@ -100,6 +117,36 @@ describe('propertyStatus', () => {
       'inactive'
     )
     expect(propertyStatus({ active: true, leases: [] }, NOW)).toBe('listed')
+  })
+
+  it('is awaiting_tenants while an imported lease has unconfirmed tenants', () => {
+    expect(propertyStatus({ active: true, leases: [imported()] }, NOW)).toBe(
+      'awaiting_tenants'
+    )
+    expect(leaseAwaitingTenants(imported(), NOW)).toBe(true)
+    expect(leaseAwaitingTenants(unsigned(), NOW)).toBe(false)
+    // Ended imported leases are ignored like any other.
+    expect(leaseAwaitingTenants(imported({ endDate: '2026-06-30' }), NOW)).toBe(
+      false
+    )
+  })
+
+  it('becomes leased once every tenant on the imported lease confirms', () => {
+    const done = imported({
+      signers: imported().signers.map(s => ({
+        ...s,
+        signed: true,
+        userId: s.userId || 't8',
+      })),
+    })
+    expect(propertyStatus({ active: true, leases: [done] }, NOW)).toBe('leased')
+  })
+})
+
+describe('tenantConfirmations', () => {
+  it('counts confirmed tenant blocks out of all tenant blocks', () => {
+    expect(tenantConfirmations(imported())).toEqual({ confirmed: 1, total: 2 })
+    expect(tenantConfirmations(null)).toEqual({ confirmed: 0, total: 0 })
   })
 })
 
@@ -183,6 +230,40 @@ describe('summarizeProperty', () => {
     expect(s.monthlyRent).toBe(2600)
     expect(s.tenants).toBe(0)
     expect(s.leaseEnd).toBeNull()
+    expect(s.invites).toBeNull()
+  })
+
+  it('reports invite progress and skips unattached members on an imported lease', () => {
+    const s = summarizeProperty(
+      {
+        ...listing,
+        maintenanceTickets: [],
+        applications: [
+          {
+            applicantId: 't7',
+            status: 'approved',
+            source: 'onboarded',
+            agreementId: 'ag-imported',
+            agreement: imported(),
+            transactions: [],
+          },
+          {
+            applicantId: null,
+            status: 'approved',
+            source: 'onboarded',
+            agreementId: 'ag-imported',
+            agreement: imported(),
+            transactions: [],
+          },
+        ],
+      },
+      NOW
+    )
+    expect(s.status).toBe('awaiting_tenants')
+    expect(s.invites).toEqual({ confirmed: 1, total: 2 })
+    // Not leased yet, so no tenant count and the asking price shows.
+    expect(s.tenants).toBe(0)
+    expect(s.monthlyRent).toBe(2600)
   })
 })
 
@@ -218,6 +299,7 @@ describe('portfolioTotals', () => {
       properties: 3,
       leased: 1,
       pendingSignatures: 0,
+      awaitingTenants: 0,
       listed: 1,
       inactive: 1,
       tenants: 2,

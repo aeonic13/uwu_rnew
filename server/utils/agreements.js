@@ -34,18 +34,33 @@ function fullName(user) {
   return user ? `${user.firstName} ${user.lastName}`.trim() : 'Unknown'
 }
 
-function shapeSigner(s, viewerId) {
+/**
+ * The invite behind an unattached tenant block on an imported lease, found
+ * through the member application the block was created for.
+ */
+function inviteFor(agreement, signer) {
+  if (signer.userId || !signer.applicationId) return null
+  const member = (agreement.members || []).find(
+    m => m.id === signer.applicationId
+  )
+  return member?.tenantInvite || null
+}
+
+function shapeSigner(s, viewerId, agreement) {
+  const invite = inviteFor(agreement, s)
   return {
     id: s.id,
     userId: s.userId,
     role: s.role,
-    name: fullName(s.user),
-    email: s.user?.email || null,
-    phone: s.user?.phone || '',
+    name: s.user ? fullName(s.user) : invite ? fullName(invite) : 'Unknown',
+    email: s.user?.email || invite?.email || null,
+    phone: s.user?.phone || invite?.phone || '',
     signed: !!s.signed,
     signedAt: s.signedAt || null,
     signatureName: s.signatureName || null,
-    isViewer: s.userId === viewerId,
+    isViewer: !!s.userId && s.userId === viewerId,
+    // Where an unattached block stands: invited / declined / expired.
+    inviteStatus: invite ? invite.status : null,
   }
 }
 
@@ -59,7 +74,9 @@ function shapeSigner(s, viewerId) {
 export function shapeAgreement(agreement, viewerId) {
   const app = agreement.application
   const t = agreement.terms || {}
-  const signers = (agreement.signers || []).map(s => shapeSigner(s, viewerId))
+  const signers = (agreement.signers || []).map(s =>
+    shapeSigner(s, viewerId, agreement)
+  )
   const tenants = signers.filter(s => s.role === 'tenant')
   const landlord =
     signers.find(s => s.role === 'landlord') ||
@@ -78,12 +95,19 @@ export function shapeAgreement(agreement, viewerId) {
   const mine = signers.find(s => s.userId === viewerId) || null
   const viewerRole = mine ? mine.role : 'other'
   const state = signatureState(agreement.signers || [])
+  const imported = agreement.source === 'imported'
 
   return {
     id: agreement.id,
     status: state.allSigned ? 'signed' : 'pending_signature',
     groupId: agreement.groupId || null,
     isGroupLease: tenants.length > 1,
+    // Imported leases were signed off Rentra; tenants confirm the recorded
+    // terms through their invite instead of e-signing here.
+    source: agreement.source || 'rentra',
+    imported,
+    monthToMonth: !!agreement.monthToMonth,
+    documentUrl: agreement.documentUrl || null,
     tenantSigned: state.tenantsSigned,
     landlordSigned: state.landlordSigned,
     viewerRole,

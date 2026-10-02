@@ -14,6 +14,7 @@ import {
   Pencil,
   ExternalLink,
   Power,
+  UserPlus,
 } from 'lucide-react'
 import { propertiesService } from '../../services/propertiesService'
 import { listingsService } from '../../services/listingsService'
@@ -137,6 +138,11 @@ export default function PropertyWorkspace() {
   const { property, stats } = data
   const meta = statusMeta(stats.status)
   const beds = property.bedrooms === 0 ? 'Studio' : `${property.bedrooms} bd`
+  // A property with no lease in progress can have its current household
+  // added by the landlord (existing-tenant onboarding).
+  const canOnboard = !data.leases.some(
+    l => l.current || l.awaitingTenants || !l.fullySigned
+  )
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -170,6 +176,12 @@ export default function PropertyWorkspace() {
                   >
                     <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />
                     {meta.label}
+                    {stats.status === 'awaiting_tenants' && stats.invites && (
+                      <span className="font-normal">
+                        · {stats.invites.confirmed} of {stats.invites.total}{' '}
+                        confirmed
+                      </span>
+                    )}
                   </span>
                   <h1 className="text-2xl font-bold text-gray-900 mt-2 leading-tight">
                     {property.title}
@@ -204,6 +216,14 @@ export default function PropertyWorkspace() {
               </div>
 
               <div className="flex flex-wrap items-center gap-2 mt-4">
+                {canOnboard && (
+                  <Link
+                    to={`/dashboard/properties/${property.id}/onboard`}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-brand-300 bg-brand-50 rounded-lg text-xs font-medium text-brand-700 hover:bg-brand-100"
+                  >
+                    <UserPlus size={13} /> Add current tenants
+                  </Link>
+                )}
                 <Link
                   to={`/dashboard/listings/${property.id}/edit`}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 rounded-lg text-xs font-medium text-gray-700 hover:border-brand-500 hover:text-brand-600"
@@ -279,7 +299,7 @@ export default function PropertyWorkspace() {
             onGoTo={key => navigate(`/dashboard/properties/${id}/${key}`)}
           />
         )}
-        {tab === 'tenants' && <TenantsTab data={data} />}
+        {tab === 'tenants' && <TenantsTab data={data} onRefresh={refresh} />}
         {tab === 'applications' && (
           <ApplicationsTab data={data} onRefresh={refresh} />
         )}

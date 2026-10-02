@@ -18,6 +18,7 @@ import {
   Calculator,
   FolderOpen,
   AlertCircle,
+  UserPlus,
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { propertiesService } from '../../services/propertiesService'
@@ -48,7 +49,8 @@ const TOOLS = [
 const needsAttention = p =>
   p.pendingApplications > 0 ||
   p.openTickets > 0 ||
-  p.status === 'pending_signatures'
+  p.status === 'pending_signatures' ||
+  p.status === 'awaiting_tenants'
 
 function StatTile({ label, value, sub, Icon, tone = 'gray' }) {
   const tones = {
@@ -102,6 +104,12 @@ export function PropertyCard({ property, onOpen }) {
         >
           <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />
           {meta.label}
+          {property.status === 'awaiting_tenants' && property.invites && (
+            <span className="font-normal">
+              · {property.invites.confirmed} of {property.invites.total}{' '}
+              confirmed
+            </span>
+          )}
         </span>
         {needsAttention(property) && (
           <span className="absolute top-3 right-3 bg-white/95 text-amber-700 text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1 shadow">
@@ -132,7 +140,9 @@ export function PropertyCard({ property, onOpen }) {
           </span>
           {property.leaseEnd && (
             <span className="text-gray-500">
-              Lease ends {shortDate(property.leaseEnd)}
+              {property.monthToMonth
+                ? 'Month-to-month'
+                : `Lease ends ${shortDate(property.leaseEnd)}`}
             </span>
           )}
         </p>
@@ -183,9 +193,14 @@ PropertyCard.propTypes = {
     bedrooms: PropTypes.number,
     bathrooms: PropTypes.number,
     tenants: PropTypes.number,
+    invites: PropTypes.shape({
+      confirmed: PropTypes.number,
+      total: PropTypes.number,
+    }),
     pendingApplications: PropTypes.number,
     openTickets: PropTypes.number,
     leaseEnd: PropTypes.string,
+    monthToMonth: PropTypes.bool,
   }).isRequired,
   onOpen: PropTypes.func.isRequired,
 }
@@ -232,6 +247,16 @@ export default function OwnerDashboard() {
   }, [properties, filter])
 
   const attentionCount = properties.filter(needsAttention).length
+  // Landlords who list a unit that is already occupied: point them at the
+  // existing-tenant flow instead of waiting for applications.
+  const occupiedCandidate = properties.find(
+    p => p.status === 'listed' && p.tenants === 0 && p.pendingApplications === 0
+  )
+  const showOnboardNudge =
+    Boolean(occupiedCandidate) &&
+    !properties.some(
+      p => p.status === 'leased' || p.status === 'awaiting_tenants'
+    )
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -271,6 +296,23 @@ export default function OwnerDashboard() {
           <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
             {error}
           </p>
+        )}
+
+        {showOnboardNudge && (
+          <div className="mb-6 bg-brand-50 border border-brand-200 rounded-xl px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3">
+            <UserPlus size={18} className="text-brand-600 flex-shrink-0" />
+            <p className="text-sm text-gray-800 flex-1">
+              <span className="font-semibold">Have tenants already?</span> Add
+              them to a property to collect rent and track the lease without
+              waiting for applications.
+            </p>
+            <Link
+              to={`/dashboard/properties/${occupiedCandidate.id}/onboard`}
+              className="inline-flex items-center justify-center px-3 py-1.5 bg-brand-500 text-white rounded-lg text-sm font-semibold hover:bg-brand-600"
+            >
+              Add current tenants
+            </Link>
+          </div>
         )}
 
         {/* Portfolio stats */}

@@ -12,11 +12,23 @@ import {
   Repeat,
   MessageSquare,
   PenLine,
+  Send,
+  Pencil,
+  X,
+  UserPlus,
+  ExternalLink,
 } from 'lucide-react'
 import { agreementsService } from '../../../services/agreementsService'
 import { messagingService } from '../../../services/messagingService'
+import { tenantInvitesService } from '../../../services/tenantInvitesService'
 import { useNavigate } from 'react-router-dom'
-import { money, shortDate, fullName, initials } from './statusMeta'
+import {
+  money,
+  shortDate,
+  fullName,
+  initials,
+  INVITE_STATUS,
+} from './statusMeta'
 
 const DEPOSIT_LABEL = {
   holding: 'Held',
@@ -24,12 +36,166 @@ const DEPOSIT_LABEL = {
   refunded: 'Refunded',
 }
 
-function MemberRow({ member, lease, listingId }) {
+const smallButton =
+  'inline-flex items-center gap-1 px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs font-medium text-gray-700 hover:border-brand-500 hover:text-brand-600 disabled:opacity-50'
+
+/** A household member who has not accepted their invite yet. */
+function InvitedRow({ member, onRefresh, onError }) {
+  const invite = member.invite
+  const [busy, setBusy] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [email, setEmail] = useState(invite?.email || '')
+  const [notice, setNotice] = useState('')
+  const status = INVITE_STATUS[invite?.status] || INVITE_STATUS.pending
+
+  const run = async (fn, okMessage) => {
+    setBusy(true)
+    setNotice('')
+    try {
+      const res = await fn()
+      if (okMessage) setNotice(okMessage(res))
+      await onRefresh()
+    } catch (err) {
+      onError(err?.message || 'Something went wrong.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const resend = () =>
+    run(
+      () => tenantInvitesService.resend(invite.id),
+      res =>
+        res?.emailSent
+          ? 'Invitation resent.'
+          : 'Link refreshed, but the email could not be sent.'
+    )
+  const saveEmail = e => {
+    e.preventDefault()
+    run(
+      () => tenantInvitesService.update(invite.id, { email: email.trim() }),
+      res =>
+        res?.emailSent === false
+          ? 'Email updated, but the invitation could not be sent.'
+          : 'Email updated and invitation sent.'
+    ).then(() => setEditing(false))
+  }
+  const cancel = () => {
+    if (
+      !window.confirm(
+        `Remove ${invite.firstName} ${invite.lastName} from this household? If they are the only tenant, the imported lease is removed too.`
+      )
+    ) {
+      return
+    }
+    run(() => tenantInvitesService.cancel(invite.id))
+  }
+
+  return (
+    <li className="py-3 flex flex-col sm:flex-row sm:items-center gap-3">
+      <div className="flex items-center gap-3 flex-1 min-w-0">
+        <span className="w-10 h-10 rounded-full bg-gray-100 text-gray-500 font-semibold flex items-center justify-center flex-shrink-0">
+          {initials(invite)}
+        </span>
+        <div className="min-w-0">
+          <p className="font-medium text-gray-900 flex items-center gap-2">
+            {fullName(invite)}
+            <span
+              className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${status.className}`}
+            >
+              {status.label}
+            </span>
+          </p>
+          {editing ? (
+            <form onSubmit={saveEmail} className="flex items-center gap-2 mt-1">
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                className="px-2 py-1 border border-gray-300 rounded text-xs w-56"
+                aria-label="New email"
+                required
+              />
+              <button type="submit" disabled={busy} className={smallButton}>
+                Save
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditing(false)}
+                className="text-xs text-gray-500"
+              >
+                Cancel
+              </button>
+            </form>
+          ) : (
+            <p className="text-xs text-gray-500 flex flex-wrap gap-x-3">
+              <span className="flex items-center gap-1">
+                <Mail size={12} /> {invite.email}
+              </span>
+              {invite.phone && (
+                <span className="flex items-center gap-1">
+                  <Phone size={12} /> {invite.phone}
+                </span>
+              )}
+              {invite.status === 'pending' && (
+                <span>Expires {shortDate(invite.expiresAt)}</span>
+              )}
+            </p>
+          )}
+          {notice && <p className="text-xs text-green-700 mt-1">{notice}</p>}
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 flex-wrap">
+        {invite.status !== 'cancelled' && (
+          <button
+            type="button"
+            onClick={resend}
+            disabled={busy}
+            className={smallButton}
+          >
+            <Send size={13} /> Resend
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={() => setEditing(v => !v)}
+          disabled={busy}
+          className={smallButton}
+        >
+          <Pencil size={13} /> Edit email
+        </button>
+        <button
+          type="button"
+          onClick={cancel}
+          disabled={busy}
+          className={`${smallButton} hover:border-red-400 hover:text-red-600`}
+        >
+          <X size={13} /> Remove
+        </button>
+      </div>
+    </li>
+  )
+}
+
+InvitedRow.propTypes = {
+  member: PropTypes.object.isRequired,
+  onRefresh: PropTypes.func.isRequired,
+  onError: PropTypes.func.isRequired,
+}
+
+function MemberRow({ member, lease, listingId, onRefresh, onError }) {
   const navigate = useNavigate()
   const [starting, setStarting] = useState(false)
   const u = member.user
   const owes =
     member.share ?? Math.round(lease.monthlyRent / lease.members.length)
+
+  if (!u) {
+    return (
+      <InvitedRow member={member} onRefresh={onRefresh} onError={onError} />
+    )
+  }
 
   const message = async () => {
     setStarting(true)
@@ -43,6 +209,9 @@ function MemberRow({ member, lease, listingId }) {
       setStarting(false)
     }
   }
+
+  const signedLabel = lease.imported ? 'Confirmed' : 'Signed'
+  const waitingLabel = lease.imported ? 'Not confirmed' : 'Waiting'
 
   return (
     <li className="py-3 flex flex-col sm:flex-row sm:items-center gap-3">
@@ -96,14 +265,16 @@ function MemberRow({ member, lease, listingId }) {
           </p>
         </div>
         <div>
-          <p className="text-xs text-gray-500">Signature</p>
+          <p className="text-xs text-gray-500">
+            {lease.imported ? 'Lease' : 'Signature'}
+          </p>
           <p
             className={`font-medium flex items-center gap-1 ${
               member.signed ? 'text-green-700' : 'text-amber-700'
             }`}
           >
             {member.signed ? <CheckCircle2 size={13} /> : <Clock size={13} />}
-            {member.signed ? 'Signed' : 'Waiting'}
+            {member.signed ? signedLabel : waitingLabel}
           </p>
         </div>
       </div>
@@ -127,7 +298,7 @@ function MemberRow({ member, lease, listingId }) {
           type="button"
           onClick={message}
           disabled={starting}
-          className="inline-flex items-center gap-1 px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs font-medium text-gray-700 hover:border-brand-500 hover:text-brand-600 disabled:opacity-50"
+          className={smallButton}
         >
           <MessageSquare size={13} /> Message
         </button>
@@ -140,9 +311,44 @@ MemberRow.propTypes = {
   member: PropTypes.object.isRequired,
   lease: PropTypes.object.isRequired,
   listingId: PropTypes.string.isRequired,
+  onRefresh: PropTypes.func.isRequired,
+  onError: PropTypes.func.isRequired,
 }
 
-function LeaseCard({ lease, listingId }) {
+function leaseHeading(lease) {
+  if (lease.imported) {
+    if (lease.current) return 'Current lease · imported'
+    if (lease.awaitingTenants) return 'Imported lease · waiting on tenants'
+    return 'Past lease · imported'
+  }
+  if (lease.current) return 'Current lease'
+  if (lease.fullySigned) return 'Past lease'
+  return 'Lease awaiting signatures'
+}
+
+function leaseBadge(lease) {
+  if (lease.fullySigned) {
+    return {
+      label: lease.imported ? 'All confirmed' : 'All signed',
+      className: 'bg-green-100 text-green-800',
+    }
+  }
+  if (lease.imported) {
+    const c = lease.confirmations || { confirmed: 0, total: 0 }
+    return {
+      label: `${c.confirmed} of ${c.total} confirmed`,
+      className: 'bg-purple-100 text-purple-800',
+    }
+  }
+  return {
+    label: lease.landlordSigned
+      ? 'Waiting on tenants'
+      : 'Your signature needed',
+    className: 'bg-amber-100 text-amber-800',
+  }
+}
+
+function LeaseCard({ lease, listingId, onRefresh, onError }) {
   const [downloading, setDownloading] = useState(false)
   const download = async () => {
     setDownloading(true)
@@ -153,20 +359,19 @@ function LeaseCard({ lease, listingId }) {
     }
   }
   const paid = lease.members.reduce((s, m) => s + m.paidThisMonth, 0)
+  const badge = leaseBadge(lease)
+  const confirmedMembers = lease.members.filter(m => m.user)
 
   return (
     <section className="bg-white border border-gray-200 rounded-xl">
       <header className="p-5 border-b border-gray-100 flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-wide text-gray-500">
-            {lease.current
-              ? 'Current lease'
-              : lease.fullySigned
-                ? 'Past lease'
-                : 'Lease awaiting signatures'}
+            {leaseHeading(lease)}
           </p>
           <h2 className="font-semibold text-gray-900 text-lg">
-            {shortDate(lease.startDate)} – {shortDate(lease.endDate)}
+            {shortDate(lease.startDate)} –{' '}
+            {lease.monthToMonth ? 'Month-to-month' : shortDate(lease.endDate)}
           </h2>
           <p className="text-sm text-gray-600 mt-0.5">
             {money(lease.monthlyRent)}/mo · {money(lease.securityDeposit)}{' '}
@@ -174,20 +379,30 @@ function LeaseCard({ lease, listingId }) {
             {lease.rentSplit &&
               ` · ${lease.rentSplit.splitMode === 'equal' ? 'split equally' : 'custom split'}`}
           </p>
+          {lease.imported && (
+            <p className="text-xs text-gray-500 mt-1">
+              Signed outside Rentra; tenants confirm the recorded terms.
+              {lease.documentUrl && (
+                <>
+                  {' '}
+                  <a
+                    href={lease.documentUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-brand-600 hover:underline inline-flex items-center gap-0.5"
+                  >
+                    Open signed lease <ExternalLink size={11} />
+                  </a>
+                </>
+              )}
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <span
-            className={`text-xs font-semibold px-2 py-1 rounded-full ${
-              lease.fullySigned
-                ? 'bg-green-100 text-green-800'
-                : 'bg-amber-100 text-amber-800'
-            }`}
+            className={`text-xs font-semibold px-2 py-1 rounded-full ${badge.className}`}
           >
-            {lease.fullySigned
-              ? 'All signed'
-              : lease.landlordSigned
-                ? 'Waiting on tenants'
-                : 'Your signature needed'}
+            {badge.label}
           </span>
           <Link
             to={`/agreement/${lease.id}`}
@@ -204,9 +419,10 @@ function LeaseCard({ lease, listingId }) {
             type="button"
             onClick={download}
             disabled={downloading}
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs font-medium text-gray-700 hover:border-brand-500 hover:text-brand-600 disabled:opacity-50"
+            className={smallButton}
           >
-            <Download size={13} /> Lease PDF
+            <Download size={13} />{' '}
+            {lease.imported ? 'Lease summary' : 'Lease PDF'}
           </button>
         </div>
       </header>
@@ -218,6 +434,8 @@ function LeaseCard({ lease, listingId }) {
             member={m}
             lease={lease}
             listingId={listingId}
+            onRefresh={onRefresh}
+            onError={onError}
           />
         ))}
       </ul>
@@ -245,7 +463,9 @@ function LeaseCard({ lease, listingId }) {
               ? `${money(lease.deposit.amountHeld)} · ${
                   DEPOSIT_LABEL[lease.deposit.status] || lease.deposit.status
                 }`
-              : 'Not tracked yet'}
+              : lease.fullySigned
+                ? 'Not tracked yet'
+                : 'Tracked once everyone confirms'}
           </p>
           <Link
             to="/dashboard/security-deposits"
@@ -258,6 +478,9 @@ function LeaseCard({ lease, listingId }) {
           <p className="text-xs text-gray-500">Household</p>
           <p className="font-semibold text-gray-900">
             {lease.members.length} tenant{lease.members.length === 1 ? '' : 's'}
+            {lease.imported && confirmedMembers.length < lease.members.length
+              ? ` · ${confirmedMembers.length} confirmed`
+              : ''}
             {' · '}
             {
               lease.members.filter(m => m.autopay?.status === 'active').length
@@ -273,25 +496,63 @@ function LeaseCard({ lease, listingId }) {
 LeaseCard.propTypes = {
   lease: PropTypes.object.isRequired,
   listingId: PropTypes.string.isRequired,
+  onRefresh: PropTypes.func.isRequired,
+  onError: PropTypes.func.isRequired,
 }
 
-export default function TenantsTab({ data }) {
+export default function TenantsTab({ data, onRefresh }) {
   const { leases, property } = data
+  const [error, setError] = useState('')
+  const refresh = onRefresh || (() => Promise.resolve())
+
   if (leases.length === 0) {
     return (
-      <div className="bg-white border border-dashed border-gray-300 rounded-xl py-14 text-center">
+      <div className="bg-white border border-dashed border-gray-300 rounded-xl py-14 text-center px-6">
         <p className="font-medium text-gray-900">No tenants yet</p>
         <p className="text-sm text-gray-500 mt-1">
           Approving an application creates the lease and moves the household
           here.
         </p>
+        <div className="mt-5 pt-5 border-t border-gray-200 max-w-md mx-auto">
+          <p className="text-sm text-gray-700">
+            Already have tenants living here?
+          </p>
+          <Link
+            to={`/dashboard/properties/${property.id}/onboard`}
+            className="inline-flex items-center gap-1.5 mt-2 px-4 py-2 bg-brand-500 text-white rounded-lg text-sm font-semibold hover:bg-brand-600"
+          >
+            <UserPlus size={15} /> Add current tenants
+          </Link>
+          <p className="text-xs text-gray-500 mt-2">
+            Record the lease you already have and invite them by email.
+          </p>
+        </div>
       </div>
     )
   }
   return (
     <div className="space-y-5">
+      {error && (
+        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3 flex items-start justify-between gap-3">
+          {error}
+          <button
+            type="button"
+            onClick={() => setError('')}
+            className="text-red-400 hover:text-red-700"
+            aria-label="Dismiss"
+          >
+            <X size={14} />
+          </button>
+        </p>
+      )}
       {leases.map(lease => (
-        <LeaseCard key={lease.id} lease={lease} listingId={property.id} />
+        <LeaseCard
+          key={lease.id}
+          lease={lease}
+          listingId={property.id}
+          onRefresh={refresh}
+          onError={setError}
+        />
       ))}
     </div>
   )
@@ -302,4 +563,5 @@ TenantsTab.propTypes = {
     property: PropTypes.object.isRequired,
     leases: PropTypes.array.isRequired,
   }).isRequired,
+  onRefresh: PropTypes.func,
 }

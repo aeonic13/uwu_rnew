@@ -392,8 +392,10 @@ router.get('/', authenticate, async (req, res) => {
       // Students see their own applications
       where.applicantId = userId
     } else {
-      // Owners see applications for their listings
+      // Owners see applications for their listings. Onboarded household
+      // rows are not applications anyone submitted.
       where.ownerId = userId
+      where.source = 'applied'
     }
 
     // Filter by status if provided
@@ -777,7 +779,7 @@ router.get('/listing/:listingId', authenticate, async (req, res) => {
     }
 
     // Build where clause
-    const where = { listingId }
+    const where = { listingId, source: 'applied' }
     if (status) {
       where.status = status
     }
@@ -916,17 +918,17 @@ router.get('/user/stats', authenticate, async (req, res) => {
         }, {}),
       }
     } else {
-      // Owner stats - applications for their listings
+      // Owner stats - applications for their listings (funnel only)
       const statusCounts = await prisma.application.groupBy({
         by: ['status'],
-        where: { ownerId: userId },
+        where: { ownerId: userId, source: 'applied' },
         _count: { status: true },
       })
 
       // Count by listing
       const byListing = await prisma.application.groupBy({
         by: ['listingId'],
-        where: { ownerId: userId, status: 'pending' },
+        where: { ownerId: userId, status: 'pending', source: 'applied' },
         _count: { listingId: true },
       })
 

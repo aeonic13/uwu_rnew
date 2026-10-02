@@ -39,16 +39,40 @@ export function leaseIsCurrent(agreement, now = new Date()) {
   return new Date(agreement.endDate) >= now
 }
 
+/** An imported (signed off-platform) lease still waiting on tenant confirmations. */
+export function leaseAwaitingTenants(agreement, now = new Date()) {
+  if (!agreement || agreement.source !== 'imported') return false
+  if (leaseFullySigned(agreement)) return false
+  return new Date(agreement.endDate) >= now
+}
+
+/**
+ * Tenant confirmations on a lease: how many tenant signature blocks are
+ * signed out of how many exist. For an imported lease this is "2 of 3
+ * confirmed"; for a Rentra lease it is the tenant signatures collected.
+ */
+export function tenantConfirmations(agreement) {
+  const signers = Array.isArray(agreement?.signers) ? agreement.signers : []
+  const tenants = signers.filter(s => s.role === 'tenant')
+  return {
+    confirmed: tenants.filter(s => s.signed).length,
+    total: tenants.length,
+  }
+}
+
 /**
  * One-word state for a property card.
  *   leased              a fully signed lease is in force
- *   pending_signatures  a lease exists but not everyone has signed
+ *   awaiting_tenants    an imported lease is in force but not every tenant
+ *                       has confirmed it yet (invites outstanding)
+ *   pending_signatures  a Rentra lease exists but not everyone has signed
  *   listed              no lease, listing active (taking applications)
  *   inactive            no lease, listing switched off
  */
 export function propertyStatus({ active, leases }, now = new Date()) {
   const list = leases || []
   if (list.some(l => leaseIsCurrent(l, now))) return 'leased'
+  if (list.some(l => leaseAwaitingTenants(l, now))) return 'awaiting_tenants'
   if (list.some(l => !leaseFullySigned(l) && new Date(l.endDate) >= now)) {
     return 'pending_signatures'
   }
@@ -76,8 +100,11 @@ export function summarizeProperty(listing, now = new Date()) {
     applications
       .filter(a => a.agreementId && current.some(l => l.id === a.agreementId))
       .map(a => a.applicantId)
+      // Onboarded member rows have no applicant until the invite is accepted.
+      .filter(Boolean)
   )
   const status = propertyStatus({ active: listing.active, leases }, now)
+  const awaiting = leases.find(l => leaseAwaitingTenants(l, now)) || null
   const monthlyRent =
     status === 'leased'
       ? current.reduce((sum, l) => sum + (l.monthlyRent || 0), 0)
@@ -97,6 +124,8 @@ export function summarizeProperty(listing, now = new Date()) {
     active: Boolean(listing.active),
     status,
     tenants: tenantIds.size,
+    // Confirmation progress while invites are outstanding ("1 of 3").
+    invites: awaiting ? tenantConfirmations(awaiting) : null,
     pendingApplications: applications.filter(a => a.status === 'pending')
       .length,
     openTickets: tickets.filter(t => OPEN_TICKET_STATUSES.includes(t.status))
@@ -109,6 +138,9 @@ export function summarizeProperty(listing, now = new Date()) {
     leaseEnd: current.length
       ? current.map(l => l.endDate).sort((a, b) => new Date(a) - new Date(b))[0]
       : null,
+    // A month-to-month lease stores a rolling anniversary as its endDate;
+    // cards say "Month-to-month" instead of that date.
+    monthToMonth: current.some(l => l.monthToMonth),
   }
 }
 
@@ -121,6 +153,7 @@ export function portfolioTotals(summaries) {
     leased: list.filter(p => p.status === 'leased').length,
     pendingSignatures: list.filter(p => p.status === 'pending_signatures')
       .length,
+    awaitingTenants: list.filter(p => p.status === 'awaiting_tenants').length,
     listed: list.filter(p => p.status === 'listed').length,
     inactive: list.filter(p => p.status === 'inactive').length,
     tenants: sum('tenants'),

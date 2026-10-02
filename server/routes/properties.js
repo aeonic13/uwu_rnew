@@ -7,10 +7,14 @@ import {
   leasesOf,
   leaseFullySigned,
   leaseIsCurrent,
+  leaseAwaitingTenants,
+  tenantConfirmations,
   summarizeProperty,
   portfolioTotals,
   collectedThisMonth,
 } from '../utils/portfolio.js'
+import { validateOnboarding, equalShares } from '../utils/onboarding.js'
+import { newInviteToken, emailInvite, presentInvite } from './tenantInvites.js'
 
 /**
  * Landlord property workspace. One property = one Listing; everything a
@@ -51,9 +55,13 @@ router.get('/', authenticate, requireUserType('owner'), async (req, res) => {
                 monthlyRent: true,
                 startDate: true,
                 endDate: true,
+                source: true,
+                monthToMonth: true,
                 tenantSigned: true,
                 landlordSigned: true,
-                signers: { select: { userId: true, signed: true } },
+                signers: {
+                  select: { userId: true, role: true, signed: true },
+                },
               },
             },
             transactions: {
@@ -90,6 +98,7 @@ router.get('/:id', authenticate, requireUserType('owner'), async (req, res) => {
         applications: {
           include: {
             applicant: { select: PERSON },
+            tenantInvite: true,
             cosigners: {
               select: {
                 id: true,
@@ -191,14 +200,23 @@ router.get('/:id', authenticate, requireUserType('owner'), async (req, res) => {
       const members = applications
         .filter(a => a.agreementId === ag.id)
         .map(a => {
-          const signer = ag.signers.find(s => s.userId === a.applicantId)
-          const share = ag.rentSplit?.shares.find(
-            s => s.userId === a.applicantId
-          )
-          const autopay = ag.autopays.find(p => p.userId === a.applicantId)
+          // Match the signature block by member application, not by user:
+          // an onboarded member has no user until their invite is accepted.
+          const signer =
+            ag.signers.find(s => s.applicationId === a.id) ||
+            (a.applicantId
+              ? ag.signers.find(s => s.userId === a.applicantId)
+              : null)
+          const share = a.applicantId
+            ? ag.rentSplit?.shares.find(s => s.userId === a.applicantId)
+            : null
+          const autopay = a.applicantId
+            ? ag.autopays.find(p => p.userId === a.applicantId)
+            : null
           return {
             applicationId: a.id,
             user: a.applicant,
+            invite: a.tenantInvite ? presentInvite(a.tenantInvite) : null,
             signed: Boolean(signer?.signed),
             signedAt: signer?.signedAt || null,
             share: share ? Math.round(share.amount) : null,
@@ -222,8 +240,13 @@ router.get('/:id', authenticate, requireUserType('owner'), async (req, res) => {
         startDate: ag.startDate,
         endDate: ag.endDate,
         documentUrl: ag.documentUrl,
+        source: ag.source,
+        imported: ag.source === 'imported',
+        monthToMonth: ag.monthToMonth,
         fullySigned: leaseFullySigned(ag),
         current: leaseIsCurrent(ag, now),
+        awaitingTenants: leaseAwaitingTenants(ag, now),
+        confirmations: tenantConfirmations(ag),
         landlordSigned: Boolean(landlord?.signed ?? ag.landlordSigned),
         members,
         deposit: ag.deposit,
@@ -234,7 +257,9 @@ router.get('/:id', authenticate, requireUserType('owner'), async (req, res) => {
     })
 
     // Applications: the screening-relevant facts, no raw Plaid payloads.
-    const applicationRows = applications.map(a => ({
+    // Onboarded member rows are household bookkeeping, not applicants.
+    const applied = applications.filter(a => a.source !== 'onboarded')
+    const applicationRows = applied.map(a => ({
       id: a.id,
       status: a.status,
       createdAt: a.createdAt,
@@ -259,7 +284,8 @@ router.get('/:id', authenticate, requireUserType('owner'), async (req, res) => {
       status: summary.status,
       tenants: summary.tenants,
       pendingApplications: summary.pendingApplications,
-      totalApplications: applications.length,
+      totalApplications: applied.length,
+      invites: summary.invites,
       openTickets: summary.openTickets,
       monthlyRent: summary.monthlyRent,
       collectedThisMonth: summary.collectedThisMonth,
@@ -282,5 +308,253 @@ router.get('/:id', authenticate, requireUserType('owner'), async (req, res) => {
     res.status(500).json({ error: { message: 'Failed to load property' } })
   }
 })
+
+/**
+ * POST /api/properties/:id/onboard
+ * Record the lease that already exists on an occupied property and invite
+ * the current household. One transaction creates the imported Agreement
+ * (landlord block signed, one unattached tenant block per person), one
+ * onboarded Application per tenant and one TenantInvite each; emails go
+ * out afterwards. Rent is split equally in v1.
+ *
+ * body: { lease: { startDate, endDate?, monthToMonth?, monthlyRent,
+ *                  securityDeposit, documentUrl? },
+ *         tenants: [{ firstName, lastName, email, phone? }],
+ *         attest: true }
+ */
+router.post(
+  '/:id/onboard',
+  authenticate,
+  requireUserType('owner'),
+  async (req, res) => {
+    try {
+      const now = new Date()
+      const listing = await prisma.listing.findFirst({
+        where: { id: req.params.id, ownerId: req.user.id },
+        select: {
+          id: true,
+          title: true,
+          location: true,
+          streetAddress: true,
+          images: true,
+          price: true,
+          applications: {
+            select: {
+              agreement: {
+                select: {
+                  id: true,
+                  startDate: true,
+                  endDate: true,
+                  source: true,
+                  tenantSigned: true,
+                  landlordSigned: true,
+                  signers: { select: { role: true, signed: true } },
+                },
+              },
+            },
+          },
+        },
+      })
+      if (!listing) {
+        return res
+          .status(404)
+          .json({ error: { message: 'Property not found' } })
+      }
+
+      const inForce = leasesOf(listing.applications).filter(
+        l =>
+          leaseIsCurrent(l, now) ||
+          leaseAwaitingTenants(l, now) ||
+          (!leaseFullySigned(l) && new Date(l.endDate) >= now)
+      )
+      if (inForce.length) {
+        return res.status(409).json({
+          error: {
+            message:
+              'This property already has a lease in progress. Manage it from the Tenants tab.',
+            code: 'LEASE_EXISTS',
+          },
+        })
+      }
+
+      const checked = validateOnboarding(req.body, {
+        ownerEmail: req.user.email,
+        now,
+      })
+      if (!checked.ok) {
+        return res.status(400).json({
+          error: { message: checked.errors[0], details: checked.errors },
+        })
+      }
+      const { lease, tenants } = checked.value
+
+      // Tenants need tenant accounts: an address already used by a landlord
+      // or co-signer cannot accept.
+      const existing = await prisma.user.findMany({
+        where: { email: { in: tenants.map(t => t.email) } },
+        select: { email: true, userType: true },
+      })
+      const wrongType = existing.find(u => u.userType !== 'student')
+      if (wrongType) {
+        return res.status(400).json({
+          error: {
+            message: `${wrongType.email} belongs to a ${wrongType.userType === 'owner' ? 'landlord' : 'co-signer'} account on Rentra. Tenants need a tenant account; use a different email.`,
+          },
+        })
+      }
+      const pendingClash = await prisma.tenantInvite.findFirst({
+        where: {
+          listingId: listing.id,
+          email: { in: tenants.map(t => t.email) },
+          status: { in: ['pending', 'accepted'] },
+        },
+        select: { email: true },
+      })
+      if (pendingClash) {
+        return res.status(400).json({
+          error: {
+            message: `${pendingClash.email} already has an invitation for this property.`,
+          },
+        })
+      }
+
+      const landlordName = `${req.user.firstName} ${req.user.lastName}`.trim()
+      const created = await prisma.$transaction(async tx => {
+        const memberData = {
+          listingId: listing.id,
+          ownerId: req.user.id,
+          applicantId: null,
+          status: 'approved',
+          source: 'onboarded',
+          startDate: lease.startDate,
+          endDate: lease.endDate,
+          message: null,
+        }
+        // The lead application carries the Agreement's required
+        // applicationId; the rest are plain members.
+        const lead = await tx.application.create({ data: memberData })
+        const others = []
+        for (let i = 1; i < tenants.length; i += 1) {
+          others.push(await tx.application.create({ data: memberData }))
+        }
+        const memberApps = [lead, ...others]
+
+        const agreement = await tx.agreement.create({
+          data: {
+            applicationId: lead.id,
+            source: 'imported',
+            monthToMonth: lease.monthToMonth,
+            monthlyRent: lease.monthlyRent,
+            securityDeposit: lease.securityDeposit,
+            startDate: lease.startDate,
+            endDate: lease.endDate,
+            documentUrl: lease.documentUrl,
+            terms: {
+              importedLease: true,
+              attestedBy: landlordName,
+              attestedAt: now.toISOString(),
+              utilities: 'As stated in the signed lease.',
+              petPolicy: 'As stated in the signed lease.',
+            },
+            // The landlord attests to the terms now; each tenant block is
+            // confirmed when that tenant accepts their invite.
+            landlordSigned: true,
+            landlordSignedAt: now,
+            signers: {
+              create: [
+                ...memberApps.map(m => ({
+                  role: 'tenant',
+                  userId: null,
+                  applicationId: m.id,
+                })),
+                {
+                  role: 'landlord',
+                  userId: req.user.id,
+                  signed: true,
+                  signedAt: now,
+                  signatureName: landlordName,
+                },
+              ],
+            },
+          },
+          select: {
+            id: true,
+            monthlyRent: true,
+            securityDeposit: true,
+            startDate: true,
+            endDate: true,
+            monthToMonth: true,
+            signers: { select: { role: true } },
+          },
+        })
+        await tx.application.updateMany({
+          where: { id: { in: memberApps.map(m => m.id) } },
+          data: { agreementId: agreement.id },
+        })
+
+        // Households of two or more start on an equal split so each tenant's
+        // Pay Rent shows their share, not the whole rent. Shares are named
+        // after the invites and attached to users as each tenant accepts.
+        if (tenants.length > 1) {
+          const amounts = equalShares(lease.monthlyRent, tenants.length)
+          await tx.rentSplit.create({
+            data: {
+              agreementId: agreement.id,
+              createdById: req.user.id,
+              total: lease.monthlyRent,
+              splitMode: 'equal',
+              shares: {
+                create: tenants.map((t, i) => ({
+                  name: `${t.firstName} ${t.lastName}`,
+                  amount: amounts[i],
+                  userId: null,
+                })),
+              },
+            },
+          })
+        }
+
+        const invites = []
+        for (let i = 0; i < tenants.length; i += 1) {
+          invites.push(
+            await tx.tenantInvite.create({
+              data: {
+                ...newInviteToken(now.getTime()),
+                ...tenants[i],
+                listingId: listing.id,
+                ownerId: req.user.id,
+                agreementId: agreement.id,
+                applicationId: memberApps[i].id,
+              },
+            })
+          )
+        }
+        return { agreement, invites }
+      })
+
+      // Emails after the commit so a mail failure never rolls back the lease.
+      const emailed = []
+      for (const invite of created.invites) {
+        const sent = await emailInvite(invite, {
+          owner: req.user,
+          listing,
+          agreement: created.agreement,
+        })
+        emailed.push({ ...presentInvite(invite), emailSent: sent })
+      }
+
+      res.status(201).json({
+        message: `Invitations sent to ${created.invites.length} tenant${
+          created.invites.length === 1 ? '' : 's'
+        }`,
+        agreementId: created.agreement.id,
+        invites: emailed,
+      })
+    } catch (error) {
+      console.error('Onboard tenants error:', error)
+      res.status(500).json({ error: { message: 'Failed to add tenants' } })
+    }
+  }
+)
 
 export default router

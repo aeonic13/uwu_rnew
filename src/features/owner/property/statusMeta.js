@@ -13,6 +13,12 @@ export const PROPERTY_STATUS = {
     className: 'bg-amber-100 text-amber-800 border-amber-200',
     dot: 'bg-amber-500',
   },
+  // An imported lease waiting on tenant confirmations.
+  awaiting_tenants: {
+    label: 'Invites sent',
+    className: 'bg-purple-100 text-purple-800 border-purple-200',
+    dot: 'bg-purple-500',
+  },
   listed: {
     label: 'Listed',
     className: 'bg-blue-100 text-blue-800 border-blue-200',
@@ -36,6 +42,14 @@ export const TICKET_STATUS = {
     className: 'bg-amber-100 text-amber-800',
   },
   completed: { label: 'Completed', className: 'bg-green-100 text-green-800' },
+}
+
+export const INVITE_STATUS = {
+  pending: { label: 'Invited', className: 'bg-amber-100 text-amber-800' },
+  accepted: { label: 'Confirmed', className: 'bg-green-100 text-green-800' },
+  declined: { label: 'Declined', className: 'bg-red-100 text-red-700' },
+  expired: { label: 'Expired', className: 'bg-gray-100 text-gray-600' },
+  cancelled: { label: 'Cancelled', className: 'bg-gray-100 text-gray-600' },
 }
 
 export const APPLICATION_STATUS = {

@@ -53,6 +53,9 @@ const CosignerAcceptPage = lazy(
 const CosignerDashboard = lazy(
   () => import('../features/cosigner/CosignerDashboard')
 )
+const TenantInviteAccept = lazy(
+  () => import('../features/auth/TenantInviteAccept')
+)
 
 // Legal pages (public)
 const TermsPage = lazy(() =>
@@ -91,6 +94,9 @@ const OwnerDashboard = lazy(() => import('../features/owner/OwnerDashboard'))
 const LandlordInbox = lazy(() => import('../features/owner/LandlordInbox'))
 const PropertyWorkspace = lazy(
   () => import('../features/owner/PropertyWorkspace')
+)
+const OnboardTenantsFlow = lazy(
+  () => import('../features/owner/property/OnboardTenantsFlow')
 )
 const LandlordListingForm = lazy(
   () => import('../features/owner/LandlordListingForm')
@@ -351,6 +357,15 @@ const routeConfig = [
     element: (
       <Suspense fallback={<SuspenseFallback />}>
         <CosignerAcceptPage />
+      </Suspense>
+    ),
+  },
+  // Existing-tenant invitation (public — reached from the email link)
+  {
+    path: '/tenant-invite/:token',
+    element: (
+      <Suspense fallback={<SuspenseFallback />}>
+        <TenantInviteAccept />
       </Suspense>
     ),
   },
@@ -667,6 +682,10 @@ const routeConfig = [
       // Live owner tools (wired to real APIs).
       ...[
         { path: '/dashboard/properties/:id', Component: PropertyWorkspace },
+        {
+          path: '/dashboard/properties/:id/onboard',
+          Component: OnboardTenantsFlow,
+        },
         {
           path: '/dashboard/properties/:id/:tab',
           Component: PropertyWorkspace,

@@ -780,3 +780,120 @@ export async function sendCosignerAcceptedEmail(
     text: `Hi ${tenant.firstName}, ${name} accepted your co-signer invitation and now backs ${listingTitle ? `your application for ${listingTitle}` : 'every application you submit'}. ${process.env.CLIENT_URL}/pre-qualify`,
   })
 }
+
+// ---------------------------------------------------------------------------
+// Existing-tenant onboarding (routes/properties.js onboard, routes/tenantInvites.js)
+// ---------------------------------------------------------------------------
+
+const BRAND = '#fc6a03'
+const wrap = body => `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+      ${body}
+      <p style="color: #888; font-size: 13px; margin-top: 24px;">— The Rentra Team</p>
+    </div>
+  `
+const button = (href, label) =>
+  `<p style="margin-top: 24px;"><a href="${href}" style="background: ${BRAND}; color: #fff; padding: 10px 18px; border-radius: 6px; text-decoration: none;">${label}</a></p>`
+const dollars = n => `$${Math.round(Number(n) || 0).toLocaleString('en-US')}`
+const leaseDate = d =>
+  new Date(d).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC',
+  })
+
+/**
+ * "<Landlord> added you as a tenant at <address> on Rentra": the lease facts
+ * and one button to the public accept page. Also used for resends.
+ */
+export async function sendTenantInvitation({
+  invite,
+  landlordName,
+  listing,
+  lease,
+  share,
+  householdSize,
+  inviteUrl,
+}) {
+  const address = listing.streetAddress || listing.location || listing.title
+  const term = lease.monthToMonth
+    ? `Month-to-month from ${leaseDate(lease.startDate)}`
+    : `${leaseDate(lease.startDate)} – ${leaseDate(lease.endDate)}`
+  const expires = leaseDate(invite.expiresAt)
+  const html = wrap(`
+      <h2 style="color: ${BRAND};">${landlordName} added you as a tenant on Rentra</h2>
+      <p>Hi ${invite.firstName},</p>
+      <p><strong>${landlordName}</strong> uses Rentra to manage <strong>${address}</strong> and has added you as a current tenant there. Accept to pay rent, split it with housemates, set up autopay and send maintenance requests from one place.</p>
+      <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px 16px; margin: 20px 0;">
+        <p style="margin: 0 0 6px;"><strong>Property:</strong> ${listing.title}</p>
+        <p style="margin: 0 0 6px;"><strong>Lease term:</strong> ${term}</p>
+        <p style="margin: 0 0 6px;"><strong>Monthly rent:</strong> ${dollars(lease.monthlyRent)}${
+          householdSize > 1
+            ? ` (your share ${dollars(share)}, split ${householdSize} ways)`
+            : ''
+        }</p>
+        <p style="margin: 0;"><strong>Deposit on file:</strong> ${dollars(lease.securityDeposit)}</p>
+      </div>
+      <p>You will be asked to confirm that these match the lease you signed. Nothing is e-signed and there is no fee.</p>
+      ${button(inviteUrl, 'Review and accept')}
+      <p style="color: #666; font-size: 13px;">This link expires on ${expires}. If you were not expecting this, you can ignore it or decline from the link.</p>
+    `)
+  return sendEmail({
+    to: invite.email,
+    subject: `${landlordName} added you as a tenant at ${address}`,
+    html,
+    text: `Hi ${invite.firstName}, ${landlordName} added you as a current tenant at ${address} on Rentra. Lease term: ${term}. Monthly rent: ${dollars(lease.monthlyRent)}. Deposit on file: ${dollars(lease.securityDeposit)}. Review and accept: ${inviteUrl} (expires ${expires}).`,
+  })
+}
+
+/** Tell the landlord a tenant confirmed the imported lease. */
+export async function sendTenantInviteAccepted({
+  owner,
+  tenant,
+  listing,
+  confirmed,
+  total,
+}) {
+  const name = `${tenant.firstName} ${tenant.lastName}`.trim()
+  const done = confirmed >= total
+  const url = `${process.env.CLIENT_URL}/dashboard/properties/${listing.id}/tenants`
+  const html = wrap(`
+      <h2 style="color: ${BRAND};">${name} confirmed the lease${done ? ' — household complete ✅' : ''}</h2>
+      <p>Hi ${owner.firstName},</p>
+      <p><strong>${name}</strong> accepted your invitation for <strong>${listing.title}</strong> and confirmed the lease terms.</p>
+      <p>${
+        done
+          ? 'Every tenant has now confirmed. The property shows as Leased and rent, deposits and maintenance are live for this household.'
+          : `${confirmed} of ${total} tenants have confirmed so far.`
+      }</p>
+      ${button(url, 'Open the property')}
+    `)
+  return sendEmail({
+    to: owner.email,
+    subject: done
+      ? `All tenants confirmed: ${listing.title}`
+      : `${name} confirmed the lease for ${listing.title}`,
+    html,
+    text: `Hi ${owner.firstName}, ${name} accepted your invitation for ${listing.title} and confirmed the lease terms. ${done ? 'Every tenant has now confirmed.' : `${confirmed} of ${total} tenants have confirmed.`} ${url}`,
+  })
+}
+
+/** Tell the landlord a tenant declined, so they can fix the email and resend. */
+export async function sendTenantInviteDeclined({ owner, invite, listing }) {
+  const name = `${invite.firstName} ${invite.lastName}`.trim()
+  const url = `${process.env.CLIENT_URL}/dashboard/properties/${listing.id}/tenants`
+  const html = wrap(`
+      <h2 style="color: ${BRAND};">${name} declined the invitation</h2>
+      <p>Hi ${owner.firstName},</p>
+      <p><strong>${name}</strong> (${invite.email}) declined your invitation to join <strong>${listing.title}</strong> on Rentra.</p>
+      <p>If the email was wrong you can correct it and resend from the property's Tenants tab, or remove them from the household.</p>
+      ${button(url, 'Open the property')}
+    `)
+  return sendEmail({
+    to: owner.email,
+    subject: `${name} declined your tenant invitation for ${listing.title}`,
+    html,
+    text: `Hi ${owner.firstName}, ${name} (${invite.email}) declined your invitation to join ${listing.title} on Rentra. Fix the email and resend, or remove them, from ${url}`,
+  })
+}

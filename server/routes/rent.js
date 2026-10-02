@@ -32,7 +32,9 @@ async function loadHousehold(agreementId, userId) {
       monthlyRent: true,
       application: { select: { listing: { select: { title: true } } } },
       signers: {
-        where: { role: 'tenant' },
+        // Imported leases keep an unattached block per tenant who has not
+        // accepted their invite yet; the household is whoever has.
+        where: { role: 'tenant', userId: { not: null } },
         orderBy: { createdAt: 'asc' },
         select: {
           userId: true,

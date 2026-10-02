@@ -43,6 +43,22 @@ const agreementInclude = {
       },
     },
   },
+  // Imported leases: the invite behind each tenant block that has not been
+  // accepted yet, so the block can show a name before it has a user.
+  members: {
+    select: {
+      id: true,
+      tenantInvite: {
+        select: {
+          firstName: true,
+          lastName: true,
+          email: true,
+          phone: true,
+          status: true,
+        },
+      },
+    },
+  },
 }
 
 const isParty = (agreement, userId) =>
@@ -171,8 +187,16 @@ router.get('/:id/pdf', authenticate, async (req, res) => {
         .text(String(value))
     }
 
+    const imported = shaped.imported
     doc.fillColor(brand).fontSize(22).font('Helvetica-Bold').text('Rentra')
-    doc.fillColor('black').fontSize(15).text('Residential Lease Agreement')
+    doc
+      .fillColor('black')
+      .fontSize(15)
+      .text(
+        imported
+          ? 'Lease Summary (imported lease)'
+          : 'Residential Lease Agreement'
+      )
     doc
       .fillColor(gray)
       .fontSize(9)
@@ -183,6 +207,14 @@ router.get('/:id/pdf', authenticate, async (req, res) => {
             ? ` · Joint lease, ${shaped.tenants.length} tenants`
             : '')
       )
+    if (imported) {
+      doc
+        .moveDown(0.4)
+        .fillColor(gray)
+        .text(
+          'This lease was signed outside Rentra. This document records the terms the landlord entered and each tenant confirmed; the signed lease itself is the governing document.'
+        )
+    }
     line()
 
     sectionTitle('Property')
@@ -215,7 +247,10 @@ router.get('/:id/pdf', authenticate, async (req, res) => {
     row('Monthly rent', `$${shaped.terms.monthlyRent.toLocaleString()}`)
     row('Security deposit', `$${shaped.terms.securityDeposit.toLocaleString()}`)
     row('Lease start', fmt(shaped.terms.startDate))
-    row('Lease end', fmt(shaped.terms.endDate))
+    row(
+      'Lease end',
+      shaped.monthToMonth ? 'Month-to-month' : fmt(shaped.terms.endDate)
+    )
 
     sectionTitle('Additional Terms')
     row('Utilities', shaped.terms.utilities)
@@ -229,7 +264,7 @@ router.get('/:id/pdf', authenticate, async (req, res) => {
       row(label, value)
     }
 
-    sectionTitle('Signatures')
+    sectionTitle(imported ? 'Confirmations' : 'Signatures')
     for (const s of shaped.signers) {
       doc.font('Helvetica-Bold').text(s.name)
       doc
@@ -240,10 +275,14 @@ router.get('/:id/pdf', authenticate, async (req, res) => {
         doc
           .fillColor('#15803d')
           .text(
-            `Signed electronically via Rentra${s.signatureName ? ` as "${s.signatureName}"` : ''}${s.signedAt ? ` on ${fmtDateTime(s.signedAt)}` : ''}`
+            imported
+              ? `${s.role === 'landlord' ? 'Attested' : 'Confirmed'} on Rentra${s.signatureName ? ` as "${s.signatureName}"` : ''}${s.signedAt ? ` on ${fmtDateTime(s.signedAt)}` : ''}`
+              : `Signed electronically via Rentra${s.signatureName ? ` as "${s.signatureName}"` : ''}${s.signedAt ? ` on ${fmtDateTime(s.signedAt)}` : ''}`
           )
       } else {
-        doc.fillColor('#b45309').text('Not yet signed')
+        doc
+          .fillColor('#b45309')
+          .text(imported ? 'Not yet confirmed' : 'Not yet signed')
       }
       doc.fillColor('black').moveDown(0.5)
     }
@@ -253,9 +292,13 @@ router.get('/:id/pdf', authenticate, async (req, res) => {
       .fillColor(gray)
       .fontSize(8)
       .text(
-        `This document is a record of the lease agreement executed on Rentra (myrentra.com). ` +
-          `Generated ${fmtDateTime(new Date())}. Signature timestamps reflect when each party ` +
-          `confirmed the agreement in their Rentra account.`
+        imported
+          ? `This document is Rentra's record of a lease executed outside Rentra (myrentra.com). ` +
+              `Generated ${fmtDateTime(new Date())}. Timestamps reflect when the landlord attested to ` +
+              `the terms and when each tenant confirmed them in their Rentra account. It is not an electronic signature of the lease.`
+          : `This document is a record of the lease agreement executed on Rentra (myrentra.com). ` +
+              `Generated ${fmtDateTime(new Date())}. Signature timestamps reflect when each party ` +
+              `confirmed the agreement in their Rentra account.`
       )
 
     doc.end()
@@ -294,6 +337,16 @@ router.post('/:id/sign', authenticate, async (req, res) => {
       return res
         .status(400)
         .json({ error: { message: 'You have already signed this lease' } })
+    }
+    if (agreement.source === 'imported') {
+      // Imported leases were signed off Rentra; tenants confirm the terms
+      // through their invitation (routes/tenantInvites.js accept).
+      return res.status(400).json({
+        error: {
+          message:
+            'This lease was signed outside Rentra. Confirm it from the invitation your landlord sent.',
+        },
+      })
     }
 
     // E-SIGN / UETA: affirmative consent plus the typed legal name, both
@@ -353,8 +406,8 @@ router.post('/:id/sign', authenticate, async (req, res) => {
     // Tell the other parties. Best-effort.
     const signerName = `${req.user.firstName} ${req.user.lastName}`
     const listingTitle = agreement.application?.listing?.title || 'your rental'
-    const pendingNames = state.pending.map(
-      s => `${s.user.firstName} ${s.user.lastName}`
+    const pendingNames = state.pending.map(s =>
+      s.user ? `${s.user.firstName} ${s.user.lastName}` : 'an invited tenant'
     )
     Promise.all(
       signers

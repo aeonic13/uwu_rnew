@@ -1,7 +1,9 @@
 # Onboarding existing tenants to an existing property
 
-Status: plan, approved for Phase 1, not started. Written 2026-10-01,
-all four decisions settled 2026-10-02 (see section 10). Follows the property-centric
+Status: Phase 1 shipped 2026-10-02 (schema, onboard endpoint, invite
+router, emails, landlord flow, tenant accept page, Inbox exclusions, local
+end-to-end trial). Phase 2 and 3 items in section 8 remain open. Written
+2026-10-01, all four decisions settled 2026-10-02 (see section 10). Follows the property-centric
 landlord dashboard (commit efc87da) and the competitive review of 2026-09-20,
 which flagged this as a category table stake Rentra lacks: most landlords
 adopt software mid-tenancy with tenants already in place, not at a vacancy.

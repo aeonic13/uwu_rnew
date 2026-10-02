@@ -7,6 +7,7 @@ import {
   AlertCircle,
   Download,
   Pen,
+  ExternalLink,
 } from 'lucide-react'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import { agreementsService } from '../../services/agreementsService'
@@ -114,8 +115,13 @@ function AgreementView() {
   }
 
   const isSigned = agreement.status === 'signed'
-  const needsMySignature = !isSigned && !agreement.viewerHasSigned
-  const awaitingOther = !isSigned && agreement.viewerHasSigned
+  const imported = Boolean(agreement.imported)
+  // Imported leases are confirmed through the tenant's invitation, never
+  // e-signed here.
+  const needsMySignature = !isSigned && !agreement.viewerHasSigned && !imported
+  const awaitingOther = !isSigned && (agreement.viewerHasSigned || imported)
+  const signedWord = imported ? 'Confirmed' : 'Signed'
+  const notSignedWord = imported ? 'Not confirmed' : 'Not signed'
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
@@ -130,7 +136,9 @@ function AgreementView() {
             >
               <ArrowLeft size={24} />
             </button>
-            <h1 className="text-lg font-semibold">Lease Agreement</h1>
+            <h1 className="text-lg font-semibold">
+              {imported ? 'Lease (imported)' : 'Lease Agreement'}
+            </h1>
           </div>
           <button
             onClick={handleDownload}
@@ -171,16 +179,24 @@ function AgreementView() {
               <CheckCircle className="text-brand-600 mr-3" size={24} />
               <div>
                 <h3 className="font-semibold text-brand-700">
-                  You&apos;ve signed
+                  {imported
+                    ? agreement.viewerHasSigned
+                      ? 'You\u2019ve confirmed'
+                      : 'Waiting on confirmations'
+                    : 'You\u2019ve signed'}
                 </h3>
                 <p className="text-sm text-brand-600">
                   {agreement.pendingSigners?.length
                     ? `Waiting on ${agreement.pendingSigners
                         .map(p => p.name)
                         .join(', ')}`
-                    : 'Awaiting the other signatures'}
+                    : imported
+                      ? 'Awaiting the other confirmations'
+                      : 'Awaiting the other signatures'}
                   {agreement.signerCount
-                    ? ` · ${agreement.signedCount}/${agreement.signerCount} signed`
+                    ? ` · ${agreement.signedCount}/${agreement.signerCount} ${
+                        imported ? 'confirmed' : 'signed'
+                      }`
                     : ''}
                 </p>
               </div>
@@ -190,10 +206,12 @@ function AgreementView() {
               <CheckCircle className="text-green-600 mr-3" size={24} />
               <div>
                 <h3 className="font-semibold text-green-800">
-                  Agreement Signed
+                  {imported ? 'Lease Confirmed' : 'Agreement Signed'}
                 </h3>
                 <p className="text-sm text-green-700">
-                  This agreement has been signed by all parties
+                  {imported
+                    ? 'Every tenant has confirmed the recorded terms'
+                    : 'This agreement has been signed by all parties'}
                 </p>
               </div>
             </>
@@ -203,6 +221,25 @@ function AgreementView() {
 
       {/* Agreement Content */}
       <div className="p-4 space-y-4">
+        {imported && (
+          <div className="bg-white rounded-lg border p-4 text-sm text-gray-700">
+            <p>
+              This lease was signed outside Rentra. Rentra holds a record of its
+              terms, entered by the landlord and confirmed by each tenant; the
+              signed lease itself is the governing document.
+            </p>
+            {agreement.documentUrl && (
+              <a
+                href={agreement.documentUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 mt-2 text-brand-600 font-medium hover:underline"
+              >
+                Open the signed lease <ExternalLink size={14} />
+              </a>
+            )}
+          </div>
+        )}
         {/* Agreement ID */}
         <div className="bg-white rounded-lg border p-4">
           <div className="flex items-center justify-between">
@@ -271,13 +308,15 @@ function AgreementView() {
                     }`}
                   >
                     {party.signed
-                      ? `Signed${party.signedAt ? ` ${formatDate(party.signedAt)}` : ''}`
-                      : 'Not signed'}
+                      ? `${signedWord}${party.signedAt ? ` ${formatDate(party.signedAt)}` : ''}`
+                      : party.inviteStatus === 'pending'
+                        ? 'Invited'
+                        : notSignedWord}
                   </span>
                 </li>
               ))}
           </ul>
-          {agreement.isGroupLease && (
+          {agreement.isGroupLease && !imported && (
             <p className="text-xs text-gray-500 mt-3">
               Every tenant signs the same lease. It takes effect once all
               tenants and the landlord have signed.
@@ -310,7 +349,9 @@ function AgreementView() {
             <div className="flex justify-between">
               <span className="text-gray-600">End Date</span>
               <span className="font-medium">
-                {formatDate(agreement.terms.endDate)}
+                {agreement.monthToMonth
+                  ? 'Month-to-month'
+                  : formatDate(agreement.terms.endDate)}
               </span>
             </div>
           </div>
@@ -331,36 +372,39 @@ function AgreementView() {
           </div>
         </div>
 
-        {/* Full Agreement Text (placeholder) */}
-        <div className="bg-white rounded-lg border p-4">
-          <h3 className="font-semibold mb-3">Full Agreement</h3>
-          <div className="prose prose-sm max-w-none text-gray-700">
-            <p>
-              This Lease Agreement (&quot;Agreement&quot;) is entered into as of{' '}
-              {formatDate(agreement.createdAt)}, by and between:
-            </p>
-            <p>
-              <strong>Sublessor:</strong> {agreement.landlord.name}
-            </p>
-            <p>
-              <strong>
-                {agreement.isGroupLease ? 'Sublessees:' : 'Sublessee:'}
-              </strong>{' '}
-              {(agreement.tenants || [agreement.tenant])
-                .map(t => t.name)
-                .join(', ')}
-              {agreement.isGroupLease &&
-                ', jointly and severally responsible for the obligations of this lease'}
-            </p>
-            <p>
-              The parties agree to the following terms and conditions for the
-              lease of the property located at {agreement.property.address}.
-            </p>
-            <p className="text-gray-500 italic">
-              [Full legal agreement text would appear here...]
-            </p>
+        {/* Full Agreement Text (placeholder). An imported lease's text is
+            the signed document itself, not something Rentra generates. */}
+        {!imported && (
+          <div className="bg-white rounded-lg border p-4">
+            <h3 className="font-semibold mb-3">Full Agreement</h3>
+            <div className="prose prose-sm max-w-none text-gray-700">
+              <p>
+                This Lease Agreement (&quot;Agreement&quot;) is entered into as
+                of {formatDate(agreement.createdAt)}, by and between:
+              </p>
+              <p>
+                <strong>Sublessor:</strong> {agreement.landlord.name}
+              </p>
+              <p>
+                <strong>
+                  {agreement.isGroupLease ? 'Sublessees:' : 'Sublessee:'}
+                </strong>{' '}
+                {(agreement.tenants || [agreement.tenant])
+                  .map(t => t.name)
+                  .join(', ')}
+                {agreement.isGroupLease &&
+                  ', jointly and severally responsible for the obligations of this lease'}
+              </p>
+              <p>
+                The parties agree to the following terms and conditions for the
+                lease of the property located at {agreement.property.address}.
+              </p>
+              <p className="text-gray-500 italic">
+                [Full legal agreement text would appear here...]
+              </p>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Sign Button */}

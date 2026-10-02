@@ -149,7 +149,7 @@ router.get(
 
       // Get applications with detailed group info
       const applications = await prisma.application.findMany({
-        where: { listingId },
+        where: { listingId, source: 'applied' },
         include: {
           applicant: {
             select: {
@@ -252,7 +252,8 @@ router.get(
         where: { ownerId },
         include: {
           applications: {
-            where: { status: 'approved' },
+            // Onboarded members join the roll once they accept their invite.
+            where: { status: 'approved', applicantId: { not: null } },
             include: {
               applicant: {
                 select: {
@@ -267,6 +268,18 @@ router.get(
                   monthlyRent: true,
                   startDate: true,
                   endDate: true,
+                  monthToMonth: true,
+                  // A household shares one agreement: each member owes
+                  // their split share, or an equal part of the rent.
+                  rentSplit: {
+                    select: {
+                      shares: { select: { userId: true, amount: true } },
+                    },
+                  },
+                  signers: {
+                    where: { role: 'tenant', userId: { not: null } },
+                    select: { userId: true },
+                  },
                 },
               },
               transactions: {
@@ -288,14 +301,26 @@ router.get(
 
       // Calculate rent roll
       const rentRoll = listings.map(listing => {
+        const shareOf = app => {
+          const ag = app.agreement
+          if (!ag) return listing.price
+          const share = ag.rentSplit?.shares.find(
+            s => s.userId === app.applicantId
+          )
+          if (share) return Math.round(share.amount)
+          const household = Math.max(1, ag.signers?.length || 1)
+          return Math.round(ag.monthlyRent / household)
+        }
         const tenants = listing.applications.map(app => ({
           id: app.applicant.id,
           applicationId: app.id,
           name: `${app.applicant.firstName} ${app.applicant.lastName}`,
           email: app.applicant.email,
-          monthlyRent: app.agreement?.monthlyRent || listing.price,
+          monthlyRent: shareOf(app),
+          leaseRent: app.agreement?.monthlyRent || listing.price,
           leaseStart: app.agreement?.startDate,
           leaseEnd: app.agreement?.endDate,
+          monthToMonth: Boolean(app.agreement?.monthToMonth),
           paidThisMonth: app.transactions
             .filter(t => t.status === 'completed')
             .reduce((sum, t) => sum + t.amount, 0),
@@ -505,7 +530,12 @@ router.get(
         where: { ownerId },
         include: {
           applications: {
-            where: { status: { in: ['pending', 'approved'] } },
+            // The inbox is the application funnel; households the landlord
+            // onboarded themselves never applied.
+            where: {
+              status: { in: ['pending', 'approved'] },
+              source: 'applied',
+            },
             include: {
               applicant: {
                 select: {
@@ -665,7 +695,7 @@ router.get(
           signers: leaseSigners.map(s => ({
             userId: s.userId,
             role: s.role,
-            name: `${s.user.firstName} ${s.user.lastName}`,
+            name: s.user ? `${s.user.firstName} ${s.user.lastName}` : 'Invited',
             signed: s.signed,
             signedAt: s.signedAt,
           })),

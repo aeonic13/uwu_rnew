@@ -43,6 +43,7 @@ import expensesRoutes from './routes/expenses.js'
 import documentsRoutes from './routes/documents.js'
 import reviewsRoutes from './routes/reviews.js'
 import savedSearchesRoutes from './routes/savedSearches.js'
+import tenantInvitesRoutes from './routes/tenantInvites.js'
 
 // Get __dirname equivalent in ES modules
 const __filename = fileURLToPath(import.meta.url)
@@ -107,6 +108,9 @@ app.use('/api/cosigners/invitation', strictLimiter)
 app.use('/api/cosigners/accept', strictLimiter)
 app.use('/api/cosigners/decline', strictLimiter)
 app.use('/api/cosigners/resend', strictLimiter)
+app.use('/api/tenant-invites/invitation', strictLimiter)
+app.use('/api/tenant-invites/accept', strictLimiter)
+app.use('/api/tenant-invites/decline', strictLimiter)
 
 // Health check
 app.get('/health', (req, res) => {
@@ -161,6 +165,7 @@ app.use('/api/expenses', expensesRoutes)
 app.use('/api/documents', documentsRoutes)
 app.use('/api/reviews', reviewsRoutes)
 app.use('/api/saved-searches', savedSearchesRoutes)
+app.use('/api/tenant-invites', tenantInvitesRoutes)
 
 // Sentry sees every error that reaches Express before our handler formats
 // the response. No-op without SENTRY_DSN.

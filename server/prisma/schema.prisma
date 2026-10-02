@@ -32,6 +32,30 @@ enum ApplicationStatus {
   cancelled
 }
 
+// How an Application row came to exist. `applied` is the marketplace funnel;
+// `onboarded` is a member row the landlord created when importing an
+// existing household (see TenantInvite). Screens that mean "people who
+// applied" filter on `applied`.
+enum ApplicationSource {
+  applied
+  onboarded
+}
+
+// Where a lease was executed. `rentra` leases are e-signed here; `imported`
+// leases were signed off-platform and each tenant only confirms the terms.
+enum AgreementSource {
+  rentra
+  imported
+}
+
+enum TenantInviteStatus {
+  pending
+  accepted
+  declined
+  expired
+  cancelled
+}
+
 // Transaction status
 enum TransactionStatus {
   pending
@@ -85,38 +109,40 @@ model User {
   updatedAt        DateTime  @updatedAt
 
   // Relations
-  listings             Listing[]
-  sentApplications     Application[]       @relation("ApplicantApplications")
-  receivedApplications Application[]       @relation("OwnerApplications")
-  sentMessages         Message[]           @relation("SentMessages")
-  conversationUsers    ConversationUser[]
-  transactions         Transaction[]
-  favorites            Favorite[]
-  reviews              Review[]            @relation("ReviewAuthor")
-  receivedReviews      Review[]            @relation("ReviewSubject")
-  cosignedApplications Cosigner[]          @relation("CosignerUser")
-  cosignersForTenant   Cosigner[]          @relation("TenantUser")
-  housemateProfile     HousemateProfile?
-  maintenanceTickets   MaintenanceTicket[] @relation("TenantTickets")
-  createdGroups        Group[]             @relation("GroupCreator")
-  groupMemberships     GroupMember[]
-  groupMessages        GroupMessage[]      @relation("GroupMessages")
-  utilityBills         UtilityBill[]       @relation("UtilityBills")
-  utilityShares        UtilityBillShare[]  @relation("UtilityShares")
-  rentSplits           RentSplit[]         @relation("RentSplitCreator")
-  rentSplitShares      RentSplitShare[]    @relation("RentSplitShares")
-  autopaySchedules     AutopaySchedule[]
-  policyAcceptances    PolicyAcceptance[]
-  agreementSignatures  AgreementSigner[]   @relation("AgreementSignatures")
-  screeningReports     ScreeningReport[]
-  securityDeposits     SecurityDeposit[]   @relation("OwnerDeposits")
-  expenses             Expense[]
-  documents            Document[]
-  savedSearches        SavedSearch[]
-  blocksGiven          UserBlock[]         @relation("BlocksGiven")
-  blocksReceived       UserBlock[]         @relation("BlocksReceived")
-  reportsFiled         UserReport[]        @relation("ReportsFiled")
-  reportsReceived      UserReport[]        @relation("ReportsReceived")
+  listings              Listing[]
+  sentApplications      Application[]       @relation("ApplicantApplications")
+  receivedApplications  Application[]       @relation("OwnerApplications")
+  sentMessages          Message[]           @relation("SentMessages")
+  conversationUsers     ConversationUser[]
+  transactions          Transaction[]
+  favorites             Favorite[]
+  reviews               Review[]            @relation("ReviewAuthor")
+  receivedReviews       Review[]            @relation("ReviewSubject")
+  cosignedApplications  Cosigner[]          @relation("CosignerUser")
+  cosignersForTenant    Cosigner[]          @relation("TenantUser")
+  housemateProfile      HousemateProfile?
+  maintenanceTickets    MaintenanceTicket[] @relation("TenantTickets")
+  createdGroups         Group[]             @relation("GroupCreator")
+  groupMemberships      GroupMember[]
+  groupMessages         GroupMessage[]      @relation("GroupMessages")
+  utilityBills          UtilityBill[]       @relation("UtilityBills")
+  utilityShares         UtilityBillShare[]  @relation("UtilityShares")
+  rentSplits            RentSplit[]         @relation("RentSplitCreator")
+  rentSplitShares       RentSplitShare[]    @relation("RentSplitShares")
+  autopaySchedules      AutopaySchedule[]
+  policyAcceptances     PolicyAcceptance[]
+  agreementSignatures   AgreementSigner[]   @relation("AgreementSignatures")
+  screeningReports      ScreeningReport[]
+  securityDeposits      SecurityDeposit[]   @relation("OwnerDeposits")
+  expenses              Expense[]
+  documents             Document[]
+  savedSearches         SavedSearch[]
+  tenantInvitesSent     TenantInvite[]      @relation("TenantInvitesSent")
+  tenantInvitesAccepted TenantInvite[]      @relation("TenantInvitesAccepted")
+  blocksGiven           UserBlock[]         @relation("BlocksGiven")
+  blocksReceived        UserBlock[]         @relation("BlocksReceived")
+  reportsFiled          UserReport[]        @relation("ReportsFiled")
+  reportsReceived       UserReport[]        @relation("ReportsReceived")
 
   @@index([email])
   @@index([userType])
@@ -182,6 +208,7 @@ model Listing {
   maintenanceTickets MaintenanceTicket[]
   expenses           Expense[]
   documents          Document[]          @relation("ListingDocuments")
+  tenantInvites      TenantInvite[]
 
   @@index([ownerId])
   @@index([university])
@@ -343,28 +370,34 @@ model Application {
 
   // Relations
   listingId         String
-  listing           Listing          @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  applicantId       String
-  applicant         User             @relation("ApplicantApplications", fields: [applicantId], references: [id], onDelete: Cascade)
+  listing           Listing           @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  // Null only for an `onboarded` member row whose tenant has not accepted
+  // their invite yet; set on acceptance. Anything that joins `applicant`
+  // must tolerate null or filter `applicantId: { not: null }`.
+  applicantId       String?
+  applicant         User?             @relation("ApplicantApplications", fields: [applicantId], references: [id], onDelete: Cascade)
   ownerId           String
-  owner             User             @relation("OwnerApplications", fields: [ownerId], references: [id], onDelete: Cascade)
+  owner             User              @relation("OwnerApplications", fields: [ownerId], references: [id], onDelete: Cascade)
   transactions      Transaction[]
   // The household lease this application is a party to. Every member of a
   // group application points at the same Agreement; the Agreement's own
   // applicationId is just the lead application it was created from.
   agreementId       String?
-  agreement         Agreement?       @relation("LeaseMembers", fields: [agreementId], references: [id], onDelete: SetNull)
-  leadOf            Agreement?       @relation("LeadApplication")
+  agreement         Agreement?        @relation("LeaseMembers", fields: [agreementId], references: [id], onDelete: SetNull)
+  leadOf            Agreement?        @relation("LeadApplication")
   cosigners         Cosigner[]
+  source            ApplicationSource @default(applied)
+  // The invite that fills this member row (onboarded rows only).
+  tenantInvite      TenantInvite?
   // Set when this application was submitted as part of a roommate group —
   // one Application row per member, linked by the shared groupId.
   groupId           String?
-  group             Group?           @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  group             Group?            @relation(fields: [groupId], references: [id], onDelete: SetNull)
   // The reusable screening report backing this application. Instead of
   // re-verifying per application, we link the applicant's still-valid report
   // (CA AB 2559 "pay once, reuse" — see ScreeningReport).
   screeningReportId String?
-  screeningReport   ScreeningReport? @relation(fields: [screeningReportId], references: [id], onDelete: SetNull)
+  screeningReport   ScreeningReport?  @relation(fields: [screeningReportId], references: [id], onDelete: SetNull)
   // Monthly housing subsidy (e.g. Section 8). Income qualifies against the
   // tenant's share (rent - voucher), never full rent — CA source-of-income law.
   voucherAmount     Int?
@@ -380,19 +413,24 @@ model Application {
 
 // Agreement/Contract model
 model Agreement {
-  id               String    @id @default(cuid())
+  id               String          @id @default(cuid())
   monthlyRent      Int
   securityDeposit  Int
   startDate        DateTime
+  // Month-to-month leases store the next anniversary of startDate here so
+  // the column stays meaningful for the rent roll and status math; the UI
+  // shows "Month-to-month" instead of the date.
   endDate          DateTime
+  monthToMonth     Boolean         @default(false)
+  source           AgreementSource @default(rentra)
   terms            Json // Additional terms stored as JSON
-  tenantSigned     Boolean   @default(false)
+  tenantSigned     Boolean         @default(false)
   tenantSignedAt   DateTime?
-  landlordSigned   Boolean   @default(false)
+  landlordSigned   Boolean         @default(false)
   landlordSignedAt DateTime?
   documentUrl      String?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
 
   // Relations
   // Lead application the lease was created from (solo tenant, or the
@@ -410,6 +448,7 @@ model Agreement {
   // one Agreement per member, so the split is looked up across siblings.
   rentSplit     RentSplit?
   autopays      AutopaySchedule[]
+  tenantInvites TenantInvite[]
 }
 
 // How a household divides monthly rent. One split per lease; for a group
@@ -502,13 +541,52 @@ model AgreementSigner {
 
   agreementId   String
   agreement     Agreement @relation(fields: [agreementId], references: [id], onDelete: Cascade)
-  userId        String
-  user          User      @relation("AgreementSignatures", fields: [userId], references: [id], onDelete: Cascade)
+  // Null for an imported lease's tenant block until that tenant accepts
+  // their invite; the block is then attached to their account and signed.
+  userId        String?
+  user          User?     @relation("AgreementSignatures", fields: [userId], references: [id], onDelete: Cascade)
   // The member application this tenant signer came from (null for landlord).
   applicationId String?
 
   @@unique([agreementId, userId])
   @@index([userId])
+}
+
+// A landlord's invitation to a current tenant of an occupied property. The
+// landlord records the existing lease (Agreement, source imported) and one
+// onboarded Application per tenant; each invite fills one of those member
+// rows when the tenant accepts and confirms the lease terms. Mirrors the
+// cosigner invite pattern: secret token, expiry, public accept/decline.
+model TenantInvite {
+  id          String             @id @default(cuid())
+  token       String             @unique
+  email       String
+  firstName   String
+  lastName    String
+  phone       String?
+  status      TenantInviteStatus @default(pending)
+  expiresAt   DateTime
+  respondedAt DateTime?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  listingId      String
+  listing        Listing     @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  ownerId        String
+  owner          User        @relation("TenantInvitesSent", fields: [ownerId], references: [id], onDelete: Cascade)
+  agreementId    String
+  agreement      Agreement   @relation(fields: [agreementId], references: [id], onDelete: Cascade)
+  // The onboarded member row this invite fills.
+  applicationId  String      @unique
+  application    Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  acceptedUserId String?
+  acceptedUser   User?       @relation("TenantInvitesAccepted", fields: [acceptedUserId], references: [id], onDelete: SetNull)
+
+  @@index([email])
+  @@index([listingId])
+  @@index([ownerId])
+  @@index([agreementId])
+  @@index([status])
 }
 
 // Conversation model

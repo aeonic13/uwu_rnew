@@ -118,6 +118,67 @@ describe('shapeAgreement', () => {
   it('marks strangers as other', () => {
     expect(shapeAgreement(agreement, 'nobody').viewerRole).toBe('other')
   })
+
+  it('names an unattached block on an imported lease after its invite', () => {
+    const importedLease = {
+      ...agreement,
+      source: 'imported',
+      monthToMonth: true,
+      documentUrl: 'https://files.example.com/lease.pdf',
+      signers: [
+        {
+          id: 's1',
+          role: 'tenant',
+          userId: 'emma',
+          signed: true,
+          applicationId: 'm1',
+          user: user('emma', 'Emma', 'Wilson'),
+        },
+        {
+          id: 's2',
+          role: 'tenant',
+          userId: null,
+          signed: false,
+          applicationId: 'm2',
+          user: null,
+        },
+        {
+          id: 's3',
+          role: 'landlord',
+          userId: 'jen',
+          signed: true,
+          user: user('jen', 'Jennifer', 'Park'),
+        },
+      ],
+      members: [
+        { id: 'm1', tenantInvite: null },
+        {
+          id: 'm2',
+          tenantInvite: {
+            firstName: 'Alex',
+            lastName: 'Johnson',
+            email: 'alex@example.com',
+            phone: null,
+            status: 'pending',
+          },
+        },
+      ],
+    }
+    const s = shapeAgreement(importedLease, 'emma')
+    expect(s.imported).toBe(true)
+    expect(s.monthToMonth).toBe(true)
+    expect(s.documentUrl).toBe('https://files.example.com/lease.pdf')
+    expect(s.status).toBe('pending_signature')
+    expect(s.tenants.map(t => t.name)).toEqual(['Emma Wilson', 'Alex Johnson'])
+    expect(s.tenants[1]).toMatchObject({
+      userId: null,
+      email: 'alex@example.com',
+      signed: false,
+      isViewer: false,
+      inviteStatus: 'pending',
+    })
+    expect(s.pendingSigners.map(p => p.name)).toEqual(['Unknown'])
+  })
 })
 
 describe('defaultLeaseTerms', () => {
