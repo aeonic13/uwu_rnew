@@ -17,6 +17,7 @@ import {
   canResend,
   equalShares,
   inviteExpired,
+  inviteUrlFor,
   normalizeEmail,
 } from '../utils/onboarding.js'
 import {
@@ -45,8 +46,7 @@ export function newInviteToken(now = Date.now()) {
   }
 }
 
-export const inviteUrlFor = token =>
-  `${process.env.CLIENT_URL}/tenant-invite/${token}`
+export { inviteUrlFor }
 
 const LISTING_FIELDS = {
   id: true,
@@ -81,7 +81,10 @@ const inviteInclude = {
       rentSplit: {
         select: {
           id: true,
-          shares: { select: { id: true, name: true, userId: true } },
+          splitMode: true,
+          shares: {
+            select: { id: true, name: true, amount: true, userId: true },
+          },
         },
       },
       signers: {
@@ -122,11 +125,49 @@ export function presentInvite(invite) {
   }
 }
 
-/** Send (or re-send) the invitation email. Best-effort; returns a boolean. */
-export async function emailInvite(invite, { owner, listing, agreement }) {
-  const tenantBlocks = agreement.signers.filter(s => s.role === 'tenant')
-  const householdSize = Math.max(1, tenantBlocks.length)
-  const share = equalShares(agreement.monthlyRent, householdSize)[0]
+/**
+ * The split share created for this invite at onboarding: the unattached
+ * share with the invite's name, else any unattached share.
+ */
+function shareFor(agreement, invite) {
+  const shares = (agreement?.rentSplit?.shares || []).filter(s => !s.userId)
+  const name = `${invite.firstName} ${invite.lastName}`
+  return shares.find(s => s.name === name) || shares[0] || null
+}
+
+/** Household size on a lease: one tenant block per member. */
+const householdSizeOf = agreement =>
+  Math.max(
+    1,
+    (agreement?.signers || []).filter(s => s.role === 'tenant').length
+  )
+
+/**
+ * What this invitee owes each month: the split share recorded for them
+ * (custom or equal), else an equal cut of the rent.
+ */
+export function shareAmountFor(agreement, invite) {
+  const named = shareFor(agreement, invite)
+  if (named && Number.isFinite(Number(named.amount))) {
+    return Math.round(Number(named.amount))
+  }
+  return equalShares(agreement.monthlyRent, householdSizeOf(agreement))[0]
+}
+
+/**
+ * Send (or re-send) the invitation email. Best-effort; returns a boolean.
+ * `share` overrides the split lookup when the caller already knows it
+ * (the onboard endpoint, whose agreement select has no split).
+ */
+export async function emailInvite(
+  invite,
+  { owner, listing, agreement, share: shareOverride }
+) {
+  const householdSize = householdSizeOf(agreement)
+  const share =
+    shareOverride !== undefined
+      ? shareOverride
+      : shareAmountFor(agreement, invite)
   try {
     const result = await sendTenantInvitation({
       invite,
@@ -142,16 +183,6 @@ export async function emailInvite(invite, { owner, listing, agreement }) {
     console.error('Tenant invitation email error:', err)
     return false
   }
-}
-
-/**
- * The equal-split share created for this invite at onboarding: the
- * unattached share with the invite's name, else any unattached share.
- */
-function shareFor(agreement, invite) {
-  const shares = (agreement?.rentSplit?.shares || []).filter(s => !s.userId)
-  const name = `${invite.firstName} ${invite.lastName}`
-  return shares.find(s => s.name === name) || shares[0] || null
 }
 
 /** Load an invite by id and check the caller owns it. */
@@ -203,7 +234,13 @@ router.post(
       const fresh = newInviteToken()
       const updated = await prisma.tenantInvite.update({
         where: { id: invite.id },
-        data: { ...fresh, status: 'pending', respondedAt: null },
+        data: {
+          ...fresh,
+          status: 'pending',
+          respondedAt: null,
+          // The fresh link gets its own day-7 reminder.
+          reminderSentAt: null,
+        },
         include: inviteInclude,
       })
       const emailSent = await emailInvite(updated, {
@@ -321,6 +358,7 @@ router.patch(
           Object.assign(data, newInviteToken(), {
             status: 'pending',
             respondedAt: null,
+            reminderSentAt: null,
           })
         }
       }
@@ -427,10 +465,17 @@ router.delete(
           if (remaining.length <= 1) {
             await tx.rentSplit.delete({ where: { id: split.id } })
           } else {
-            const amounts = equalShares(
-              invite.agreement.monthlyRent,
-              remaining.length
-            )
+            // Re-divide so the household still covers the whole rent: an
+            // equal split stays equal; a custom one spreads the removed
+            // tenant's share equally over whoever is left.
+            const removed = Math.round(Number(share?.amount)) || 0
+            const topUp = equalShares(removed, remaining.length)
+            const amounts =
+              split.splitMode === 'custom'
+                ? remaining.map(
+                    (s, i) => Math.round(Number(s.amount)) + topUp[i]
+                  )
+                : equalShares(invite.agreement.monthlyRent, remaining.length)
             for (let i = 0; i < remaining.length; i += 1) {
               await tx.rentSplitShare.update({
                 where: { id: remaining[i].id },
@@ -501,7 +546,8 @@ function presentPreview(invite, existingUser) {
       monthToMonth: ag.monthToMonth,
       monthlyRent: ag.monthlyRent,
       securityDeposit: ag.securityDeposit,
-      share: equalShares(ag.monthlyRent, householdSize)[0],
+      share: shareAmountFor(ag, invite),
+      splitMode: ag.rentSplit?.splitMode || 'equal',
       householdSize,
     },
     housemates,

@@ -1,10 +1,15 @@
 import express from 'express'
 import PDFDocument from 'pdfkit'
+import { Readable } from 'node:stream'
 import prisma from '../utils/prisma.js'
 import { authenticate } from '../middleware/authenticate.js'
 import { recordAcceptances } from '../utils/policies.js'
 import { sendLeaseSignatureUpdate } from '../utils/email.js'
-import { shapeAgreement, signatureState } from '../utils/agreements.js'
+import {
+  shapeAgreement,
+  signatureState,
+  signedLeaseFilename,
+} from '../utils/agreements.js'
 
 /**
  * Household leases. One Agreement per household with an AgreementSigner
@@ -115,9 +120,46 @@ router.get('/:id', authenticate, async (req, res) => {
 })
 
 /**
+ * Stream the landlord's uploaded copy of an imported lease to a party on
+ * it. The file lives in Cloudinary under the landlord's documents; parties
+ * fetch it through here so the link is auth-gated and never a raw asset
+ * URL. Returns false (nothing written) when the upload cannot be read, so
+ * the caller can fall back to the generated summary.
+ */
+async function streamSignedLease(agreement, res) {
+  let upstream
+  try {
+    upstream = await fetch(agreement.documentUrl)
+  } catch (err) {
+    console.error('Signed lease fetch error:', err)
+    return false
+  }
+  if (!upstream.ok || !upstream.body) return false
+  const contentType =
+    upstream.headers.get('content-type') || 'application/octet-stream'
+  res.setHeader('Content-Type', contentType)
+  res.setHeader(
+    'Content-Disposition',
+    `attachment; filename="${signedLeaseFilename(agreement, contentType)}"`
+  )
+  const length = upstream.headers.get('content-length')
+  if (length) res.setHeader('Content-Length', length)
+  await new Promise((resolve, reject) => {
+    Readable.fromWeb(upstream.body)
+      .on('error', reject)
+      .pipe(res)
+      .on('finish', resolve)
+      .on('error', reject)
+  })
+  return true
+}
+
+/**
  * GET /api/agreements/:id/pdf
  * The lease as a PDF with one signature block per party, generated from the
- * stored terms and signature record.
+ * stored terms and signature record. For an imported lease with the signed
+ * copy uploaded, that file is served instead; `?summary=1` still returns
+ * Rentra's generated summary of the recorded terms and confirmations.
  */
 router.get('/:id/pdf', authenticate, async (req, res) => {
   try {
@@ -133,6 +175,16 @@ router.get('/:id/pdf', authenticate, async (req, res) => {
       return res
         .status(403)
         .json({ error: { message: 'Not authorized to view this agreement' } })
+    }
+
+    if (
+      agreement.source === 'imported' &&
+      agreement.documentUrl &&
+      req.query.summary !== '1'
+    ) {
+      const served = await streamSignedLease(agreement, res)
+      if (served) return
+      if (res.headersSent) return res.end()
     }
 
     const shaped = shapeAgreement(agreement, userId)

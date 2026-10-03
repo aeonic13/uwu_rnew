@@ -1,9 +1,13 @@
 # Onboarding existing tenants to an existing property
 
-Status: Phase 1 shipped 2026-10-02 (schema, onboard endpoint, invite
-router, emails, landlord flow, tenant accept page, Inbox exclusions, local
-end-to-end trial). Phase 2 and 3 items in section 8 remain open. Written
-2026-10-01, all four decisions settled 2026-10-02 (see section 10). Follows the property-centric
+Status: Phase 1 and Phase 2 shipped 2026-10-02. Phase 1: schema, onboard
+endpoint, invite router, emails, landlord flow, tenant accept page, Inbox
+exclusions, local end-to-end trial. Phase 2: hourly invite runner (expiry,
+day-7 reminder), portfolio-card confirmation count, delist prompt on finish,
+uploaded lease served through the agreement PDF route, custom shares at
+onboarding, plus the month-to-month roll-forward pulled in from Phase 3.
+Remaining Phase 3 items in section 8 stay open. Written 2026-10-01, all four
+decisions settled 2026-10-02 (see section 10). Follows the property-centric
 landlord dashboard (commit efc87da) and the competitive review of 2026-09-20,
 which flagged this as a category table stake Rentra lacks: most landlords
 adopt software mid-tenancy with tenants already in place, not at a vacancy.
@@ -259,12 +263,21 @@ Phase 1, core, about four working days:
    accept both invites in the browser, pay rent as one tenant, open a
    maintenance ticket, check the rent roll and deposits screens.
 
-Phase 2, polish, one to two days: reminder and expiry runner,
-`awaiting_tenants` on the portfolio, prompt to delist on finish, uploaded
-lease served from the PDF route, custom shares at onboarding.
+Phase 2, polish, one to two days (shipped 2026-10-02): reminder and expiry
+runner (`server/utils/tenantInviteRunner.js`, hourly, shares the
+`AUTOPAY_RUNNER=false` switch; reminder once per link a week before expiry,
+`TenantInvite.reminderSentAt`), `awaiting_tenants` count on the portfolio
+card, prompt to delist on finish, uploaded lease served from
+`GET /api/agreements/:id/pdf` (auth-gated proxy of the Cloudinary file;
+`?summary=1` returns the generated summary), custom shares at onboarding
+(`tenants[i].share`, must sum to the rent; the split is `custom` and each
+invite, preview and Pay Rent show that share). The month-to-month
+roll-forward also runs in that runner: a stand-in `endDate` within 30 days
+is moved to the next anniversary.
 
-Phase 3, later: CSV bulk import, past-payment backfill, month-to-month
-roll-forward, lease amendments.
+Phase 3, later: CSV bulk import, past-payment backfill, lease amendments
+after confirmation, and letting a tenant on two leases pick which one to
+pay (section 7).
 
 ## 9. Acceptance criteria
 

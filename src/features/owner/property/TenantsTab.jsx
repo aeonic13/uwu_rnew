@@ -16,7 +16,7 @@ import {
   Pencil,
   X,
   UserPlus,
-  ExternalLink,
+  FileText,
 } from 'lucide-react'
 import { agreementsService } from '../../../services/agreementsService'
 import { messagingService } from '../../../services/messagingService'
@@ -350,14 +350,17 @@ function leaseBadge(lease) {
 
 function LeaseCard({ lease, listingId, onRefresh, onError }) {
   const [downloading, setDownloading] = useState(false)
-  const download = async () => {
+  const download = async ({ summary = false } = {}) => {
     setDownloading(true)
     try {
-      await agreementsService.downloadPdf(lease.id)
+      await agreementsService.downloadPdf(lease.id, { summary })
+    } catch (err) {
+      onError(err?.message || 'Could not download the lease.')
     } finally {
       setDownloading(false)
     }
   }
+  const hasSignedCopy = Boolean(lease.imported && lease.documentUrl)
   const paid = lease.members.reduce((s, m) => s + m.paidThisMonth, 0)
   const badge = leaseBadge(lease)
   const confirmedMembers = lease.members.filter(m => m.user)
@@ -382,18 +385,20 @@ function LeaseCard({ lease, listingId, onRefresh, onError }) {
           {lease.imported && (
             <p className="text-xs text-gray-500 mt-1">
               Signed outside Rentra; tenants confirm the recorded terms.
-              {lease.documentUrl && (
+              {hasSignedCopy ? (
                 <>
                   {' '}
-                  <a
-                    href={lease.documentUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-brand-600 hover:underline inline-flex items-center gap-0.5"
+                  <button
+                    type="button"
+                    onClick={() => download({ summary: true })}
+                    disabled={downloading}
+                    className="text-brand-600 hover:underline inline-flex items-center gap-0.5 disabled:opacity-50"
                   >
-                    Open signed lease <ExternalLink size={11} />
-                  </a>
+                    Lease summary <FileText size={11} />
+                  </button>
                 </>
+              ) : (
+                ' No signed copy uploaded.'
               )}
             </p>
           )}
@@ -417,12 +422,16 @@ function LeaseCard({ lease, listingId, onRefresh, onError }) {
           </Link>
           <button
             type="button"
-            onClick={download}
+            onClick={() => download()}
             disabled={downloading}
             className={smallButton}
           >
             <Download size={13} />{' '}
-            {lease.imported ? 'Lease summary' : 'Lease PDF'}
+            {hasSignedCopy
+              ? 'Signed lease'
+              : lease.imported
+                ? 'Lease summary'
+                : 'Lease PDF'}
           </button>
         </div>
       </header>

@@ -4,9 +4,22 @@
  * routes/tenantInvites.js). No Prisma here so they unit test in isolation.
  */
 
+const DAY_MS = 24 * 60 * 60 * 1000
+
 export const INVITE_TTL_DAYS = 14
-export const INVITE_TTL_MS = INVITE_TTL_DAYS * 24 * 60 * 60 * 1000
+export const INVITE_TTL_MS = INVITE_TTL_DAYS * DAY_MS
+// The runner reminds a pending tenant once, this long before the link dies.
+export const REMINDER_BEFORE_DAYS = 7
+export const REMINDER_BEFORE_MS = REMINDER_BEFORE_DAYS * DAY_MS
+// A month-to-month lease's stand-in endDate is rolled forward a year once
+// it is this close to passing.
+export const ROLL_FORWARD_WINDOW_DAYS = 30
+export const ROLL_FORWARD_WINDOW_MS = ROLL_FORWARD_WINDOW_DAYS * DAY_MS
 export const MAX_HOUSEHOLD = 12
+
+/** Public accept page for an invite token. */
+export const inviteUrlFor = token =>
+  `${process.env.CLIENT_URL}/tenant-invite/${token}`
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/
@@ -79,12 +92,17 @@ const toWholeDollars = v => {
  * body = {
  *   lease: { startDate, endDate?, monthToMonth?, monthlyRent,
  *            securityDeposit, documentUrl?, documentId? },
- *   tenants: [{ firstName, lastName, email, phone? }],
+ *   tenants: [{ firstName, lastName, email, phone?, share? }],
  *   attest: true,
  * }
  *
- * Returns { ok: true, value } with normalised values, or
- * { ok: false, errors: string[] } (every problem listed, not just the first).
+ * Shares are optional whole-dollar amounts. When any tenant of a household
+ * of two or more carries one, every tenant must, and they must add up to
+ * the rent; the split is then "custom". Otherwise rent is split equally.
+ *
+ * Returns { ok: true, value } with normalised values (including
+ * `split: { mode, amounts }`), or { ok: false, errors: string[] } (every
+ * problem listed, not just the first).
  */
 export function validateOnboarding(
   body,
@@ -164,6 +182,12 @@ export function validateOnboarding(
     return { firstName, lastName, email, phone: phone || null }
   })
 
+  const split = validateShares(
+    tenants.map(t => t?.share),
+    monthlyRent,
+    errors
+  )
+
   if (errors.length) return { ok: false, errors }
   return {
     ok: true,
@@ -177,8 +201,45 @@ export function validateOnboarding(
         documentUrl,
       },
       tenants: cleanTenants,
+      split,
     },
   }
+}
+
+const hasValue = v => v !== undefined && v !== null && v !== ''
+
+/**
+ * Decide the household's rent split from the optional per-tenant shares.
+ * Pushes problems onto `errors`; returns { mode: 'equal' | 'custom',
+ * amounts: number[] }. A household of one always owes the whole rent.
+ */
+export function validateShares(rawShares, monthlyRent, errors = []) {
+  const count = rawShares.length
+  const equal = { mode: 'equal', amounts: equalShares(monthlyRent, count) }
+  if (count < 2 || !rawShares.some(hasValue)) return equal
+
+  const amounts = rawShares.map(toWholeDollars)
+  amounts.forEach((a, i) => {
+    if (!(a >= 0)) {
+      errors.push(`Tenant ${i + 1}: enter their share of the rent (0 or more).`)
+    }
+  })
+  if (amounts.every(a => a >= 0)) {
+    const sum = amounts.reduce((acc, a) => acc + a, 0)
+    if (sum !== monthlyRent) {
+      errors.push(
+        `Shares add up to $${sum.toLocaleString('en-US')}, not the $${monthlyRent.toLocaleString('en-US')} rent.`
+      )
+    }
+  }
+  // Every tenant carrying the same amount is just an equal split.
+  if (
+    amounts.every(a => a === amounts[0]) &&
+    amounts.length * amounts[0] === monthlyRent
+  ) {
+    return equal
+  }
+  return { mode: 'custom', amounts }
 }
 
 /** Each tenant's equal share of the rent, whole dollars, remainder on the first. */
@@ -192,6 +253,17 @@ export function equalShares(monthlyRent, count) {
 /** True when a pending invite's link has lapsed. */
 export function inviteExpired(invite, now = new Date()) {
   return invite?.status === 'pending' && new Date(invite.expiresAt) < now
+}
+
+/**
+ * True when a pending invite is inside its final week and has not been
+ * reminded about this link yet (resend clears reminderSentAt).
+ */
+export function inviteNeedsReminder(invite, now = new Date()) {
+  if (invite?.status !== 'pending' || invite.reminderSentAt) return false
+  const expires = new Date(invite.expiresAt)
+  if (expires <= now) return false
+  return expires.getTime() - now.getTime() <= REMINDER_BEFORE_MS
 }
 
 /** Which invites can be resent: anything not accepted or cancelled. */

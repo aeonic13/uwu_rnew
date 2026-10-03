@@ -38,6 +38,7 @@ import utilitiesRoutes from './routes/utilities.js'
 import rentRoutes from './routes/rent.js'
 import legalRoutes from './routes/legal.js'
 import { startAutopayRunner } from './utils/autopay.js'
+import { startTenantInviteRunner } from './utils/tenantInviteRunner.js'
 import depositsRoutes from './routes/deposits.js'
 import expensesRoutes from './routes/expenses.js'
 import documentsRoutes from './routes/documents.js'
@@ -198,6 +199,9 @@ app.listen(PORT, '0.0.0.0', () => {
   // Rent autopay: hourly check for schedules whose run day has arrived.
   // Set AUTOPAY_RUNNER=false to disable (tests, local dev without email).
   startAutopayRunner()
+  // Tenant invites: hourly expiry, day-7 reminders and the month-to-month
+  // lease roll-forward. Same AUTOPAY_RUNNER=false switch.
+  startTenantInviteRunner()
 })
 
 export default app

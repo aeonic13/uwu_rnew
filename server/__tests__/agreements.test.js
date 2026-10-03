@@ -1,3 +1,4 @@
+import { signedLeaseFilename } from '../utils/agreements.js'
 import { describe, it, expect } from 'vitest'
 import {
   signatureState,
@@ -190,5 +191,26 @@ describe('defaultLeaseTerms', () => {
     expect(t.monthlyRent).toBe(1500)
     expect(t.securityDeposit).toBe(1500)
     expect(t.terms.utilities).toMatch(/utilities/i)
+  })
+})
+
+describe('signedLeaseFilename', () => {
+  it('names the download after the lease with the extension from the content type', () => {
+    expect(signedLeaseFilename({ id: 'ag1' }, 'application/pdf')).toBe(
+      'signed-lease-ag1.pdf'
+    )
+    expect(
+      signedLeaseFilename({ id: 'ag1' }, 'image/jpeg; charset=binary')
+    ).toBe('signed-lease-ag1.jpg')
+  })
+
+  it('falls back to the upload URL extension, then pdf', () => {
+    expect(
+      signedLeaseFilename(
+        { id: 'ag2', documentUrl: 'https://cdn.example/x/doc_1.DOCX?v=2' },
+        'application/octet-stream'
+      )
+    ).toBe('signed-lease-ag2.docx')
+    expect(signedLeaseFilename({ id: 'ag3' }, '')).toBe('signed-lease-ag3.pdf')
   })
 })

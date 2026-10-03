@@ -4,6 +4,8 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import OnboardTenantsFlow, {
   validateLease,
   validateTenants,
+  validateShares,
+  equalShares,
 } from './OnboardTenantsFlow'
 import { propertiesService } from '../../../services/propertiesService'
 
@@ -104,6 +106,32 @@ describe('validateLease / validateTenants', () => {
   })
 })
 
+describe('validateShares / equalShares', () => {
+  const two = [
+    { key: 'a', share: '1500' },
+    { key: 'b', share: '900' },
+  ]
+
+  it('ignores shares unless the split is custom and the household has two or more', () => {
+    expect(validateShares(two, 2400, 'equal')).toEqual({})
+    expect(validateShares([two[0]], 2400, 'custom')).toEqual({})
+  })
+
+  it('requires every share and a total that matches the rent', () => {
+    expect(validateShares(two, 2400, 'custom')).toEqual({})
+    expect(validateShares(two, 2600, 'custom')).toEqual({
+      total: 'Shares add up to $2,400, not the $2,600 rent.',
+    })
+    expect(
+      validateShares([two[0], { key: 'b', share: '' }], 2400, 'custom')
+    ).toEqual({ b: 'Enter their share' })
+  })
+
+  it('puts the remainder of an equal split on the first tenant', () => {
+    expect(equalShares(2500, 3)).toEqual([834, 833, 833])
+  })
+})
+
 describe('OnboardTenantsFlow', () => {
   beforeEach(() => {
     propertiesService.getProperty.mockReset()
@@ -181,6 +209,61 @@ describe('OnboardTenantsFlow', () => {
     expect(
       screen.getByRole('button', { name: /stop taking applications/i })
     ).toBeInTheDocument()
+  })
+
+  it('sends custom shares when the landlord sets each tenant’s share', async () => {
+    propertiesService.onboard.mockResolvedValue({
+      agreementId: 'ag9',
+      invites: [],
+    })
+    renderFlow()
+    await screen.findByRole('heading', { name: 'Add current tenants' })
+    fireEvent.change(screen.getByLabelText('Lease start'), {
+      target: { value: '2026-08-01' },
+    })
+    fireEvent.click(screen.getByLabelText('This lease is month-to-month'))
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }))
+
+    await screen.findByText('Tenant 1')
+    fireEvent.click(screen.getByRole('button', { name: /add another tenant/i }))
+    const first = screen.getAllByLabelText('First name')
+    const last = screen.getAllByLabelText('Last name')
+    const email = screen.getAllByLabelText('Email')
+    fireEvent.change(first[0], { target: { value: 'Emma' } })
+    fireEvent.change(last[0], { target: { value: 'Wilson' } })
+    fireEvent.change(email[0], { target: { value: 'emma@example.com' } })
+    fireEvent.change(first[1], { target: { value: 'Alex' } })
+    fireEvent.change(last[1], { target: { value: 'Johnson' } })
+    fireEvent.change(email[1], { target: { value: 'alex@example.com' } })
+
+    // Equal by default: $1,300 each of the $2,600 listing price.
+    expect(screen.getAllByText('$1,300/mo').length).toBe(2)
+
+    fireEvent.click(screen.getByLabelText('Set each share'))
+    fireEvent.change(screen.getByLabelText('Emma Wilson share'), {
+      target: { value: '1600' },
+    })
+    fireEvent.change(screen.getByLabelText('Alex Johnson share'), {
+      target: { value: '900' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }))
+    expect(
+      await screen.findByText('Shares add up to $2,500, not the $2,600 rent.')
+    ).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText('Alex Johnson share'), {
+      target: { value: '1000' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }))
+    expect(await screen.findByText('Household')).toBeInTheDocument()
+    expect(screen.getByText('$1,600/mo')).toBeInTheDocument()
+    expect(screen.getByText('$1,000/mo')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('checkbox'))
+    fireEvent.click(screen.getByRole('button', { name: /send invites/i }))
+    await waitFor(() => expect(propertiesService.onboard).toHaveBeenCalled())
+    const [, body] = propertiesService.onboard.mock.calls[0]
+    expect(body.tenants.map(t => t.share)).toEqual([1600, 1000])
   })
 
   it('blocks a property that already has a lease in progress', async () => {

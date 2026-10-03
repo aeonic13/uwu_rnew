@@ -157,3 +157,27 @@ export function defaultLeaseTerms(listing, application) {
     },
   }
 }
+
+const EXT_BY_TYPE = {
+  'application/pdf': 'pdf',
+  'application/msword': 'doc',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+    'docx',
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'image/heic': 'heic',
+}
+
+/**
+ * Download name for the landlord's uploaded copy of an imported lease,
+ * extension from the file's content type (routes/agreements.js GET :id/pdf).
+ */
+export function signedLeaseFilename(agreement, contentType = '') {
+  const type = String(contentType).split(';')[0].trim().toLowerCase()
+  const fromUrl = (String(agreement?.documentUrl || '').match(
+    /\.([a-z0-9]{2,5})(?:\?|#|$)/i
+  ) || [])[1]
+  const ext = EXT_BY_TYPE[type] || (fromUrl ? fromUrl.toLowerCase() : 'pdf')
+  return `signed-lease-${agreement?.id || 'lease'}.${ext}`
+}

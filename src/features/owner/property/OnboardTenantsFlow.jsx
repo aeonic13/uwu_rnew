@@ -13,6 +13,7 @@ import {
   Users,
   FileText,
   Send,
+  Scale,
 } from 'lucide-react'
 import { useAuth } from '../../../contexts/AuthContext'
 import { propertiesService } from '../../../services/propertiesService'
@@ -35,7 +36,44 @@ const emptyTenant = () => ({
   lastName: '',
   email: '',
   phone: '',
+  share: '',
 })
+
+/** Each tenant's equal share of the rent, whole dollars, remainder on the first. */
+export function equalShares(monthlyRent, count) {
+  const rent = Math.round(Number(monthlyRent) || 0)
+  if (!(count > 0)) return []
+  const base = Math.floor(rent / count)
+  const remainder = rent - base * count
+  return Array.from({ length: count }, (_, i) => base + (i < remainder ? 1 : 0))
+}
+
+/**
+ * Problems with a custom split: every tenant needs a whole-dollar share and
+ * they must add up to the rent. Returns {} when the split is equal or the
+ * household is one person.
+ */
+export function validateShares(tenants, monthlyRent, splitMode) {
+  if (splitMode !== 'custom' || tenants.length < 2) return {}
+  const errors = {}
+  let sum = 0
+  let complete = true
+  tenants.forEach(t => {
+    const raw = String(t.share ?? '').trim()
+    const n = Number(raw)
+    if (raw === '' || !Number.isFinite(n) || n < 0) {
+      errors[t.key] = 'Enter their share'
+      complete = false
+    } else {
+      sum += Math.round(n)
+    }
+  })
+  const rent = Math.round(Number(monthlyRent) || 0)
+  if (complete && sum !== rent) {
+    errors.total = `Shares add up to ${money(sum)}, not the ${money(rent)} rent.`
+  }
+  return errors
+}
 
 /** Problems with the lease step, keyed by field. */
 export function validateLease(lease) {
@@ -136,6 +174,7 @@ export default function OnboardTenantsFlow() {
   })
   const [leaseFile, setLeaseFile] = useState(null)
   const [tenants, setTenants] = useState([emptyTenant()])
+  const [splitMode, setSplitMode] = useState('equal')
   const [attest, setAttest] = useState(false)
   const [touched, setTouched] = useState(false)
 
@@ -179,6 +218,18 @@ export default function OnboardTenantsFlow() {
     () => validateTenants(tenants, user?.email),
     [tenants, user?.email]
   )
+  const shareErrors = useMemo(
+    () => validateShares(tenants, lease.monthlyRent, splitMode),
+    [tenants, lease.monthlyRent, splitMode]
+  )
+  const customSplit = splitMode === 'custom' && tenants.length > 1
+  const shownShares = useMemo(
+    () =>
+      customSplit
+        ? tenants.map(t => Math.round(Number(t.share) || 0))
+        : equalShares(lease.monthlyRent, tenants.length),
+    [customSplit, tenants, lease.monthlyRent]
+  )
 
   const setLeaseField = (field, value) =>
     setLease(prev => ({ ...prev, [field]: value }))
@@ -190,7 +241,12 @@ export default function OnboardTenantsFlow() {
   const next = () => {
     setTouched(true)
     if (step === 0 && Object.keys(leaseErrors).length) return
-    if (step === 1 && Object.keys(tenantErrors).length) return
+    if (
+      step === 1 &&
+      (Object.keys(tenantErrors).length || Object.keys(shareErrors).length)
+    ) {
+      return
+    }
     setTouched(false)
     setStep(s => Math.min(s + 1, STEPS.length - 1))
   }
@@ -230,6 +286,7 @@ export default function OnboardTenantsFlow() {
           lastName: t.lastName.trim(),
           email: t.email.trim(),
           phone: t.phone.trim() || undefined,
+          share: customSplit ? Math.round(Number(t.share)) : undefined,
         })),
         attest: true,
       })
@@ -239,7 +296,7 @@ export default function OnboardTenantsFlow() {
     } finally {
       setSubmitting(false)
     }
-  }, [attest, leaseFile, property, id, lease, tenants])
+  }, [attest, leaseFile, property, id, lease, tenants, customSplit])
 
   const stopApplications = async () => {
     setDelisting(true)
@@ -490,7 +547,7 @@ export default function OnboardTenantsFlow() {
                 <Field
                   label="Monthly rent"
                   error={showLeaseErrors && leaseErrors.monthlyRent}
-                  hint="Total for the unit. Split equally between tenants for now."
+                  hint="Total for the unit. You can split it between tenants on the next step."
                 >
                   <div className="relative">
                     <span className="absolute left-3 top-2 text-gray-400 text-sm">
@@ -650,6 +707,98 @@ export default function OnboardTenantsFlow() {
                   <Plus size={15} /> Add another tenant
                 </button>
               )}
+
+              {tenants.length > 1 && (
+                <fieldset className="border border-gray-200 rounded-lg p-4">
+                  <legend className="text-sm font-semibold text-gray-900 px-1 flex items-center gap-1.5">
+                    <Scale size={14} /> Rent split
+                  </legend>
+                  <p className="text-xs text-gray-500 mb-3">
+                    {money(lease.monthlyRent)}/mo between {tenants.length}{' '}
+                    tenants. Each tenant sees their own share on Pay Rent.
+                  </p>
+                  <div className="flex flex-wrap gap-4 text-sm text-gray-700">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="splitMode"
+                        value="equal"
+                        checked={splitMode === 'equal'}
+                        onChange={() => setSplitMode('equal')}
+                        className="border-gray-300 text-brand-500 focus:ring-brand-500"
+                      />
+                      Split equally
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="splitMode"
+                        value="custom"
+                        checked={splitMode === 'custom'}
+                        onChange={() => setSplitMode('custom')}
+                        className="border-gray-300 text-brand-500 focus:ring-brand-500"
+                      />
+                      Set each share
+                    </label>
+                  </div>
+                  <ul className="mt-3 divide-y divide-gray-100">
+                    {tenants.map((t, i) => {
+                      const err = showTenantErrors && shareErrors[t.key]
+                      const label =
+                        [t.firstName, t.lastName].filter(Boolean).join(' ') ||
+                        `Tenant ${i + 1}`
+                      return (
+                        <li
+                          key={t.key}
+                          className="py-2 flex items-center justify-between gap-3 text-sm"
+                        >
+                          <span className="text-gray-900 truncate">
+                            {label}
+                          </span>
+                          {customSplit ? (
+                            <span className="relative w-32">
+                              <span className="absolute left-3 top-2 text-gray-400 text-sm">
+                                $
+                              </span>
+                              <input
+                                type="number"
+                                min="0"
+                                step="1"
+                                inputMode="numeric"
+                                aria-label={`${label} share`}
+                                value={t.share}
+                                onChange={e =>
+                                  setTenantField(t.key, 'share', e.target.value)
+                                }
+                                className={`${inputClass(err)} pl-7`}
+                              />
+                            </span>
+                          ) : (
+                            <span className="font-medium text-gray-900">
+                              {money(shownShares[i])}/mo
+                            </span>
+                          )}
+                        </li>
+                      )
+                    })}
+                  </ul>
+                  {customSplit && (
+                    <p
+                      className={`text-xs mt-2 ${
+                        showTenantErrors && shareErrors.total
+                          ? 'text-red-600'
+                          : 'text-gray-500'
+                      }`}
+                    >
+                      {showTenantErrors && shareErrors.total
+                        ? shareErrors.total
+                        : `Entered ${money(
+                            shownShares.reduce((a, b) => a + b, 0)
+                          )} of ${money(lease.monthlyRent)}.`}
+                    </p>
+                  )}
+                </fieldset>
+              )}
             </div>
           )}
 
@@ -673,9 +822,9 @@ export default function OnboardTenantsFlow() {
                   <dd className="text-gray-900">
                     {money(lease.monthlyRent)}
                     {tenants.length > 1 &&
-                      ` · ${money(
-                        Math.floor(Number(lease.monthlyRent) / tenants.length)
-                      )} each`}
+                      (customSplit
+                        ? ' · custom split'
+                        : ` · ${money(shownShares[0])} each`)}
                   </dd>
                   <dt className="text-gray-500">Deposit held</dt>
                   <dd className="text-gray-900">
@@ -692,12 +841,22 @@ export default function OnboardTenantsFlow() {
                   Household
                 </h2>
                 <ul className="divide-y divide-gray-100 border-t border-b border-gray-100">
-                  {tenants.map(t => (
-                    <li key={t.key} className="py-2 text-sm">
-                      <span className="font-medium text-gray-900">
-                        {t.firstName} {t.lastName}
+                  {tenants.map((t, i) => (
+                    <li
+                      key={t.key}
+                      className="py-2 text-sm flex items-center justify-between gap-3"
+                    >
+                      <span className="min-w-0 truncate">
+                        <span className="font-medium text-gray-900">
+                          {t.firstName} {t.lastName}
+                        </span>
+                        <span className="text-gray-500 ml-2">{t.email}</span>
                       </span>
-                      <span className="text-gray-500 ml-2">{t.email}</span>
+                      {tenants.length > 1 && (
+                        <span className="text-gray-700 whitespace-nowrap">
+                          {money(shownShares[i])}/mo
+                        </span>
+                      )}
                     </li>
                   ))}
                 </ul>

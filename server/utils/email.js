@@ -805,7 +805,8 @@ const leaseDate = d =>
 
 /**
  * "<Landlord> added you as a tenant at <address> on Rentra": the lease facts
- * and one button to the public accept page. Also used for resends.
+ * and one button to the public accept page. Also used for resends, and
+ * (with `reminder: true`) by the hourly runner a week before the link dies.
  */
 export async function sendTenantInvitation({
   invite,
@@ -815,6 +816,7 @@ export async function sendTenantInvitation({
   share,
   householdSize,
   inviteUrl,
+  reminder = false,
 }) {
   const address = listing.streetAddress || listing.location || listing.title
   const term = lease.monthToMonth
@@ -822,9 +824,17 @@ export async function sendTenantInvitation({
     : `${leaseDate(lease.startDate)} – ${leaseDate(lease.endDate)}`
   const expires = leaseDate(invite.expiresAt)
   const html = wrap(`
-      <h2 style="color: ${BRAND};">${landlordName} added you as a tenant on Rentra</h2>
+      <h2 style="color: ${BRAND};">${
+        reminder
+          ? `Reminder: confirm your lease at ${address}`
+          : `${landlordName} added you as a tenant on Rentra`
+      }</h2>
       <p>Hi ${invite.firstName},</p>
-      <p><strong>${landlordName}</strong> uses Rentra to manage <strong>${address}</strong> and has added you as a current tenant there. Accept to pay rent, split it with housemates, set up autopay and send maintenance requests from one place.</p>
+      ${
+        reminder
+          ? `<p>Your invitation from <strong>${landlordName}</strong> to join <strong>${address}</strong> on Rentra is still waiting, and the link expires on <strong>${expires}</strong>. Accept to pay rent, split it with housemates, set up autopay and send maintenance requests from one place.</p>`
+          : `<p><strong>${landlordName}</strong> uses Rentra to manage <strong>${address}</strong> and has added you as a current tenant there. Accept to pay rent, split it with housemates, set up autopay and send maintenance requests from one place.</p>`
+      }
       <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px 16px; margin: 20px 0;">
         <p style="margin: 0 0 6px;"><strong>Property:</strong> ${listing.title}</p>
         <p style="margin: 0 0 6px;"><strong>Lease term:</strong> ${term}</p>
@@ -841,10 +851,17 @@ export async function sendTenantInvitation({
     `)
   return sendEmail({
     to: invite.email,
-    subject: `${landlordName} added you as a tenant at ${address}`,
+    subject: reminder
+      ? `Reminder: confirm your lease at ${address} by ${expires}`
+      : `${landlordName} added you as a tenant at ${address}`,
     html,
-    text: `Hi ${invite.firstName}, ${landlordName} added you as a current tenant at ${address} on Rentra. Lease term: ${term}. Monthly rent: ${dollars(lease.monthlyRent)}. Deposit on file: ${dollars(lease.securityDeposit)}. Review and accept: ${inviteUrl} (expires ${expires}).`,
+    text: `Hi ${invite.firstName}, ${reminder ? 'reminder: ' : ''}${landlordName} added you as a current tenant at ${address} on Rentra. Lease term: ${term}. Monthly rent: ${dollars(lease.monthlyRent)}. Deposit on file: ${dollars(lease.securityDeposit)}. Review and accept: ${inviteUrl} (expires ${expires}).`,
   })
+}
+
+/** The same invitation, framed as a reminder (utils/tenantInviteRunner.js). */
+export function sendTenantInviteReminder(args) {
+  return sendTenantInvitation({ ...args, reminder: true })
 }
 
 /** Tell the landlord a tenant confirmed the imported lease. */

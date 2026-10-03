@@ -558,17 +558,20 @@ model AgreementSigner {
 // rows when the tenant accepts and confirms the lease terms. Mirrors the
 // cosigner invite pattern: secret token, expiry, public accept/decline.
 model TenantInvite {
-  id          String             @id @default(cuid())
-  token       String             @unique
-  email       String
-  firstName   String
-  lastName    String
-  phone       String?
-  status      TenantInviteStatus @default(pending)
-  expiresAt   DateTime
-  respondedAt DateTime?
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
+  id             String             @id @default(cuid())
+  token          String             @unique
+  email          String
+  firstName      String
+  lastName       String
+  phone          String?
+  status         TenantInviteStatus @default(pending)
+  expiresAt      DateTime
+  respondedAt    DateTime?
+  // When the day-7 reminder went out (utils/tenantInviteRunner.js); reset
+  // on resend so the fresh link gets its own reminder.
+  reminderSentAt DateTime?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
 
   listingId      String
   listing        Listing     @relation(fields: [listingId], references: [id], onDelete: Cascade)

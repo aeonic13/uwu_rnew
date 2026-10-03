@@ -7,7 +7,6 @@ import {
   AlertCircle,
   Download,
   Pen,
-  ExternalLink,
 } from 'lucide-react'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import { agreementsService } from '../../services/agreementsService'
@@ -79,10 +78,12 @@ function AgreementView() {
 
   const [isDownloading, setIsDownloading] = useState(false)
 
-  const handleDownload = async () => {
+  // Imported lease with the signed copy uploaded: the main download is that
+  // file; Rentra's generated summary stays available separately.
+  const handleDownload = async ({ summary = false } = {}) => {
     setIsDownloading(true)
     try {
-      await agreementsService.downloadPdf(agreementId)
+      await agreementsService.downloadPdf(agreementId, { summary })
     } catch (err) {
       console.error('Failed to download lease PDF:', err)
     } finally {
@@ -141,10 +142,14 @@ function AgreementView() {
             </h1>
           </div>
           <button
-            onClick={handleDownload}
+            onClick={() => handleDownload()}
             disabled={isDownloading}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors disabled:opacity-50"
-            aria-label="Download lease PDF"
+            aria-label={
+              imported && agreement.documentUrl
+                ? 'Download signed lease'
+                : 'Download lease PDF'
+            }
           >
             <Download size={20} className="text-gray-600" />
           </button>
@@ -228,15 +233,30 @@ function AgreementView() {
               terms, entered by the landlord and confirmed by each tenant; the
               signed lease itself is the governing document.
             </p>
-            {agreement.documentUrl && (
-              <a
-                href={agreement.documentUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1 mt-2 text-brand-600 font-medium hover:underline"
-              >
-                Open the signed lease <ExternalLink size={14} />
-              </a>
+            {agreement.documentUrl ? (
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
+                <button
+                  type="button"
+                  onClick={() => handleDownload()}
+                  disabled={isDownloading}
+                  className="inline-flex items-center gap-1 text-brand-600 font-medium hover:underline disabled:opacity-50"
+                >
+                  <Download size={14} /> Download the signed lease
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDownload({ summary: true })}
+                  disabled={isDownloading}
+                  className="inline-flex items-center gap-1 text-gray-600 hover:underline disabled:opacity-50"
+                >
+                  <FileText size={14} /> Rentra&apos;s summary
+                </button>
+              </div>
+            ) : (
+              <p className="text-xs text-gray-500 mt-2">
+                The landlord has not uploaded the signed copy. The download
+                above is Rentra&apos;s summary of the recorded terms.
+              </p>
             )}
           </div>
         )}

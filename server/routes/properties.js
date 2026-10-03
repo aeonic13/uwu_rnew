@@ -13,7 +13,7 @@ import {
   portfolioTotals,
   collectedThisMonth,
 } from '../utils/portfolio.js'
-import { validateOnboarding, equalShares } from '../utils/onboarding.js'
+import { validateOnboarding } from '../utils/onboarding.js'
 import { newInviteToken, emailInvite, presentInvite } from './tenantInvites.js'
 
 /**
@@ -315,11 +315,12 @@ router.get('/:id', authenticate, requireUserType('owner'), async (req, res) => {
  * the current household. One transaction creates the imported Agreement
  * (landlord block signed, one unattached tenant block per person), one
  * onboarded Application per tenant and one TenantInvite each; emails go
- * out afterwards. Rent is split equally in v1.
+ * out afterwards. Rent is split equally unless the landlord entered each
+ * tenant's share.
  *
  * body: { lease: { startDate, endDate?, monthToMonth?, monthlyRent,
  *                  securityDeposit, documentUrl? },
- *         tenants: [{ firstName, lastName, email, phone? }],
+ *         tenants: [{ firstName, lastName, email, phone?, share? }],
  *         attest: true }
  */
 router.post(
@@ -386,7 +387,7 @@ router.post(
           error: { message: checked.errors[0], details: checked.errors },
         })
       }
-      const { lease, tenants } = checked.value
+      const { lease, tenants, split } = checked.value
 
       // Tenants need tenant accounts: an address already used by a landlord
       // or co-signer cannot accept.
@@ -492,21 +493,21 @@ router.post(
           data: { agreementId: agreement.id },
         })
 
-        // Households of two or more start on an equal split so each tenant's
-        // Pay Rent shows their share, not the whole rent. Shares are named
-        // after the invites and attached to users as each tenant accepts.
+        // Households of two or more start on a split (equal, or the shares
+        // the landlord entered) so each tenant's Pay Rent shows their share,
+        // not the whole rent. Shares are named after the invites and
+        // attached to users as each tenant accepts.
         if (tenants.length > 1) {
-          const amounts = equalShares(lease.monthlyRent, tenants.length)
           await tx.rentSplit.create({
             data: {
               agreementId: agreement.id,
               createdById: req.user.id,
               total: lease.monthlyRent,
-              splitMode: 'equal',
+              splitMode: split.mode,
               shares: {
                 create: tenants.map((t, i) => ({
                   name: `${t.firstName} ${t.lastName}`,
-                  amount: amounts[i],
+                  amount: split.amounts[i],
                   userId: null,
                 })),
               },
@@ -534,13 +535,19 @@ router.post(
 
       // Emails after the commit so a mail failure never rolls back the lease.
       const emailed = []
-      for (const invite of created.invites) {
+      for (let i = 0; i < created.invites.length; i += 1) {
+        const invite = created.invites[i]
         const sent = await emailInvite(invite, {
           owner: req.user,
           listing,
           agreement: created.agreement,
+          share: split.amounts[i],
         })
-        emailed.push({ ...presentInvite(invite), emailSent: sent })
+        emailed.push({
+          ...presentInvite(invite),
+          share: split.amounts[i],
+          emailSent: sent,
+        })
       }
 
       res.status(201).json({

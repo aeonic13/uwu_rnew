@@ -246,8 +246,10 @@ export default function TenantInviteAccept() {
               {money(lease.monthlyRent)}/mo
               {lease.householdSize > 1 && (
                 <span className="text-gray-500">
-                  · your share {money(lease.share)}, split {lease.householdSize}{' '}
-                  ways
+                  · your share {money(lease.share)}
+                  {lease.splitMode === 'custom'
+                    ? ` of ${money(lease.monthlyRent)}`
+                    : `, split ${lease.householdSize} ways`}
                 </span>
               )}
             </div>

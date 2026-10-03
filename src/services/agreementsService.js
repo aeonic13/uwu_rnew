@@ -29,20 +29,47 @@ export const agreementsService = {
     return res.agreement
   },
 
-  /** Download the agreement PDF and save it via the browser. */
-  async downloadPdf(id) {
+  /**
+   * Download the lease and save it via the browser. For an imported lease
+   * with the signed copy uploaded, the server sends that file; pass
+   * `{ summary: true }` to get Rentra's generated summary of the recorded
+   * terms and confirmations instead.
+   */
+  async downloadPdf(id, { summary = false } = {}) {
     const blob = await apiClient.get(`/agreements/${id}/pdf`, {
       responseType: 'blob',
+      params: summary ? { summary: '1' } : undefined,
     })
+    const ext = blobExtension(blob?.type)
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `rentra-lease-${id}.pdf`
+    link.download = summary
+      ? `rentra-lease-summary-${id}.pdf`
+      : `rentra-lease-${id}.${ext}`
     document.body.appendChild(link)
     link.click()
     link.remove()
     URL.revokeObjectURL(url)
   },
+}
+
+const EXT_BY_TYPE = {
+  'application/pdf': 'pdf',
+  'application/msword': 'doc',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+    'docx',
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+}
+
+function blobExtension(type) {
+  const key = String(type || '')
+    .split(';')[0]
+    .trim()
+    .toLowerCase()
+  return EXT_BY_TYPE[key] || 'pdf'
 }
 
 export default agreementsService

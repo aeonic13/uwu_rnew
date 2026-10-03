@@ -1,12 +1,15 @@
 import { describe, it, expect } from 'vitest'
 import {
   validateOnboarding,
+  validateShares,
   nextAnniversary,
   parseDateOnly,
   equalShares,
   inviteExpired,
+  inviteNeedsReminder,
   canResend,
   INVITE_TTL_DAYS,
+  REMINDER_BEFORE_DAYS,
 } from '../utils/onboarding.js'
 
 const NOW = new Date('2026-10-02T18:00:00Z')
@@ -59,7 +62,124 @@ describe('parseDateOnly / nextAnniversary', () => {
   })
 })
 
+describe('validateShares', () => {
+  it('splits equally when no tenant carries a share', () => {
+    const errors = []
+    expect(validateShares([undefined, ''], 2401, errors)).toEqual({
+      mode: 'equal',
+      amounts: [1201, 1200],
+    })
+    expect(errors).toEqual([])
+  })
+
+  it('accepts custom whole-dollar shares that add up to the rent', () => {
+    const errors = []
+    expect(validateShares(['1500', 900], 2400, errors)).toEqual({
+      mode: 'custom',
+      amounts: [1500, 900],
+    })
+    expect(errors).toEqual([])
+  })
+
+  it('collapses identical shares back to an equal split', () => {
+    expect(validateShares([1200, 1200], 2400).mode).toBe('equal')
+  })
+
+  it('rejects a missing share or a total that misses the rent', () => {
+    const errors = []
+    validateShares([1500, ''], 2400, errors)
+    expect(errors).toEqual([
+      'Tenant 2: enter their share of the rent (0 or more).',
+    ])
+    const more = []
+    validateShares([1500, 1000], 2400, more)
+    expect(more).toEqual(['Shares add up to $2,500, not the $2,400 rent.'])
+  })
+
+  it('ignores a share on a household of one', () => {
+    expect(validateShares([700], 2400)).toEqual({
+      mode: 'equal',
+      amounts: [2400],
+    })
+  })
+})
+
+describe('inviteNeedsReminder', () => {
+  const day = 24 * 60 * 60 * 1000
+  const pending = daysLeft => ({
+    status: 'pending',
+    reminderSentAt: null,
+    expiresAt: new Date(NOW.getTime() + daysLeft * day),
+  })
+
+  it('fires once the final week starts and not before', () => {
+    expect(inviteNeedsReminder(pending(REMINDER_BEFORE_DAYS + 1), NOW)).toBe(
+      false
+    )
+    expect(inviteNeedsReminder(pending(REMINDER_BEFORE_DAYS), NOW)).toBe(true)
+    expect(inviteNeedsReminder(pending(2), NOW)).toBe(true)
+  })
+
+  it('skips reminded, lapsed and settled invites', () => {
+    expect(
+      inviteNeedsReminder({ ...pending(3), reminderSentAt: NOW }, NOW)
+    ).toBe(false)
+    expect(inviteNeedsReminder(pending(-1), NOW)).toBe(false)
+    expect(
+      inviteNeedsReminder({ ...pending(3), status: 'accepted' }, NOW)
+    ).toBe(false)
+  })
+})
+
 describe('validateOnboarding', () => {
+  it('carries custom shares through as a custom split', () => {
+    const result = validateOnboarding(
+      good({
+        tenants: [
+          {
+            firstName: 'Emma',
+            lastName: 'Wilson',
+            email: 'emma@example.com',
+            share: 1500,
+          },
+          {
+            firstName: 'Alex',
+            lastName: 'Johnson',
+            email: 'alex@example.com',
+            share: '900',
+          },
+        ],
+      }),
+      { ownerEmail: 'jen@example.com', now: NOW }
+    )
+    expect(result.ok).toBe(true)
+    expect(result.value.split).toEqual({ mode: 'custom', amounts: [1500, 900] })
+  })
+
+  it('lists a share mismatch alongside other problems', () => {
+    const result = validateOnboarding(
+      good({
+        tenants: [
+          {
+            firstName: 'Emma',
+            lastName: 'Wilson',
+            email: 'emma@example.com',
+            share: 1500,
+          },
+          { firstName: '', lastName: 'Johnson', email: 'alex@example.com' },
+        ],
+      }),
+      { ownerEmail: 'jen@example.com', now: NOW }
+    )
+    expect(result.ok).toBe(false)
+    expect(result.errors).toContain(
+      'Tenant 2: first and last name are required.'
+    )
+    expect(result.errors).toContain(
+      'Tenant 2: enter their share of the rent (0 or more).'
+    )
+  })
+
   it('normalises a valid request', () => {
     const result = validateOnboarding(good(), {
       ownerEmail: 'jen@example.com',
