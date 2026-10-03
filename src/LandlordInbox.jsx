@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import PropTypes from 'prop-types'
 import { dashboardService } from './services/dashboardService'
 import { applicationsService } from './services/applicationsService'
 import {
@@ -157,32 +158,32 @@ const stageBadge = key => {
   )
 }
 
-const GroupApplicationsTab = () => {
+/** Individual vs roommate-group marker, shown on every card and detail. */
+function KindBadge({ kind }) {
+  if (kind === 'group') {
+    return (
+      <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
+        <Users size={11} /> Group
+      </span>
+    )
+  }
+  return (
+    <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-brand-100 text-brand-600">
+      <User size={11} /> Individual
+    </span>
+  )
+}
+
+KindBadge.propTypes = { kind: PropTypes.oneOf(['individual', 'group']) }
+
+/**
+ * A roommate group's review screen: members, guarantors, combined income,
+ * approve-the-household, then the joint lease's signature progress.
+ */
+function GroupDetail({ app, onBack, onReload }) {
   const navigate = useNavigate()
-  // Real grouped applications only (no demo rows): an empty inbox shows an
-  // honest empty state instead of example groups.
-  const [groups, setGroups] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [selectedGroup, setSelectedGroup] = useState(null)
   const [approving, setApproving] = useState(false)
   const [approveError, setApproveError] = useState(null)
-
-  const loadGroups = () =>
-    dashboardService
-      .getInbox()
-      .then(data => {
-        const next = Array.isArray(data?.groups) ? data.groups : []
-        setGroups(next)
-        setSelectedGroup(prev =>
-          prev ? next.find(g => g.id === prev.id) || null : prev
-        )
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false))
-
-  useEffect(() => {
-    loadGroups()
-  }, [])
 
   const guarStatus = v => {
     if (v === 'verified')
@@ -207,7 +208,7 @@ const GroupApplicationsTab = () => {
     setApproveError(null)
     try {
       await applicationsService.updateStatus(lead.applicationId, 'approved')
-      await loadGroups()
+      await onReload()
     } catch (err) {
       setApproveError(err.message || 'Could not approve the group.')
     } finally {
@@ -215,8 +216,7 @@ const GroupApplicationsTab = () => {
     }
   }
 
-  if (selectedGroup) {
-    const app = selectedGroup
+  if (app) {
     const allVerified = app.members.every(
       m => !m.guarantor || m.guarantor.verificationStatus === 'verified'
     )
@@ -233,10 +233,10 @@ const GroupApplicationsTab = () => {
     return (
       <div className="p-4 pb-24 space-y-5">
         <button
-          onClick={() => setSelectedGroup(null)}
+          onClick={onBack}
           className="flex items-center text-brand-500 text-sm font-medium mb-2"
         >
-          ← Back to Group Applications
+          ← Back to inbox
         </button>
 
         {/* Header */}
@@ -248,7 +248,10 @@ const GroupApplicationsTab = () => {
                 {app.groupName}
               </span>
             </div>
-            {stageBadge(app.status)}
+            <div className="flex items-center gap-2">
+              <KindBadge kind="group" />
+              {stageBadge(app.status)}
+            </div>
           </div>
           <p className="text-sm text-purple-700">{app.propertyTitle}</p>
           <div className="flex gap-3 mt-2 text-xs text-purple-600">
@@ -530,80 +533,331 @@ const GroupApplicationsTab = () => {
     )
   }
 
+  return null
+}
+
+GroupDetail.propTypes = {
+  app: PropTypes.object,
+  onBack: PropTypes.func.isRequired,
+  onReload: PropTypes.func.isRequired,
+}
+
+/** One roommate group on the merged inbox list. */
+function GroupCard({ app, onOpen }) {
+  const totalGuarantors = app.members.filter(m => m.guarantor).length
   return (
-    <div className="p-4 pb-20 space-y-4">
-      <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
-        <p className="font-semibold text-purple-800 mb-1">Group Applications</p>
-        <p className="text-sm text-purple-700">
-          Review combined income &amp; guarantors, approve the group, and one
-          joint lease goes out for every member to sign.
-        </p>
+    <div
+      onClick={() => onOpen(app)}
+      className="bg-white border border-purple-200 rounded-lg p-4 cursor-pointer hover:border-purple-400 transition-colors"
+      data-testid={`inbox-group-${app.id}`}
+    >
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center">
+          <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mr-4">
+            <Users size={20} className="text-purple-600" />
+          </div>
+          <div>
+            <h3 className="font-semibold">{app.groupName}</h3>
+            <p className="text-sm text-gray-600">
+              {app.members.map(m => m.name.split(' ')[0]).join(', ')}
+            </p>
+            <p className="text-xs text-gray-500">
+              {app.propertyTitle} · {app.members.length} tenant
+              {app.members.length !== 1 ? 's' : ''}
+              {totalGuarantors > 0 &&
+                `, ${totalGuarantors} guarantor${totalGuarantors !== 1 ? 's' : ''}`}
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-col items-end gap-1">
+          <KindBadge kind="group" />
+          {stageBadge(app.status)}
+        </div>
       </div>
 
-      {loading && (
-        <p className="text-center text-sm text-gray-400 py-6">Loading…</p>
-      )}
-      {!loading && groups.length === 0 && (
-        <div className="text-center py-12 text-gray-500">
-          <Users size={32} className="mx-auto mb-3 text-gray-300" />
-          <p className="font-medium text-gray-600">No group applications yet</p>
-          <p className="text-sm">
-            Roommate groups that apply together to one of your listings show up
-            here.
-          </p>
-        </div>
-      )}
+      <div className="flex items-center justify-between bg-purple-50 rounded p-3 mb-3">
+        <span
+          className={`text-sm font-semibold ${
+            app.meetsRequirement ? 'text-green-600' : 'text-red-600'
+          }`}
+        >
+          ${app.combinedMonthlyIncome.toLocaleString()}/mo combined
+        </span>
+        <span
+          className={`text-xs px-2 py-1 rounded-full ${
+            app.meetsRequirement
+              ? 'bg-green-100 text-green-700'
+              : 'bg-red-100 text-red-700'
+          }`}
+        >
+          {app.meetsRequirement ? '✓ Income met' : '✗ Short'}
+        </span>
+      </div>
 
-      {groups.map(app => {
-        const totalGuarantors = app.members.filter(m => m.guarantor).length
-        return (
-          <div
-            key={app.id}
-            onClick={() => setSelectedGroup(app)}
-            className="bg-white border border-gray-200 rounded-xl p-4 cursor-pointer hover:border-purple-300 transition-colors"
-          >
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex items-center">
-                <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mr-3">
-                  <Users size={18} className="text-purple-600" />
-                </div>
-                <div>
-                  <p className="font-semibold">{app.groupName}</p>
-                  <p className="text-xs text-gray-500">
-                    {app.propertyTitle} · {app.members.length} tenant
-                    {app.members.length !== 1 ? 's' : ''}
-                    {totalGuarantors > 0 &&
-                      `, ${totalGuarantors} guarantor${totalGuarantors !== 1 ? 's' : ''}`}
-                  </p>
-                </div>
-              </div>
-              {stageBadge(app.status)}
-            </div>
-
-            <div className="flex items-center justify-between">
-              <span
-                className={`text-sm font-semibold ${
-                  app.meetsRequirement ? 'text-green-600' : 'text-red-600'
-                }`}
-              >
-                ${app.combinedMonthlyIncome.toLocaleString()}/mo combined
-              </span>
-              <span
-                className={`text-xs px-2 py-1 rounded-full ${
-                  app.meetsRequirement
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-red-100 text-red-700'
-                }`}
-              >
-                {app.meetsRequirement ? '✓ Income Met' : '✗ Short'}
-              </span>
-            </div>
-          </div>
-        )
-      })}
+      <div className="flex items-center justify-between text-xs text-gray-600">
+        <span className="flex items-center">
+          <Clock size={12} className="mr-1" />
+          Applied {new Date(app.submittedAt).toLocaleDateString()}
+        </span>
+        <ChevronRight size={20} className="text-gray-400" />
+      </div>
     </div>
   )
 }
+
+GroupCard.propTypes = {
+  app: PropTypes.object.isRequired,
+  onOpen: PropTypes.func.isRequired,
+}
+
+/**
+ * Merge solo applicants and roommate groups into one list, newest first.
+ * A group's members appear once, as the group, never also as individuals.
+ * The per-listing "pool" entries the API also returns are skipped: their
+ * applicants are the individuals.
+ */
+export function buildInboxEntries(applications, groups) {
+  const real = (groups || []).filter(g => g.isRealGroup)
+  const memberIds = new Set(
+    real.flatMap(g => (g.members || []).map(m => m.applicationId))
+  )
+  const entries = [
+    ...real.map(g => ({
+      kind: 'group',
+      id: `group:${g.id}`,
+      propertyId: g.propertyId,
+      propertyTitle: g.propertyTitle,
+      date: g.submittedAt,
+      group: g,
+    })),
+    ...(applications || [])
+      .filter(a => !memberIds.has(a.id))
+      .map(a => ({
+        kind: 'individual',
+        id: `app:${a.id}`,
+        propertyId: a.propertyId,
+        propertyTitle: a.propertyTitle,
+        date: a.application?.appliedAt,
+        application: a,
+      })),
+  ]
+  return entries.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0))
+}
+
+/** The properties that have at least one entry, for the filter select. */
+export function uniqueProperties(entries) {
+  const seen = new Map()
+  for (const e of entries) {
+    if (e.propertyId && !seen.has(e.propertyId)) {
+      seen.set(e.propertyId, e.propertyTitle)
+    }
+  }
+  return [...seen.entries()].map(([id, title]) => ({ id, title }))
+}
+
+const getCreditScoreColor = score => {
+  if (score == null) return 'text-gray-500 bg-gray-100'
+  if (score >= 750) return 'text-green-600 bg-green-100'
+  if (score >= 700) return 'text-brand-500 bg-brand-100'
+  if (score >= 650) return 'text-yellow-600 bg-yellow-100'
+  return 'text-red-600 bg-red-100'
+}
+
+const getStatusColor = status => {
+  switch (status) {
+    case 'pending':
+      return 'text-yellow-600 bg-yellow-100'
+    case 'approved':
+      return 'text-green-600 bg-green-100'
+    case 'rejected':
+      return 'text-red-600 bg-red-100'
+    default:
+      return 'text-gray-600 bg-gray-100'
+  }
+}
+
+const getTourStatusEmoji = tourStatus => {
+  switch (tourStatus) {
+    case 'not-requested':
+      return '❓' // No tour requested
+    case 'requested':
+      return '📅' // Tour requested, not scheduled
+    case 'scheduled':
+      return '✅' // Tour scheduled
+    case 'completed':
+      return '✔️' // Tour completed
+    default:
+      return '❓'
+  }
+}
+
+const getTourStatusText = tourStatus => {
+  switch (tourStatus) {
+    case 'not-requested':
+      return 'No Tour Requested'
+    case 'requested':
+      return 'Tour Requested'
+    case 'scheduled':
+      return 'Tour Scheduled'
+    case 'completed':
+      return 'Tour Completed'
+    default:
+      return 'No Tour Info'
+  }
+}
+
+const getTourStatusColor = tourStatus => {
+  switch (tourStatus) {
+    case 'not-requested':
+      return 'text-gray-600 bg-gray-100'
+    case 'requested':
+      return 'text-brand-500 bg-brand-100'
+    case 'scheduled':
+      return 'text-green-600 bg-green-100'
+    case 'completed':
+      return 'text-purple-600 bg-purple-100'
+    default:
+      return 'text-gray-600 bg-gray-100'
+  }
+}
+
+/** One solo applicant on the merged inbox list. */
+function IndividualCard({ application, onOpen }) {
+  return (
+    <div
+      className="border border-gray-200 rounded-lg p-4 hover:border-brand-300 transition-colors cursor-pointer"
+      onClick={() => onOpen(application)}
+      data-testid={`inbox-application-${application.id}`}
+    >
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center">
+          <img
+            src={application.applicant.avatar}
+            alt={application.applicant.name}
+            className="w-12 h-12 rounded-full mr-4"
+          />
+          <div>
+            <div className="flex items-center">
+              <h3 className="font-semibold">{application.applicant.name}</h3>
+              {application.applicant.verified && (
+                <Shield size={16} className="ml-2 text-brand-500" />
+              )}
+            </div>
+            <p className="text-sm text-gray-600">
+              {application.applicant.university} • {application.applicant.year}
+            </p>
+            <p className="text-xs text-gray-500">{application.propertyTitle}</p>
+          </div>
+        </div>
+        <div className="text-right">
+          <div className="flex justify-end mb-1">
+            <KindBadge kind="individual" />
+          </div>
+          <div
+            className={`px-3 py-1 rounded-full text-xs font-medium mb-2 ${getStatusColor(application.status)}`}
+          >
+            {application.status.toUpperCase()}
+          </div>
+          <div className="flex items-center text-xs text-gray-500">
+            <MessageCircle size={12} className="mr-1" />
+            <span>{application.messages} messages</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Credit Score & Key Info */}
+      <div className="grid grid-cols-3 gap-4 mb-3">
+        <div className="text-center">
+          <div
+            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getCreditScoreColor(application.applicant.creditScore)}`}
+          >
+            <CreditCard size={12} className="mr-1" />
+            {application.applicant.creditScore ?? 'N/A'}
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            {application.applicant.creditTier ?? 'Not checked'}
+          </p>
+        </div>
+        <div className="text-center">
+          <div className="text-sm font-medium">
+            ${application.application.monthlyIncome}
+          </div>
+          <p className="text-xs text-gray-500">Monthly Income</p>
+        </div>
+        <div className="text-center">
+          <div className="text-sm font-medium">
+            {application.application.documents.length}
+          </div>
+          <p className="text-xs text-gray-500">Documents</p>
+        </div>
+      </div>
+
+      {/* Application Preview */}
+      <div className="bg-gray-50 rounded p-3 mb-3">
+        <p className="text-sm text-gray-700 line-clamp-2">
+          {application.application.message}
+        </p>
+      </div>
+
+      {/* Tour Status Badge */}
+      <div className="flex items-center mb-3">
+        <div
+          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getTourStatusColor(application.tourStatus)}`}
+        >
+          <span className="mr-1">
+            {getTourStatusEmoji(application.tourStatus)}
+          </span>
+          {getTourStatusText(application.tourStatus)}
+          {application.tourDate && application.tourStatus === 'scheduled' && (
+            <span className="ml-2 text-xs">
+              • {new Date(application.tourDate).toLocaleDateString()} at{' '}
+              {new Date(application.tourDate).toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Move-in Details */}
+      <div className="flex items-center justify-between text-xs text-gray-600">
+        <div className="flex items-center">
+          <Calendar size={12} className="mr-1" />
+          <span>
+            {new Date(application.application.moveInDate).toLocaleDateString()}{' '}
+            -{' '}
+            {new Date(application.application.moveOutDate).toLocaleDateString()}
+          </span>
+        </div>
+        <div className="flex items-center">
+          <Clock size={12} className="mr-1" />
+          <span>
+            Applied{' '}
+            {application.application.appliedAt
+              ? new Date(application.application.appliedAt).toLocaleDateString()
+              : application.lastMessage}
+          </span>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-end mt-3">
+        <ChevronRight size={20} className="text-gray-400" />
+      </div>
+    </div>
+  )
+}
+
+IndividualCard.propTypes = {
+  application: PropTypes.object.isRequired,
+  onOpen: PropTypes.func.isRequired,
+}
+
+const KIND_FILTERS = [
+  { key: 'all', label: 'All' },
+  { key: 'individual', label: 'Individuals', Icon: User },
+  { key: 'group', label: 'Groups', Icon: Users },
+]
 
 const LandlordInbox = ({
   properties,
@@ -614,219 +868,48 @@ const LandlordInbox = ({
   onNavigateToApprovals,
   onNavigateToUtilities,
 }) => {
-  const [selectedProperty, setSelectedProperty] = useState(null)
+  const [selectedProperty, setSelectedProperty] = useState('')
   const [selectedApplicant, setSelectedApplicant] = useState(null)
+  const [selectedGroup, setSelectedGroup] = useState(null)
   const [viewMode, setViewMode] = useState('inbox') // 'inbox', 'applicant-detail'
-  const [activeTab, setActiveTab] = useState('individual') // 'individual' | 'group'
+  const [kindFilter, setKindFilter] = useState('all') // 'all' | 'individual' | 'group'
+  const [applications, setApplications] = useState([])
+  const [groups, setGroups] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  // Mock applicant data with credit scores and details
-  const mockApplications = [
-    {
-      id: 1,
-      propertyId: 1,
-      propertyTitle: 'Cozy 1BR near USC Campus',
-      applicant: {
-        id: 'app1',
-        name: 'Emily Rodriguez',
-        email: 'emily.r@usc.edu',
-        phone: '(555) 123-4567',
-        university: 'USC',
-        year: 'Senior',
-        avatar:
-          'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100',
-        creditScore: 742,
-        creditTier: 'Excellent',
-        verified: true,
-        backgroundCheck: 'Passed',
-      },
-      application: {
-        moveInDate: '2024-01-15',
-        moveOutDate: '2024-06-15',
-        monthlyIncome: 3500,
-        employmentStatus: 'Part-time + Financial Aid',
-        emergencyContact: 'Maria Rodriguez (Mother) - (555) 987-6543',
-        references: ['Prof. Johnson - USC', 'Previous Landlord - John Smith'],
-        message:
-          "Hi! I'm a responsible senior at USC looking for a quiet place to study. I have excellent references and have never missed a rent payment.",
-        appliedAt: '2024-12-20T10:30:00Z',
-        documents: ['Student ID', 'Income Verification', 'References'],
-      },
-      status: 'pending', // 'pending', 'approved', 'rejected'
-      tourStatus: 'scheduled', // 'not-requested', 'requested', 'scheduled', 'completed'
-      tourDate: '2024-12-25T14:00:00Z',
-      messages: 3,
-      lastMessage: '2 hours ago',
-    },
-    {
-      id: 2,
-      propertyId: 1,
-      propertyTitle: 'Cozy 1BR near USC Campus',
-      applicant: {
-        id: 'app2',
-        name: 'Michael Chen',
-        email: 'mchen@ucla.edu',
-        phone: '(555) 234-5678',
-        university: 'UCLA',
-        year: 'Graduate Student',
-        avatar:
-          'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100',
-        creditScore: 678,
-        creditTier: 'Good',
-        verified: true,
-        backgroundCheck: 'Passed',
-      },
-      application: {
-        moveInDate: '2024-02-01',
-        moveOutDate: '2024-08-01',
-        monthlyIncome: 2800,
-        employmentStatus: 'Graduate Research Assistant',
-        emergencyContact: 'Lisa Chen (Sister) - (555) 876-5432',
-        references: ['Dr. Kim - UCLA', 'Current Roommate - Alex Wong'],
-        message:
-          "I'm a quiet graduate student focusing on my research. Looking for a peaceful place close to campus with good study environment.",
-        appliedAt: '2024-12-19T14:20:00Z',
-        documents: [
-          'Student ID',
-          'Research Assistant Contract',
-          'Bank Statements',
-        ],
-      },
-      status: 'pending',
-      tourStatus: 'requested',
-      messages: 1,
-      lastMessage: '1 day ago',
-    },
-    {
-      id: 3,
-      propertyId: 2,
-      propertyTitle: 'Shared House - UCLA Area',
-      applicant: {
-        id: 'app3',
-        name: 'Sarah Johnson',
-        email: 'sarah.j@berkeley.edu',
-        phone: '(555) 345-6789',
-        university: 'UC Berkeley',
-        year: 'Junior',
-        avatar:
-          'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100',
-        creditScore: 695,
-        creditTier: 'Good',
-        verified: true,
-        backgroundCheck: 'Passed',
-      },
-      application: {
-        moveInDate: '2024-01-20',
-        moveOutDate: '2024-05-20',
-        monthlyIncome: 3200,
-        employmentStatus: 'Student + Part-time job',
-        emergencyContact: 'Robert Johnson (Father) - (555) 765-4321',
-        references: ['Manager at Starbucks', 'Professor Williams'],
-        message:
-          'Clean, responsible student looking for a place during my semester abroad program. Non-smoker, no parties.',
-        appliedAt: '2024-12-18T16:45:00Z',
-        documents: ['Student ID', 'Pay Stubs', 'Parent Guarantor Form'],
-      },
-      status: 'approved',
-      tourStatus: 'completed',
-      tourDate: '2024-12-18T10:00:00Z',
-      messages: 5,
-      lastMessage: '30 minutes ago',
-    },
-  ]
+  // One load feeds both kinds of entry: the flat per-applicant rows and the
+  // roommate groups. No demo rows: an empty inbox is an honest empty state.
+  const load = useCallback(
+    () =>
+      dashboardService
+        .getInbox()
+        .then(data => {
+          const nextApps = Array.isArray(data?.applications)
+            ? data.applications
+            : []
+          const nextGroups = (
+            Array.isArray(data?.groups) ? data.groups : []
+          ).filter(g => g.isRealGroup)
+          setApplications(nextApps)
+          setGroups(nextGroups)
+          setSelectedGroup(prev =>
+            prev ? nextGroups.find(g => g.id === prev.id) || null : prev
+          )
+        })
+        .catch(() => {})
+        .finally(() => setLoading(false)),
+    []
+  )
 
-  const [applications, setApplications] = useState(mockApplications)
-
-  // Replace demo data with the landlord's real applications.
   useEffect(() => {
-    let active = true
-    dashboardService
-      .getInbox()
-      .then(data => {
-        if (
-          active &&
-          Array.isArray(data?.applications) &&
-          data.applications.length > 0
-        ) {
-          setApplications(data.applications)
-        }
-      })
-      .catch(() => {})
-    return () => {
-      active = false
-    }
-  }, [])
+    load()
+  }, [load])
 
-  const getPropertyApplications = propertyId => {
-    return applications.filter(
-      app => !propertyId || app.propertyId === propertyId
-    )
-  }
-
-  const getCreditScoreColor = score => {
-    if (score == null) return 'text-gray-500 bg-gray-100'
-    if (score >= 750) return 'text-green-600 bg-green-100'
-    if (score >= 700) return 'text-brand-500 bg-brand-100'
-    if (score >= 650) return 'text-yellow-600 bg-yellow-100'
-    return 'text-red-600 bg-red-100'
-  }
-
-  const getStatusColor = status => {
-    switch (status) {
-      case 'pending':
-        return 'text-yellow-600 bg-yellow-100'
-      case 'approved':
-        return 'text-green-600 bg-green-100'
-      case 'rejected':
-        return 'text-red-600 bg-red-100'
-      default:
-        return 'text-gray-600 bg-gray-100'
-    }
-  }
-
-  const getTourStatusEmoji = tourStatus => {
-    switch (tourStatus) {
-      case 'not-requested':
-        return '❓' // No tour requested
-      case 'requested':
-        return '📅' // Tour requested, not scheduled
-      case 'scheduled':
-        return '✅' // Tour scheduled
-      case 'completed':
-        return '✔️' // Tour completed
-      default:
-        return '❓'
-    }
-  }
-
-  const getTourStatusText = tourStatus => {
-    switch (tourStatus) {
-      case 'not-requested':
-        return 'No Tour Requested'
-      case 'requested':
-        return 'Tour Requested'
-      case 'scheduled':
-        return 'Tour Scheduled'
-      case 'completed':
-        return 'Tour Completed'
-      default:
-        return 'No Tour Info'
-    }
-  }
-
-  const getTourStatusColor = tourStatus => {
-    switch (tourStatus) {
-      case 'not-requested':
-        return 'text-gray-600 bg-gray-100'
-      case 'requested':
-        return 'text-brand-500 bg-brand-100'
-      case 'scheduled':
-        return 'text-green-600 bg-green-100'
-      case 'completed':
-        return 'text-purple-600 bg-purple-100'
-      default:
-        return 'text-gray-600 bg-gray-100'
-    }
-  }
+  const entries = useMemo(
+    () => buildInboxEntries(applications, groups),
+    [applications, groups]
+  )
+  const propertyOptions = useMemo(() => uniqueProperties(entries), [entries])
 
   const applyStatus = (applicationId, status) => {
     setApplications(prev =>
@@ -859,9 +942,28 @@ const LandlordInbox = ({
     }
   }
 
+  if (selectedGroup) {
+    return (
+      <GroupDetail
+        app={selectedGroup}
+        onBack={() => setSelectedGroup(null)}
+        onReload={load}
+      />
+    )
+  }
+
   // Inbox View
   if (viewMode === 'inbox') {
-    const applications = getPropertyApplications(selectedProperty)
+    const shown = entries.filter(
+      e =>
+        (kindFilter === 'all' || e.kind === kindFilter) &&
+        (!selectedProperty || e.propertyId === selectedProperty)
+    )
+    const counts = {
+      all: entries.length,
+      individual: entries.filter(e => e.kind === 'individual').length,
+      group: entries.filter(e => e.kind === 'group').length,
+    }
 
     return (
       <div className="pb-20">
@@ -890,214 +992,99 @@ const LandlordInbox = ({
               </div>
             </div>
             <p className="text-gray-600">
-              Review applications and manage your properties
+              Individual applicants and roommate groups, newest first
             </p>
           </div>
 
-          {/* Tab Switcher */}
-          <div className="flex bg-gray-100 rounded-lg p-1 mb-4">
-            <button
-              onClick={() => setActiveTab('individual')}
-              className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center ${
-                activeTab === 'individual'
-                  ? 'bg-white text-brand-500 shadow-sm'
-                  : 'text-gray-600'
-              }`}
-            >
-              <User size={14} className="mr-1" /> Individual
-            </button>
-            <button
-              onClick={() => setActiveTab('group')}
-              className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center ${
-                activeTab === 'group'
-                  ? 'bg-white text-purple-600 shadow-sm'
-                  : 'text-gray-600'
-              }`}
-            >
-              <Users size={14} className="mr-1" /> Group
-            </button>
+          {/* Kind filter: one list, but individuals and groups stay telling apart */}
+          <div
+            className="flex items-center gap-2 mb-4"
+            role="group"
+            aria-label="Show"
+          >
+            {KIND_FILTERS.map(f => (
+              <button
+                key={f.key}
+                type="button"
+                onClick={() => setKindFilter(f.key)}
+                aria-pressed={kindFilter === f.key}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                  kindFilter === f.key
+                    ? f.key === 'group'
+                      ? 'bg-purple-600 text-white border-purple-600'
+                      : 'bg-gray-900 text-white border-gray-900'
+                    : 'bg-white text-gray-700 border-gray-300 hover:border-gray-500'
+                }`}
+              >
+                {f.Icon && <f.Icon size={13} />}
+                {f.label}
+                <span className="opacity-70">({counts[f.key]})</span>
+              </button>
+            ))}
           </div>
         </div>
         {/* end p-4 */}
 
-        {/* Group Applications Tab */}
-        {activeTab === 'group' && <GroupApplicationsTab />}
-
-        {activeTab === 'individual' && (
-          <div className="p-4">
-            {/* Property Filter */}
+        <div className="p-4">
+          {/* Property Filter */}
+          {propertyOptions.length > 1 && (
             <div className="mb-6">
               <select
-                value={selectedProperty || ''}
-                onChange={e =>
-                  setSelectedProperty(
-                    e.target.value ? parseInt(e.target.value) : null
-                  )
-                }
+                value={selectedProperty}
+                onChange={e => setSelectedProperty(e.target.value)}
+                aria-label="Property"
                 className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
               >
-                <option value="">All Properties</option>
-                <option value={1}>Cozy 1BR near USC Campus</option>
-                <option value={2}>Shared House - UCLA Area</option>
-                <option value={3}>Studio Apartment - NYU</option>
+                <option value="">All properties</option>
+                {propertyOptions.map(p => (
+                  <option key={p.id} value={p.id}>
+                    {p.title}
+                  </option>
+                ))}
               </select>
             </div>
+          )}
 
-            {/* Applications List */}
-            {applications.length === 0 ? (
-              <div className="text-center py-12">
-                <User size={48} className="mx-auto text-gray-300 mb-4" />
-                <h3 className="text-lg font-semibold text-gray-600 mb-2">
-                  No Applications Yet
-                </h3>
-                <p className="text-gray-500">
-                  Applications will appear here when people apply to your
-                  properties
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {applications.map(application => (
-                  <div
-                    key={application.id}
-                    className="border border-gray-200 rounded-lg p-4 hover:border-brand-300 transition-colors cursor-pointer"
-                    onClick={() => {
-                      setSelectedApplicant(application)
+          {/* Applications List */}
+          {loading ? (
+            <p className="text-center text-sm text-gray-400 py-6">Loading…</p>
+          ) : shown.length === 0 ? (
+            <div className="text-center py-12">
+              <User size={48} className="mx-auto text-gray-300 mb-4" />
+              <h3 className="text-lg font-semibold text-gray-600 mb-2">
+                {entries.length === 0
+                  ? 'No applications yet'
+                  : 'Nothing matches this filter'}
+              </h3>
+              <p className="text-gray-500">
+                {entries.length === 0
+                  ? 'Individual applicants and roommate groups both show up here when they apply to your properties.'
+                  : 'Try another filter or property.'}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {shown.map(entry =>
+                entry.kind === 'group' ? (
+                  <GroupCard
+                    key={entry.id}
+                    app={entry.group}
+                    onOpen={setSelectedGroup}
+                  />
+                ) : (
+                  <IndividualCard
+                    key={entry.id}
+                    application={entry.application}
+                    onOpen={app => {
+                      setSelectedApplicant(app)
                       setViewMode('applicant-detail')
                     }}
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center">
-                        <img
-                          src={application.applicant.avatar}
-                          alt={application.applicant.name}
-                          className="w-12 h-12 rounded-full mr-4"
-                        />
-                        <div>
-                          <div className="flex items-center">
-                            <h3 className="font-semibold">
-                              {application.applicant.name}
-                            </h3>
-                            {application.applicant.verified && (
-                              <Shield
-                                size={16}
-                                className="ml-2 text-brand-500"
-                              />
-                            )}
-                          </div>
-                          <p className="text-sm text-gray-600">
-                            {application.applicant.university} •{' '}
-                            {application.applicant.year}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {application.propertyTitle}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div
-                          className={`px-3 py-1 rounded-full text-xs font-medium mb-2 ${getStatusColor(application.status)}`}
-                        >
-                          {application.status.toUpperCase()}
-                        </div>
-                        <div className="flex items-center text-xs text-gray-500">
-                          <MessageCircle size={12} className="mr-1" />
-                          <span>{application.messages} messages</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Credit Score & Key Info */}
-                    <div className="grid grid-cols-3 gap-4 mb-3">
-                      <div className="text-center">
-                        <div
-                          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getCreditScoreColor(application.applicant.creditScore)}`}
-                        >
-                          <CreditCard size={12} className="mr-1" />
-                          {application.applicant.creditScore ?? 'N/A'}
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {application.applicant.creditTier ?? 'Not checked'}
-                        </p>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-sm font-medium">
-                          ${application.application.monthlyIncome}
-                        </div>
-                        <p className="text-xs text-gray-500">Monthly Income</p>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-sm font-medium">
-                          {application.application.documents.length}
-                        </div>
-                        <p className="text-xs text-gray-500">Documents</p>
-                      </div>
-                    </div>
-
-                    {/* Application Preview */}
-                    <div className="bg-gray-50 rounded p-3 mb-3">
-                      <p className="text-sm text-gray-700 line-clamp-2">
-                        {application.application.message}
-                      </p>
-                    </div>
-
-                    {/* Tour Status Badge */}
-                    <div className="flex items-center mb-3">
-                      <div
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getTourStatusColor(application.tourStatus)}`}
-                      >
-                        <span className="mr-1">
-                          {getTourStatusEmoji(application.tourStatus)}
-                        </span>
-                        {getTourStatusText(application.tourStatus)}
-                        {application.tourDate &&
-                          application.tourStatus === 'scheduled' && (
-                            <span className="ml-2 text-xs">
-                              •{' '}
-                              {new Date(
-                                application.tourDate
-                              ).toLocaleDateString()}{' '}
-                              at{' '}
-                              {new Date(
-                                application.tourDate
-                              ).toLocaleTimeString([], {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
-                            </span>
-                          )}
-                      </div>
-                    </div>
-
-                    {/* Move-in Details */}
-                    <div className="flex items-center justify-between text-xs text-gray-600">
-                      <div className="flex items-center">
-                        <Calendar size={12} className="mr-1" />
-                        <span>
-                          {new Date(
-                            application.application.moveInDate
-                          ).toLocaleDateString()}{' '}
-                          -{' '}
-                          {new Date(
-                            application.application.moveOutDate
-                          ).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <div className="flex items-center">
-                        <Clock size={12} className="mr-1" />
-                        <span>Applied {application.lastMessage}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-end mt-3">
-                      <ChevronRight size={20} className="text-gray-400" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+                  />
+                )
+              )}
+            </div>
+          )}
+        </div>
       </div>
     )
   }
@@ -1146,6 +1133,9 @@ const LandlordInbox = ({
               </p>
             </div>
             <div className="text-right">
+              <div className="flex justify-end mb-2">
+                <KindBadge kind="individual" />
+              </div>
               <div
                 className={`px-4 py-2 rounded-full text-sm font-medium ${getStatusColor(selectedApplicant.status)}`}
               >
