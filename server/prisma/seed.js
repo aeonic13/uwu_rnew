@@ -8,6 +8,15 @@ async function main() {
 
   // Clear existing data (in reverse order of dependencies)
   console.log('Clearing existing data...')
+  await prisma.tenantInvite.deleteMany()
+  await prisma.autopaySchedule.deleteMany()
+  await prisma.rentSplit.deleteMany()
+  await prisma.securityDeposit.deleteMany()
+  await prisma.agreementSigner.deleteMany()
+  await prisma.maintenanceTicket.deleteMany()
+  await prisma.expense.deleteMany()
+  await prisma.document.deleteMany()
+  await prisma.group.deleteMany()
   await prisma.cosigner.deleteMany()
   await prisma.message.deleteMany()
   await prisma.conversationUser.deleteMany()
@@ -946,6 +955,924 @@ async function main() {
   })
   console.log('Created 2 housemate profiles')
 
+  // ─── LANDLORD DEMO (Jennifer Park's portfolio) ────────────────
+  // Everything the owner screens read, on one account: a leased unit with a
+  // roommate-group lease, an occupied unit mid-onboarding (one tenant
+  // confirmed, one invite outstanding), and two listed units with
+  // individual and roommate-group applicants. Log in as
+  // jennifer.park@gmail.com to see all of it.
+  console.log('Creating landlord demo data (Jennifer Park)...')
+
+  const now = new Date()
+  const DAY = 24 * 60 * 60 * 1000
+  const daysAgo = n => new Date(now.getTime() - n * DAY)
+  const daysFromNow = n => new Date(now.getTime() + n * DAY)
+  // 9am on the given day of a month `monthsBack` months ago.
+  const onDay = (monthsBack, dayOfMonth) =>
+    new Date(now.getFullYear(), now.getMonth() - monthsBack, dayOfMonth, 9)
+  const landlordName = `${owner3.firstName} ${owner3.lastName}`
+  const rentalProfile = (overrides = {}) => ({
+    currentAddress: '4120 Cass St, San Diego, CA 92109',
+    timeAtAddress: '2 years',
+    currentLandlordName: 'Patricia Moore',
+    currentLandlordPhone: '(619) 555-4040',
+    currentRent: '$1,650',
+    reasonForLeaving: 'Lease ending, want to be closer to campus',
+    previousAddress: '9500 Gilman Dr, La Jolla, CA 92093',
+    employer: 'UC San Diego',
+    jobTitle: 'Research assistant',
+    employmentLength: '1 year',
+    workPhone: '(858) 555-3030',
+    monthlyIncome: '$3,200',
+    otherIncome: 'None',
+    occupants: '1',
+    pets: 'None',
+    vehicles: '1 car',
+    everEvicted: false,
+    brokenLease: false,
+    felony: false,
+    smoker: false,
+    ...overrides,
+  })
+
+  // Screening facts on the seeded tenants so applicant cards show real numbers.
+  await Promise.all([
+    prisma.user.update({
+      where: { id: tenant1.id },
+      data: {
+        university: 'SDSU',
+        year: 'Alumni',
+        creditScore: 712,
+        creditTier: 'Good',
+      },
+    }),
+    prisma.user.update({
+      where: { id: tenant2.id },
+      data: {
+        university: 'UCSD',
+        year: 'Graduate',
+        creditScore: 745,
+        creditTier: 'Good',
+      },
+    }),
+    prisma.user.update({
+      where: { id: tenant3.id },
+      data: {
+        university: 'UCSD',
+        year: 'Senior',
+        creditScore: 705,
+        creditTier: 'Good',
+      },
+    }),
+    prisma.user.update({
+      where: { id: tenant4.id },
+      data: {
+        university: 'SDSU',
+        year: 'Junior',
+        creditScore: 688,
+        creditTier: 'Fair',
+      },
+    }),
+    prisma.user.update({
+      where: { id: tenant5.id },
+      data: {
+        university: 'USD',
+        year: 'Alumni',
+        creditScore: 672,
+        creditTier: 'Fair',
+      },
+    }),
+    prisma.user.update({
+      where: { id: tenant6.id },
+      data: {
+        university: 'SDSU',
+        year: 'Senior',
+        creditScore: 761,
+        creditTier: 'Excellent',
+      },
+    }),
+  ])
+
+  // A few more people so every state has a face.
+  const [noah, priya, marcus, chloe, linda] = await Promise.all([
+    prisma.user.create({
+      data: {
+        email: 'noah.carter@gmail.com',
+        passwordHash,
+        userType: 'student',
+        firstName: 'Noah',
+        lastName: 'Carter',
+        phone: '(619) 555-2007',
+        university: 'SDSU',
+        year: 'Senior',
+        creditScore: 702,
+        creditTier: 'Good',
+        bio: 'Current tenant in Mission Beach. Surfer, early riser.',
+        verified: true,
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: 'priya.patel@gmail.com',
+        passwordHash,
+        userType: 'student',
+        firstName: 'Priya',
+        lastName: 'Patel',
+        phone: '(858) 555-2008',
+        university: 'UCSD',
+        year: 'Graduate',
+        creditScore: 742,
+        creditTier: 'Good',
+        bio: 'PhD student in bioengineering. Quiet, tidy, no pets.',
+        verified: true,
+        rentalProfile: rentalProfile({
+          employer: 'Qualcomm',
+          jobTitle: 'UX designer (part-time) + PhD stipend',
+          monthlyIncome: '$6,100',
+        }),
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: 'marcus.lee@gmail.com',
+        passwordHash,
+        userType: 'student',
+        firstName: 'Marcus',
+        lastName: 'Lee',
+        phone: '(619) 555-2009',
+        university: 'USD',
+        year: 'Junior',
+        creditScore: 651,
+        creditTier: 'Fair',
+        bio: 'Business major, campus job. My mom is co-signing.',
+        verified: true,
+        rentalProfile: rentalProfile({
+          employer: 'USD Campus Recreation',
+          jobTitle: 'Front desk (part-time)',
+          monthlyIncome: '$1,400',
+          otherIncome: 'Parent support $1,200/mo',
+        }),
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: 'chloe.nguyen@gmail.com',
+        passwordHash,
+        userType: 'student',
+        firstName: 'Chloe',
+        lastName: 'Nguyen',
+        phone: '(858) 555-2010',
+        university: 'UCSD',
+        year: 'Junior',
+        creditScore: 731,
+        creditTier: 'Good',
+        bio: 'Cognitive science major. Looking for a house with friends.',
+        verified: true,
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: 'linda.lee@gmail.com',
+        passwordHash,
+        userType: 'cosigner',
+        firstName: 'Linda',
+        lastName: 'Lee',
+        phone: '(626) 555-0101',
+        verified: true,
+      },
+    }),
+  ])
+
+  // One more listing for Jennifer so a 3-person group has somewhere to apply.
+  const l16 = await prisma.listing.create({
+    data: {
+      title: 'Sunny 3BR Townhome – Pacific Beach',
+      description:
+        'Two-story townhome three blocks from the bay. Three bedrooms, two and a half baths, in-unit laundry, private patio and a two-car garage. Ideal for a group of roommates. No smoking.',
+      price: 4500,
+      location: 'Pacific Beach, San Diego, CA 92109',
+      streetAddress: '1835 Reed Ave, San Diego, CA 92109',
+      latitude: 32.7945,
+      longitude: -117.2412,
+      university: 'Pacific Beach',
+      moveInDate: new Date('2026-11-01'),
+      moveOutDate: new Date('2027-10-31'),
+      propertyType: 'House',
+      bedrooms: 3,
+      bathrooms: 2.5,
+      amenities: [
+        'In-unit laundry',
+        'Garage',
+        'Patio',
+        'Dishwasher',
+        'Central AC',
+      ],
+      images: [
+        'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800',
+        'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800',
+      ],
+      ownerId: owner3.id,
+    },
+  })
+
+  // 1. Beachside 2BR (l7) — LEASED to a roommate group on a Rentra lease.
+  //    Emma's seeded approved application becomes the lead of a household
+  //    lease with Alex; equal split, deposit held, rent paid since June.
+  const beachHouse = await prisma.group.create({
+    data: {
+      name: 'PB Beach House',
+      description: 'Emma + Alex',
+      maxMembers: 2,
+      createdById: tenant2.id,
+      members: {
+        create: [
+          { userId: tenant2.id, role: 'admin' },
+          { userId: tenant1.id, role: 'member' },
+        ],
+      },
+    },
+  })
+  const beachStart = new Date('2026-06-01')
+  const beachEnd = new Date('2027-06-01')
+  await prisma.application.update({
+    where: { id: app2.id },
+    data: {
+      groupId: beachHouse.id,
+      createdAt: daysAgo(140),
+      employmentStatus: 'Graduate student + teaching assistant',
+      references: ['Patricia Moore (prior landlord) – (619) 555-4040'],
+      verificationData: {
+        groupApplication: true,
+        submittedBy: tenant2.id,
+        bankConnected: true,
+        incomeVerified: true,
+        monthlyIncome: 3700,
+        identityVerified: true,
+        applicationFeePaid: true,
+        rentalProfile: rentalProfile({ monthlyIncome: '$3,700' }),
+      },
+    },
+  })
+  const alexApp = await prisma.application.create({
+    data: {
+      listingId: l7.id,
+      applicantId: tenant1.id,
+      ownerId: owner3.id,
+      groupId: beachHouse.id,
+      status: 'approved',
+      startDate: beachStart,
+      endDate: beachEnd,
+      message: 'Applying as part of group "PB Beach House"',
+      employmentStatus: 'Full-time – account manager',
+      createdAt: daysAgo(140),
+      verificationData: {
+        groupApplication: true,
+        submittedBy: tenant2.id,
+        bankConnected: true,
+        incomeVerified: true,
+        monthlyIncome: 5200,
+        identityVerified: true,
+        applicationFeePaid: true,
+        rentalProfile: rentalProfile({
+          employer: 'Illumina',
+          jobTitle: 'Account manager',
+          employmentLength: '3 years',
+          monthlyIncome: '$5,200',
+        }),
+      },
+    },
+  })
+  const beachShare = l7.price / 2
+  const beachLease = await prisma.agreement.create({
+    data: {
+      applicationId: app2.id,
+      groupId: beachHouse.id,
+      source: 'rentra',
+      monthlyRent: l7.price,
+      securityDeposit: l7.price,
+      startDate: beachStart,
+      endDate: beachEnd,
+      terms: {
+        petPolicy: 'No pets',
+        utilities:
+          'Tenants pay electricity and internet; water and trash included',
+        lateFee: '$50 after the 5th',
+        parking: 'One assigned space',
+      },
+      tenantSigned: true,
+      tenantSignedAt: daysAgo(135),
+      landlordSigned: true,
+      landlordSignedAt: daysAgo(134),
+      signers: {
+        create: [
+          {
+            role: 'tenant',
+            userId: tenant2.id,
+            applicationId: app2.id,
+            signed: true,
+            signedAt: daysAgo(135),
+            signatureName: 'Emma Wilson',
+          },
+          {
+            role: 'tenant',
+            userId: tenant1.id,
+            applicationId: alexApp.id,
+            signed: true,
+            signedAt: daysAgo(135),
+            signatureName: 'Alex Johnson',
+          },
+          {
+            role: 'landlord',
+            userId: owner3.id,
+            signed: true,
+            signedAt: daysAgo(134),
+            signatureName: landlordName,
+          },
+        ],
+      },
+      rentSplit: {
+        create: {
+          createdById: tenant2.id,
+          total: l7.price,
+          splitMode: 'equal',
+          shares: {
+            create: [
+              { userId: tenant2.id, name: 'Emma Wilson', amount: beachShare },
+              { userId: tenant1.id, name: 'Alex Johnson', amount: beachShare },
+            ],
+          },
+        },
+      },
+      deposit: {
+        create: {
+          ownerId: owner3.id,
+          amountHeld: l7.price,
+          state: 'CA',
+          status: 'holding',
+        },
+      },
+      autopays: {
+        create: [
+          {
+            userId: tenant2.id,
+            amount: beachShare,
+            dayOfMonth: 1,
+            nextRunAt: new Date(now.getFullYear(), now.getMonth() + 1, 1, 9),
+            lastRunAt: onDay(0, 1),
+          },
+        ],
+      },
+    },
+  })
+  await prisma.application.updateMany({
+    where: { id: { in: [app2.id, alexApp.id] } },
+    data: { agreementId: beachLease.id },
+  })
+
+  // Rent history since June: Emma is paid up (autopay), Alex's current
+  // month is still processing so the rent roll shows a partial month.
+  const beachPayments = []
+  for (let monthsBack = 4; monthsBack >= 0; monthsBack -= 1) {
+    beachPayments.push({
+      userId: tenant2.id,
+      applicationId: app2.id,
+      amount: beachShare,
+      serviceFee: 0,
+      total: beachShare,
+      status: 'completed',
+      paymentMethod: 'ach',
+      createdAt: onDay(monthsBack, 1),
+    })
+    beachPayments.push({
+      userId: tenant1.id,
+      applicationId: alexApp.id,
+      amount: beachShare,
+      serviceFee: 0,
+      total: beachShare,
+      status: monthsBack === 0 ? 'processing' : 'completed',
+      paymentMethod: 'ach',
+      createdAt: onDay(monthsBack, monthsBack === 0 ? 3 : 2),
+    })
+  }
+  await prisma.transaction.createMany({ data: beachPayments })
+
+  await prisma.maintenanceTicket.createMany({
+    data: [
+      {
+        listingId: l7.id,
+        tenantId: tenant2.id,
+        category: 'Plumbing',
+        description:
+          'Kitchen sink drains slowly and there is a drip under the cabinet.',
+        priority: 'high',
+        status: 'pending',
+        createdAt: daysAgo(3),
+      },
+      {
+        listingId: l7.id,
+        tenantId: tenant1.id,
+        category: 'Appliance',
+        description: 'Dryer runs but does not heat.',
+        priority: 'medium',
+        status: 'in-progress',
+        assignedTo: 'Pacific Appliance Repair',
+        createdAt: daysAgo(9),
+      },
+      {
+        listingId: l7.id,
+        tenantId: tenant2.id,
+        category: 'Electrical',
+        description: 'Bedroom outlet by the closet stopped working.',
+        priority: 'low',
+        status: 'completed',
+        completedAt: daysAgo(40),
+        createdAt: daysAgo(45),
+      },
+    ],
+  })
+
+  // 2. Pet-Friendly 1BR (l9) — OCCUPIED, lease signed off-platform and
+  //    imported through the onboarding flow. Noah confirmed; Olivia's
+  //    invite is still open. Month-to-month, so endDate is the stand-in
+  //    next anniversary the hourly runner rolls forward.
+  const mbStart = new Date('2025-09-01')
+  const mbEnd = new Date('2027-09-01')
+  const onboardedRow = {
+    listingId: l9.id,
+    ownerId: owner3.id,
+    applicantId: null,
+    status: 'approved',
+    source: 'onboarded',
+    startDate: mbStart,
+    endDate: mbEnd,
+    message: null,
+    createdAt: daysAgo(6),
+  }
+  const noahApp = await prisma.application.create({
+    data: { ...onboardedRow, applicantId: noah.id },
+  })
+  const oliviaApp = await prisma.application.create({ data: onboardedRow })
+  const mbShare = l9.price / 2
+  const mbLease = await prisma.agreement.create({
+    data: {
+      applicationId: noahApp.id,
+      source: 'imported',
+      monthToMonth: true,
+      monthlyRent: l9.price,
+      securityDeposit: l9.price,
+      startDate: mbStart,
+      endDate: mbEnd,
+      terms: {
+        importedLease: true,
+        attestedBy: landlordName,
+        attestedAt: daysAgo(6).toISOString(),
+        utilities: 'As stated in the signed lease.',
+        petPolicy: 'As stated in the signed lease.',
+      },
+      landlordSigned: true,
+      landlordSignedAt: daysAgo(6),
+      signers: {
+        create: [
+          {
+            role: 'tenant',
+            userId: noah.id,
+            applicationId: noahApp.id,
+            signed: true,
+            signedAt: daysAgo(4),
+            signatureName: 'Noah Carter',
+          },
+          { role: 'tenant', userId: null, applicationId: oliviaApp.id },
+          {
+            role: 'landlord',
+            userId: owner3.id,
+            signed: true,
+            signedAt: daysAgo(6),
+            signatureName: landlordName,
+          },
+        ],
+      },
+      rentSplit: {
+        create: {
+          createdById: owner3.id,
+          total: l9.price,
+          splitMode: 'equal',
+          shares: {
+            create: [
+              { userId: noah.id, name: 'Noah Carter', amount: mbShare },
+              { userId: null, name: 'Olivia Reyes', amount: mbShare },
+            ],
+          },
+        },
+      },
+      deposit: {
+        create: { ownerId: owner3.id, amountHeld: l9.price, state: 'CA' },
+      },
+    },
+  })
+  await prisma.application.updateMany({
+    where: { id: { in: [noahApp.id, oliviaApp.id] } },
+    data: { agreementId: mbLease.id },
+  })
+  // Fixed tokens so the accept page can be opened straight from the seed log.
+  const OLIVIA_INVITE_TOKEN = 'demo-olivia-reyes-mission-beach'
+  await prisma.tenantInvite.createMany({
+    data: [
+      {
+        token: 'demo-noah-carter-mission-beach',
+        email: noah.email,
+        firstName: 'Noah',
+        lastName: 'Carter',
+        phone: noah.phone,
+        status: 'accepted',
+        expiresAt: daysFromNow(24),
+        respondedAt: daysAgo(4),
+        listingId: l9.id,
+        ownerId: owner3.id,
+        agreementId: mbLease.id,
+        applicationId: noahApp.id,
+        acceptedUserId: noah.id,
+        createdAt: daysAgo(6),
+      },
+      {
+        token: OLIVIA_INVITE_TOKEN,
+        email: 'olivia.reyes@gmail.com',
+        firstName: 'Olivia',
+        lastName: 'Reyes',
+        phone: '(619) 555-2011',
+        status: 'pending',
+        expiresAt: daysFromNow(24),
+        listingId: l9.id,
+        ownerId: owner3.id,
+        agreementId: mbLease.id,
+        applicationId: oliviaApp.id,
+        createdAt: daysAgo(6),
+      },
+    ],
+  })
+  await prisma.transaction.createMany({
+    data: [1, 0].map(monthsBack => ({
+      userId: noah.id,
+      applicationId: noahApp.id,
+      amount: mbShare,
+      serviceFee: 0,
+      total: mbShare,
+      status: 'completed',
+      paymentMethod: 'ach',
+      createdAt: onDay(monthsBack, 1),
+    })),
+  })
+  await prisma.maintenanceTicket.create({
+    data: {
+      listingId: l9.id,
+      tenantId: noah.id,
+      category: 'Pest control',
+      description: 'Ants in the kitchen near the patio door.',
+      priority: 'medium',
+      status: 'pending',
+      createdAt: daysAgo(1),
+    },
+  })
+
+  // 3. Ocean View Studio (l8) — LISTED with two individual applicants.
+  await prisma.application.createMany({
+    data: [
+      {
+        listingId: l8.id,
+        applicantId: priya.id,
+        ownerId: owner3.id,
+        status: 'pending',
+        startDate: new Date('2026-11-01'),
+        endDate: new Date('2027-10-31'),
+        message:
+          "Hi Jennifer, I'm a PhD student at UCSD and would love a quiet place in Bird Rock. Happy to share references and tour any afternoon this week.",
+        emergencyContact: 'Anand Patel (father) – (408) 555-9090',
+        employmentStatus: 'Part-time UX designer + PhD stipend',
+        references: [
+          'Patricia Moore (prior landlord) – (619) 555-4040',
+          'Dr. Sam Okafor (advisor) – (858) 555-3030',
+        ],
+        tourStatus: 'requested',
+        createdAt: daysAgo(2),
+        verificationData: {
+          bankConnected: true,
+          incomeVerified: true,
+          monthlyIncome: 6100,
+          identityVerified: true,
+          applicationFeePaid: true,
+          rentalProfile: priya.rentalProfile,
+        },
+      },
+      {
+        listingId: l8.id,
+        applicantId: tenant6.id,
+        ownerId: owner3.id,
+        status: 'pending',
+        startDate: new Date('2026-11-15'),
+        endDate: new Date('2027-11-15'),
+        message:
+          'The ocean view sold me. I design interiors and work from home a few days a week.',
+        emergencyContact: 'James Kim (father) – (619) 555-5555',
+        employmentStatus: 'Freelance interior designer',
+        tourStatus: 'scheduled',
+        tourDate: daysFromNow(2),
+        createdAt: daysAgo(5),
+        verificationData: {
+          bankConnected: true,
+          incomeVerified: true,
+          monthlyIncome: 4200,
+          identityVerified: true,
+          applicationFeePaid: true,
+          rentalProfile: rentalProfile({
+            employer: 'Self-employed',
+            jobTitle: 'Interior designer',
+            employmentLength: '4 years',
+            monthlyIncome: '$4,200',
+            pets: '1 cat',
+          }),
+        },
+      },
+    ],
+  })
+
+  // 4. Sunny 3BR Townhome (l16) — LISTED with a roommate group of three,
+  //    one individual applicant backed by a co-signer, and one rejection.
+  const studySquad = await prisma.group.create({
+    data: {
+      name: 'PB Study Squad',
+      description: 'Jordan, Mia and Chloe',
+      maxMembers: 3,
+      createdById: tenant3.id,
+      members: {
+        create: [
+          { userId: tenant3.id, role: 'admin' },
+          { userId: tenant4.id, role: 'member' },
+          { userId: chloe.id, role: 'member' },
+        ],
+      },
+    },
+  })
+  const squadRow = (user, monthlyIncome, extra = {}) => ({
+    listingId: l16.id,
+    applicantId: user.id,
+    ownerId: owner3.id,
+    groupId: studySquad.id,
+    status: 'pending',
+    startDate: new Date('2026-11-01'),
+    endDate: new Date('2027-10-31'),
+    message: 'Applying as part of group "PB Study Squad"',
+    createdAt: daysAgo(4),
+    verificationData: {
+      groupApplication: true,
+      submittedBy: tenant3.id,
+      bankConnected: true,
+      incomeVerified: true,
+      monthlyIncome,
+      identityVerified: true,
+      applicationFeePaid: true,
+      rentalProfile: rentalProfile({
+        monthlyIncome: `$${monthlyIncome.toLocaleString()}`,
+        ...extra,
+      }),
+    },
+  })
+  await prisma.application.createMany({
+    data: [
+      squadRow(tenant3, 5400, {
+        employer: 'ServiceNow',
+        jobTitle: 'Software engineering intern',
+      }),
+      squadRow(tenant4, 4600, {
+        employer: 'Scripps Health',
+        jobTitle: 'Nursing assistant',
+      }),
+      squadRow(chloe, 3800, {
+        employer: 'UCSD Library',
+        jobTitle: 'Student assistant',
+        otherIncome: 'Parent support $1,000/mo',
+      }),
+    ],
+  })
+
+  const marcusApp = await prisma.application.create({
+    data: {
+      listingId: l16.id,
+      applicantId: marcus.id,
+      ownerId: owner3.id,
+      status: 'pending',
+      startDate: new Date('2026-11-01'),
+      endDate: new Date('2027-10-31'),
+      message:
+        "Hi! I'd take the townhome with two friends from USD who will join the lease once approved. My mom is co-signing and has already verified her income.",
+      emergencyContact: 'Linda Lee (mother) – (626) 555-0101',
+      employmentStatus: 'Part-time campus job',
+      createdAt: daysAgo(1),
+      verificationData: {
+        bankConnected: true,
+        incomeVerified: true,
+        monthlyIncome: 1400,
+        identityVerified: true,
+        applicationFeePaid: true,
+        rentalProfile: marcus.rentalProfile,
+      },
+    },
+  })
+  await prisma.cosigner.create({
+    data: {
+      applicationId: marcusApp.id,
+      tenantId: marcus.id,
+      cosignerId: linda.id,
+      status: 'accepted',
+      relationshipType: 'parent',
+      inviteEmail: linda.email,
+      inviteToken: 'demo-linda-lee-cosigner',
+      tokenExpires: daysFromNow(30),
+      invitedAt: daysAgo(1),
+      respondedAt: daysAgo(1),
+      verifiedMonthlyIncome: 12400,
+      incomeVerifiedAt: daysAgo(1),
+    },
+  })
+  await prisma.application.create({
+    data: {
+      listingId: l16.id,
+      applicantId: tenant5.id,
+      ownerId: owner3.id,
+      status: 'rejected',
+      startDate: new Date('2026-11-01'),
+      endDate: new Date('2027-05-01'),
+      message: 'Looking for a 6-month lease while I finish my contract.',
+      employmentStatus: 'Contract – logistics coordinator',
+      createdAt: daysAgo(8),
+      verificationData: {
+        bankConnected: true,
+        incomeVerified: true,
+        monthlyIncome: 3100,
+        identityVerified: true,
+        applicationFeePaid: false,
+      },
+    },
+  })
+
+  // Bookkeeping: this year's expenses across the portfolio (Schedule E
+  // categories) and the document index. Receipt/document links point at
+  // Cloudinary's public demo asset because local trials have no upload keys.
+  const DEMO_FILE = 'https://res.cloudinary.com/demo/image/upload/sample.jpg'
+  await prisma.expense.createMany({
+    data: [
+      {
+        ownerId: owner3.id,
+        listingId: l7.id,
+        date: daysAgo(2),
+        amount: 185,
+        category: 'repairs',
+        description: 'Plumber – kitchen sink P-trap and drain snake',
+        vendor: 'Bay Park Plumbing',
+        receiptUrl: DEMO_FILE,
+      },
+      {
+        ownerId: owner3.id,
+        listingId: l7.id,
+        date: daysAgo(120),
+        amount: 240,
+        category: 'cleaning_maintenance',
+        description: 'Move-in deep clean',
+        vendor: 'Coastal Cleaners',
+      },
+      {
+        ownerId: owner3.id,
+        listingId: l7.id,
+        date: onDay(1, 15),
+        amount: 1620,
+        category: 'mortgage_interest',
+        description: 'Mortgage interest – last month',
+        vendor: 'Wells Fargo',
+      },
+      {
+        ownerId: owner3.id,
+        listingId: l9.id,
+        date: daysAgo(20),
+        amount: 95,
+        category: 'utilities',
+        description: 'Water and trash',
+        vendor: 'City of San Diego',
+      },
+      {
+        ownerId: owner3.id,
+        listingId: l9.id,
+        date: daysAgo(60),
+        amount: 430,
+        category: 'repairs',
+        description: 'Replace garbage disposal',
+        vendor: 'Bay Park Plumbing',
+        receiptUrl: DEMO_FILE,
+      },
+      {
+        ownerId: owner3.id,
+        listingId: l8.id,
+        date: daysAgo(12),
+        amount: 75,
+        category: 'advertising',
+        description: 'Listing photos',
+        vendor: 'Snap SD Photography',
+      },
+      {
+        ownerId: owner3.id,
+        listingId: l16.id,
+        date: daysAgo(6),
+        amount: 350,
+        category: 'cleaning_maintenance',
+        description: 'Pre-listing clean and carpet shampoo',
+        vendor: 'Coastal Cleaners',
+      },
+      {
+        ownerId: owner3.id,
+        listingId: null,
+        date: new Date(now.getFullYear(), 0, 12),
+        amount: 1890,
+        category: 'insurance',
+        description: 'Landlord insurance – annual premium (all units)',
+        vendor: 'State Farm',
+      },
+      {
+        ownerId: owner3.id,
+        listingId: null,
+        date: new Date(now.getFullYear(), 3, 10),
+        amount: 6400,
+        category: 'taxes',
+        description: 'Property tax – second installment',
+        vendor: 'San Diego County Treasurer',
+      },
+      {
+        ownerId: owner3.id,
+        listingId: null,
+        date: daysAgo(30),
+        amount: 325,
+        category: 'legal_professional',
+        description: 'Lease review',
+        vendor: 'Harbor Legal',
+      },
+    ],
+  })
+  await prisma.document.createMany({
+    data: [
+      {
+        ownerId: owner3.id,
+        listingId: l7.id,
+        name: 'Lease – Beachside 2BR – Jun 2026 to Jun 2027.pdf',
+        category: 'lease',
+        url: DEMO_FILE,
+        mimeType: 'application/pdf',
+        size: 182400,
+        createdAt: daysAgo(134),
+      },
+      {
+        ownerId: owner3.id,
+        listingId: l7.id,
+        name: 'Move-in inspection – Beachside 2BR.pdf',
+        category: 'inspection',
+        url: DEMO_FILE,
+        mimeType: 'application/pdf',
+        size: 2140000,
+        createdAt: daysAgo(126),
+      },
+      {
+        ownerId: owner3.id,
+        listingId: l9.id,
+        name: 'Lease – Mission Beach 1BR – signed 2025.pdf',
+        category: 'lease',
+        url: DEMO_FILE,
+        mimeType: 'application/pdf',
+        size: 164000,
+        createdAt: daysAgo(6),
+      },
+      {
+        ownerId: owner3.id,
+        listingId: l7.id,
+        name: 'Receipt – Bay Park Plumbing.jpg',
+        category: 'receipt',
+        url: DEMO_FILE,
+        mimeType: 'image/jpeg',
+        size: 420000,
+        createdAt: daysAgo(2),
+      },
+      {
+        ownerId: owner3.id,
+        listingId: null,
+        name: 'Landlord insurance policy 2026.pdf',
+        category: 'insurance',
+        url: DEMO_FILE,
+        mimeType: 'application/pdf',
+        size: 910000,
+        createdAt: new Date(now.getFullYear(), 0, 12),
+      },
+    ],
+  })
+
+  console.log('Created landlord demo data')
+  console.log(
+    `  Olivia's open tenant invite: ${process.env.CLIENT_URL || 'http://localhost:3000'}/tenant-invite/${OLIVIA_INVITE_TOKEN}`
+  )
+
   console.log('✅ Database seeded successfully!')
   console.log('')
   console.log('📝 Demo Accounts (password: password123)')
@@ -953,7 +1880,9 @@ async function main() {
   console.log('LANDLORDS:')
   console.log('  sarah.chen@gmail.com       (3 listings)')
   console.log('  mike.rodriguez@gmail.com   (3 listings)')
-  console.log('  jennifer.park@gmail.com    (3 listings)')
+  console.log(
+    '  jennifer.park@gmail.com    (4 listings — full landlord demo: leased, onboarding, applicants)'
+  )
   console.log('  david.thompson@gmail.com   (3 listings)')
   console.log('  lisa.martinez@gmail.com    (3 listings)')
   console.log('')
@@ -964,6 +1893,12 @@ async function main() {
   console.log('  mia.garcia@gmail.com')
   console.log('  tyler.brown@gmail.com')
   console.log('  sophia.kim@gmail.com')
+  console.log('  noah.carter@gmail.com      (onboarded tenant, Mission Beach)')
+  console.log('  priya.patel@gmail.com      (applicant, Ocean View Studio)')
+  console.log(
+    '  marcus.lee@gmail.com       (applicant; co-signer linda.lee@gmail.com)'
+  )
+  console.log('  chloe.nguyen@gmail.com     (PB Study Squad group member)')
   console.log('─'.repeat(50))
 }
 
