@@ -49,7 +49,7 @@ const docUpload = multer({
 router.get('/', authenticate, requireUserType('owner'), async (req, res) => {
   try {
     const { listingId, category } = req.query
-    const where = { ownerId: req.user.id }
+    const where = { ownerId: req.portfolioId }
     if (listingId) where.listingId = listingId
     if (category) where.category = category
 
@@ -85,7 +85,7 @@ router.post(
       }
       if (listingId) {
         const listing = await prisma.listing.findFirst({
-          where: { id: listingId, ownerId: req.user.id },
+          where: { id: listingId, ownerId: req.portfolioId },
           select: { id: true },
         })
         if (!listing) {
@@ -96,14 +96,14 @@ router.post(
       }
 
       const result = await uploadToCloudinary(req.file.buffer, {
-        folder: `rentra/documents/${req.user.id}`,
+        folder: `rentra/documents/${req.portfolioId}`,
         publicId: `doc_${Date.now()}`,
         resourceType: 'auto',
       })
 
       const document = await prisma.document.create({
         data: {
-          ownerId: req.user.id,
+          ownerId: req.portfolioId,
           name: name || req.file.originalname,
           category,
           url: result.secure_url,
@@ -132,7 +132,7 @@ router.delete(
   async (req, res) => {
     try {
       const document = await prisma.document.findFirst({
-        where: { id: req.params.id, ownerId: req.user.id },
+        where: { id: req.params.id, ownerId: req.portfolioId },
       })
       if (!document) {
         return res

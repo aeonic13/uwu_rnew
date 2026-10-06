@@ -41,6 +41,8 @@ enum ApplicationSource {
   onboarded
   // Member row created when a household lease is renewed in place.
   renewal
+  // Member row created when a signed lease is amended mid-term.
+  amendment
 }
 
 // Where a lease was executed. `rentra` leases are e-signed here; `imported`
@@ -150,6 +152,8 @@ model User {
   inspections           Inspection[]         @relation("OwnerInspections")
   maintenanceComments   MaintenanceComment[] @relation("MaintenanceComments")
   notifications         Notification[]
+  portfolioMembers      PortfolioMember[]    @relation("PortfolioOwner")
+  portfolioMemberships  PortfolioMember[]    @relation("PortfolioMemberships")
 
   @@index([email])
   @@index([userType])
@@ -467,11 +471,18 @@ model Agreement {
   // Lifecycle. Ending a lease stamps endedAt and moves endDate to the
   // move-out date; the property reads leased until then. A renewal is a
   // new Agreement whose renewsId points back here.
-  endedAt   DateTime?
-  endReason String? // move_out | nonrenewal | early_termination | other
-  renewsId  String?    @unique
-  renews    Agreement? @relation("LeaseRenewal", fields: [renewsId], references: [id], onDelete: SetNull)
-  renewal   Agreement? @relation("LeaseRenewal")
+  endedAt       DateTime?
+  endReason     String? // move_out | nonrenewal | early_termination | other
+  renewsId      String?    @unique
+  renews        Agreement? @relation("LeaseRenewal", fields: [renewsId], references: [id], onDelete: SetNull)
+  renewal       Agreement? @relation("LeaseRenewal")
+  // A mid-term amendment is a replacement Agreement that takes over on its
+  // startDate once everyone has signed; the amended lease is then ended
+  // with endReason `amended` and its deposit, split and autopays move over.
+  amendsId      String?    @unique
+  amends        Agreement? @relation("LeaseAmendment", fields: [amendsId], references: [id], onDelete: SetNull)
+  amendment     Agreement? @relation("LeaseAmendment")
+  amendmentNote String?
 
   // Structured late-fee rule (the free-text terms.lateFee stays for the
   // document). Null means no late fee is charged.
@@ -1093,4 +1104,30 @@ model Notification {
 
   @@index([userId, readAt])
   @@index([userId, createdAt])
+}
+
+// Someone who works a landlord's portfolio besides the landlord: a
+// co-owner or a property manager. Owner routes resolve `req.portfolioId`
+// to the portfolio owner's id for active members (middleware/portfolio.js),
+// so a member sees and manages the same properties. Signing leases stays
+// with the owner's own account.
+model PortfolioMember {
+  id           String    @id @default(cuid())
+  role         String    @default("manager") // manager | co_owner
+  status       String    @default("invited") // invited | active | removed
+  inviteEmail  String
+  inviteToken  String    @unique
+  tokenExpires DateTime
+  acceptedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  ownerId String
+  owner   User    @relation("PortfolioOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  userId  String?
+  user    User?   @relation("PortfolioMemberships", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId])
+  @@index([userId])
+  @@index([inviteEmail])
 }

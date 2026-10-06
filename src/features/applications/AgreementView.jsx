@@ -122,7 +122,11 @@ function AgreementView() {
   const imported = Boolean(agreement.imported)
   // Imported leases are confirmed through the tenant's invitation, never
   // e-signed here.
-  const needsMySignature = !isSigned && !agreement.viewerHasSigned && !imported
+  const needsMySignature =
+    !isSigned &&
+    !agreement.viewerHasSigned &&
+    !imported &&
+    agreement.canSign !== false
   const awaitingOther = !isSigned && (agreement.viewerHasSigned || imported)
   const signedWord = imported ? 'Confirmed' : 'Signed'
   const notSignedWord = imported ? 'Not confirmed' : 'Not signed'
@@ -266,10 +270,52 @@ function AgreementView() {
             )}
           </div>
         )}
-        {agreement.endedAt && (
+        {agreement.endedAt && agreement.endReason !== 'amended' && (
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
             Notice given: this lease ends on{' '}
             {formatDate(agreement.terms.endDate)}.
+          </div>
+        )}
+        {agreement.actingForOwner && (
+          <div className="bg-white rounded-lg border p-4 text-sm text-gray-700">
+            You are viewing this lease as a member of the landlord&apos;s team.
+            Only the owner can sign it.
+          </div>
+        )}
+        {agreement.amendsId && (
+          <div className="bg-brand-50 border border-brand-200 rounded-lg p-4 text-sm text-gray-800">
+            <p>
+              This amendment replaces the current lease from{' '}
+              {formatDate(agreement.terms.startDate)}
+              {isSigned ? '.' : ' once everyone has signed.'}{' '}
+              <button
+                type="button"
+                onClick={() => navigate(`/agreement/${agreement.amendsId}`)}
+                className="text-brand-600 hover:underline"
+              >
+                View the lease it amends
+              </button>
+            </p>
+            {agreement.amendmentNote && (
+              <p className="mt-2">
+                <span className="text-gray-500">Note from the landlord:</span>{' '}
+                {agreement.amendmentNote}
+              </p>
+            )}
+          </div>
+        )}
+        {agreement.amendmentId && (
+          <div className="bg-white rounded-lg border p-4 text-sm text-gray-700">
+            {agreement.endReason === 'amended'
+              ? 'This lease was replaced by an amendment.'
+              : 'An amendment to this lease is awaiting signatures.'}{' '}
+            <button
+              type="button"
+              onClick={() => navigate(`/agreement/${agreement.amendmentId}`)}
+              className="text-brand-600 hover:underline"
+            >
+              Open the amendment
+            </button>
           </div>
         )}
         {agreement.renewsId && (

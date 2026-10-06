@@ -7,6 +7,7 @@ import {
   sendRentReceiptEmail,
 } from '../utils/email.js'
 import { monthWindow, tenantLedger } from '../utils/ledger.js'
+import { pickCurrentApplication } from '../utils/tenancy.js'
 import {
   createMoovAccount,
   linkBankAccount,
@@ -410,11 +411,17 @@ router.post('/rent', authenticate, async (req, res) => {
   try {
     const { paymentMethod = 'ach' } = req.body
 
-    const application = await prisma.application.findFirst({
+    const candidates = await prisma.application.findMany({
       where: { applicantId: req.user.id, status: 'approved' },
-      orderBy: { updatedAt: 'desc' },
       include: {
-        agreement: { select: { monthlyRent: true } },
+        agreement: {
+          select: {
+            monthlyRent: true,
+            startDate: true,
+            endDate: true,
+            signers: { select: { signed: true } },
+          },
+        },
         listing: {
           select: {
             price: true,
@@ -424,6 +431,9 @@ router.post('/rent', authenticate, async (req, res) => {
         },
       },
     })
+    // The lease in force today, not merely the newest approved row: a
+    // signed renewal or a pending amendment also leaves one behind.
+    const application = pickCurrentApplication(candidates)
 
     if (!application) {
       return res.status(400).json({
@@ -557,7 +567,11 @@ router.post(
       }
 
       const application = await prisma.application.findFirst({
-        where: { id: applicationId, ownerId: req.user.id, status: 'approved' },
+        where: {
+          id: applicationId,
+          ownerId: req.portfolioId,
+          status: 'approved',
+        },
         include: {
           agreement: { select: { monthlyRent: true } },
           listing: { select: { price: true, title: true } },
@@ -626,7 +640,11 @@ router.post(
       }
 
       const application = await prisma.application.findFirst({
-        where: { id: applicationId, ownerId: req.user.id, status: 'approved' },
+        where: {
+          id: applicationId,
+          ownerId: req.portfolioId,
+          status: 'approved',
+        },
         include: {
           applicant: {
             select: { firstName: true, lastName: true, email: true },

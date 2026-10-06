@@ -56,6 +56,24 @@ export async function authenticate(req, res, next) {
     // Attach user to request object
     req.user = user
 
+    // Owner routes act on a portfolio. A landlord works their own; an
+    // active team member (routes/team.js) works the owner's portfolio, so
+    // every owner-scoped query uses req.portfolioId instead of req.user.id.
+    // Personal things (signing, messages, who-did-it fields) keep req.user.id.
+    req.portfolioId = user.id
+    req.portfolioRole = 'owner'
+    if (user.userType === 'owner') {
+      const membership = await prisma.portfolioMember.findFirst({
+        where: { userId: user.id, status: 'active' },
+        select: { ownerId: true, role: true },
+        orderBy: { acceptedAt: 'asc' },
+      })
+      if (membership) {
+        req.portfolioId = membership.ownerId
+        req.portfolioRole = membership.role
+      }
+    }
+
     next()
   } catch (error) {
     console.error('Authentication error:', error)

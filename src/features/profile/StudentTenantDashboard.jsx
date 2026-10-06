@@ -24,6 +24,15 @@ import { rentService } from '../../services/rentService'
 import UtilityBillSplit from '../utilities/UtilityBillSplit'
 import RentSplitCard from '../payments/RentSplitCard'
 import AutopayCard from '../payments/AutopayCard'
+import {
+  pickCurrentLease,
+  sortLeases,
+  leaseState,
+  leaseStatusLabel,
+  leaseStatusTone,
+  SIGNABLE_STATES,
+  ACTIVE_STATES,
+} from './leasePicker'
 
 /**
  * Student Tenant Dashboard - Comprehensive dashboard for student tenants
@@ -101,6 +110,8 @@ function PayRentTab() {
   const [payError, setPayError] = useState(null)
   // Household split + autopay for the lease (server/routes/rent.js).
   const [plan, setPlan] = useState(null)
+  // A renewal or amendment still waiting for this tenant's signature.
+  const [waitingLease, setWaitingLease] = useState(null)
 
   useEffect(() => {
     let active = true
@@ -108,9 +119,23 @@ function PayRentTab() {
       .listAgreements()
       .then(agreements => {
         if (!active) return
-        // Prefer a fully-signed lease; otherwise the most recent one.
-        const lease =
-          agreements.find(a => a.status === 'signed') || agreements[0]
+        // The lease in force today (a signed renewal waits its turn).
+        const lease = pickCurrentLease(agreements)
+        const waiting = agreements.find(
+          a =>
+            SIGNABLE_STATES.includes(leaseState(a)) &&
+            !a.viewerHasSigned &&
+            a.canSign !== false
+        )
+        setWaitingLease(
+          waiting
+            ? {
+                id: waiting.id,
+                kind: leaseState(waiting),
+                startDate: waiting.terms?.startDate,
+              }
+            : null
+        )
         if (lease) {
           setCurrentLease({
             id: lease.id,
@@ -118,6 +143,7 @@ function PayRentTab() {
             monthlyRent: lease.terms?.monthlyRent || 0,
             landlord: lease.landlord?.name,
             endDate: lease.terms?.endDate,
+            state: leaseState(lease),
           })
           return rentService
             .getPlan(lease.id)
@@ -190,6 +216,45 @@ function PayRentTab() {
 
   return (
     <div className="space-y-6">
+      {waitingLease && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="font-semibold text-amber-900">
+              {waitingLease.kind === 'amendment'
+                ? 'A lease amendment is waiting for your signature'
+                : waitingLease.kind === 'renewal'
+                  ? 'A lease renewal is waiting for your signature'
+                  : 'A lease is waiting for your signature'}
+            </p>
+            <p className="text-sm text-amber-800">
+              {waitingLease.startDate
+                ? `Takes effect ${new Date(waitingLease.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}. `
+                : ''}
+              Your current lease stands until everyone has signed.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate(`/agreement/${waitingLease.id}`)}
+            className="px-4 py-2 bg-brand-500 text-white rounded-lg text-sm font-semibold hover:bg-brand-600"
+          >
+            Review & sign
+          </button>
+        </div>
+      )}
+      {currentLease.state === 'ending' && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-900">
+          Your lease ends{' '}
+          {new Date(currentLease.endDate).toLocaleDateString('en-US', {
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric',
+            timeZone: 'UTC',
+          })}
+          . Rent stays due until then; your deposit, less any itemized
+          deductions, comes back after move-out.
+        </div>
+      )}
       {/* Current Lease Info */}
       <div className="bg-white rounded-lg border border-gray-200 p-4">
         <h3 className="font-semibold text-lg mb-3">Current Lease</h3>
@@ -892,19 +957,12 @@ function LeasesTab() {
       .then(agreements => {
         if (!active) return
         setLeases(
-          agreements.map(a => ({
+          sortLeases(agreements).map(a => ({
             id: a.id,
             property: a.property?.description || a.property?.address || 'Lease',
             landlord: a.landlord?.name || '—',
             landlordEmail: a.landlord?.email || null,
-            status:
-              a.status === 'signed'
-                ? a.endedAt
-                  ? 'ending'
-                  : 'active'
-                : a.renewsId
-                  ? 'renewal'
-                  : 'pending',
+            status: leaseState(a),
             startDate: a.terms?.startDate,
             endDate: a.terms?.endDate,
             monthlyRent: a.terms?.monthlyRent,
@@ -955,27 +1013,16 @@ function LeasesTab() {
               </p>
             </div>
             <span
-              className={`px-3 py-1 rounded-full text-sm font-medium ${
-                lease.status === 'active'
-                  ? 'bg-green-100 text-green-700'
-                  : lease.status === 'ending'
-                    ? 'bg-amber-100 text-amber-800'
-                    : lease.status === 'renewal'
-                      ? 'bg-brand-100 text-brand-700'
-                      : 'bg-gray-100 text-gray-700'
-              }`}
+              className={`px-3 py-1 rounded-full text-sm font-medium ${leaseStatusTone(
+                lease.status
+              )}`}
             >
-              {
-                {
-                  active: 'Active',
-                  ending: `Ends ${lease.endDate ? new Date(lease.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }) : ''}`,
-                  renewal: 'Renewal to sign',
-                  pending: 'Pending',
-                }[lease.status]
-              }
+              {leaseStatusLabel(lease.status, {
+                terms: { startDate: lease.startDate, endDate: lease.endDate },
+              })}
             </span>
           </div>
-          {(lease.status === 'pending' || lease.status === 'renewal') && (
+          {SIGNABLE_STATES.includes(lease.status) && (
             <p
               className="text-xs text-yellow-700 bg-yellow-50 border border-yellow-100 rounded-lg px-3 py-2 mb-4"
               data-testid="lease-waiting"
@@ -1024,7 +1071,7 @@ function LeasesTab() {
               className="flex-1 flex items-center justify-center py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 font-medium"
             >
               <Eye size={18} className="mr-2" />
-              {lease.status === 'active' || lease.status === 'ending'
+              {ACTIVE_STATES.includes(lease.status) || lease.status === 'past'
                 ? 'View Lease'
                 : 'View & Sign'}
             </button>
@@ -1041,7 +1088,7 @@ function LeasesTab() {
             </button>
           </div>
 
-          {(lease.status === 'active' || lease.status === 'ending') && (
+          {ACTIVE_STATES.includes(lease.status) && (
             <div className="mt-3 bg-brand-50 border border-brand-200 rounded-lg p-3 text-sm">
               <AlertCircle size={16} className="inline text-brand-500 mr-2" />
               <span className="text-brand-600">

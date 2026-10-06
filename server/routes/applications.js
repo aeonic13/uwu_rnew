@@ -391,10 +391,13 @@ router.get('/', authenticate, async (req, res) => {
     if (userType === 'student') {
       // Students see their own applications
       where.applicantId = userId
+      // Renewal, amendment and onboarded member rows are leases, not
+      // applications the tenant submitted.
+      where.source = 'applied'
     } else {
       // Owners see applications for their listings. Onboarded household
       // rows are not applications anyone submitted.
-      where.ownerId = userId
+      where.ownerId = req.portfolioId
       where.source = 'applied'
     }
 
@@ -540,7 +543,10 @@ router.get('/:id', authenticate, async (req, res) => {
     }
 
     // Only applicant or owner can view
-    if (application.applicantId !== userId && application.ownerId !== userId) {
+    if (
+      application.applicantId !== userId &&
+      application.ownerId !== req.portfolioId
+    ) {
       return res.status(403).json({
         error: {
           message: 'You do not have permission to view this application',
@@ -594,7 +600,7 @@ router.put('/:id/status', authenticate, async (req, res) => {
     }
 
     // Permission check
-    const isOwner = application.ownerId === userId
+    const isOwner = application.ownerId === req.portfolioId
     const isApplicant = application.applicantId === userId
 
     if (!isOwner && !isApplicant) {
@@ -769,7 +775,7 @@ router.get('/listing/:listingId', authenticate, async (req, res) => {
       })
     }
 
-    if (listing.ownerId !== userId) {
+    if (listing.ownerId !== req.portfolioId) {
       return res.status(403).json({
         error: {
           message:

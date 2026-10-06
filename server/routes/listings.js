@@ -243,7 +243,7 @@ router.post('/', authenticate, async (req, res) => {
         screeningCriteria: sanitizeScreeningCriteria(screeningCriteria),
         amenities: amenities || [],
         images: images || [],
-        ownerId: req.user.id,
+        ownerId: req.portfolioId,
         active: true,
       },
       include: {
@@ -315,7 +315,7 @@ router.put('/:id', authenticate, async (req, res) => {
       })
     }
 
-    if (existingListing.ownerId !== req.user.id) {
+    if (existingListing.ownerId !== req.portfolioId) {
       return res.status(403).json({
         error: { message: 'You do not have permission to update this listing' },
       })
@@ -442,7 +442,7 @@ router.delete('/:id', authenticate, async (req, res) => {
       })
     }
 
-    if (listing.ownerId !== req.user.id) {
+    if (listing.ownerId !== req.portfolioId) {
       return res.status(403).json({
         error: { message: 'You do not have permission to delete this listing' },
       })
@@ -475,7 +475,7 @@ router.get('/my/listings', authenticate, async (req, res) => {
   try {
     const listings = await prisma.listing.findMany({
       where: {
-        ownerId: req.user.id,
+        ownerId: req.portfolioId,
       },
       include: {
         _count: {

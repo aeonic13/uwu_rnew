@@ -24,6 +24,7 @@ import { tenantInvitesService } from '../../../services/tenantInvitesService'
 import {
   EndLeaseModal,
   RenewLeaseModal,
+  AmendLeaseModal,
   LeaseActionButtons,
 } from './LeaseActions'
 import { useNavigate } from 'react-router-dom'
@@ -321,6 +322,10 @@ MemberRow.propTypes = {
 }
 
 function leaseHeading(lease) {
+  if (lease.amendsId && !lease.fullySigned)
+    return 'Amendment awaiting signatures'
+  if (lease.amendsId && lease.current) return 'Current lease · amended'
+  if (lease.endReason === 'amended') return 'Replaced by an amendment'
   if (lease.renewsId && !lease.fullySigned) return 'Renewal awaiting signatures'
   if (lease.renewsId && lease.current && new Date(lease.startDate) > new Date())
     return 'Upcoming renewal'
@@ -405,6 +410,22 @@ function LeaseCard({ lease, listingId, onRefresh, onError }) {
               deposit refund countdown runs from that date.
             </p>
           )}
+          {lease.amendmentId && (
+            <p className="text-xs text-gray-600 mt-1">
+              Amendment drafted ·{' '}
+              <Link
+                to={`/agreement/${lease.amendmentId}`}
+                className="text-brand-600 hover:underline"
+              >
+                open the amendment
+              </Link>
+            </p>
+          )}
+          {lease.amendsId && lease.amendmentNote && (
+            <p className="text-xs text-gray-600 mt-1">
+              Amendment note: {lease.amendmentNote}
+            </p>
+          )}
           {lease.renewalId && (
             <p className="text-xs text-gray-600 mt-1">
               Renewal drafted ·{' '}
@@ -472,6 +493,7 @@ function LeaseCard({ lease, listingId, onRefresh, onError }) {
             className={smallButton}
             onEnd={() => setAction('end')}
             onRenew={() => setAction('renew')}
+            onAmend={() => setAction('amend')}
           />
         </div>
       </header>
@@ -540,6 +562,16 @@ function LeaseCard({ lease, listingId, onRefresh, onError }) {
       </footer>
       {action === 'end' && (
         <EndLeaseModal
+          lease={lease}
+          onClose={() => setAction(null)}
+          onDone={async () => {
+            setAction(null)
+            await onRefresh()
+          }}
+        />
+      )}
+      {action === 'amend' && (
+        <AmendLeaseModal
           lease={lease}
           onClose={() => setAction(null)}
           onDone={async () => {

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import PropTypes from 'prop-types'
-import { CalendarX, RefreshCw, X } from 'lucide-react'
+import { CalendarX, RefreshCw, FileEdit, X } from 'lucide-react'
 import { agreementsService } from '../../../services/agreementsService'
 import { money, shortDate } from './statusMeta'
 
@@ -288,11 +288,157 @@ RenewLeaseModal.propTypes = {
   onDone: PropTypes.func.isRequired,
 }
 
-/** The End / Renew buttons for a signed lease in force. */
-export function LeaseActionButtons({ lease, onEnd, onRenew, className }) {
+/** Change a signed lease mid-term; everyone signs the amendment. */
+export function AmendLeaseModal({ lease, onClose, onDone }) {
+  const [effectiveDate, setEffectiveDate] = useState(() =>
+    addDays(new Date(), 30)
+  )
+  const [monthlyRent, setMonthlyRent] = useState(lease.monthlyRent)
+  const [endDate, setEndDate] = useState(toInput(lease.endDate))
+  const [addEmail, setAddEmail] = useState('')
+  const [note, setNote] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  const submit = async e => {
+    e.preventDefault()
+    setBusy(true)
+    setError('')
+    try {
+      await agreementsService.amendLease(lease.id, {
+        effectiveDate,
+        monthlyRent: Number(monthlyRent),
+        endDate: lease.monthToMonth ? undefined : endDate,
+        addTenantEmails: addEmail.trim() ? [addEmail.trim()] : [],
+        note: note.trim() || undefined,
+      })
+      await onDone()
+    } catch (err) {
+      setError(err?.message || 'Could not create the amendment.')
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Modal title="Amend this lease" onClose={onClose}>
+      <form onSubmit={submit} className="space-y-4">
+        <p className="text-sm text-gray-600">
+          Drafts a replacement lease that takes over on the effective date.
+          Every tenant and you sign it; until then the current lease stands. The
+          deposit, household split and autopay carry over.
+        </p>
+        <div className="grid grid-cols-2 gap-3">
+          <label className="block text-sm">
+            <span className="text-gray-700 font-medium">Effective date</span>
+            <input
+              type="date"
+              required
+              value={effectiveDate}
+              min={addDays(lease.startDate, 1)}
+              onChange={e => setEffectiveDate(e.target.value)}
+              className={`${field} mt-1`}
+            />
+          </label>
+          <label className="block text-sm">
+            <span className="text-gray-700 font-medium">Monthly rent ($)</span>
+            <input
+              type="number"
+              min="1"
+              required
+              value={monthlyRent}
+              onChange={e => setMonthlyRent(e.target.value)}
+              className={`${field} mt-1`}
+            />
+          </label>
+          {!lease.monthToMonth && (
+            <label className="block text-sm col-span-2">
+              <span className="text-gray-700 font-medium">Lease end date</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={e => setEndDate(e.target.value)}
+                className={`${field} mt-1`}
+              />
+            </label>
+          )}
+          <label className="block text-sm col-span-2">
+            <span className="text-gray-700 font-medium">
+              Add a roommate{' '}
+              <span className="font-normal text-gray-500">
+                (their Rentra tenant email, optional)
+              </span>
+            </span>
+            <input
+              type="email"
+              value={addEmail}
+              onChange={e => setAddEmail(e.target.value)}
+              placeholder="new.roommate@email.com"
+              className={`${field} mt-1`}
+            />
+          </label>
+          <label className="block text-sm col-span-2">
+            <span className="text-gray-700 font-medium">
+              Note to tenants{' '}
+              <span className="font-normal text-gray-500">(optional)</span>
+            </span>
+            <textarea
+              rows={2}
+              value={note}
+              onChange={e => setNote(e.target.value)}
+              placeholder="e.g. Rent increase per the annual review; everything else unchanged."
+              className={`${field} mt-1`}
+            />
+          </label>
+        </div>
+        {error && <p className="text-sm text-red-600">{error}</p>}
+        <div className="flex gap-2 pt-1">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg text-sm hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={busy}
+            className="flex-1 bg-brand-500 text-white py-2 rounded-lg text-sm font-semibold hover:bg-brand-600 disabled:opacity-50"
+          >
+            {busy ? 'Creating…' : 'Send amendment for signatures'}
+          </button>
+        </div>
+      </form>
+    </Modal>
+  )
+}
+
+AmendLeaseModal.propTypes = {
+  lease: PropTypes.object.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onDone: PropTypes.func.isRequired,
+}
+
+/** The Amend / Renew / End buttons for a signed lease in force. */
+export function LeaseActionButtons({
+  lease,
+  onEnd,
+  onRenew,
+  onAmend,
+  className,
+}) {
   if (!lease.fullySigned || !lease.current || lease.endedAt) return null
   return (
     <>
+      {!lease.amendmentId && onAmend && (
+        <button
+          type="button"
+          onClick={onAmend}
+          className={className}
+          title="Change rent, dates, terms or roommates mid-term"
+        >
+          <FileEdit size={13} /> Amend
+        </button>
+      )}
       {!lease.renewalId && (
         <button
           type="button"
@@ -319,5 +465,6 @@ LeaseActionButtons.propTypes = {
   lease: PropTypes.object.isRequired,
   onEnd: PropTypes.func.isRequired,
   onRenew: PropTypes.func.isRequired,
+  onAmend: PropTypes.func,
   className: PropTypes.string,
 }

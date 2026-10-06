@@ -108,6 +108,9 @@ const SecurityDeposits = lazy(
 const Bookkeeping = lazy(() => import('../features/owner/Bookkeeping'))
 const TaxCenter = lazy(() => import('../features/owner/TaxCenter'))
 const OwnerDocuments = lazy(() => import('../features/owner/Documents'))
+const OwnerTeam = lazy(() => import('../features/owner/Team'))
+const TeamInviteAccept = lazy(() => import('../features/auth/TeamInviteAccept'))
+const OwnerReports = lazy(() => import('../features/owner/Reports'))
 const OwnerInspections = lazy(() => import('../features/owner/Inspections'))
 const InspectionEditor = lazy(
   () => import('../features/owner/property/InspectionEditor')
@@ -373,6 +376,15 @@ const routeConfig = [
     element: (
       <Suspense fallback={<SuspenseFallback />}>
         <TenantInviteAccept />
+      </Suspense>
+    ),
+  },
+  // Team invitation (public page; accepting needs a landlord sign-in)
+  {
+    path: '/team-invite/:token',
+    element: (
+      <Suspense fallback={<SuspenseFallback />}>
+        <TeamInviteAccept />
       </Suspense>
     ),
   },
@@ -719,6 +731,8 @@ const routeConfig = [
         { path: '/dashboard/banking', Component: Bookkeeping },
         { path: '/dashboard/tax', Component: TaxCenter },
         { path: '/dashboard/documents', Component: OwnerDocuments },
+        { path: '/dashboard/team', Component: OwnerTeam },
+        { path: '/dashboard/reports', Component: OwnerReports },
         { path: '/dashboard/inspections', Component: OwnerInspections },
       ].map(({ path, Component }) => ({
         path,

@@ -30,7 +30,7 @@ export const EXPENSE_CATEGORIES = {
 router.get('/', authenticate, requireUserType('owner'), async (req, res) => {
   try {
     const { year, listingId } = req.query
-    const where = { ownerId: req.user.id }
+    const where = { ownerId: req.portfolioId }
     if (listingId) where.listingId = listingId
     if (year) {
       const y = parseInt(year, 10)
@@ -89,7 +89,7 @@ router.post('/', authenticate, requireUserType('owner'), async (req, res) => {
     }
     if (listingId) {
       const listing = await prisma.listing.findFirst({
-        where: { id: listingId, ownerId: req.user.id },
+        where: { id: listingId, ownerId: req.portfolioId },
         select: { id: true },
       })
       if (!listing) {
@@ -99,7 +99,7 @@ router.post('/', authenticate, requireUserType('owner'), async (req, res) => {
 
     const expense = await prisma.expense.create({
       data: {
-        ownerId: req.user.id,
+        ownerId: req.portfolioId,
         date: parsedDate,
         amount: parsedAmount,
         category,
@@ -123,7 +123,7 @@ router.post('/', authenticate, requireUserType('owner'), async (req, res) => {
 router.put('/:id', authenticate, requireUserType('owner'), async (req, res) => {
   try {
     const existing = await prisma.expense.findFirst({
-      where: { id: req.params.id, ownerId: req.user.id },
+      where: { id: req.params.id, ownerId: req.portfolioId },
     })
     if (!existing) {
       return res.status(404).json({ error: { message: 'Expense not found' } })
@@ -186,7 +186,7 @@ router.delete(
   async (req, res) => {
     try {
       const existing = await prisma.expense.findFirst({
-        where: { id: req.params.id, ownerId: req.user.id },
+        where: { id: req.params.id, ownerId: req.portfolioId },
         select: { id: true },
       })
       if (!existing) {
@@ -214,7 +214,7 @@ router.get(
   requireUserType('owner'),
   async (req, res) => {
     try {
-      const ownerId = req.user.id
+      const ownerId = req.portfolioId
       const year = parseInt(req.query.year, 10) || new Date().getFullYear()
       const start = new Date(year, 0, 1)
       const end = new Date(year + 1, 0, 1)

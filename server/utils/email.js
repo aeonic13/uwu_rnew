@@ -1235,3 +1235,40 @@ export async function sendRentReceiptEmail({
     text: `Receipt: $${amount} ${method} rent payment for ${listingTitle} recorded on ${new Date(date).toDateString()}. ${url}`,
   })
 }
+
+/**
+ * Tenant: the landlord drafted a mid-term amendment for them to sign.
+ */
+export async function sendLeaseAmendmentEmail({
+  tenant,
+  landlordName,
+  listingTitle,
+  agreementId,
+  effectiveDate,
+  monthlyRent,
+  note,
+}) {
+  if (!tenant?.email) return null
+  const url = `${process.env.CLIENT_URL}/agreement/${agreementId}`
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+      <h2 style="color: #fc6a03;">Lease amendment to review ✍️</h2>
+      <p>Hi ${tenant.firstName},</p>
+      <p>${landlordName} proposed a change to your lease at <strong>${listingTitle}</strong>, effective <strong>${longDate(effectiveDate)}</strong>.</p>
+      <div style="background: #f9fafb; padding: 15px; border-radius: 6px; margin: 20px 0;">
+        <strong>Monthly rent:</strong> $${Number(monthlyRent).toLocaleString()}<br>
+        ${note ? `<strong>Note from your landlord:</strong> ${note}` : ''}
+      </div>
+      <p>Nothing changes until every tenant and the landlord have signed the amendment. Your current lease stays in force until then.</p>
+      <p style="margin-top: 24px;"><a href="${url}" style="background: #fc6a03; color: #fff; padding: 10px 18px; border-radius: 6px; text-decoration: none;">Review the amendment</a></p>
+      <p style="color: #888; font-size: 13px; margin-top: 24px;">— The Rentra Team</p>
+    </div>
+  `
+  return sendEmail({
+    to: tenant.email,
+    notify: { type: 'lease', link: `/agreement/${agreementId}` },
+    subject: `Lease amendment for ${listingTitle}`,
+    html,
+    text: `Hi ${tenant.firstName}, ${landlordName} proposed a lease amendment for ${listingTitle} effective ${longDate(effectiveDate)} ($${monthlyRent}/mo).${note ? ` Note: ${note}` : ''} Review and sign: ${url}`,
+  })
+}

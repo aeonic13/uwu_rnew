@@ -153,7 +153,7 @@ router.get('/:agreementId', authenticate, async (req, res) => {
     if (!lease) {
       return res.status(404).json({ error: { message: 'Lease not found' } })
     }
-    if (!isOwner(lease, req.user.id) && !isTenant(lease, req.user.id)) {
+    if (!isOwner(lease, req.portfolioId) && !isTenant(lease, req.user.id)) {
       return res
         .status(403)
         .json({ error: { message: 'Not a party to this lease' } })
@@ -177,7 +177,7 @@ router.post(
   async (req, res) => {
     try {
       const lease = await loadLease(req.params.agreementId)
-      if (!lease || !isOwner(lease, req.user.id)) {
+      if (!lease || !isOwner(lease, req.portfolioId)) {
         return res.status(404).json({ error: { message: 'Lease not found' } })
       }
       const { type, amount, description, dueDate, userId } = req.body || {}
@@ -267,7 +267,7 @@ router.delete(
           agreement: { select: { application: { select: { ownerId: true } } } },
         },
       })
-      if (!charge || charge.agreement.application.ownerId !== req.user.id) {
+      if (!charge || charge.agreement.application.ownerId !== req.portfolioId) {
         return res.status(404).json({ error: { message: 'Charge not found' } })
       }
       await prisma.rentCharge.delete({ where: { id: charge.id } })
@@ -293,7 +293,7 @@ router.post(
   async (req, res) => {
     try {
       const lease = await loadLease(req.params.agreementId)
-      if (!lease || !isOwner(lease, req.user.id)) {
+      if (!lease || !isOwner(lease, req.portfolioId)) {
         return res.status(404).json({ error: { message: 'Lease not found' } })
       }
       const now = new Date()

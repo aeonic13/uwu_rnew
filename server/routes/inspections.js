@@ -94,7 +94,7 @@ async function canRead(inspection, user) {
  */
 router.get('/', authenticate, requireUserType('owner'), async (req, res) => {
   try {
-    const where = { ownerId: req.user.id }
+    const where = { ownerId: req.portfolioId }
     if (req.query.listingId) where.listingId = String(req.query.listingId)
     const inspections = await prisma.inspection.findMany({
       where,
@@ -134,7 +134,7 @@ router.post('/', authenticate, requireUserType('owner'), async (req, res) => {
       return res.status(400).json({ error: { message: 'listingId required' } })
     }
     const listing = await prisma.listing.findFirst({
-      where: { id: listingId, ownerId: req.user.id },
+      where: { id: listingId, ownerId: req.portfolioId },
       select: {
         id: true,
         bedrooms: true,
@@ -166,7 +166,7 @@ router.post('/', authenticate, requireUserType('owner'), async (req, res) => {
       data: {
         type,
         listingId,
-        ownerId: req.user.id,
+        ownerId: req.portfolioId,
         agreementId: agreementRef,
         items: defaultChecklist(listing),
       },
@@ -207,7 +207,7 @@ router.get('/:id', authenticate, async (req, res) => {
 /** Load the owner's draft or answer the request; returns null when answered. */
 async function ownedDraft(req, res) {
   const inspection = await loadInspection(req.params.id)
-  if (!inspection || inspection.listing.ownerId !== req.user.id) {
+  if (!inspection || inspection.listing.ownerId !== req.portfolioId) {
     res.status(404).json({ error: { message: 'Inspection not found' } })
     return null
   }
@@ -336,7 +336,7 @@ router.post(
       const results = await Promise.all(
         req.files.map((file, index) =>
           uploadToCloudinary(file.buffer, {
-            folder: `rentra/inspections/${req.user.id}`,
+            folder: `rentra/inspections/${req.portfolioId}`,
             publicId: `${inspection.id}_${Date.now()}_${index}`,
             transformation: [
               { width: 1600, height: 1600, crop: 'limit' },
@@ -369,7 +369,7 @@ router.post(
   async (req, res) => {
     try {
       const inspection = await loadInspection(req.params.id)
-      if (!inspection || inspection.listing.ownerId !== req.user.id) {
+      if (!inspection || inspection.listing.ownerId !== req.portfolioId) {
         return res
           .status(404)
           .json({ error: { message: 'Inspection not found' } })
@@ -396,7 +396,7 @@ router.post(
           application: { select: { ownerId: true } },
         },
       })
-      if (!agreement || agreement.application.ownerId !== req.user.id) {
+      if (!agreement || agreement.application.ownerId !== req.portfolioId) {
         return res.status(404).json({ error: { message: 'Lease not found' } })
       }
 
@@ -412,7 +412,7 @@ router.post(
         deposit = await prisma.securityDeposit.create({
           data: {
             agreementId: agreement.id,
-            ownerId: req.user.id,
+            ownerId: req.portfolioId,
             amountHeld: agreement.securityDeposit,
             state,
           },

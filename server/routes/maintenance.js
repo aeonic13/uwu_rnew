@@ -1,6 +1,7 @@
 import express from 'express'
 import prisma from '../utils/prisma.js'
 import { authenticate, requireUserType } from '../middleware/authenticate.js'
+import { pickCurrentApplication } from '../utils/tenancy.js'
 import {
   sendMaintenanceTicketEmail,
   sendMaintenanceStatusEmail,
@@ -57,7 +58,10 @@ async function loadTicketForParty(req, res) {
     res.status(404).json({ error: { message: 'Ticket not found' } })
     return null
   }
-  if (!isTicketParty(ticket, req.user.id)) {
+  if (
+    !isTicketParty(ticket, req.user.id) &&
+    ticket.listing?.ownerId !== req.portfolioId
+  ) {
     res
       .status(403)
       .json({ error: { message: 'Not authorized to view this ticket' } })
@@ -81,11 +85,19 @@ router.post('/', authenticate, async (req, res) => {
     }
 
     // Find the tenant's active (approved) application to attach the listing.
-    const application = await prisma.application.findFirst({
+    const candidates = await prisma.application.findMany({
       where: { applicantId: req.user.id, status: 'approved' },
-      orderBy: { updatedAt: 'desc' },
       select: {
         listingId: true,
+        status: true,
+        createdAt: true,
+        agreement: {
+          select: {
+            startDate: true,
+            endDate: true,
+            signers: { select: { signed: true } },
+          },
+        },
         listing: {
           select: {
             id: true,
@@ -95,6 +107,8 @@ router.post('/', authenticate, async (req, res) => {
         },
       },
     })
+    // The tenancy in force today, not merely the newest approved row.
+    const application = pickCurrentApplication(candidates)
 
     if (!application) {
       return res.status(400).json({
@@ -141,7 +155,7 @@ router.get('/', authenticate, async (req, res) => {
   try {
     const where =
       req.user.userType === 'owner'
-        ? { listing: { ownerId: req.user.id } }
+        ? { listing: { ownerId: req.portfolioId } }
         : { tenantId: req.user.id }
 
     const tickets = await prisma.maintenanceTicket.findMany({
@@ -222,7 +236,7 @@ router.post('/:id/comments', authenticate, async (req, res) => {
     res.status(201).json({ comment })
 
     // Notify the other side of the thread. Best-effort, after responding.
-    const authorIsOwner = req.user.id === ticket.listing.ownerId
+    const authorIsOwner = req.portfolioId === ticket.listing.ownerId
     const recipient = authorIsOwner ? ticket.tenant : ticket.listing.owner
     sendMaintenanceCommentEmail({
       recipient,
@@ -308,7 +322,7 @@ router.put('/:id/status', authenticate, async (req, res) => {
     if (!ticket) {
       return res.status(404).json({ error: { message: 'Ticket not found' } })
     }
-    if (ticket.listing.ownerId !== req.user.id) {
+    if (ticket.listing.ownerId !== req.portfolioId) {
       return res
         .status(403)
         .json({ error: { message: 'Not authorized to update this ticket' } })
@@ -362,7 +376,7 @@ router.post(
       if (!ticket) {
         return res.status(404).json({ error: { message: 'Ticket not found' } })
       }
-      if (ticket.listing.ownerId !== req.user.id) {
+      if (ticket.listing.ownerId !== req.portfolioId) {
         return res
           .status(403)
           .json({ error: { message: 'Not authorized to book this ticket' } })

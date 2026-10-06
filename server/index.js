@@ -39,6 +39,7 @@ import rentRoutes from './routes/rent.js'
 import legalRoutes from './routes/legal.js'
 import { startAutopayRunner } from './utils/autopay.js'
 import { startTenantInviteRunner } from './utils/tenantInviteRunner.js'
+import { startLateFeeRunner } from './utils/lateFeeRunner.js'
 import depositsRoutes from './routes/deposits.js'
 import expensesRoutes from './routes/expenses.js'
 import documentsRoutes from './routes/documents.js'
@@ -47,7 +48,9 @@ import savedSearchesRoutes from './routes/savedSearches.js'
 import tenantInvitesRoutes from './routes/tenantInvites.js'
 import ledgerRoutes from './routes/ledger.js'
 import notificationsRoutes from './routes/notifications.js'
+import teamRoutes from './routes/team.js'
 import inspectionsRoutes from './routes/inspections.js'
+import reportsRoutes from './routes/reports.js'
 
 // Get __dirname equivalent in ES modules
 const __filename = fileURLToPath(import.meta.url)
@@ -172,7 +175,9 @@ app.use('/api/saved-searches', savedSearchesRoutes)
 app.use('/api/tenant-invites', tenantInvitesRoutes)
 app.use('/api/ledger', ledgerRoutes)
 app.use('/api/notifications', notificationsRoutes)
+app.use('/api/team', teamRoutes)
 app.use('/api/inspections', inspectionsRoutes)
+app.use('/api/reports', reportsRoutes)
 
 // Sentry sees every error that reaches Express before our handler formats
 // the response. No-op without SENTRY_DSN.
@@ -208,6 +213,8 @@ app.listen(PORT, '0.0.0.0', () => {
   // Tenant invites: hourly expiry, day-7 reminders and the month-to-month
   // lease roll-forward. Same AUTOPAY_RUNNER=false switch.
   startTenantInviteRunner()
+  // Late fees: hourly, once rent is short past the grace period. Same switch.
+  startLateFeeRunner()
 })
 
 export default app

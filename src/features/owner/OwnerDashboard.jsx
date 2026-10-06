@@ -19,9 +19,11 @@ import {
   FolderOpen,
   AlertCircle,
   UserPlus,
+  BarChart3,
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { propertiesService } from '../../services/propertiesService'
+import { teamService } from '../../services/teamService'
 import { statusMeta, money, shortDate } from './property/statusMeta'
 
 const PLACEHOLDER_IMAGE =
@@ -43,6 +45,7 @@ const TOOLS = [
   { to: '/dashboard/security-deposits', label: 'Deposits', Icon: Receipt },
   { to: '/dashboard/banking', label: 'Bookkeeping', Icon: DollarSign },
   { to: '/dashboard/tax', label: 'Tax center', Icon: Calculator },
+  { to: '/dashboard/reports', label: 'Reports', Icon: BarChart3 },
   { to: '/dashboard/documents', label: 'Documents', Icon: FolderOpen },
 ]
 
@@ -221,6 +224,18 @@ PropertyCard.propTypes = {
  */
 export default function OwnerDashboard() {
   const { user } = useAuth()
+  // A team member works someone else's portfolio; say whose.
+  const [portfolio, setPortfolio] = useState(null)
+  useEffect(() => {
+    let active = true
+    teamService
+      .get()
+      .then(d => active && setPortfolio(d?.portfolio || null))
+      .catch(() => {})
+    return () => {
+      active = false
+    }
+  }, [])
   const navigate = useNavigate()
   const [data, setData] = useState(null)
   const [error, setError] = useState('')
@@ -276,6 +291,11 @@ export default function OwnerDashboard() {
           <div>
             <p className="text-sm text-gray-500">
               Welcome back{user?.firstName ? `, ${user.firstName}` : ''}
+              {portfolio && !portfolio.isOwner && (
+                <span className="ml-2 inline-flex items-center rounded-full bg-brand-50 text-brand-700 border border-brand-200 px-2 py-0.5 text-xs font-medium">
+                  Managing {portfolio.ownerName}&apos;s portfolio
+                </span>
+              )}
             </p>
             <h1 className="text-2xl font-bold text-gray-900">
               Your properties

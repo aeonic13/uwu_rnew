@@ -114,6 +114,9 @@ export function shapeAgreement(agreement, viewerId) {
     endReason: agreement.endReason || null,
     renewsId: agreement.renewsId || null,
     renewalId: agreement.renewal?.id || null,
+    amendsId: agreement.amendsId || null,
+    amendmentId: agreement.amendment?.id || null,
+    amendmentNote: agreement.amendmentNote || null,
     lateFee: agreement.lateFeeAmount
       ? {
           amount: agreement.lateFeeAmount,
@@ -337,4 +340,73 @@ export function scaleShares(shares = [], oldTotal, newTotal) {
   const drift = to - scaled.reduce((s, x) => s + x.amount, 0)
   scaled[scaled.length - 1].amount += drift
   return scaled
+}
+
+/**
+ * Plan a mid-term amendment of a signed lease: the replacement takes over
+ * on `effectiveDate` (inside the current term) and keeps everything the
+ * landlord did not change. Returns { ok, errors, value } like
+ * validateLeaseTermsInput; `value` is the full set of fields for the new
+ * Agreement plus `note`.
+ */
+export function amendmentPlan(current, body = {}, now = new Date()) {
+  const effective = parseDate(body.effectiveDate)
+  const errors = []
+  if (!effective) errors.push('A valid effective date is required.')
+  const checked = validateLeaseTermsInput(
+    {
+      ...body,
+      startDate: body.effectiveDate,
+      // Keep the current end unless the landlord changes it.
+      endDate:
+        body.endDate !== undefined
+          ? body.endDate
+          : body.monthToMonth
+            ? undefined
+            : current.endDate,
+      monthToMonth:
+        body.monthToMonth !== undefined
+          ? body.monthToMonth
+          : Boolean(current.monthToMonth),
+    },
+    { now }
+  )
+  errors.push(...checked.errors)
+  const v = checked.value
+  if (effective) {
+    if (effective <= new Date(current.startDate)) {
+      errors.push('The effective date must be after the current lease started.')
+    }
+    if (!current.monthToMonth && effective >= new Date(current.endDate)) {
+      errors.push(
+        'The effective date must fall inside the current term; renew the lease instead.'
+      )
+    }
+  }
+  if (errors.length) return { ok: false, errors, value: null }
+
+  const terms = { ...(current.terms || {}), ...(v.terms || {}) }
+  delete terms.importedLease
+  delete terms.attestedBy
+  delete terms.attestedAt
+
+  return {
+    ok: true,
+    errors: [],
+    value: {
+      startDate: v.startDate,
+      endDate: v.endDate,
+      monthToMonth: Boolean(v.monthToMonth),
+      monthlyRent: v.monthlyRent ?? current.monthlyRent,
+      securityDeposit: v.securityDeposit ?? current.securityDeposit,
+      terms,
+      lateFeeAmount:
+        v.lateFeeAmount !== undefined ? v.lateFeeAmount : current.lateFeeAmount,
+      lateFeeGraceDays:
+        v.lateFeeGraceDays !== undefined
+          ? v.lateFeeGraceDays
+          : current.lateFeeGraceDays,
+      note: cleanString(body.note, 500) || null,
+    },
+  }
 }

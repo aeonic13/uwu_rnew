@@ -36,7 +36,7 @@ router.get(
   async (req, res) => {
     try {
       const { listingId } = req.params
-      const ownerId = req.user.id
+      const ownerId = req.portfolioId
 
       // Verify listing belongs to this owner
       const listing = await prisma.listing.findFirst({
@@ -146,7 +146,7 @@ router.get(
   async (req, res) => {
     try {
       const { listingId } = req.params
-      const ownerId = req.user.id
+      const ownerId = req.portfolioId
 
       // Verify ownership
       const listing = await prisma.listing.findFirst({
@@ -260,7 +260,7 @@ router.get(
   requireUserType('owner'),
   async (req, res) => {
     try {
-      const ownerId = req.user.id
+      const ownerId = req.portfolioId
 
       // Get all listings with approved applications
       const now = new Date()
@@ -481,7 +481,7 @@ router.get(
   async (req, res) => {
     try {
       const { applicationId } = req.params
-      const ownerId = req.user.id
+      const ownerId = req.portfolioId
 
       // Get application with payment details
       const application = await prisma.application.findFirst({
@@ -591,7 +591,7 @@ router.get(
   requireUserType('owner'),
   async (req, res) => {
     try {
-      const ownerId = req.user.id
+      const ownerId = req.portfolioId
 
       const listings = await prisma.listing.findMany({
         where: { ownerId },

@@ -91,6 +91,15 @@ export const agreementsService = {
     const res = await apiClient.post(`/agreements/${id}/renew`, body)
     return res.agreement
   },
+
+  /**
+   * Landlord amends a signed lease mid-term (rent, end date, terms, added
+   * roommates); returns the replacement lease awaiting signatures.
+   */
+  async amendLease(id, body) {
+    const res = await apiClient.post(`/agreements/${id}/amend`, body)
+    return res.agreement
+  },
 }
 
 const EXT_BY_TYPE = {

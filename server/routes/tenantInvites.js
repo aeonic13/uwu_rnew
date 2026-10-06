@@ -222,7 +222,7 @@ router.post(
   requireUserType('owner'),
   async (req, res) => {
     try {
-      const invite = await loadOwned(req.params.id, req.user.id)
+      const invite = await loadOwned(req.params.id, req.portfolioId)
       if (!invite) {
         return res.status(404).json({ error: { message: 'Invite not found' } })
       }
@@ -273,7 +273,7 @@ router.patch(
   requireUserType('owner'),
   async (req, res) => {
     try {
-      const invite = await loadOwned(req.params.id, req.user.id)
+      const invite = await loadOwned(req.params.id, req.portfolioId)
       if (!invite) {
         return res.status(404).json({ error: { message: 'Invite not found' } })
       }
@@ -407,7 +407,7 @@ router.delete(
   requireUserType('owner'),
   async (req, res) => {
     try {
-      const invite = await loadOwned(req.params.id, req.user.id)
+      const invite = await loadOwned(req.params.id, req.portfolioId)
       if (!invite) {
         return res.status(404).json({ error: { message: 'Invite not found' } })
       }

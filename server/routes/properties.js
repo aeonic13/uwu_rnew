@@ -42,7 +42,7 @@ const PERSON = {
 router.get('/', authenticate, requireUserType('owner'), async (req, res) => {
   try {
     const listings = await prisma.listing.findMany({
-      where: { ownerId: req.user.id },
+      where: { ownerId: req.portfolioId },
       include: {
         applications: {
           select: {
@@ -94,7 +94,7 @@ router.get('/:id', authenticate, requireUserType('owner'), async (req, res) => {
     const yearStart = new Date(now.getFullYear(), 0, 1)
 
     const listing = await prisma.listing.findFirst({
-      where: { id: req.params.id, ownerId: req.user.id },
+      where: { id: req.params.id, ownerId: req.portfolioId },
       include: {
         _count: { select: { favorites: true } },
         applications: {
@@ -123,6 +123,7 @@ router.get('/:id', authenticate, requireUserType('owner'), async (req, res) => {
             agreement: {
               include: {
                 renewal: { select: { id: true } },
+                amendment: { select: { id: true } },
                 signers: {
                   include: {
                     user: {
@@ -253,6 +254,9 @@ router.get('/:id', authenticate, requireUserType('owner'), async (req, res) => {
         endReason: ag.endReason || null,
         renewalId: ag.renewal?.id || null,
         renewsId: ag.renewsId || null,
+        amendsId: ag.amendsId || null,
+        amendmentId: ag.amendment?.id || null,
+        amendmentNote: ag.amendmentNote || null,
         lateFee: ag.lateFeeAmount
           ? { amount: ag.lateFeeAmount, graceDays: ag.lateFeeGraceDays ?? 0 }
           : null,
@@ -356,7 +360,7 @@ router.post(
     try {
       const now = new Date()
       const listing = await prisma.listing.findFirst({
-        where: { id: req.params.id, ownerId: req.user.id },
+        where: { id: req.params.id, ownerId: req.portfolioId },
         select: {
           id: true,
           title: true,
@@ -448,7 +452,7 @@ router.post(
       const created = await prisma.$transaction(async tx => {
         const memberData = {
           listingId: listing.id,
-          ownerId: req.user.id,
+          ownerId: req.portfolioId,
           applicantId: null,
           status: 'approved',
           source: 'onboarded',
@@ -495,7 +499,7 @@ router.post(
                 })),
                 {
                   role: 'landlord',
-                  userId: req.user.id,
+                  userId: req.portfolioId,
                   signed: true,
                   signedAt: now,
                   signatureName: landlordName,
@@ -548,7 +552,7 @@ router.post(
                 ...newInviteToken(now.getTime()),
                 ...tenants[i],
                 listingId: listing.id,
-                ownerId: req.user.id,
+                ownerId: req.portfolioId,
                 agreementId: agreement.id,
                 applicationId: memberApps[i].id,
               },

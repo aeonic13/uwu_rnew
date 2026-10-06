@@ -235,6 +235,11 @@ function ProfileView() {
                 label="Applications Inbox"
                 onClick={() => navigate('/dashboard/inbox')}
               />
+              <MenuItem
+                icon={Users}
+                label="Team"
+                onClick={() => navigate('/dashboard/team')}
+              />
             </>
           )}
         </MenuSection>

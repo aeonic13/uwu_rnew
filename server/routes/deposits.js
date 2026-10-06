@@ -128,7 +128,7 @@ function moveOutInspection(inspections) {
  */
 router.get('/', authenticate, requireUserType('owner'), async (req, res) => {
   try {
-    const ownerId = req.user.id
+    const ownerId = req.portfolioId
 
     const uncovered = await prisma.agreement.findMany({
       where: {
@@ -186,7 +186,7 @@ async function findOwnedDeposit(id, ownerId) {
  */
 router.put('/:id', authenticate, requireUserType('owner'), async (req, res) => {
   try {
-    const deposit = await findOwnedDeposit(req.params.id, req.user.id)
+    const deposit = await findOwnedDeposit(req.params.id, req.portfolioId)
     if (!deposit) {
       return res.status(404).json({ error: { message: 'Deposit not found' } })
     }
@@ -248,7 +248,7 @@ router.post(
   requireUserType('owner'),
   async (req, res) => {
     try {
-      const deposit = await findOwnedDeposit(req.params.id, req.user.id)
+      const deposit = await findOwnedDeposit(req.params.id, req.portfolioId)
       if (!deposit) {
         return res.status(404).json({ error: { message: 'Deposit not found' } })
       }
@@ -286,7 +286,7 @@ router.post(
           evidenceUrls: Array.isArray(evidenceUrls) ? evidenceUrls : [],
         },
       })
-      const updated = await findOwnedDeposit(deposit.id, req.user.id)
+      const updated = await findOwnedDeposit(deposit.id, req.portfolioId)
       res.status(201).json({ deposit: presentDeposit(updated) })
     } catch (error) {
       console.error('Add deduction error:', error)
@@ -304,7 +304,7 @@ router.delete(
   requireUserType('owner'),
   async (req, res) => {
     try {
-      const deposit = await findOwnedDeposit(req.params.id, req.user.id)
+      const deposit = await findOwnedDeposit(req.params.id, req.portfolioId)
       if (!deposit) {
         return res.status(404).json({ error: { message: 'Deposit not found' } })
       }
@@ -322,7 +322,7 @@ router.delete(
           .json({ error: { message: 'Deduction not found' } })
       }
       await prisma.depositDeduction.delete({ where: { id: deduction.id } })
-      const updated = await findOwnedDeposit(deposit.id, req.user.id)
+      const updated = await findOwnedDeposit(deposit.id, req.portfolioId)
       res.json({ deposit: presentDeposit(updated) })
     } catch (error) {
       console.error('Delete deduction error:', error)
@@ -343,7 +343,7 @@ router.get(
   requireUserType('owner'),
   async (req, res) => {
     try {
-      const deposit = await findOwnedDeposit(req.params.id, req.user.id)
+      const deposit = await findOwnedDeposit(req.params.id, req.portfolioId)
       if (!deposit) {
         return res.status(404).json({ error: { message: 'Deposit not found' } })
       }
@@ -397,7 +397,7 @@ router.post(
   requireUserType('owner'),
   async (req, res) => {
     try {
-      const deposit = await findOwnedDeposit(req.params.id, req.user.id)
+      const deposit = await findOwnedDeposit(req.params.id, req.portfolioId)
       if (!deposit) {
         return res.status(404).json({ error: { message: 'Deposit not found' } })
       }

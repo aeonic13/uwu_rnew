@@ -9,11 +9,13 @@ import {
   sendApplicationStatusEmail,
   sendLeaseEndedEmail,
   sendLeaseRenewalOfferEmail,
+  sendLeaseAmendmentEmail,
 } from '../utils/email.js'
 import { documentUpload, uploadToCloudinary } from '../utils/cloudinary.js'
 import { STATE_DEPOSIT_RULES, ruleForState } from './deposits.js'
 import {
   validateLeaseTermsInput,
+  amendmentPlan,
   scaleShares,
   END_REASONS,
   shapeAgreement,
@@ -31,6 +33,7 @@ const router = express.Router()
 // Shared include: lead application (listing + owner) and every signer.
 const agreementInclude = {
   renewal: { select: { id: true } },
+  amendment: { select: { id: true } },
   application: {
     include: {
       listing: { select: { id: true, title: true, location: true } },
@@ -92,7 +95,7 @@ router.get('/', authenticate, async (req, res) => {
       where: {
         OR: [
           { signers: { some: { userId } } },
-          { application: { ownerId: userId } },
+          { application: { ownerId: req.portfolioId } },
         ],
       },
       include: agreementInclude,
@@ -118,12 +121,21 @@ router.get('/:id', authenticate, async (req, res) => {
     if (!agreement) {
       return res.status(404).json({ error: { message: 'Agreement not found' } })
     }
-    if (!isParty(agreement, userId)) {
+    if (
+      !isParty(agreement, userId) &&
+      !isLandlordOf(agreement, req.portfolioId)
+    ) {
       return res
         .status(403)
         .json({ error: { message: 'Not authorized to view this agreement' } })
     }
-    res.json({ agreement: shapeAgreement(agreement, userId) })
+    // A team member sees the landlord's side; only the person on the
+    // signature block can sign.
+    const viewerId = isParty(agreement, userId) ? userId : req.portfolioId
+    const shaped = shapeAgreement(agreement, viewerId)
+    shaped.canSign = viewerId === userId
+    shaped.actingForOwner = viewerId !== userId
+    res.json({ agreement: shaped })
   } catch (error) {
     console.error('Get agreement error:', error)
     res.status(500).json({ error: { message: 'Failed to get agreement' } })
@@ -182,7 +194,10 @@ router.get('/:id/pdf', authenticate, async (req, res) => {
     if (!agreement) {
       return res.status(404).json({ error: { message: 'Agreement not found' } })
     }
-    if (!isParty(agreement, userId)) {
+    if (
+      !isParty(agreement, userId) &&
+      !isLandlordOf(agreement, req.portfolioId)
+    ) {
       return res
         .status(403)
         .json({ error: { message: 'Not authorized to view this agreement' } })
@@ -415,7 +430,7 @@ router.put('/:id/terms', authenticate, async (req, res) => {
     if (!agreement) {
       return res.status(404).json({ error: { message: 'Agreement not found' } })
     }
-    if (!isLandlordOf(agreement, req.user.id)) {
+    if (!isLandlordOf(agreement, req.portfolioId)) {
       return res
         .status(403)
         .json({ error: { message: 'Only the landlord can edit the terms' } })
@@ -476,7 +491,7 @@ router.post(
           .status(404)
           .json({ error: { message: 'Agreement not found' } })
       }
-      if (!isLandlordOf(agreement, req.user.id)) {
+      if (!isLandlordOf(agreement, req.portfolioId)) {
         return res.status(403).json({
           error: { message: 'Only the landlord can attach a lease document' },
         })
@@ -528,7 +543,7 @@ router.post('/:id/end', authenticate, async (req, res) => {
     if (!agreement) {
       return res.status(404).json({ error: { message: 'Agreement not found' } })
     }
-    if (!isLandlordOf(agreement, req.user.id)) {
+    if (!isLandlordOf(agreement, req.portfolioId)) {
       return res
         .status(403)
         .json({ error: { message: 'Only the landlord can end a lease' } })
@@ -597,7 +612,7 @@ router.post('/:id/end', authenticate, async (req, res) => {
           await tx.securityDeposit.create({
             data: {
               agreementId: agreement.id,
-              ownerId: req.user.id,
+              ownerId: req.portfolioId,
               amountHeld: agreement.securityDeposit,
               state: depositState,
               moveOutDate: moveOut,
@@ -670,7 +685,7 @@ router.post('/:id/renew', authenticate, async (req, res) => {
     if (!agreement) {
       return res.status(404).json({ error: { message: 'Agreement not found' } })
     }
-    if (!isLandlordOf(agreement, req.user.id)) {
+    if (!isLandlordOf(agreement, req.portfolioId)) {
       return res
         .status(403)
         .json({ error: { message: 'Only the landlord can renew a lease' } })
@@ -723,7 +738,7 @@ router.post('/:id/renew', authenticate, async (req, res) => {
             data: {
               listingId,
               applicantId: m.applicantId,
-              ownerId: req.user.id,
+              ownerId: req.portfolioId,
               groupId: agreement.groupId || null,
               status: 'approved',
               source: 'renewal',
@@ -762,7 +777,7 @@ router.post('/:id/renew', authenticate, async (req, res) => {
                 userId: m.applicantId,
                 applicationId: m.id,
               })),
-              { role: 'landlord', userId: req.user.id },
+              { role: 'landlord', userId: req.portfolioId },
             ],
           },
         },
@@ -824,6 +839,296 @@ router.post('/:id/renew', authenticate, async (req, res) => {
     res.status(500).json({ error: { message: 'Failed to create the renewal' } })
   }
 })
+
+/**
+ * POST /api/agreements/:id/amend
+ * Landlord amends a signed lease mid-term: rent, end date, written terms,
+ * the late-fee rule, and optionally more tenants (existing Rentra tenant
+ * accounts by email). A replacement Agreement is drafted with amendsId
+ * pointing back here; everyone signs; on the last signature the current
+ * lease ends the day before the effective date and its deposit, split and
+ * autopays move to the amendment (applyAmendment, in the sign route).
+ * body: { effectiveDate, monthlyRent?, endDate?, monthToMonth?,
+ *         securityDeposit?, terms?, lateFeeAmount?, lateFeeGraceDays?,
+ *         addTenantEmails?: [], note? }
+ */
+router.post('/:id/amend', authenticate, async (req, res) => {
+  try {
+    const agreement = await prisma.agreement.findUnique({
+      where: { id: req.params.id },
+      include: {
+        ...agreementInclude,
+        amendment: { select: { id: true } },
+        rentSplit: { include: { shares: true } },
+        members: { select: { id: true, applicantId: true } },
+      },
+    })
+    if (!agreement) {
+      return res.status(404).json({ error: { message: 'Agreement not found' } })
+    }
+    if (!isLandlordOf(agreement, req.portfolioId)) {
+      return res
+        .status(403)
+        .json({ error: { message: 'Only the landlord can amend a lease' } })
+    }
+    if (agreement.amendment) {
+      return res.status(400).json({
+        error: {
+          message: 'An amendment is already awaiting signatures.',
+          amendmentId: agreement.amendment.id,
+        },
+      })
+    }
+    if (agreement.endedAt) {
+      return res.status(400).json({
+        error: {
+          message: 'Notice has been given on this lease; it cannot be amended.',
+        },
+      })
+    }
+    if (!signatureState(agreement.signers).allSigned) {
+      return res.status(400).json({
+        error: { message: 'Only a fully signed lease can be amended.' },
+      })
+    }
+
+    const plan = amendmentPlan(agreement, req.body, new Date())
+    if (!plan.ok) {
+      return res
+        .status(400)
+        .json({ error: { message: plan.errors[0], details: plan.errors } })
+    }
+    const v = plan.value
+
+    const existing = agreement.members.filter(m => m.applicantId)
+    const existingIds = new Set(existing.map(m => m.applicantId))
+    const added = []
+    const wanted = Array.isArray(req.body?.addTenantEmails)
+      ? [
+          ...new Set(
+            req.body.addTenantEmails
+              .map(e =>
+                String(e || '')
+                  .trim()
+                  .toLowerCase()
+              )
+              .filter(Boolean)
+          ),
+        ]
+      : []
+    for (const email of wanted) {
+      const user = await prisma.user.findUnique({
+        where: { email },
+        select: {
+          id: true,
+          userType: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+        },
+      })
+      if (!user || user.userType !== 'student') {
+        return res.status(400).json({
+          error: {
+            message: `${email} does not have a tenant account on Rentra yet. Ask them to sign up first.`,
+          },
+        })
+      }
+      if (!existingIds.has(user.id)) added.push(user)
+    }
+    const tenantIds = [...existingIds, ...added.map(u => u.id)]
+    const listingId = agreement.application.listingId
+
+    const created = await prisma.$transaction(async tx => {
+      const memberRows = []
+      for (const applicantId of tenantIds) {
+        memberRows.push(
+          await tx.application.create({
+            data: {
+              listingId,
+              applicantId,
+              ownerId: req.portfolioId,
+              groupId: agreement.groupId || null,
+              status: 'approved',
+              source: 'amendment',
+              startDate: v.startDate,
+              endDate: v.endDate,
+              message: null,
+            },
+            select: { id: true, applicantId: true },
+          })
+        )
+      }
+      const amendment = await tx.agreement.create({
+        data: {
+          applicationId: memberRows[0].id,
+          groupId: agreement.groupId || null,
+          source: 'rentra',
+          amendsId: agreement.id,
+          amendmentNote: v.note,
+          monthlyRent: v.monthlyRent,
+          securityDeposit: v.securityDeposit,
+          startDate: v.startDate,
+          endDate: v.endDate,
+          monthToMonth: v.monthToMonth,
+          terms: v.terms,
+          lateFeeAmount: v.lateFeeAmount,
+          lateFeeGraceDays: v.lateFeeGraceDays,
+          signers: {
+            create: [
+              ...memberRows.map(m => ({
+                role: 'tenant',
+                userId: m.applicantId,
+                applicationId: m.id,
+              })),
+              { role: 'landlord', userId: req.portfolioId },
+            ],
+          },
+        },
+        select: { id: true },
+      })
+      await tx.application.updateMany({
+        where: { id: { in: memberRows.map(m => m.id) } },
+        data: { agreementId: amendment.id },
+      })
+      // Household split: scale the existing shares when the household is
+      // unchanged; with new tenants, start again from an equal split.
+      if (agreement.rentSplit || added.length) {
+        const shares = added.length
+          ? memberRows.map((m, i) => {
+              const per = Math.floor(v.monthlyRent / memberRows.length)
+              const amount =
+                i === memberRows.length - 1
+                  ? v.monthlyRent - per * (memberRows.length - 1)
+                  : per
+              const u = added.find(a => a.id === m.applicantId)
+              const s = agreement.signers.find(x => x.userId === m.applicantId)
+              const name = u
+                ? `${u.firstName} ${u.lastName}`
+                : s?.user
+                  ? `${s.user.firstName} ${s.user.lastName}`
+                  : 'Tenant'
+              return { userId: m.applicantId, name, amount }
+            })
+          : scaleShares(
+              agreement.rentSplit.shares.map(s => ({
+                name: s.name,
+                userId: s.userId,
+                amount: s.amount,
+              })),
+              agreement.rentSplit.total,
+              v.monthlyRent
+            )
+        await tx.rentSplit.create({
+          data: {
+            agreementId: amendment.id,
+            createdById: agreement.rentSplit?.createdById || req.user.id,
+            total: v.monthlyRent,
+            splitMode: added.length ? 'equal' : agreement.rentSplit.splitMode,
+            shares: { create: shares },
+          },
+        })
+      }
+      return amendment
+    })
+
+    const full = await prisma.agreement.findUnique({
+      where: { id: created.id },
+      include: agreementInclude,
+    })
+    res.status(201).json({ agreement: shapeAgreement(full, req.user.id) })
+
+    const landlordName = `${req.user.firstName} ${req.user.lastName}`.trim()
+    const listingTitle = agreement.application?.listing?.title || 'your rental'
+    Promise.all(
+      full.signers
+        .filter(s => s.role === 'tenant' && s.user?.email)
+        .map(s =>
+          sendLeaseAmendmentEmail({
+            tenant: s.user,
+            landlordName,
+            listingTitle,
+            agreementId: full.id,
+            effectiveDate: full.startDate,
+            monthlyRent: full.monthlyRent,
+            note: full.amendmentNote,
+          })
+        )
+    ).catch(err => console.error('Amendment email error:', err))
+  } catch (error) {
+    console.error('Amend lease error:', error)
+    res
+      .status(500)
+      .json({ error: { message: 'Failed to create the amendment' } })
+  }
+})
+
+/**
+ * The amendment is fully signed: the lease it amends ends the day before
+ * the effective date, and its deposit, household split (if the amendment
+ * has none) and autopays carry over so nothing about the tenancy resets.
+ */
+async function applyAmendment(amendment) {
+  const oldId = amendment.amendsId
+  if (!oldId) return
+  const old = await prisma.agreement.findUnique({
+    where: { id: oldId },
+    include: {
+      deposit: { select: { id: true } },
+      autopays: true,
+      rentSplit: {
+        select: { shares: { select: { userId: true, amount: true } } },
+      },
+    },
+  })
+  if (!old) return
+  const dayBefore = new Date(amendment.startDate)
+  dayBefore.setUTCDate(dayBefore.getUTCDate() - 1)
+  const now = new Date()
+  const newShares = await prisma.rentSplitShare.findMany({
+    where: { split: { agreementId: amendment.id } },
+    select: { userId: true, amount: true },
+  })
+  const tenantCount = await prisma.agreementSigner.count({
+    where: { agreementId: amendment.id, role: 'tenant' },
+  })
+  const shareFor = userId => {
+    const s = newShares.find(x => x.userId === userId)
+    return s
+      ? Math.round(s.amount)
+      : Math.round(amendment.monthlyRent / Math.max(1, tenantCount))
+  }
+
+  await prisma.$transaction(async tx => {
+    await tx.agreement.update({
+      where: { id: old.id },
+      data: { endedAt: now, endReason: 'amended', endDate: dayBefore },
+    })
+    if (old.deposit) {
+      await tx.securityDeposit.update({
+        where: { id: old.deposit.id },
+        data: { agreementId: amendment.id },
+      })
+    }
+    for (const ap of old.autopays) {
+      await tx.autopaySchedule.upsert({
+        where: {
+          userId_agreementId: { userId: ap.userId, agreementId: amendment.id },
+        },
+        update: {},
+        create: {
+          userId: ap.userId,
+          agreementId: amendment.id,
+          amount: shareFor(ap.userId),
+          dayOfMonth: ap.dayOfMonth,
+          paymentMethod: ap.paymentMethod,
+          status: ap.status,
+          nextRunAt: ap.nextRunAt,
+        },
+      })
+    }
+  })
+}
 
 /**
  * POST /api/agreements/:id/sign
@@ -943,6 +1248,11 @@ router.post('/:id/sign', authenticate, async (req, res) => {
       closeListingForLease(agreement).catch(err =>
         console.error('Close listing after lease error:', err)
       )
+      if (agreement.amendsId) {
+        applyAmendment(agreement).catch(err =>
+          console.error('Apply amendment error:', err)
+        )
+      }
     }
 
     const updated = await prisma.agreement.findUnique({
