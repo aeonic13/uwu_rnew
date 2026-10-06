@@ -54,6 +54,7 @@ export async function sendInspectionReportEmail({
   `
   return sendEmail({
     to: tenant.email,
+    notify: { type: 'inspection', link: `/inspections/${inspection.id}` },
     subject: `${label} inspection report for ${listing.title}`,
     html,
     text: `Hi ${tenant.firstName}, ${landlordName} completed the ${label.toLowerCase()} inspection for ${listing.title}: ${itemCount} items checked, ${damagedCount} flagged. View it at ${reportUrl}`,

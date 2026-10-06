@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { messagingService } from '../../services/messagingService'
+import NotificationBell from './NotificationBell'
 import {
   Menu,
   X,
@@ -152,6 +153,7 @@ export default function Header() {
           <div className="hidden md:flex items-center gap-3">
             {user ? (
               <>
+                <NotificationBell />
                 <span className="hidden xl:inline text-sm text-gray-600">
                   {user.firstName} {user.lastName}
                 </span>
@@ -182,13 +184,17 @@ export default function Header() {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 text-gray-700 hover:bg-gray-100 rounded-lg"
-          >
-            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
+          {/* Mobile: bell + menu button */}
+          <div className="md:hidden flex items-center gap-1">
+            {user && <NotificationBell compact />}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+            >
+              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
         </div>
       </div>
 

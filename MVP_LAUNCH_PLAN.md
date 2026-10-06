@@ -180,7 +180,7 @@ is what the pilot landlord needs on day one anyway.
 - [ ] ToS + Privacy published; Fair Housing copy sweep (P0-4)
 - [ ] Plaid production application submitted (P0-5) → approved
 - [ ] Moov production onboarding started (parallel, for v1.1)
-- [ ] Golden-path QA passed on prod, both roles, mobile (P0-6)
+- [ ] Golden-path QA passed on prod, both roles, mobile (P0-6) — API half is scripted: `SMOKE_API_URL=https://rentra-production.up.railway.app/api GP_LANDLORD_EMAIL=… GP_LANDLORD_PASSWORD=… GP_TENANT_EMAIL=… GP_TENANT_PASSWORD=… node e2e/golden-path.mjs` (19 steps, then check both inboxes for the emails)
 - [ ] "Pay Rent" relabeled as ledger/record (scope decision §3)
 - [ ] DB backups + Sentry + uptime monitor (P0-7)
 - [ ] Pilot landlord committed + listings seeded (§6)

@@ -50,6 +50,7 @@ export async function sendMaintenanceCommentEmail({
   `
   return sendEmail({
     to: recipient.email,
+    notify: { type: 'maintenance', link: url },
     subject: `${authorName} replied on the ${ticket.category} request at ${listing.title}`,
     html,
     text: `Hi ${recipient.firstName}, ${authorName} replied on the ${ticket.category} request at ${listing.title}: "${comment.body}". ${url}`,

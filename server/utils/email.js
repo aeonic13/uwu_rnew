@@ -1,4 +1,5 @@
 import sgMail from '@sendgrid/mail'
+import { notificationFromEmail, pushNotification } from './notifications.js'
 
 // Providers, in order of preference. Resend has a permanently free tier
 // (3,000/mo, 100/day) and is hit via plain HTTP — no SDK dependency.
@@ -57,7 +58,27 @@ async function sendViaSendGrid({ to, subject, html, text }) {
  * Send an email through whichever provider is configured. All templates in
  * this file route through here, so swapping providers is an env-var change.
  */
-export async function sendEmail({ to, subject, html, text }) {
+/** Plain text from a template: drop <style> blocks, then tags. */
+function htmlToText(html) {
+  return String(html || '')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+export async function sendEmail({ to, subject, html, text, notify }) {
+  // The in-app copy lands whether or not mail is configured.
+  if (notify && to) {
+    await pushNotification({
+      email: to,
+      ...notificationFromEmail({
+        subject,
+        text: text || htmlToText(html),
+        notify,
+      }),
+    })
+  }
   if (!RESEND_API_KEY && !SENDGRID_API_KEY) {
     console.log(
       `📧 [EMAIL NOT SENT - No API Key] To: ${to}, Subject: ${subject}`
@@ -70,7 +91,7 @@ export async function sendEmail({ to, subject, html, text }) {
     subject,
     html,
     // Strip HTML for the text version when one isn't provided.
-    text: text || html.replace(/<[^>]*>/g, ''),
+    text: text || htmlToText(html),
   }
 
   try {
@@ -239,6 +260,7 @@ export async function sendApplicationNotification(owner, applicant, listing) {
 
   return await sendEmail({
     to: owner.email,
+    notify: { type: 'application', link: '/dashboard/inbox' },
     subject: `New application for ${listing.title}`,
     html,
   })
@@ -317,6 +339,7 @@ export async function sendApplicationStatusEmail(
 
   return await sendEmail({
     to: applicant.email,
+    notify: { type: 'application', link: '/applications' },
     subject: `Application ${status}: ${listing.title}`,
     html,
   })
@@ -371,6 +394,7 @@ export async function sendMessageNotification(
 
   return await sendEmail({
     to: recipient.email,
+    notify: { type: 'message', link: '/messages' },
     subject: `New message from ${sender.firstName} ${sender.lastName}`,
     html,
   })
@@ -461,6 +485,7 @@ export async function sendCosignerInvitation({
 
   return await sendEmail({
     to: cosignerEmail,
+    notify: { type: 'cosigner', link: '/cosigner' },
     subject: `${tenantName} invited you to cosign their rental application`,
     html,
   })
@@ -492,6 +517,7 @@ export async function sendRentReminderEmail({
   `
   return sendEmail({
     to: tenant.email,
+    notify: { type: 'rent', link: '/profile/tenant-dashboard' },
     subject: `Rent reminder for ${listingTitle}`,
     html,
     text: `Hi ${tenant.firstName}, ${landlordName} sent a reminder that rent ($${amount}) is due for ${listingTitle}. ${payUrl}`,
@@ -522,6 +548,7 @@ export async function sendGroupInviteEmail({ email, inviterName, group }) {
   `
   return sendEmail({
     to: email,
+    notify: { type: 'group', link: '/groups' },
     subject: `${inviterName} invited you to join "${group.name}" on Rentra`,
     html,
     text: `${inviterName} invited you to join their housing group "${group.name}" on Rentra. Sign in with this email at ${groupsUrl} to accept.`,
@@ -550,6 +577,7 @@ export async function sendNewListingAlert(recipient, listing) {
   `
   return sendEmail({
     to: recipient.email,
+    notify: { type: 'listing', link: `/listings/${listing.id}` },
     subject: `New rental in ${listing.location}: ${listing.title}`,
     html,
     text: `Hi ${recipient.firstName}, a new listing matches your saved search: ${listing.title} — ${listing.location} — $${listing.price}/mo. ${listingUrl}`,
@@ -586,6 +614,7 @@ export async function sendNewHousemateAlert(recipient, profile, score) {
   `
   return sendEmail({
     to: recipient.email,
+    notify: { type: 'housemate', link: '/housemates' },
     subject: `New housemate match${where}: ${name} (${score}% fit)`,
     html,
     text: `Hi ${recipient.firstName}, ${name}${where} just joined Rentra Housemates and matches you at ${score}%. ${hubUrl}`,
@@ -629,6 +658,7 @@ export async function sendUtilityShareEmail({
   `
   return sendEmail({
     to: recipient.email,
+    notify: { type: 'utility', link: '/profile/tenant-dashboard' },
     subject: `${creatorName} split a ${bill.utilityType} bill with you`,
     html,
     text: `Hi ${recipient.firstName}, ${creatorName} split a ${label} bill ($${Number(bill.total).toFixed(2)}). Your share is $${Number(share.amount).toFixed(2)}. ${url}`,
@@ -661,6 +691,7 @@ export async function sendAutopayReminderEmail({
   `
   return sendEmail({
     to: tenant.email,
+    notify: { type: 'rent', link: '/payments' },
     subject: `Rent autopay day: $${Number(amount).toLocaleString()} for ${listingTitle}`,
     html,
     text: `Hi ${tenant.firstName}, your rent autopay ($${amount}) for ${listingTitle} is scheduled today. Bank transfers are not live yet, so nothing was charged — record your payment at ${url}`,
@@ -699,6 +730,7 @@ export async function sendLeaseSignatureUpdate({
   `
   return sendEmail({
     to: recipient.email,
+    notify: { type: 'lease', link: `/agreement/${agreementId}` },
     subject: fullySigned
       ? `Lease fully signed: ${listingTitle}`
       : `${signerName} signed the lease for ${listingTitle}`,
@@ -743,6 +775,7 @@ export async function sendCosignerDeclinedEmail(tenant, cosignerEmail) {
   `
   return sendEmail({
     to: tenant.email,
+    notify: { type: 'cosigner', link: '/applications' },
     subject: 'Your co-signer invitation was declined',
     html,
     text: `Hi ${tenant.firstName}, ${cosignerEmail} declined your co-signer invitation. You can invite a different co-signer from ${process.env.CLIENT_URL}/pre-qualify`,
@@ -775,6 +808,7 @@ export async function sendCosignerAcceptedEmail(
   `
   return sendEmail({
     to: tenant.email,
+    notify: { type: 'cosigner', link: '/applications' },
     subject: `${name} accepted your co-signer invitation`,
     html,
     text: `Hi ${tenant.firstName}, ${name} accepted your co-signer invitation and now backs ${listingTitle ? `your application for ${listingTitle}` : 'every application you submit'}. ${process.env.CLIENT_URL}/pre-qualify`,
@@ -888,6 +922,10 @@ export async function sendTenantInviteAccepted({
     `)
   return sendEmail({
     to: owner.email,
+    notify: {
+      type: 'lease',
+      link: `/dashboard/properties/${listing.id}/tenants`,
+    },
     subject: done
       ? `All tenants confirmed: ${listing.title}`
       : `${name} confirmed the lease for ${listing.title}`,
@@ -909,6 +947,10 @@ export async function sendTenantInviteDeclined({ owner, invite, listing }) {
     `)
   return sendEmail({
     to: owner.email,
+    notify: {
+      type: 'lease',
+      link: `/dashboard/properties/${listing.id}/tenants`,
+    },
     subject: `${name} declined your tenant invitation for ${listing.title}`,
     html,
     text: `Hi ${owner.firstName}, ${name} (${invite.email}) declined your invitation to join ${listing.title} on Rentra. Fix the email and resend, or remove them, from ${url}`,
@@ -942,6 +984,10 @@ export async function sendMaintenanceTicketEmail({
   `
   return sendEmail({
     to: owner.email,
+    notify: {
+      type: 'maintenance',
+      link: `/dashboard/properties/${listing.id}/maintenance`,
+    },
     subject: `Maintenance request at ${listing.title}: ${ticket.category}`,
     html,
     text: `${tenantName} reported a ${ticket.priority}-priority ${ticket.category} issue at ${listing.title}: ${ticket.description}. ${url}`,
@@ -983,6 +1029,7 @@ export async function sendMaintenanceStatusEmail({
   `
   return sendEmail({
     to: tenant.email,
+    notify: { type: 'maintenance', link: '/profile/tenant-dashboard' },
     subject: `Your ${ticket.category} request ${label}`,
     html,
     text: `Hi ${tenant.firstName}, your ${ticket.category} request at ${listing.title} ${label}. ${url}`,
@@ -1019,6 +1066,7 @@ export async function sendRentPaymentRecordedEmail({
   `
   return sendEmail({
     to: owner.email,
+    notify: { type: 'rent', link: '/dashboard/rent-collection' },
     subject: `${tenantName} recorded $${Number(amount).toLocaleString()} rent for ${listingTitle}`,
     html,
     text: `${tenantName} recorded a $${amount} ${method} rent payment for ${listingTitle}. ${url}`,
@@ -1061,6 +1109,7 @@ export async function sendLeaseEndedEmail({
   `
   return sendEmail({
     to: tenant.email,
+    notify: { type: 'lease', link: '/profile/tenant-dashboard' },
     subject: `Your lease at ${listingTitle} ends ${longDate(moveOutDate)}`,
     html,
     text: `Hi ${tenant.firstName}, ${landlordName} set your lease at ${listingTitle} to end on ${longDate(moveOutDate)}. ${url}`,
@@ -1101,6 +1150,7 @@ export async function sendLeaseRenewalOfferEmail({
   `
   return sendEmail({
     to: tenant.email,
+    notify: { type: 'lease', link: `/agreement/${agreementId}` },
     subject: `Lease renewal for ${listingTitle}`,
     html,
     text: `Hi ${tenant.firstName}, ${landlordName} drafted a renewal for ${listingTitle} (${term}, $${monthlyRent}/mo). Review and sign: ${url}`,
@@ -1141,6 +1191,7 @@ export async function sendRentChargeEmail({
   `
   return sendEmail({
     to: tenant.email,
+    notify: { type: 'rent', link: '/profile/tenant-dashboard' },
     subject: `${isCredit ? 'Credit' : charge.label || 'Charge'} on your rent at ${listingTitle}`,
     html,
     text: `${landlordName} ${isCredit ? 'credited' : 'charged'} $${charge.amount} (${charge.description}) on your rent ledger for ${listingTitle}.${yourPart} ${url}`,
@@ -1178,6 +1229,7 @@ export async function sendRentReceiptEmail({
   `
   return sendEmail({
     to: tenant.email,
+    notify: { type: 'rent', link: '/payments' },
     subject: `Receipt: $${Number(amount).toLocaleString()} rent for ${listingTitle}`,
     html,
     text: `Receipt: $${amount} ${method} rent payment for ${listingTitle} recorded on ${new Date(date).toDateString()}. ${url}`,

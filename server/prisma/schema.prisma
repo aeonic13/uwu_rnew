@@ -149,6 +149,7 @@ model User {
   rentChargesCreated    RentCharge[]         @relation("RentChargesCreated")
   inspections           Inspection[]         @relation("OwnerInspections")
   maintenanceComments   MaintenanceComment[] @relation("MaintenanceComments")
+  notifications         Notification[]
 
   @@index([email])
   @@index([userType])
@@ -1073,4 +1074,23 @@ model MaintenanceComment {
   author   User              @relation("MaintenanceComments", fields: [authorId], references: [id], onDelete: Cascade)
 
   @@index([ticketId])
+}
+
+// In-app notification. Written alongside every transactional email (see
+// utils/email.js sendEmail → utils/notifications.js) so the bell in the
+// header mirrors the inbox; `link` is an in-app path.
+model Notification {
+  id        String    @id @default(cuid())
+  type      String // application | lease | rent | maintenance | inspection | message | cosigner | ...
+  title     String
+  body      String?
+  link      String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
 }
