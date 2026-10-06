@@ -1263,6 +1263,9 @@ async function main() {
       tenantSignedAt: daysAgo(135),
       landlordSigned: true,
       landlordSignedAt: daysAgo(134),
+      // Structured late-fee rule so Rent Collection can apply it.
+      lateFeeAmount: 50,
+      lateFeeGraceDays: 5,
       signers: {
         create: [
           {

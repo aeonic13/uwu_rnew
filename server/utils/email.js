@@ -57,7 +57,7 @@ async function sendViaSendGrid({ to, subject, html, text }) {
  * Send an email through whichever provider is configured. All templates in
  * this file route through here, so swapping providers is an env-var change.
  */
-async function sendEmail({ to, subject, html, text }) {
+export async function sendEmail({ to, subject, html, text }) {
   if (!RESEND_API_KEY && !SENDGRID_API_KEY) {
     console.log(
       `📧 [EMAIL NOT SENT - No API Key] To: ${to}, Subject: ${subject}`
@@ -1022,5 +1022,164 @@ export async function sendRentPaymentRecordedEmail({
     subject: `${tenantName} recorded $${Number(amount).toLocaleString()} rent for ${listingTitle}`,
     html,
     text: `${tenantName} recorded a $${amount} ${method} rent payment for ${listingTitle}. ${url}`,
+  })
+}
+
+const longDate = d =>
+  new Date(d).toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC',
+  })
+
+/**
+ * Tenant: the landlord gave notice; the lease now ends on moveOutDate.
+ */
+export async function sendLeaseEndedEmail({
+  tenant,
+  landlordName,
+  listingTitle,
+  moveOutDate,
+  refundDeadline,
+  returnWindowDays,
+}) {
+  if (!tenant?.email) return null
+  const url = `${process.env.CLIENT_URL}/profile/tenant-dashboard`
+  const depositLine = refundDeadline
+    ? `<p>Your security deposit, less any itemized deductions, is due back within ${returnWindowDays} days of move-out, by <strong>${longDate(refundDeadline)}</strong>.</p>`
+    : ''
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+      <h2 style="color: #fc6a03;">Your lease is ending</h2>
+      <p>Hi ${tenant.firstName},</p>
+      <p>${landlordName} has set your lease at <strong>${listingTitle}</strong> to end on <strong>${longDate(moveOutDate)}</strong>.</p>
+      ${depositLine}
+      <p style="margin-top: 24px;"><a href="${url}" style="background: #fc6a03; color: #fff; padding: 10px 18px; border-radius: 6px; text-decoration: none;">View your lease</a></p>
+      <p style="color: #888; font-size: 13px; margin-top: 24px;">— The Rentra Team</p>
+    </div>
+  `
+  return sendEmail({
+    to: tenant.email,
+    subject: `Your lease at ${listingTitle} ends ${longDate(moveOutDate)}`,
+    html,
+    text: `Hi ${tenant.firstName}, ${landlordName} set your lease at ${listingTitle} to end on ${longDate(moveOutDate)}. ${url}`,
+  })
+}
+
+/**
+ * Tenant: the landlord drafted a renewal for them to review and sign.
+ */
+export async function sendLeaseRenewalOfferEmail({
+  tenant,
+  landlordName,
+  listingTitle,
+  agreementId,
+  startDate,
+  endDate,
+  monthToMonth,
+  monthlyRent,
+}) {
+  if (!tenant?.email) return null
+  const url = `${process.env.CLIENT_URL}/agreement/${agreementId}`
+  const term = monthToMonth
+    ? `month-to-month from ${longDate(startDate)}`
+    : `${longDate(startDate)} to ${longDate(endDate)}`
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+      <h2 style="color: #fc6a03;">Lease renewal ready to sign ✍️</h2>
+      <p>Hi ${tenant.firstName},</p>
+      <p>${landlordName} would like to renew your lease at <strong>${listingTitle}</strong>.</p>
+      <div style="background: #f9fafb; padding: 15px; border-radius: 6px; margin: 20px 0;">
+        <strong>Term:</strong> ${term}<br>
+        <strong>Monthly rent:</strong> $${Number(monthlyRent).toLocaleString()}
+      </div>
+      <p>Review the full terms and sign in Rentra. Nothing changes until every tenant and the landlord have signed.</p>
+      <p style="margin-top: 24px;"><a href="${url}" style="background: #fc6a03; color: #fff; padding: 10px 18px; border-radius: 6px; text-decoration: none;">Review the renewal</a></p>
+      <p style="color: #888; font-size: 13px; margin-top: 24px;">— The Rentra Team</p>
+    </div>
+  `
+  return sendEmail({
+    to: tenant.email,
+    subject: `Lease renewal for ${listingTitle}`,
+    html,
+    text: `Hi ${tenant.firstName}, ${landlordName} drafted a renewal for ${listingTitle} (${term}, $${monthlyRent}/mo). Review and sign: ${url}`,
+  })
+}
+
+/**
+ * Tenant: a charge or credit was added to their rent ledger.
+ */
+export async function sendRentChargeEmail({
+  tenant,
+  landlordName,
+  listingTitle,
+  charge,
+  household,
+  memberCount,
+}) {
+  if (!tenant?.email) return null
+  const url = `${process.env.CLIENT_URL}/profile/tenant-dashboard`
+  const isCredit = charge.type === 'credit'
+  const yourPart =
+    household && memberCount > 1
+      ? ` Your share is $${Math.round(charge.amount / memberCount).toLocaleString()} (split ${memberCount} ways).`
+      : ''
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+      <h2 style="color: #fc6a03;">${isCredit ? 'Credit applied to your rent' : 'New charge on your rent ledger'}</h2>
+      <p>Hi ${tenant.firstName},</p>
+      <p>${landlordName} ${isCredit ? 'credited' : 'added a charge to'} your ledger for <strong>${listingTitle}</strong>.</p>
+      <div style="background: #f9fafb; padding: 15px; border-radius: 6px; margin: 20px 0;">
+        <strong>${charge.label || charge.type}:</strong> ${isCredit ? '-' : ''}$${Number(charge.amount).toLocaleString()}<br>
+        <span style="color: #555;">${charge.description}</span>
+      </div>
+      <p>${yourPart} It is reflected in your amount due this month.</p>
+      <p style="margin-top: 24px;"><a href="${url}" style="background: #fc6a03; color: #fff; padding: 10px 18px; border-radius: 6px; text-decoration: none;">View your rent</a></p>
+      <p style="color: #888; font-size: 13px; margin-top: 24px;">— The Rentra Team</p>
+    </div>
+  `
+  return sendEmail({
+    to: tenant.email,
+    subject: `${isCredit ? 'Credit' : charge.label || 'Charge'} on your rent at ${listingTitle}`,
+    html,
+    text: `${landlordName} ${isCredit ? 'credited' : 'charged'} $${charge.amount} (${charge.description}) on your rent ledger for ${listingTitle}.${yourPart} ${url}`,
+  })
+}
+
+/**
+ * Tenant: receipt for a rent payment recorded on their ledger.
+ */
+export async function sendRentReceiptEmail({
+  tenant,
+  listingTitle,
+  amount,
+  paymentMethod,
+  date,
+  recordedBy,
+}) {
+  if (!tenant?.email) return null
+  const url = `${process.env.CLIENT_URL}/payments`
+  const method = String(paymentMethod || 'ach').toUpperCase()
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+      <h2 style="color: #fc6a03;">Rent payment receipt</h2>
+      <p>Hi ${tenant.firstName},</p>
+      <p>A rent payment for <strong>${listingTitle}</strong> was recorded on your ledger${recordedBy ? ` by ${recordedBy}` : ''}.</p>
+      <div style="background: #f9fafb; padding: 15px; border-radius: 6px; margin: 20px 0;">
+        <strong>Amount:</strong> $${Number(amount).toLocaleString()}<br>
+        <strong>Method:</strong> ${method}<br>
+        <strong>Date:</strong> ${new Date(date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+      </div>
+      <p style="color: #666; font-size: 13px;">Keep this for your records. No money moved through Rentra.</p>
+      <p style="margin-top: 24px;"><a href="${url}" style="background: #fc6a03; color: #fff; padding: 10px 18px; border-radius: 6px; text-decoration: none;">Payment history</a></p>
+      <p style="color: #888; font-size: 13px; margin-top: 24px;">— The Rentra Team</p>
+    </div>
+  `
+  return sendEmail({
+    to: tenant.email,
+    subject: `Receipt: $${Number(amount).toLocaleString()} rent for ${listingTitle}`,
+    html,
+    text: `Receipt: $${amount} ${method} rent payment for ${listingTitle} recorded on ${new Date(date).toDateString()}. ${url}`,
   })
 }

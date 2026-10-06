@@ -108,6 +108,18 @@ export function shapeAgreement(agreement, viewerId) {
     imported,
     monthToMonth: !!agreement.monthToMonth,
     documentUrl: agreement.documentUrl || null,
+    // Lifecycle: notice given (endedAt + the move-out date in endDate), and
+    // the renewal chain in both directions.
+    endedAt: agreement.endedAt || null,
+    endReason: agreement.endReason || null,
+    renewsId: agreement.renewsId || null,
+    renewalId: agreement.renewal?.id || null,
+    lateFee: agreement.lateFeeAmount
+      ? {
+          amount: agreement.lateFeeAmount,
+          graceDays: agreement.lateFeeGraceDays ?? 0,
+        }
+      : null,
     tenantSigned: state.tenantsSigned,
     landlordSigned: state.landlordSigned,
     viewerRole,
@@ -138,6 +150,11 @@ export function shapeAgreement(agreement, viewerId) {
       endDate: agreement.endDate,
       utilities: t.utilities || 'As agreed between the parties.',
       petPolicy: t.petPolicy || 'As agreed between the parties.',
+      lateFee: t.lateFee || null,
+      parking: t.parking || null,
+      additionalClauses: Array.isArray(t.additionalClauses)
+        ? t.additionalClauses
+        : [],
     },
     createdAt: agreement.createdAt,
   }
@@ -180,4 +197,144 @@ export function signedLeaseFilename(agreement, contentType = '') {
   ) || [])[1]
   const ext = EXT_BY_TYPE[type] || (fromUrl ? fromUrl.toLowerCase() : 'pdf')
   return `signed-lease-${agreement?.id || 'lease'}.${ext}`
+}
+
+// ─── Lease lifecycle helpers ────────────────────────────────────────────
+
+export const END_REASONS = [
+  'move_out',
+  'nonrenewal',
+  'early_termination',
+  'other',
+]
+
+const MAX_RENT = 100000
+const MAX_CLAUSES = 20
+
+const parseDate = value => {
+  if (!value) return null
+  const d = new Date(value)
+  return Number.isNaN(d.getTime()) ? null : d
+}
+
+/**
+ * A month-to-month lease keeps a stand-in endDate (the next anniversary of
+ * its start after `now`) so the rent roll and status math stay meaningful.
+ */
+export function standInEndDate(startDate, now = new Date()) {
+  const start = new Date(startDate)
+  const next = new Date(start)
+  next.setUTCFullYear(start.getUTCFullYear() + 1)
+  while (next <= now) next.setUTCFullYear(next.getUTCFullYear() + 1)
+  return next
+}
+
+const cleanString = (value, max) =>
+  value === undefined || value === null
+    ? undefined
+    : String(value).trim().slice(0, max)
+
+/**
+ * Validate the lease terms a landlord submits (editing an unsigned lease or
+ * drafting a renewal). Returns { ok, errors, value } where `value` holds
+ * only the fields that were supplied, coerced. With `requireAll` the core
+ * money/date fields must all be present (renewals).
+ */
+export function validateLeaseTermsInput(
+  body = {},
+  { now = new Date(), requireAll = false } = {}
+) {
+  const errors = []
+  const value = {}
+
+  if (body.monthlyRent !== undefined || requireAll) {
+    const rent = Math.round(Number(body.monthlyRent))
+    if (!Number.isFinite(rent) || rent <= 0 || rent > MAX_RENT) {
+      errors.push('Monthly rent must be a positive whole-dollar amount.')
+    } else value.monthlyRent = rent
+  }
+  if (body.securityDeposit !== undefined) {
+    const deposit = Math.round(Number(body.securityDeposit))
+    if (!Number.isFinite(deposit) || deposit < 0 || deposit > MAX_RENT * 3) {
+      errors.push('Security deposit must be zero or a positive amount.')
+    } else value.securityDeposit = deposit
+  }
+  if (body.monthToMonth !== undefined) {
+    value.monthToMonth = Boolean(body.monthToMonth)
+  }
+  if (body.startDate !== undefined || requireAll) {
+    const start = parseDate(body.startDate)
+    if (!start) errors.push('A valid start date is required.')
+    else value.startDate = start
+  }
+  if (value.monthToMonth) {
+    if (value.startDate) value.endDate = standInEndDate(value.startDate, now)
+  } else if (body.endDate !== undefined || requireAll) {
+    const end = parseDate(body.endDate)
+    if (!end) errors.push('A valid end date is required.')
+    else value.endDate = end
+  }
+  if (value.startDate && value.endDate && value.endDate <= value.startDate) {
+    errors.push('The end date must be after the start date.')
+  }
+
+  if (body.terms !== undefined) {
+    const t = body.terms && typeof body.terms === 'object' ? body.terms : {}
+    const terms = {}
+    for (const key of ['utilities', 'petPolicy', 'lateFee', 'parking']) {
+      const s = cleanString(t[key], 500)
+      if (s !== undefined) terms[key] = s
+    }
+    if (t.additionalClauses !== undefined) {
+      if (!Array.isArray(t.additionalClauses)) {
+        errors.push('Additional clauses must be a list.')
+      } else {
+        terms.additionalClauses = t.additionalClauses
+          .map(c => String(c || '').trim())
+          .filter(Boolean)
+          .slice(0, MAX_CLAUSES)
+          .map(c => c.slice(0, 1000))
+      }
+    }
+    value.terms = terms
+  }
+
+  if (body.lateFeeAmount !== undefined) {
+    if (body.lateFeeAmount === null || body.lateFeeAmount === '') {
+      value.lateFeeAmount = null
+      value.lateFeeGraceDays = null
+    } else {
+      const fee = Math.round(Number(body.lateFeeAmount))
+      if (!Number.isFinite(fee) || fee < 0 || fee > 5000) {
+        errors.push('Late fee must be between $0 and $5,000.')
+      } else value.lateFeeAmount = fee || null
+    }
+  }
+  if (body.lateFeeGraceDays !== undefined && value.lateFeeAmount !== null) {
+    const days = Math.round(Number(body.lateFeeGraceDays))
+    if (!Number.isFinite(days) || days < 0 || days > 30) {
+      errors.push('Grace period must be between 0 and 30 days.')
+    } else value.lateFeeGraceDays = days
+  }
+
+  return { ok: errors.length === 0, errors, value }
+}
+
+/**
+ * Carry a household's rent split onto a renewal at the new rent: each share
+ * keeps its proportion, rounded to whole dollars, with the last share
+ * absorbing the rounding so the shares still sum to the new total.
+ */
+export function scaleShares(shares = [], oldTotal, newTotal) {
+  if (!shares.length) return []
+  const from = Number(oldTotal) || shares.reduce((s, x) => s + x.amount, 0)
+  const to = Math.round(Number(newTotal) || 0)
+  if (!from || !to) return shares.map(s => ({ ...s, amount: 0 }))
+  const scaled = shares.map(s => ({
+    ...s,
+    amount: Math.round((s.amount / from) * to),
+  }))
+  const drift = to - scaled.reduce((s, x) => s + x.amount, 0)
+  scaled[scaled.length - 1].amount += drift
+  return scaled
 }

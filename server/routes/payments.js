@@ -4,7 +4,9 @@ import { authenticate, requireUserType } from '../middleware/authenticate.js'
 import {
   sendRentReminderEmail,
   sendRentPaymentRecordedEmail,
+  sendRentReceiptEmail,
 } from '../utils/email.js'
+import { monthWindow, tenantLedger } from '../utils/ledger.js'
 import {
   createMoovAccount,
   linkBankAccount,
@@ -441,13 +443,60 @@ router.post('/rent', authenticate, async (req, res) => {
         })
       : null
 
-    const amount = myShare
+    const share = myShare
       ? Math.round(myShare.amount)
       : application.agreement?.monthlyRent || application.listing?.price || 0
-    if (amount <= 0) {
+    if (share <= 0) {
       return res
         .status(400)
         .json({ error: { message: 'No rent amount on this lease.' } })
+    }
+    // The tenant may record what they actually paid, up to this month's
+    // amount due (their share plus any charges on the ledger).
+    let amount = share
+    if (req.body.amount !== undefined) {
+      const requested = Math.round(Number(req.body.amount))
+      if (!Number.isFinite(requested) || requested <= 0) {
+        return res
+          .status(400)
+          .json({ error: { message: 'A positive amount is required' } })
+      }
+      const now = new Date()
+      const { from, to } = monthWindow(now)
+      const [charges, members] = application.agreementId
+        ? await Promise.all([
+            prisma.rentCharge.findMany({
+              where: {
+                agreementId: application.agreementId,
+                dueDate: { gte: from, lt: to },
+              },
+            }),
+            prisma.agreementSigner.count({
+              where: {
+                agreementId: application.agreementId,
+                role: 'tenant',
+                userId: { not: null },
+              },
+            }),
+          ])
+        : [[], 1]
+      const { due } = tenantLedger({
+        rentShare: share,
+        charges,
+        payments: [],
+        tenantId: req.user.id,
+        memberCount: members,
+        now,
+      })
+      const cap = Math.max(due, share)
+      if (requested > cap) {
+        return res.status(400).json({
+          error: {
+            message: `That is more than the $${cap.toLocaleString()} due this month.`,
+          },
+        })
+      }
+      amount = requested
     }
     // No fee while nothing moves through Rentra: this endpoint only records
     // a payment the tenant made outside the app. When Moov transfers go
@@ -469,7 +518,14 @@ router.post('/rent', authenticate, async (req, res) => {
 
     res.status(201).json({ transaction })
 
-    // The landlord's rent roll just changed; tell them. Best-effort.
+    // Receipt to the tenant, heads-up to the landlord. Best-effort.
+    sendRentReceiptEmail({
+      tenant: req.user,
+      listingTitle: application.listing?.title || 'your rental',
+      amount,
+      paymentMethod,
+      date: transaction.createdAt,
+    }).catch(err => console.error('Rent receipt email failed:', err?.message))
     sendRentPaymentRecordedEmail({
       owner: application.listing?.owner,
       tenant: req.user,
@@ -504,7 +560,8 @@ router.post(
         where: { id: applicationId, ownerId: req.user.id, status: 'approved' },
         include: {
           agreement: { select: { monthlyRent: true } },
-          listing: { select: { price: true } },
+          listing: { select: { price: true, title: true } },
+          applicant: { select: { firstName: true, email: true } },
         },
       })
       if (!application) {
@@ -536,6 +593,16 @@ router.post(
         },
       })
       res.status(201).json({ transaction })
+
+      // Receipt to the tenant. Best-effort.
+      sendRentReceiptEmail({
+        tenant: application.applicant,
+        listingTitle: application.listing?.title || 'your rental',
+        amount: recorded,
+        paymentMethod,
+        date: transaction.createdAt,
+        recordedBy: `${req.user.firstName} ${req.user.lastName}`.trim(),
+      }).catch(err => console.error('Rent receipt email failed:', err?.message))
     } catch (error) {
       console.error('Record payment error:', error)
       res.status(500).json({ error: { message: 'Failed to record payment' } })

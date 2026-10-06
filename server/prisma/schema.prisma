@@ -39,6 +39,8 @@ enum ApplicationStatus {
 enum ApplicationSource {
   applied
   onboarded
+  // Member row created when a household lease is renewed in place.
+  renewal
 }
 
 // Where a lease was executed. `rentra` leases are e-signed here; `imported`
@@ -110,39 +112,43 @@ model User {
 
   // Relations
   listings              Listing[]
-  sentApplications      Application[]       @relation("ApplicantApplications")
-  receivedApplications  Application[]       @relation("OwnerApplications")
-  sentMessages          Message[]           @relation("SentMessages")
+  sentApplications      Application[]        @relation("ApplicantApplications")
+  receivedApplications  Application[]        @relation("OwnerApplications")
+  sentMessages          Message[]            @relation("SentMessages")
   conversationUsers     ConversationUser[]
   transactions          Transaction[]
   favorites             Favorite[]
-  reviews               Review[]            @relation("ReviewAuthor")
-  receivedReviews       Review[]            @relation("ReviewSubject")
-  cosignedApplications  Cosigner[]          @relation("CosignerUser")
-  cosignersForTenant    Cosigner[]          @relation("TenantUser")
+  reviews               Review[]             @relation("ReviewAuthor")
+  receivedReviews       Review[]             @relation("ReviewSubject")
+  cosignedApplications  Cosigner[]           @relation("CosignerUser")
+  cosignersForTenant    Cosigner[]           @relation("TenantUser")
   housemateProfile      HousemateProfile?
-  maintenanceTickets    MaintenanceTicket[] @relation("TenantTickets")
-  createdGroups         Group[]             @relation("GroupCreator")
+  maintenanceTickets    MaintenanceTicket[]  @relation("TenantTickets")
+  createdGroups         Group[]              @relation("GroupCreator")
   groupMemberships      GroupMember[]
-  groupMessages         GroupMessage[]      @relation("GroupMessages")
-  utilityBills          UtilityBill[]       @relation("UtilityBills")
-  utilityShares         UtilityBillShare[]  @relation("UtilityShares")
-  rentSplits            RentSplit[]         @relation("RentSplitCreator")
-  rentSplitShares       RentSplitShare[]    @relation("RentSplitShares")
+  groupMessages         GroupMessage[]       @relation("GroupMessages")
+  utilityBills          UtilityBill[]        @relation("UtilityBills")
+  utilityShares         UtilityBillShare[]   @relation("UtilityShares")
+  rentSplits            RentSplit[]          @relation("RentSplitCreator")
+  rentSplitShares       RentSplitShare[]     @relation("RentSplitShares")
   autopaySchedules      AutopaySchedule[]
   policyAcceptances     PolicyAcceptance[]
-  agreementSignatures   AgreementSigner[]   @relation("AgreementSignatures")
+  agreementSignatures   AgreementSigner[]    @relation("AgreementSignatures")
   screeningReports      ScreeningReport[]
-  securityDeposits      SecurityDeposit[]   @relation("OwnerDeposits")
+  securityDeposits      SecurityDeposit[]    @relation("OwnerDeposits")
   expenses              Expense[]
   documents             Document[]
   savedSearches         SavedSearch[]
-  tenantInvitesSent     TenantInvite[]      @relation("TenantInvitesSent")
-  tenantInvitesAccepted TenantInvite[]      @relation("TenantInvitesAccepted")
-  blocksGiven           UserBlock[]         @relation("BlocksGiven")
-  blocksReceived        UserBlock[]         @relation("BlocksReceived")
-  reportsFiled          UserReport[]        @relation("ReportsFiled")
-  reportsReceived       UserReport[]        @relation("ReportsReceived")
+  tenantInvitesSent     TenantInvite[]       @relation("TenantInvitesSent")
+  tenantInvitesAccepted TenantInvite[]       @relation("TenantInvitesAccepted")
+  blocksGiven           UserBlock[]          @relation("BlocksGiven")
+  blocksReceived        UserBlock[]          @relation("BlocksReceived")
+  reportsFiled          UserReport[]         @relation("ReportsFiled")
+  reportsReceived       UserReport[]         @relation("ReportsReceived")
+  rentChargesOwed       RentCharge[]         @relation("RentChargesOwed")
+  rentChargesCreated    RentCharge[]         @relation("RentChargesCreated")
+  inspections           Inspection[]         @relation("OwnerInspections")
+  maintenanceComments   MaintenanceComment[] @relation("MaintenanceComments")
 
   @@index([email])
   @@index([userType])
@@ -209,6 +215,7 @@ model Listing {
   expenses           Expense[]
   documents          Document[]          @relation("ListingDocuments")
   tenantInvites      TenantInvite[]
+  inspections        Inspection[]
 
   @@index([ownerId])
   @@index([university])
@@ -323,14 +330,20 @@ model MaintenanceTicket {
   status      String    @default("pending") // pending, in-progress, completed
   photos      String[]  @default([])
   assignedTo  String?
+  vendorPhone String?
+  cost        Int?
   completedAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
   tenantId  String
-  tenant    User    @relation("TenantTickets", fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant    User                 @relation("TenantTickets", fields: [tenantId], references: [id], onDelete: Cascade)
   listingId String
-  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  listing   Listing              @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  // The bookkeeping expense this repair was booked as, once completed.
+  expenseId String?              @unique
+  expense   Expense?             @relation(fields: [expenseId], references: [id], onDelete: SetNull)
+  comments  MaintenanceComment[]
 
   @@index([tenantId])
   @@index([listingId])
@@ -449,6 +462,23 @@ model Agreement {
   rentSplit     RentSplit?
   autopays      AutopaySchedule[]
   tenantInvites TenantInvite[]
+
+  // Lifecycle. Ending a lease stamps endedAt and moves endDate to the
+  // move-out date; the property reads leased until then. A renewal is a
+  // new Agreement whose renewsId points back here.
+  endedAt   DateTime?
+  endReason String? // move_out | nonrenewal | early_termination | other
+  renewsId  String?    @unique
+  renews    Agreement? @relation("LeaseRenewal", fields: [renewsId], references: [id], onDelete: SetNull)
+  renewal   Agreement? @relation("LeaseRenewal")
+
+  // Structured late-fee rule (the free-text terms.lateFee stays for the
+  // document). Null means no late fee is charged.
+  lateFeeAmount    Int?
+  lateFeeGraceDays Int?
+
+  charges     RentCharge[]
+  inspections Inspection[]
 }
 
 // How a household divides monthly rent. One split per lease; for a group
@@ -950,6 +980,8 @@ model Expense {
   listingId String?
   listing   Listing? @relation(fields: [listingId], references: [id], onDelete: SetNull)
 
+  maintenanceTicket MaintenanceTicket?
+
   @@index([ownerId])
   @@index([listingId])
   @@index([date])
@@ -974,4 +1006,71 @@ model Document {
   @@index([ownerId])
   @@index([listingId])
   @@index([category])
+}
+
+// A line on a lease's rent ledger other than the monthly rent itself: a
+// late fee, a utility pass-through, a repair bill, or a credit. Payments
+// stay in Transaction; balance = rent + charges - credits - payments.
+// userId pins the line to one tenant's share; null means the household.
+model RentCharge {
+  id          String   @id @default(cuid())
+  type        String // late_fee | utility | repair | other | credit
+  amount      Int // whole dollars, always positive; `credit` subtracts
+  description String
+  dueDate     DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  agreementId String
+  agreement   Agreement @relation(fields: [agreementId], references: [id], onDelete: Cascade)
+  userId      String?
+  user        User?     @relation("RentChargesOwed", fields: [userId], references: [id], onDelete: SetNull)
+  createdById String
+  createdBy   User      @relation("RentChargesCreated", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([agreementId])
+  @@index([userId])
+  @@index([dueDate])
+}
+
+// Move-in / move-out condition report. `items` is the checklist:
+// [{ id, room, item, condition: good|fair|damaged, notes, photos: [url],
+//   estimatedCost }]. A completed move-out report feeds the security
+// deposit's itemized deductions.
+model Inspection {
+  id          String    @id @default(cuid())
+  type        String // move_in | move_out
+  status      String    @default("draft") // draft | completed
+  conductedAt DateTime?
+  completedAt DateTime?
+  items       Json      @default("[]")
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  listingId   String
+  listing     Listing    @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  agreementId String?
+  agreement   Agreement? @relation(fields: [agreementId], references: [id], onDelete: SetNull)
+  ownerId     String
+  owner       User       @relation("OwnerInspections", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([listingId])
+  @@index([agreementId])
+  @@index([ownerId])
+}
+
+// Back-and-forth on a maintenance ticket between tenant and landlord.
+model MaintenanceComment {
+  id        String   @id @default(cuid())
+  body      String
+  photos    String[] @default([])
+  createdAt DateTime @default(now())
+
+  ticketId String
+  ticket   MaintenanceTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorId String
+  author   User              @relation("MaintenanceComments", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
 }

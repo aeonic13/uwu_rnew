@@ -39,6 +39,17 @@ export function leaseIsCurrent(agreement, now = new Date()) {
   return new Date(agreement.endDate) >= now
 }
 
+/** A signed lease the landlord has ended (notice given) that has not reached its move-out date. */
+export function leaseIsEnding(agreement, now = new Date()) {
+  if (!agreement?.endedAt) return false
+  return leaseIsCurrent(agreement, now)
+}
+
+/** A fully signed lease whose term has not started yet (a renewal signed ahead). */
+export function leaseIsUpcoming(agreement, now = new Date()) {
+  return leaseIsCurrent(agreement, now) && new Date(agreement.startDate) > now
+}
+
 /** An imported (signed off-platform) lease still waiting on tenant confirmations. */
 export function leaseAwaitingTenants(agreement, now = new Date()) {
   if (!agreement || agreement.source !== 'imported') return false
@@ -96,9 +107,14 @@ export function summarizeProperty(listing, now = new Date()) {
   const applications = listing.applications || []
   const leases = leasesOf(applications)
   const current = leases.filter(l => leaseIsCurrent(l, now))
+  // A renewal signed ahead of time is current too. Rent, tenants and the
+  // end date come from the lease whose term covers today, falling back to
+  // the upcoming one when nothing is in force yet.
+  const inForce = current.filter(l => new Date(l.startDate) <= now)
+  const basis = inForce.length ? inForce : current
   const tenantIds = new Set(
     applications
-      .filter(a => a.agreementId && current.some(l => l.id === a.agreementId))
+      .filter(a => a.agreementId && basis.some(l => l.id === a.agreementId))
       .map(a => a.applicantId)
       // Onboarded member rows have no applicant until the invite is accepted.
       .filter(Boolean)
@@ -107,8 +123,13 @@ export function summarizeProperty(listing, now = new Date()) {
   const awaiting = leases.find(l => leaseAwaitingTenants(l, now)) || null
   const monthlyRent =
     status === 'leased'
-      ? current.reduce((sum, l) => sum + (l.monthlyRent || 0), 0)
+      ? basis.reduce((sum, l) => sum + (l.monthlyRent || 0), 0)
       : listing.price || 0
+  const ending = basis.find(l => l.endedAt) || null
+  const upcoming = current
+    .filter(l => leaseIsUpcoming(l, now))
+    .map(l => l.startDate)
+    .sort((a, b) => new Date(a) - new Date(b))
   const tickets = listing.maintenanceTickets || []
 
   return {
@@ -135,12 +156,16 @@ export function summarizeProperty(listing, now = new Date()) {
       applications.flatMap(a => a.transactions || []),
       now
     ),
-    leaseEnd: current.length
-      ? current.map(l => l.endDate).sort((a, b) => new Date(a) - new Date(b))[0]
+    leaseEnd: basis.length
+      ? basis.map(l => l.endDate).sort((a, b) => new Date(a) - new Date(b))[0]
       : null,
+    // Notice given: the move-out date the current lease now ends on.
+    endingOn: ending ? ending.endDate : null,
+    // A signed renewal waiting for its term to start.
+    nextLeaseStart: upcoming[0] || null,
     // A month-to-month lease stores a rolling anniversary as its endDate;
     // cards say "Month-to-month" instead of that date.
-    monthToMonth: current.some(l => l.monthToMonth),
+    monthToMonth: basis.some(l => l.monthToMonth),
   }
 }
 

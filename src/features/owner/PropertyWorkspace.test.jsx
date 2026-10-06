@@ -242,11 +242,12 @@ describe('PropertyWorkspace', () => {
     })
     fireEvent.click(screen.getByRole('button', { name: /save/i }))
     await waitFor(() =>
-      expect(maintenanceService.updateStatus).toHaveBeenCalledWith(
-        'tk1',
-        'in-progress',
-        ''
-      )
+      expect(maintenanceService.updateStatus).toHaveBeenCalledWith('tk1', {
+        status: 'in-progress',
+        assignedTo: '',
+        vendorPhone: '',
+        cost: null,
+      })
     )
   })
 

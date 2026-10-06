@@ -122,6 +122,8 @@ export async function runInviteMaintenance({
   const rolling = await db.agreement.findMany({
     where: {
       monthToMonth: true,
+      // Once notice is given the endDate is the real move-out date.
+      endedAt: null,
       endDate: { lte: new Date(now.getTime() + ROLL_FORWARD_WINDOW_MS) },
     },
     select: { id: true, startDate: true, endDate: true },

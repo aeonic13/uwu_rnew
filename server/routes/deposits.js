@@ -1,6 +1,7 @@
 import express from 'express'
 import prisma from '../utils/prisma.js'
 import { authenticate, requireUserType } from '../middleware/authenticate.js'
+import { summarizeItems } from '../utils/inspections.js'
 
 const router = express.Router()
 
@@ -34,7 +35,7 @@ export function ruleForState(state) {
 }
 
 /** Pull a two-letter state code out of a listing location string, CA default. */
-function stateFromLocation(location) {
+export function stateFromLocation(location) {
   const match = (location || '').match(/\b([A-Z]{2})\b(?:\s+\d{5})?\s*$/)
   return match && STATE_DEPOSIT_RULES[match[1]] ? match[1] : 'CA'
 }
@@ -56,6 +57,12 @@ const DEPOSIT_INCLUDE = {
           },
           listing: { select: { id: true, title: true, location: true } },
         },
+      },
+      inspections: {
+        where: { type: 'move_out', status: 'completed' },
+        orderBy: { completedAt: 'desc' },
+        take: 1,
+        select: { id: true, items: true, completedAt: true },
       },
     },
   },
@@ -96,6 +103,20 @@ function presentDeposit(deposit) {
       startDate: deposit.agreement.startDate,
       endDate: deposit.agreement.endDate,
     },
+    moveOutInspection: moveOutInspection(deposit.agreement.inspections),
+  }
+}
+
+/** The latest completed move-out report on the lease, summarized. */
+function moveOutInspection(inspections) {
+  const latest = inspections?.[0]
+  if (!latest) return null
+  const { damagedCount, estimatedTotal } = summarizeItems(latest.items)
+  return {
+    id: latest.id,
+    completedAt: latest.completedAt,
+    damagedCount,
+    estimatedTotal,
   }
 }
 

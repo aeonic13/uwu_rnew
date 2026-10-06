@@ -7,9 +7,11 @@ import {
   AlertCircle,
   Download,
   Pen,
+  Pencil,
 } from 'lucide-react'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import { agreementsService } from '../../services/agreementsService'
+import LeaseTermsEditor from './LeaseTermsEditor'
 
 /**
  * Format date
@@ -38,6 +40,7 @@ function AgreementView() {
   const [signature, setSignature] = useState('')
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [isSigning, setIsSigning] = useState(false)
+  const [editingTerms, setEditingTerms] = useState(false)
 
   useEffect(() => {
     const fetchAgreement = async () => {
@@ -123,6 +126,9 @@ function AgreementView() {
   const awaitingOther = !isSigned && (agreement.viewerHasSigned || imported)
   const signedWord = imported ? 'Confirmed' : 'Signed'
   const notSignedWord = imported ? 'Not confirmed' : 'Not signed'
+  // The landlord can shape an unsigned Rentra lease; signatures lock it.
+  const canEditTerms =
+    agreement.viewerRole === 'landlord' && !imported && !agreement.signedCount
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
@@ -260,6 +266,73 @@ function AgreementView() {
             )}
           </div>
         )}
+        {agreement.endedAt && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
+            Notice given: this lease ends on{' '}
+            {formatDate(agreement.terms.endDate)}.
+          </div>
+        )}
+        {agreement.renewsId && (
+          <div className="bg-white rounded-lg border p-4 text-sm text-gray-700">
+            This is a renewal of the household&apos;s previous lease.{' '}
+            <button
+              type="button"
+              onClick={() => navigate(`/agreement/${agreement.renewsId}`)}
+              className="text-brand-600 hover:underline"
+            >
+              View the previous lease
+            </button>
+          </div>
+        )}
+        {agreement.renewalId && (
+          <div className="bg-white rounded-lg border p-4 text-sm text-gray-700">
+            A renewal has been drafted for this household.{' '}
+            <button
+              type="button"
+              onClick={() => navigate(`/agreement/${agreement.renewalId}`)}
+              className="text-brand-600 hover:underline"
+            >
+              Open the renewal
+            </button>
+          </div>
+        )}
+        {!imported && agreement.documentUrl && (
+          <div className="bg-white rounded-lg border p-4 text-sm text-gray-700">
+            The landlord attached their own lease document. It is what the
+            parties sign and what the download contains; the terms below are
+            Rentra&apos;s record of it.{' '}
+            <button
+              type="button"
+              onClick={() => handleDownload()}
+              disabled={isDownloading}
+              className="text-brand-600 hover:underline disabled:opacity-50"
+            >
+              Download the document
+            </button>
+          </div>
+        )}
+        {canEditTerms && (
+          <div>
+            <button
+              type="button"
+              onClick={() => setEditingTerms(v => !v)}
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-600 hover:underline"
+            >
+              <Pencil size={14} />
+              {editingTerms
+                ? 'Hide the editor'
+                : 'Edit terms or upload your own lease'}
+            </button>
+            {editingTerms && (
+              <div className="mt-3">
+                <LeaseTermsEditor
+                  agreement={agreement}
+                  onSaved={setAgreement}
+                />
+              </div>
+            )}
+          </div>
+        )}
         {/* Agreement ID */}
         <div className="bg-white rounded-lg border p-4">
           <div className="flex items-center justify-between">
@@ -389,6 +462,32 @@ function AgreementView() {
               <p className="text-sm text-gray-500">Pet Policy</p>
               <p>{agreement.terms.petPolicy}</p>
             </div>
+            {agreement.terms.parking && (
+              <div>
+                <p className="text-sm text-gray-500">Parking</p>
+                <p>{agreement.terms.parking}</p>
+              </div>
+            )}
+            {(agreement.terms.lateFee || agreement.lateFee) && (
+              <div>
+                <p className="text-sm text-gray-500">Late fee</p>
+                <p>
+                  {agreement.terms.lateFee}
+                  {agreement.lateFee &&
+                    ` (${agreement.terms.lateFee ? 'rule: ' : ''}$${agreement.lateFee.amount} once rent is ${agreement.lateFee.graceDays} days past due)`}
+                </p>
+              </div>
+            )}
+            {agreement.terms.additionalClauses?.length > 0 && (
+              <div>
+                <p className="text-sm text-gray-500">Additional clauses</p>
+                <ol className="list-decimal pl-5 space-y-1">
+                  {agreement.terms.additionalClauses.map((clause, i) => (
+                    <li key={i}>{clause}</li>
+                  ))}
+                </ol>
+              </div>
+            )}
           </div>
         </div>
 

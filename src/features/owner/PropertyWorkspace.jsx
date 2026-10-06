@@ -15,6 +15,7 @@ import {
   ExternalLink,
   Power,
   UserPlus,
+  ClipboardCheck,
 } from 'lucide-react'
 import { propertiesService } from '../../services/propertiesService'
 import { listingsService } from '../../services/listingsService'
@@ -25,6 +26,7 @@ import ApplicationsTab from './property/ApplicationsTab'
 import MaintenanceTab from './property/MaintenanceTab'
 import DocumentsTab from './property/DocumentsTab'
 import ExpensesTab from './property/ExpensesTab'
+import InspectionsTab from './property/InspectionsTab'
 
 const PLACEHOLDER_IMAGE =
   'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600'
@@ -58,6 +60,7 @@ const TABS = [
     count: d => d.documents.length,
   },
   { key: 'expenses', label: 'Expenses', Icon: Receipt },
+  { key: 'inspections', label: 'Inspections', Icon: ClipboardCheck },
 ]
 
 const TAB_KEYS = TABS.map(t => t.key)
@@ -310,6 +313,9 @@ export default function PropertyWorkspace() {
           <DocumentsTab data={data} onRefresh={refresh} />
         )}
         {tab === 'expenses' && <ExpensesTab data={data} onRefresh={refresh} />}
+        {tab === 'inspections' && (
+          <InspectionsTab data={data} onRefresh={refresh} />
+        )}
       </div>
     </div>
   )

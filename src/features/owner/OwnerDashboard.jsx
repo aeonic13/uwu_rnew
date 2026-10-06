@@ -138,13 +138,21 @@ export function PropertyCard({ property, onOpen }) {
           <span className="flex items-center gap-1">
             <Bath size={13} /> {property.bathrooms} ba
           </span>
-          {property.leaseEnd && (
+          {property.endingOn ? (
+            <span className="text-amber-700 font-medium">
+              Ending {shortDate(property.endingOn)}
+            </span>
+          ) : property.nextLeaseStart ? (
+            <span className="text-gray-500">
+              Renewed from {shortDate(property.nextLeaseStart)}
+            </span>
+          ) : property.leaseEnd ? (
             <span className="text-gray-500">
               {property.monthToMonth
                 ? 'Month-to-month'
                 : `Lease ends ${shortDate(property.leaseEnd)}`}
             </span>
-          )}
+          ) : null}
         </p>
         <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-gray-100 text-center">
           <div>
@@ -200,6 +208,8 @@ PropertyCard.propTypes = {
     pendingApplications: PropTypes.number,
     openTickets: PropTypes.number,
     leaseEnd: PropTypes.string,
+    endingOn: PropTypes.string,
+    nextLeaseStart: PropTypes.string,
     monthToMonth: PropTypes.bool,
   }).isRequired,
   onOpen: PropTypes.func.isRequired,

@@ -101,6 +101,7 @@ describe('runInviteMaintenance', () => {
       expect.objectContaining({
         where: {
           monthToMonth: true,
+          endedAt: null,
           endDate: { lte: new Date(now.getTime() + ROLL_FORWARD_WINDOW_MS) },
         },
       })

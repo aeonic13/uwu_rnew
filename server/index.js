@@ -45,6 +45,8 @@ import documentsRoutes from './routes/documents.js'
 import reviewsRoutes from './routes/reviews.js'
 import savedSearchesRoutes from './routes/savedSearches.js'
 import tenantInvitesRoutes from './routes/tenantInvites.js'
+import ledgerRoutes from './routes/ledger.js'
+import inspectionsRoutes from './routes/inspections.js'
 
 // Get __dirname equivalent in ES modules
 const __filename = fileURLToPath(import.meta.url)
@@ -167,6 +169,8 @@ app.use('/api/documents', documentsRoutes)
 app.use('/api/reviews', reviewsRoutes)
 app.use('/api/saved-searches', savedSearchesRoutes)
 app.use('/api/tenant-invites', tenantInvitesRoutes)
+app.use('/api/ledger', ledgerRoutes)
+app.use('/api/inspections', inspectionsRoutes)
 
 // Sentry sees every error that reaches Express before our handler formats
 // the response. No-op without SENTRY_DSN.

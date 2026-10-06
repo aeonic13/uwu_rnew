@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft,
+  ClipboardCheck,
   Shield,
   Clock,
   AlertTriangle,
@@ -13,6 +14,7 @@ import {
   Loader2,
 } from 'lucide-react'
 import { depositsService } from '../../services/depositsService'
+import { inspectionsService } from '../../services/inspectionsService'
 
 const money = n => `$${Number(n || 0).toLocaleString()}`
 const DEDUCTION_LABELS = {
@@ -109,6 +111,7 @@ function DepositCard({ deposit, onChanged }) {
   const [dCategory, setDCategory] = useState('cleaning')
   const [dDescription, setDDescription] = useState('')
   const [dAmount, setDAmount] = useState('')
+  const [pulled, setPulled] = useState(null)
 
   const run = async fn => {
     setBusy(true)
@@ -142,6 +145,17 @@ function DepositCard({ deposit, onChanged }) {
   }
 
   const refunded = deposit.status === 'refunded'
+  const inspection = deposit.moveOutInspection
+
+  // Push the completed move-out report's flagged items onto this deposit,
+  // then re-read the deposit so the new lines show up.
+  const pullFromInspection = () =>
+    run(async () => {
+      const result = await inspectionsService.sendToDeposit(inspection.id)
+      setPulled(result)
+      const list = await depositsService.list()
+      return list.find(d => d.id === deposit.id) || null
+    })
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
@@ -185,6 +199,36 @@ function DepositCard({ deposit, onChanged }) {
         {deposit.state} law: itemized statement + refund within{' '}
         {deposit.returnWindowDays} days of move-out ({deposit.statuteCite}).
       </p>
+
+      {inspection && !refunded && (
+        <div className="flex flex-wrap items-center justify-between gap-2 bg-brand-50 border border-brand-100 rounded-lg px-3 py-2 text-sm">
+          <span className="text-gray-700">
+            <ClipboardCheck size={14} className="inline mr-1 -mt-0.5" />
+            Move-out inspection: {inspection.damagedCount} flagged ·{' '}
+            {money(inspection.estimatedTotal)} estimated{' '}
+            <Link
+              to={`/inspections/${inspection.id}`}
+              className="text-brand-600 hover:underline"
+            >
+              View report
+            </Link>
+          </span>
+          <button
+            type="button"
+            onClick={pullFromInspection}
+            disabled={busy || inspection.estimatedTotal <= 0}
+            className="px-3 py-1.5 text-sm border border-brand-300 text-brand-700 rounded-lg hover:bg-brand-100 disabled:opacity-50"
+          >
+            Pull deductions from inspection
+          </button>
+          {pulled && (
+            <span className="w-full text-xs text-gray-600">
+              Added {pulled.created}, skipped {pulled.skipped} (already listed
+              or over the amount held).
+            </span>
+          )}
+        </div>
+      )}
 
       {!refunded && (
         <div className="flex items-end gap-2">

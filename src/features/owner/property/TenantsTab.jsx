@@ -21,6 +21,11 @@ import {
 import { agreementsService } from '../../../services/agreementsService'
 import { messagingService } from '../../../services/messagingService'
 import { tenantInvitesService } from '../../../services/tenantInvitesService'
+import {
+  EndLeaseModal,
+  RenewLeaseModal,
+  LeaseActionButtons,
+} from './LeaseActions'
 import { useNavigate } from 'react-router-dom'
 import {
   money,
@@ -316,6 +321,9 @@ MemberRow.propTypes = {
 }
 
 function leaseHeading(lease) {
+  if (lease.renewsId && !lease.fullySigned) return 'Renewal awaiting signatures'
+  if (lease.renewsId && lease.current && new Date(lease.startDate) > new Date())
+    return 'Upcoming renewal'
   if (lease.imported) {
     if (lease.current) return 'Current lease · imported'
     if (lease.awaitingTenants) return 'Imported lease · waiting on tenants'
@@ -327,6 +335,12 @@ function leaseHeading(lease) {
 }
 
 function leaseBadge(lease) {
+  if (lease.endedAt && lease.current) {
+    return {
+      label: `Ending ${shortDate(lease.endDate)}`,
+      className: 'bg-amber-100 text-amber-800',
+    }
+  }
   if (lease.fullySigned) {
     return {
       label: lease.imported ? 'All confirmed' : 'All signed',
@@ -350,6 +364,7 @@ function leaseBadge(lease) {
 
 function LeaseCard({ lease, listingId, onRefresh, onError }) {
   const [downloading, setDownloading] = useState(false)
+  const [action, setAction] = useState(null) // 'end' | 'renew'
   const download = async ({ summary = false } = {}) => {
     setDownloading(true)
     try {
@@ -381,7 +396,26 @@ function LeaseCard({ lease, listingId, onRefresh, onError }) {
             deposit
             {lease.rentSplit &&
               ` · ${lease.rentSplit.splitMode === 'equal' ? 'split equally' : 'custom split'}`}
+            {lease.lateFee &&
+              ` · late fee ${money(lease.lateFee.amount)} after ${lease.lateFee.graceDays} days`}
           </p>
+          {lease.endedAt && (
+            <p className="text-xs text-amber-700 mt-1">
+              Notice given · tenants move out {shortDate(lease.endDate)}. The
+              deposit refund countdown runs from that date.
+            </p>
+          )}
+          {lease.renewalId && (
+            <p className="text-xs text-gray-600 mt-1">
+              Renewal drafted ·{' '}
+              <Link
+                to={`/agreement/${lease.renewalId}`}
+                className="text-brand-600 hover:underline"
+              >
+                open the renewal
+              </Link>
+            </p>
+          )}
           {lease.imported && (
             <p className="text-xs text-gray-500 mt-1">
               Signed outside Rentra; tenants confirm the recorded terms.
@@ -433,6 +467,12 @@ function LeaseCard({ lease, listingId, onRefresh, onError }) {
                 ? 'Lease summary'
                 : 'Lease PDF'}
           </button>
+          <LeaseActionButtons
+            lease={lease}
+            className={smallButton}
+            onEnd={() => setAction('end')}
+            onRenew={() => setAction('renew')}
+          />
         </div>
       </header>
 
@@ -498,6 +538,26 @@ function LeaseCard({ lease, listingId, onRefresh, onError }) {
           </p>
         </div>
       </footer>
+      {action === 'end' && (
+        <EndLeaseModal
+          lease={lease}
+          onClose={() => setAction(null)}
+          onDone={async () => {
+            setAction(null)
+            await onRefresh()
+          }}
+        />
+      )}
+      {action === 'renew' && (
+        <RenewLeaseModal
+          lease={lease}
+          onClose={() => setAction(null)}
+          onDone={async () => {
+            setAction(null)
+            await onRefresh()
+          }}
+        />
+      )}
     </section>
   )
 }

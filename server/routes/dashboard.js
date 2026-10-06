@@ -1,4 +1,9 @@
 import express from 'express'
+import {
+  monthWindow,
+  tenantLedger,
+  lateFeeAssessment,
+} from '../utils/ledger.js'
 import prisma from '../utils/prisma.js'
 import { authenticate, requireUserType } from '../middleware/authenticate.js'
 import {
@@ -8,6 +13,16 @@ import {
 } from '../utils/screening.js'
 
 const router = express.Router()
+
+/** Is lease `a` the better rent-roll row for a tenant than lease `b`? */
+function preferLease(a, b, now) {
+  if (!a) return false
+  if (!b) return true
+  const inForce = l =>
+    new Date(l.startDate) <= now && new Date(l.endDate) >= now
+  if (inForce(a) !== inForce(b)) return inForce(a)
+  return new Date(a.startDate) > new Date(b.startDate)
+}
 
 /**
  * GET /api/dashboard/landlord/applications/:listingId
@@ -248,6 +263,8 @@ router.get(
       const ownerId = req.user.id
 
       // Get all listings with approved applications
+      const now = new Date()
+      const { from: monthFrom, to: monthTo } = monthWindow(now)
       const listings = await prisma.listing.findMany({
         where: { ownerId },
         include: {
@@ -265,10 +282,14 @@ router.get(
               },
               agreement: {
                 select: {
+                  id: true,
                   monthlyRent: true,
                   startDate: true,
                   endDate: true,
                   monthToMonth: true,
+                  endedAt: true,
+                  lateFeeAmount: true,
+                  lateFeeGraceDays: true,
                   // A household shares one agreement: each member owes
                   // their split share, or an equal part of the rent.
                   rentSplit: {
@@ -280,18 +301,13 @@ router.get(
                     where: { role: 'tenant', userId: { not: null } },
                     select: { userId: true },
                   },
+                  charges: {
+                    where: { dueDate: { gte: monthFrom, lt: monthTo } },
+                  },
                 },
               },
               transactions: {
-                where: {
-                  createdAt: {
-                    gte: new Date(
-                      new Date().getFullYear(),
-                      new Date().getMonth(),
-                      1
-                    ), // This month
-                  },
-                },
+                where: { createdAt: { gte: monthFrom, lt: monthTo } },
               },
             },
           },
@@ -301,6 +317,24 @@ router.get(
 
       // Calculate rent roll
       const rentRoll = listings.map(listing => {
+        // One row per tenant: the lease whose term covers today wins (a
+        // signed renewal waits its turn), then the latest-starting one.
+        const byTenant = new Map()
+        for (const app of listing.applications) {
+          const prev = byTenant.get(app.applicantId)
+          if (!prev || preferLease(app.agreement, prev.agreement, now)) {
+            byTenant.set(app.applicantId, app)
+          }
+        }
+        // Rent paid per lease this month, for the household late-fee test.
+        const paidByLease = new Map()
+        for (const app of listing.applications) {
+          const key = app.agreementId || 'none'
+          const paid = app.transactions
+            .filter(t => t.status === 'completed')
+            .reduce((sum, t) => sum + t.amount, 0)
+          paidByLease.set(key, (paidByLease.get(key) || 0) + paid)
+        }
         const shareOf = app => {
           const ag = app.agreement
           if (!ag) return listing.price
@@ -311,26 +345,59 @@ router.get(
           const household = Math.max(1, ag.signers?.length || 1)
           return Math.round(ag.monthlyRent / household)
         }
-        const tenants = listing.applications.map(app => ({
-          id: app.applicant.id,
-          applicationId: app.id,
-          name: `${app.applicant.firstName} ${app.applicant.lastName}`,
-          email: app.applicant.email,
-          monthlyRent: shareOf(app),
-          leaseRent: app.agreement?.monthlyRent || listing.price,
-          leaseStart: app.agreement?.startDate,
-          leaseEnd: app.agreement?.endDate,
-          monthToMonth: Boolean(app.agreement?.monthToMonth),
-          paidThisMonth: app.transactions
-            .filter(t => t.status === 'completed')
-            .reduce((sum, t) => sum + t.amount, 0),
-          pendingThisMonth: app.transactions
-            .filter(t => t.status === 'pending' || t.status === 'processing')
-            .reduce((sum, t) => sum + t.amount, 0),
-        }))
+        const tenants = [...byTenant.values()].map(app => {
+          const ag = app.agreement
+          const memberCount = Math.max(1, ag?.signers?.length || 1)
+          const ledger = tenantLedger({
+            rentShare: shareOf(app),
+            charges: ag?.charges || [],
+            payments: app.transactions,
+            tenantId: app.applicantId,
+            memberCount,
+            now,
+          })
+          const lateFeeApplied = (ag?.charges || []).some(
+            c => c.type === 'late_fee' && !c.userId
+          )
+          return {
+            id: app.applicant.id,
+            applicationId: app.id,
+            agreementId: ag?.id || null,
+            name: `${app.applicant.firstName} ${app.applicant.lastName}`,
+            email: app.applicant.email,
+            monthlyRent: ledger.rentDue,
+            otherCharges: ledger.otherCharges,
+            credits: ledger.credits,
+            due: ledger.due,
+            charges: ledger.lines,
+            leaseRent: ag?.monthlyRent || listing.price,
+            leaseStart: ag?.startDate,
+            leaseEnd: ag?.endDate,
+            monthToMonth: Boolean(ag?.monthToMonth),
+            leaseEnding: Boolean(ag?.endedAt),
+            paidThisMonth: ledger.paid,
+            pendingThisMonth: ledger.pending,
+            balance: ledger.balance,
+            lateFee: ag?.lateFeeAmount
+              ? {
+                  amount: ag.lateFeeAmount,
+                  graceDays: ag.lateFeeGraceDays ?? 0,
+                  appliedThisMonth: lateFeeApplied,
+                  ...lateFeeAssessment({
+                    lateFeeAmount: ag.lateFeeAmount,
+                    lateFeeGraceDays: ag.lateFeeGraceDays,
+                    rentDue: ag.monthlyRent,
+                    paidThisMonth: paidByLease.get(ag.id) || 0,
+                    alreadyAppliedThisMonth: lateFeeApplied,
+                    now,
+                  }),
+                }
+              : null,
+          }
+        })
 
         const monthlyExpected = tenants.reduce(
-          (sum, t) => sum + (t.monthlyRent || 0),
+          (sum, t) => sum + (t.due ?? t.monthlyRent ?? 0),
           0
         )
         const monthlyCollected = tenants.reduce(

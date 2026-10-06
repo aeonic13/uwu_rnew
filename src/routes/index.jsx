@@ -108,6 +108,13 @@ const SecurityDeposits = lazy(
 const Bookkeeping = lazy(() => import('../features/owner/Bookkeeping'))
 const TaxCenter = lazy(() => import('../features/owner/TaxCenter'))
 const OwnerDocuments = lazy(() => import('../features/owner/Documents'))
+const OwnerInspections = lazy(() => import('../features/owner/Inspections'))
+const InspectionEditor = lazy(
+  () => import('../features/owner/property/InspectionEditor')
+)
+const InspectionReport = lazy(
+  () => import('../features/inspections/InspectionReport')
+)
 // Not-yet-real owner screens are gated behind an honest Coming Soon page
 // (launch plan P0-3). Their mock components stay in the repo as design
 // references but are intentionally unrouted.
@@ -568,6 +575,18 @@ const routeConfig = [
           </ProtectedRoute>
         ),
       },
+      // Read-only inspection report for anyone on the lease (tenant or
+      // landlord); reached from the completion email.
+      {
+        path: '/inspections/:id',
+        element: (
+          <ProtectedRoute>
+            <Suspense fallback={<SuspenseFallback />}>
+              <InspectionReport />
+            </Suspense>
+          </ProtectedRoute>
+        ),
+      },
 
       // Legacy roommate routes — superseded by the real Housemates feature.
       // Redirect any stray links/bookmarks there.
@@ -686,6 +705,11 @@ const routeConfig = [
           path: '/dashboard/properties/:id/onboard',
           Component: OnboardTenantsFlow,
         },
+        // Five segments, so it never collides with the four-segment :tab route.
+        {
+          path: '/dashboard/properties/:id/inspections/:inspectionId',
+          Component: InspectionEditor,
+        },
         {
           path: '/dashboard/properties/:id/:tab',
           Component: PropertyWorkspace,
@@ -695,6 +719,7 @@ const routeConfig = [
         { path: '/dashboard/banking', Component: Bookkeeping },
         { path: '/dashboard/tax', Component: TaxCenter },
         { path: '/dashboard/documents', Component: OwnerDocuments },
+        { path: '/dashboard/inspections', Component: OwnerInspections },
       ].map(({ path, Component }) => ({
         path,
         element: (
@@ -719,12 +744,6 @@ const routeConfig = [
           path: '/dashboard/disputes',
           title: 'Dispute Resolution',
           description: 'Structured dispute and mediation tools are planned.',
-        },
-        {
-          path: '/dashboard/inspections',
-          title: 'Property Inspections',
-          description:
-            'Move-in/move-out inspections with saved photo reports are coming.',
         },
       ].map(({ path, title, description }) => ({
         path,

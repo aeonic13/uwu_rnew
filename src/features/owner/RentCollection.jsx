@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { dashboardService } from '../../services/dashboardService'
 import { paymentsService } from '../../services/payments'
+import { ledgerService } from '../../services/ledgerService'
 
 const money = n => `$${Number(n || 0).toLocaleString()}`
 
@@ -34,7 +35,8 @@ function StatCard({ label, value, tone = 'gray' }) {
 }
 
 function tenantStatus(t) {
-  if (t.monthlyRent > 0 && t.paidThisMonth >= t.monthlyRent) return 'paid'
+  const due = t.due ?? t.monthlyRent
+  if (due > 0 && t.paidThisMonth >= due) return 'paid'
   if (t.pendingThisMonth > 0) return 'processing'
   return 'due'
 }
@@ -152,6 +154,139 @@ function RecordPaymentModal({ tenant, onClose, onSaved }) {
   )
 }
 
+const CHARGE_TYPES = [
+  { value: 'utility', label: 'Utility' },
+  { value: 'repair', label: 'Repair' },
+  { value: 'late_fee', label: 'Late fee' },
+  { value: 'other', label: 'Other charge' },
+  { value: 'credit', label: 'Credit (reduces what they owe)' },
+]
+
+/** Add a charge or credit to a tenant's ledger for this month. */
+function ChargeModal({ tenant, onClose, onSaved }) {
+  const [type, setType] = useState('utility')
+  const [amount, setAmount] = useState('')
+  const [description, setDescription] = useState('')
+  const [dueDate, setDueDate] = useState(() =>
+    new Date().toISOString().slice(0, 10)
+  )
+  const [scope, setScope] = useState('tenant')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
+
+  const submit = async e => {
+    e.preventDefault()
+    setSaving(true)
+    setError(null)
+    try {
+      await ledgerService.addCharge(tenant.agreementId, {
+        type,
+        amount: Number(amount),
+        description,
+        dueDate,
+        userId: scope === 'tenant' ? tenant.id : undefined,
+      })
+      onSaved()
+    } catch (err) {
+      setError(err.message)
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+      <form
+        onSubmit={submit}
+        className="bg-white rounded-xl p-6 w-full max-w-sm space-y-4"
+      >
+        <h3 className="font-semibold text-lg">Add a charge</h3>
+        <p className="text-sm text-gray-600">
+          Lands on {tenant.name}&apos;s ledger for the month it is due and is
+          emailed to them. A credit reduces what they owe.
+        </p>
+        <div className="grid grid-cols-2 gap-3">
+          <label className="block text-sm text-gray-600">
+            Type
+            <select
+              value={type}
+              onChange={e => setType(e.target.value)}
+              className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 bg-white text-gray-900"
+            >
+              {CHARGE_TYPES.map(c => (
+                <option key={c.value} value={c.value}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block text-sm text-gray-600">
+            Amount ($)
+            <input
+              type="number"
+              min="1"
+              required
+              value={amount}
+              onChange={e => setAmount(e.target.value)}
+              className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900"
+            />
+          </label>
+        </div>
+        <label className="block text-sm text-gray-600">
+          Description
+          <input
+            type="text"
+            required
+            value={description}
+            onChange={e => setDescription(e.target.value)}
+            placeholder="e.g. Water bill, September"
+            className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900"
+          />
+        </label>
+        <div className="grid grid-cols-2 gap-3">
+          <label className="block text-sm text-gray-600">
+            Due
+            <input
+              type="date"
+              required
+              value={dueDate}
+              onChange={e => setDueDate(e.target.value)}
+              className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900"
+            />
+          </label>
+          <label className="block text-sm text-gray-600">
+            Applies to
+            <select
+              value={scope}
+              onChange={e => setScope(e.target.value)}
+              className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 bg-white text-gray-900"
+            >
+              <option value="tenant">{tenant.name} only</option>
+              <option value="household">Whole household (split)</option>
+            </select>
+          </label>
+        </div>
+        {error && <p className="text-sm text-red-600">{error}</p>}
+        <div className="flex space-x-3 pt-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={saving}
+            className="flex-1 bg-brand-500 text-white py-2 rounded-lg font-medium hover:bg-brand-600 disabled:opacity-50"
+          >
+            {saving ? 'Saving…' : 'Add'}
+          </button>
+        </div>
+      </form>
+    </div>
+  )
+}
+
 /** Expandable per-tenant payment history, from the payment-status API. */
 function PaymentHistory({ applicationId }) {
   const [data, setData] = useState(null)
@@ -244,6 +379,8 @@ export default function RentCollection() {
   const [recordingFor, setRecordingFor] = useState(null)
   const [expanded, setExpanded] = useState(null)
   const [remindStatus, setRemindStatus] = useState({}) // applicationId -> 'sending' | 'sent' | error
+  const [chargingFor, setChargingFor] = useState(null)
+  const [feeStatus, setFeeStatus] = useState({}) // agreementId -> 'applying' | error
 
   const load = useCallback(() => {
     dashboardService
@@ -266,6 +403,26 @@ export default function RentCollection() {
       setRemindStatus(s => ({ ...s, [tenant.applicationId]: 'sent' }))
     } catch (err) {
       setRemindStatus(s => ({ ...s, [tenant.applicationId]: err.message }))
+    }
+  }
+
+  const applyLateFee = async tenant => {
+    setFeeStatus(s => ({ ...s, [tenant.agreementId]: 'applying' }))
+    try {
+      await ledgerService.applyLateFee(tenant.agreementId)
+      setFeeStatus(s => ({ ...s, [tenant.agreementId]: null }))
+      load()
+    } catch (err) {
+      setFeeStatus(s => ({ ...s, [tenant.agreementId]: err.message }))
+    }
+  }
+
+  const removeCharge = async chargeId => {
+    try {
+      await ledgerService.removeCharge(chargeId)
+      load()
+    } catch (err) {
+      setError(err.message)
     }
   }
 
@@ -384,6 +541,15 @@ export default function RentCollection() {
                           <div className="font-medium">{tenant.name}</div>
                           <div className="text-sm text-gray-500">
                             {money(tenant.monthlyRent)}/mo
+                            {tenant.otherCharges > 0 &&
+                              ` + ${money(tenant.otherCharges)} charges`}
+                            {tenant.credits > 0 &&
+                              ` − ${money(tenant.credits)} credit`}
+                            {tenant.leaseEnding && (
+                              <span className="ml-2 text-amber-700">
+                                · lease ending
+                              </span>
+                            )}
                           </div>
                         </div>
                         <span
@@ -394,11 +560,12 @@ export default function RentCollection() {
                           {status === 'paid'
                             ? ''
                             : ` — ${money(
-                                Math.max(
-                                  0,
-                                  (tenant.monthlyRent || 0) -
-                                    tenant.paidThisMonth
-                                )
+                                tenant.balance ??
+                                  Math.max(
+                                    0,
+                                    (tenant.monthlyRent || 0) -
+                                      tenant.paidThisMonth
+                                  )
                               )}`}
                         </span>
                       </div>
@@ -422,6 +589,34 @@ export default function RentCollection() {
                               ? 'Reminder sent ✓'
                               : 'Send reminder'}
                         </button>
+                        {tenant.agreementId && (
+                          <button
+                            onClick={() => setChargingFor(tenant)}
+                            className="inline-flex items-center px-3 py-1.5 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                          >
+                            <Plus size={14} className="mr-1" /> Add charge
+                          </button>
+                        )}
+                        {tenant.lateFee && (
+                          <button
+                            onClick={() => applyLateFee(tenant)}
+                            disabled={
+                              !tenant.lateFee.applicable ||
+                              feeStatus[tenant.agreementId] === 'applying'
+                            }
+                            title={
+                              tenant.lateFee.applicable
+                                ? `Adds the ${money(tenant.lateFee.amount)} late fee from the lease`
+                                : tenant.lateFee.reason
+                            }
+                            className="inline-flex items-center px-3 py-1.5 text-sm border border-amber-300 text-amber-800 rounded-lg hover:bg-amber-50 disabled:opacity-50"
+                          >
+                            <AlertTriangle size={14} className="mr-1" />
+                            {tenant.lateFee.appliedThisMonth
+                              ? 'Late fee applied'
+                              : `Apply ${money(tenant.lateFee.amount)} late fee`}
+                          </button>
+                        )}
                         <button
                           onClick={() =>
                             setExpanded(isOpen ? null : tenant.applicationId)
@@ -438,6 +633,54 @@ export default function RentCollection() {
                       </div>
                       {remind && remind !== 'sending' && remind !== 'sent' && (
                         <p className="text-xs text-red-600 mt-1">{remind}</p>
+                      )}
+                      {feeStatus[tenant.agreementId] &&
+                        feeStatus[tenant.agreementId] !== 'applying' && (
+                          <p className="text-xs text-red-600 mt-1">
+                            {feeStatus[tenant.agreementId]}
+                          </p>
+                        )}
+                      {tenant.charges?.length > 0 && (
+                        <ul className="mt-3 text-sm divide-y divide-gray-100 border border-gray-100 rounded-lg">
+                          {tenant.charges.map(c => (
+                            <li
+                              key={c.id}
+                              className="flex items-center justify-between px-3 py-1.5"
+                            >
+                              <span className="text-gray-700">
+                                <span className="font-medium">{c.label}</span>
+                                {' · '}
+                                {c.description}
+                                {c.household && (
+                                  <span className="text-gray-400">
+                                    {' '}
+                                    (household, their share)
+                                  </span>
+                                )}
+                              </span>
+                              <span className="flex items-center gap-2">
+                                <span
+                                  className={
+                                    c.type === 'credit'
+                                      ? 'text-green-700'
+                                      : 'text-gray-900'
+                                  }
+                                >
+                                  {c.type === 'credit' ? '−' : '+'}
+                                  {money(c.amount)}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => removeCharge(c.id)}
+                                  className="text-xs text-gray-400 hover:text-red-600"
+                                  aria-label="Remove charge"
+                                >
+                                  Remove
+                                </button>
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
                       )}
 
                       {isOpen && (
@@ -458,6 +701,16 @@ export default function RentCollection() {
           onClose={() => setRecordingFor(null)}
           onSaved={() => {
             setRecordingFor(null)
+            load()
+          }}
+        />
+      )}
+      {chargingFor && (
+        <ChargeModal
+          tenant={chargingFor}
+          onClose={() => setChargingFor(null)}
+          onSaved={() => {
+            setChargingFor(null)
             load()
           }}
         />

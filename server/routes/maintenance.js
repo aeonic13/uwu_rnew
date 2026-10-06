@@ -1,14 +1,70 @@
 import express from 'express'
 import prisma from '../utils/prisma.js'
-import { authenticate } from '../middleware/authenticate.js'
+import { authenticate, requireUserType } from '../middleware/authenticate.js'
 import {
   sendMaintenanceTicketEmail,
   sendMaintenanceStatusEmail,
 } from '../utils/email.js'
+import { sendMaintenanceCommentEmail } from '../utils/emailMaintenance.js'
+import { upload, uploadToCloudinary } from '../utils/cloudinary.js'
+import {
+  expenseFromTicket,
+  isTicketParty,
+  sanitizeComment,
+  sanitizeVendorFields,
+} from '../utils/maintenance.js'
 
 const router = express.Router()
 
 const VALID_STATUS = ['pending', 'in-progress', 'completed']
+
+const AUTHOR_SELECT = {
+  id: true,
+  firstName: true,
+  lastName: true,
+  userType: true,
+}
+
+/**
+ * Load a ticket with the relations the party check and the emails need, and
+ * confirm the caller is the tenant or the listing owner. Responds on failure
+ * and returns null; otherwise returns the ticket.
+ */
+async function loadTicketForParty(req, res) {
+  const ticket = await prisma.maintenanceTicket.findUnique({
+    where: { id: req.params.id },
+    include: {
+      listing: {
+        select: {
+          id: true,
+          title: true,
+          ownerId: true,
+          owner: { select: { firstName: true, email: true, userType: true } },
+        },
+      },
+      tenant: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          userType: true,
+        },
+      },
+    },
+  })
+  if (!ticket) {
+    res.status(404).json({ error: { message: 'Ticket not found' } })
+    return null
+  }
+  if (!isTicketParty(ticket, req.user.id)) {
+    res
+      .status(403)
+      .json({ error: { message: 'Not authorized to view this ticket' } })
+    return null
+  }
+  return ticket
+}
 
 /**
  * POST /api/maintenance
@@ -79,6 +135,7 @@ router.post('/', authenticate, async (req, res) => {
 /**
  * GET /api/maintenance
  * Tenants see their own tickets; owners see tickets on their listings.
+ * Each row carries a comment count so lists can show a thread badge.
  */
 router.get('/', authenticate, async (req, res) => {
   try {
@@ -95,6 +152,7 @@ router.get('/', authenticate, async (req, res) => {
           req.user.userType === 'owner'
             ? { select: { firstName: true, lastName: true, email: true } }
             : false,
+        _count: { select: { comments: true } },
       },
       orderBy: { createdAt: 'desc' },
     })
@@ -107,14 +165,137 @@ router.get('/', authenticate, async (req, res) => {
 })
 
 /**
+ * GET /api/maintenance/:id
+ * One ticket with its thread. Tenant or listing owner only.
+ */
+router.get('/:id', authenticate, async (req, res) => {
+  try {
+    const party = await loadTicketForParty(req, res)
+    if (!party) return
+
+    const ticket = await prisma.maintenanceTicket.findUnique({
+      where: { id: party.id },
+      include: {
+        listing: { select: { id: true, title: true, ownerId: true } },
+        tenant: {
+          select: { id: true, firstName: true, lastName: true, email: true },
+        },
+        expense: { select: { id: true, amount: true, date: true } },
+        comments: {
+          orderBy: { createdAt: 'asc' },
+          include: { author: { select: AUTHOR_SELECT } },
+        },
+      },
+    })
+
+    res.json({ ticket })
+  } catch (error) {
+    console.error('Get maintenance ticket error:', error)
+    res.status(500).json({ error: { message: 'Failed to load ticket' } })
+  }
+})
+
+/**
+ * POST /api/maintenance/:id/comments  { body, photos? }
+ * Either party adds to the thread; the other party is emailed.
+ */
+router.post('/:id/comments', authenticate, async (req, res) => {
+  try {
+    const ticket = await loadTicketForParty(req, res)
+    if (!ticket) return
+
+    const parsed = sanitizeComment(req.body)
+    if (parsed.error) {
+      return res.status(400).json({ error: { message: parsed.error } })
+    }
+
+    const comment = await prisma.maintenanceComment.create({
+      data: {
+        body: parsed.body,
+        photos: parsed.photos,
+        ticketId: ticket.id,
+        authorId: req.user.id,
+      },
+      include: { author: { select: AUTHOR_SELECT } },
+    })
+
+    res.status(201).json({ comment })
+
+    // Notify the other side of the thread. Best-effort, after responding.
+    const authorIsOwner = req.user.id === ticket.listing.ownerId
+    const recipient = authorIsOwner ? ticket.tenant : ticket.listing.owner
+    sendMaintenanceCommentEmail({
+      recipient,
+      authorName: `${req.user.firstName} ${req.user.lastName || ''}`.trim(),
+      listing: ticket.listing,
+      ticket,
+      comment,
+    }).catch(err =>
+      console.error('Maintenance comment email failed:', err?.message)
+    )
+  } catch (error) {
+    console.error('Add maintenance comment error:', error)
+    res.status(500).json({ error: { message: 'Failed to add comment' } })
+  }
+})
+
+/**
+ * POST /api/maintenance/:id/photos  (multipart `images`, up to 10)
+ * Either party uploads photos to attach to a comment. Returns the URLs; the
+ * client then sends them in the comment body.
+ */
+router.post(
+  '/:id/photos',
+  authenticate,
+  upload.array('images', 10),
+  async (req, res) => {
+    try {
+      const ticket = await loadTicketForParty(req, res)
+      if (!ticket) return
+
+      if (!req.files || req.files.length === 0) {
+        return res
+          .status(400)
+          .json({ error: { message: 'No images provided' } })
+      }
+
+      const results = await Promise.all(
+        req.files.map((file, index) =>
+          uploadToCloudinary(file.buffer, {
+            folder: `rentra/maintenance/${ticket.id}`,
+            publicId: `photo_${index}_${Date.now()}`,
+            transformation: [
+              { width: 1600, height: 1600, crop: 'limit' },
+              { quality: 'auto' },
+              { fetch_format: 'auto' },
+            ],
+          })
+        )
+      )
+
+      res
+        .status(201)
+        .json({ images: results.map(r => ({ url: r.secure_url })) })
+    } catch (error) {
+      console.error('Maintenance photo upload error:', error)
+      res.status(500).json({ error: { message: 'Failed to upload photos' } })
+    }
+  }
+)
+
+/**
  * PUT /api/maintenance/:id/status
- * Owner updates a ticket's status / assignment.
+ * Owner updates a ticket's status / assignment / vendor phone / cost.
  */
 router.put('/:id/status', authenticate, async (req, res) => {
   try {
     const { status, assignedTo } = req.body
     if (status && !VALID_STATUS.includes(status)) {
       return res.status(400).json({ error: { message: 'Invalid status' } })
+    }
+    const vendor = sanitizeVendorFields(req.body)
+    if (vendor.error) {
+      return res.status(400).json({ error: { message: vendor.error } })
     }
 
     const ticket = await prisma.maintenanceTicket.findUnique({
@@ -138,7 +319,9 @@ router.put('/:id/status', authenticate, async (req, res) => {
       data: {
         ...(status && { status }),
         ...(assignedTo !== undefined && { assignedTo }),
-        ...(status === 'completed' && { completedAt: new Date() }),
+        ...vendor.data,
+        ...(status === 'completed' &&
+          ticket.status !== 'completed' && { completedAt: new Date() }),
       },
     })
 
@@ -160,5 +343,57 @@ router.put('/:id/status', authenticate, async (req, res) => {
     res.status(500).json({ error: { message: 'Failed to update ticket' } })
   }
 })
+
+/**
+ * POST /api/maintenance/:id/expense
+ * Owner books a costed repair as a `repairs` Expense on the property.
+ * One expense per ticket; a second call is a 409.
+ */
+router.post(
+  '/:id/expense',
+  authenticate,
+  requireUserType('owner'),
+  async (req, res) => {
+    try {
+      const ticket = await prisma.maintenanceTicket.findUnique({
+        where: { id: req.params.id },
+        include: { listing: { select: { id: true, ownerId: true } } },
+      })
+      if (!ticket) {
+        return res.status(404).json({ error: { message: 'Ticket not found' } })
+      }
+      if (ticket.listing.ownerId !== req.user.id) {
+        return res
+          .status(403)
+          .json({ error: { message: 'Not authorized to book this ticket' } })
+      }
+      if (ticket.expenseId) {
+        return res.status(409).json({
+          error: { message: 'This repair is already booked as an expense' },
+        })
+      }
+      const data = expenseFromTicket(ticket)
+      if (!data) {
+        return res.status(400).json({
+          error: { message: 'Enter the repair cost before booking it' },
+        })
+      }
+
+      const [expense, updated] = await prisma.$transaction(async tx => {
+        const expense = await tx.expense.create({ data })
+        const updated = await tx.maintenanceTicket.update({
+          where: { id: ticket.id },
+          data: { expenseId: expense.id },
+        })
+        return [expense, updated]
+      })
+
+      res.status(201).json({ ticket: updated, expense })
+    } catch (error) {
+      console.error('Book maintenance expense error:', error)
+      res.status(500).json({ error: { message: 'Failed to book expense' } })
+    }
+  }
+)
 
 export default router

@@ -7,8 +7,15 @@ import { recordAcceptances } from '../utils/policies.js'
 import {
   sendLeaseSignatureUpdate,
   sendApplicationStatusEmail,
+  sendLeaseEndedEmail,
+  sendLeaseRenewalOfferEmail,
 } from '../utils/email.js'
+import { documentUpload, uploadToCloudinary } from '../utils/cloudinary.js'
+import { STATE_DEPOSIT_RULES, ruleForState } from './deposits.js'
 import {
+  validateLeaseTermsInput,
+  scaleShares,
+  END_REASONS,
   shapeAgreement,
   signatureState,
   signedLeaseFilename,
@@ -23,9 +30,10 @@ const router = express.Router()
 
 // Shared include: lead application (listing + owner) and every signer.
 const agreementInclude = {
+  renewal: { select: { id: true } },
   application: {
     include: {
-      listing: { select: { title: true, location: true } },
+      listing: { select: { id: true, title: true, location: true } },
       owner: {
         select: {
           id: true,
@@ -180,11 +188,7 @@ router.get('/:id/pdf', authenticate, async (req, res) => {
         .json({ error: { message: 'Not authorized to view this agreement' } })
     }
 
-    if (
-      agreement.source === 'imported' &&
-      agreement.documentUrl &&
-      req.query.summary !== '1'
-    ) {
+    if (agreement.documentUrl && req.query.summary !== '1') {
       const served = await streamSignedLease(agreement, res)
       if (served) return
       if (res.headersSent) return res.end()
@@ -310,13 +314,31 @@ router.get('/:id/pdf', authenticate, async (req, res) => {
     sectionTitle('Additional Terms')
     row('Utilities', shaped.terms.utilities)
     row('Pet policy', shaped.terms.petPolicy)
+    if (agreement.lateFeeAmount) {
+      row(
+        'Late fee rule',
+        `$${agreement.lateFeeAmount.toLocaleString()} once rent is ${agreement.lateFeeGraceDays || 0} day${agreement.lateFeeGraceDays === 1 ? '' : 's'} past due`
+      )
+    }
     for (const [key, value] of Object.entries(agreement.terms || {})) {
-      if (['utilities', 'petPolicy'].includes(key)) continue
+      if (['utilities', 'petPolicy', 'additionalClauses'].includes(key))
+        continue
       if (typeof value !== 'string' || !value) continue
       const label = key
         .replace(/([A-Z])/g, ' $1')
         .replace(/^./, c => c.toUpperCase())
       row(label, value)
+    }
+
+    if (shaped.terms.additionalClauses.length) {
+      sectionTitle('Additional Clauses')
+      shaped.terms.additionalClauses.forEach((clause, i) => {
+        doc
+          .font('Helvetica')
+          .fillColor('black')
+          .text(`${i + 1}. ${clause}`)
+        doc.moveDown(0.3)
+      })
     }
 
     sectionTitle(imported ? 'Confirmations' : 'Signatures')
@@ -364,6 +386,442 @@ router.get('/:id/pdf', authenticate, async (req, res) => {
     } else {
       res.end()
     }
+  }
+})
+
+// ─── Lease lifecycle (landlord) ─────────────────────────────────────────
+
+const isLandlordOf = (agreement, userId) =>
+  agreement.application?.ownerId === userId
+
+/** Two-letter state from a listing location string, CA when unsure. */
+function stateFromLocation(location) {
+  const match = (location || '').match(/\b([A-Z]{2})\b(?:\s+\d{5})?\s*$/)
+  return match && STATE_DEPOSIT_RULES[match[1]] ? match[1] : 'CA'
+}
+
+/**
+ * PUT /api/agreements/:id/terms
+ * Landlord edits an unsigned Rentra lease before anyone signs: rent,
+ * deposit, dates, the written terms (utilities, pets, late fee text,
+ * parking, extra clauses) and the structured late-fee rule.
+ */
+router.put('/:id/terms', authenticate, async (req, res) => {
+  try {
+    const agreement = await prisma.agreement.findUnique({
+      where: { id: req.params.id },
+      include: agreementInclude,
+    })
+    if (!agreement) {
+      return res.status(404).json({ error: { message: 'Agreement not found' } })
+    }
+    if (!isLandlordOf(agreement, req.user.id)) {
+      return res
+        .status(403)
+        .json({ error: { message: 'Only the landlord can edit the terms' } })
+    }
+    if (agreement.source === 'imported') {
+      return res.status(400).json({
+        error: { message: 'An imported lease keeps the terms as signed.' },
+      })
+    }
+    if (agreement.signers.some(s => s.signed)) {
+      return res.status(400).json({
+        error: {
+          message:
+            'Terms are locked once a signature is on the lease. Ask the signers to re-sign a fresh lease instead.',
+        },
+      })
+    }
+
+    const checked = validateLeaseTermsInput(req.body)
+    if (!checked.ok) {
+      return res.status(400).json({
+        error: { message: checked.errors[0], details: checked.errors },
+      })
+    }
+    const { terms, ...fields } = checked.value
+    const updated = await prisma.agreement.update({
+      where: { id: agreement.id },
+      data: {
+        ...fields,
+        ...(terms && { terms: { ...(agreement.terms || {}), ...terms } }),
+      },
+      include: agreementInclude,
+    })
+    res.json({ agreement: shapeAgreement(updated, req.user.id) })
+  } catch (error) {
+    console.error('Update lease terms error:', error)
+    res.status(500).json({ error: { message: 'Failed to update the terms' } })
+  }
+})
+
+/**
+ * POST /api/agreements/:id/document
+ * Landlord uploads their own lease document for an unsigned Rentra lease.
+ * Parties then e-sign against that document; GET :id/pdf serves it.
+ */
+router.post(
+  '/:id/document',
+  authenticate,
+  documentUpload.single('file'),
+  async (req, res) => {
+    try {
+      const agreement = await prisma.agreement.findUnique({
+        where: { id: req.params.id },
+        include: agreementInclude,
+      })
+      if (!agreement) {
+        return res
+          .status(404)
+          .json({ error: { message: 'Agreement not found' } })
+      }
+      if (!isLandlordOf(agreement, req.user.id)) {
+        return res.status(403).json({
+          error: { message: 'Only the landlord can attach a lease document' },
+        })
+      }
+      if (agreement.signers.some(s => s.signed)) {
+        return res.status(400).json({
+          error: { message: 'The document is locked once anyone has signed.' },
+        })
+      }
+      if (!req.file) {
+        return res.status(400).json({ error: { message: 'No file provided' } })
+      }
+      const result = await uploadToCloudinary(req.file.buffer, {
+        folder: `rentra/leases/${req.user.id}`,
+        publicId: `lease_${agreement.id}_${Date.now()}`,
+        resourceType: 'auto',
+      })
+      const updated = await prisma.agreement.update({
+        where: { id: agreement.id },
+        data: { documentUrl: result.secure_url },
+        include: agreementInclude,
+      })
+      res.json({ agreement: shapeAgreement(updated, req.user.id) })
+    } catch (error) {
+      console.error('Attach lease document error:', error)
+      res
+        .status(500)
+        .json({ error: { message: 'Failed to attach the lease document' } })
+    }
+  }
+)
+
+/**
+ * POST /api/agreements/:id/end
+ * Landlord gives notice on a signed lease. body: { moveOutDate, reason,
+ * relist }. The lease now ends on moveOutDate; the deposit's refund clock
+ * starts from that date (lazily creating the deposit record if needed);
+ * tenants are emailed. `relist` switches the listing back on right away.
+ */
+router.post('/:id/end', authenticate, async (req, res) => {
+  try {
+    const agreement = await prisma.agreement.findUnique({
+      where: { id: req.params.id },
+      include: {
+        ...agreementInclude,
+        deposit: { select: { id: true, status: true, state: true } },
+      },
+    })
+    if (!agreement) {
+      return res.status(404).json({ error: { message: 'Agreement not found' } })
+    }
+    if (!isLandlordOf(agreement, req.user.id)) {
+      return res
+        .status(403)
+        .json({ error: { message: 'Only the landlord can end a lease' } })
+    }
+    if (agreement.endedAt) {
+      return res.status(400).json({
+        error: { message: 'Notice has already been given on this lease' },
+      })
+    }
+    const state = signatureState(agreement.signers)
+    if (!state.allSigned) {
+      return res.status(400).json({
+        error: {
+          message:
+            'This lease is not in force yet. Decline or let the signatures lapse instead.',
+        },
+      })
+    }
+
+    const moveOut = new Date(req.body?.moveOutDate)
+    if (!req.body?.moveOutDate || Number.isNaN(moveOut.getTime())) {
+      return res
+        .status(400)
+        .json({ error: { message: 'A valid move-out date is required' } })
+    }
+    if (moveOut < new Date(agreement.startDate)) {
+      return res.status(400).json({
+        error: {
+          message: 'The move-out date cannot be before the lease started',
+        },
+      })
+    }
+    const reason = END_REASONS.includes(req.body?.reason)
+      ? req.body.reason
+      : 'move_out'
+    const relist = Boolean(req.body?.relist)
+    const now = new Date()
+    const listingId = agreement.application?.listingId
+    const listingLocation = agreement.application?.listing?.location
+
+    const depositState =
+      agreement.deposit?.state || stateFromLocation(listingLocation)
+    const refundDeadline = new Date(moveOut)
+    refundDeadline.setDate(
+      refundDeadline.getDate() + ruleForState(depositState).days
+    )
+
+    await prisma.$transaction(async tx => {
+      await tx.agreement.update({
+        where: { id: agreement.id },
+        data: { endedAt: now, endReason: reason, endDate: moveOut },
+      })
+      if (agreement.securityDeposit > 0) {
+        if (agreement.deposit) {
+          if (agreement.deposit.status !== 'refunded') {
+            await tx.securityDeposit.update({
+              where: { id: agreement.deposit.id },
+              data: {
+                moveOutDate: moveOut,
+                refundDeadline,
+                status: 'pending_refund',
+              },
+            })
+          }
+        } else {
+          await tx.securityDeposit.create({
+            data: {
+              agreementId: agreement.id,
+              ownerId: req.user.id,
+              amountHeld: agreement.securityDeposit,
+              state: depositState,
+              moveOutDate: moveOut,
+              refundDeadline,
+              status: 'pending_refund',
+            },
+          })
+        }
+      }
+      if (relist && listingId) {
+        await tx.listing.update({
+          where: { id: listingId },
+          data: { active: true },
+        })
+      }
+    })
+
+    const updated = await prisma.agreement.findUnique({
+      where: { id: agreement.id },
+      include: agreementInclude,
+    })
+    res.json({ agreement: shapeAgreement(updated, req.user.id) })
+
+    // Tell every tenant. Best-effort.
+    const landlordName = `${req.user.firstName} ${req.user.lastName}`.trim()
+    const listingTitle = agreement.application?.listing?.title || 'your rental'
+    Promise.all(
+      agreement.signers
+        .filter(s => s.role === 'tenant' && s.user?.email)
+        .map(s =>
+          sendLeaseEndedEmail({
+            tenant: s.user,
+            landlordName,
+            listingTitle,
+            moveOutDate: moveOut,
+            refundDeadline:
+              agreement.securityDeposit > 0 ? refundDeadline : null,
+            returnWindowDays: ruleForState(depositState).days,
+          })
+        )
+    ).catch(err => console.error('Lease ended email error:', err))
+  } catch (error) {
+    console.error('End lease error:', error)
+    res.status(500).json({ error: { message: 'Failed to end the lease' } })
+  }
+})
+
+/**
+ * POST /api/agreements/:id/renew
+ * Landlord drafts a renewal of a signed lease for the same household:
+ * one member row per tenant (source renewal), a new Agreement pointing back
+ * through renewsId, the rent split carried over at the new rent, and a
+ * signature block per tenant plus the landlord. Tenants are emailed to
+ * review and sign. body: { startDate, endDate | monthToMonth, monthlyRent,
+ * securityDeposit?, terms?, lateFeeAmount?, lateFeeGraceDays? }
+ */
+router.post('/:id/renew', authenticate, async (req, res) => {
+  try {
+    const agreement = await prisma.agreement.findUnique({
+      where: { id: req.params.id },
+      include: {
+        ...agreementInclude,
+        renewal: { select: { id: true } },
+        rentSplit: { include: { shares: true } },
+        members: {
+          select: { id: true, applicantId: true, groupId: true },
+        },
+      },
+    })
+    if (!agreement) {
+      return res.status(404).json({ error: { message: 'Agreement not found' } })
+    }
+    if (!isLandlordOf(agreement, req.user.id)) {
+      return res
+        .status(403)
+        .json({ error: { message: 'Only the landlord can renew a lease' } })
+    }
+    if (agreement.renewal) {
+      return res.status(400).json({
+        error: {
+          message: 'A renewal already exists for this lease.',
+          renewalId: agreement.renewal.id,
+        },
+      })
+    }
+    if (!signatureState(agreement.signers).allSigned) {
+      return res.status(400).json({
+        error: { message: 'Only a fully signed lease can be renewed.' },
+      })
+    }
+    const tenants = agreement.members.filter(m => m.applicantId)
+    if (!tenants.length) {
+      return res.status(400).json({
+        error: { message: 'No tenants are attached to this lease yet.' },
+      })
+    }
+
+    const checked = validateLeaseTermsInput(req.body, { requireAll: true })
+    if (!checked.ok) {
+      return res.status(400).json({
+        error: { message: checked.errors[0], details: checked.errors },
+      })
+    }
+    const v = checked.value
+    if (v.startDate <= new Date(agreement.startDate)) {
+      return res.status(400).json({
+        error: {
+          message: 'The renewal must start after the current lease began.',
+        },
+      })
+    }
+    const listingId = agreement.application.listingId
+    const terms = { ...(agreement.terms || {}), ...(v.terms || {}) }
+    delete terms.importedLease
+    delete terms.attestedBy
+    delete terms.attestedAt
+
+    const created = await prisma.$transaction(async tx => {
+      const memberRows = []
+      for (const m of tenants) {
+        memberRows.push(
+          await tx.application.create({
+            data: {
+              listingId,
+              applicantId: m.applicantId,
+              ownerId: req.user.id,
+              groupId: agreement.groupId || null,
+              status: 'approved',
+              source: 'renewal',
+              startDate: v.startDate,
+              endDate: v.endDate,
+              message: null,
+            },
+            select: { id: true, applicantId: true },
+          })
+        )
+      }
+      const renewal = await tx.agreement.create({
+        data: {
+          applicationId: memberRows[0].id,
+          groupId: agreement.groupId || null,
+          source: 'rentra',
+          renewsId: agreement.id,
+          monthlyRent: v.monthlyRent,
+          securityDeposit: v.securityDeposit ?? agreement.securityDeposit,
+          startDate: v.startDate,
+          endDate: v.endDate,
+          monthToMonth: Boolean(v.monthToMonth),
+          terms,
+          lateFeeAmount:
+            v.lateFeeAmount !== undefined
+              ? v.lateFeeAmount
+              : agreement.lateFeeAmount,
+          lateFeeGraceDays:
+            v.lateFeeGraceDays !== undefined
+              ? v.lateFeeGraceDays
+              : agreement.lateFeeGraceDays,
+          signers: {
+            create: [
+              ...memberRows.map(m => ({
+                role: 'tenant',
+                userId: m.applicantId,
+                applicationId: m.id,
+              })),
+              { role: 'landlord', userId: req.user.id },
+            ],
+          },
+        },
+        select: { id: true },
+      })
+      await tx.application.updateMany({
+        where: { id: { in: memberRows.map(m => m.id) } },
+        data: { agreementId: renewal.id },
+      })
+      if (agreement.rentSplit) {
+        const shares = scaleShares(
+          agreement.rentSplit.shares.map(s => ({
+            name: s.name,
+            userId: s.userId,
+            amount: s.amount,
+          })),
+          agreement.rentSplit.total,
+          v.monthlyRent
+        )
+        await tx.rentSplit.create({
+          data: {
+            agreementId: renewal.id,
+            createdById: agreement.rentSplit.createdById,
+            total: v.monthlyRent,
+            splitMode: agreement.rentSplit.splitMode,
+            shares: { create: shares },
+          },
+        })
+      }
+      return renewal
+    })
+
+    const full = await prisma.agreement.findUnique({
+      where: { id: created.id },
+      include: agreementInclude,
+    })
+    res.status(201).json({ agreement: shapeAgreement(full, req.user.id) })
+
+    const landlordName = `${req.user.firstName} ${req.user.lastName}`.trim()
+    const listingTitle = agreement.application?.listing?.title || 'your rental'
+    Promise.all(
+      full.signers
+        .filter(s => s.role === 'tenant' && s.user?.email)
+        .map(s =>
+          sendLeaseRenewalOfferEmail({
+            tenant: s.user,
+            landlordName,
+            listingTitle,
+            agreementId: full.id,
+            startDate: full.startDate,
+            endDate: full.endDate,
+            monthToMonth: full.monthToMonth,
+            monthlyRent: full.monthlyRent,
+          })
+        )
+    ).catch(err => console.error('Renewal offer email error:', err))
+  } catch (error) {
+    console.error('Renew lease error:', error)
+    res.status(500).json({ error: { message: 'Failed to create the renewal' } })
   }
 })
 

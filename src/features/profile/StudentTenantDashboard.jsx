@@ -142,6 +142,8 @@ function PayRentTab() {
     try {
       await paymentsService.payRent({
         paymentMethod: bankAccount ? 'ach' : 'recorded',
+        // Share plus this month's charges, when the ledger is loaded.
+        ...(plan?.ledger ? { amount: plan.ledger.due } : {}),
       })
       setPaid(true)
     } catch (err) {
@@ -166,8 +168,10 @@ function PayRentTab() {
 
   // With a household split, the tenant only owes their share.
   const hasSplit = !!plan?.split
-  const amountDue =
+  const ledger = plan?.ledger || null
+  const baseDue =
     hasSplit && plan.myShare != null ? plan.myShare : currentLease.monthlyRent
+  const amountDue = ledger ? ledger.due : baseDue
   const amountLabel = Number.isInteger(amountDue)
     ? amountDue.toLocaleString()
     : amountDue.toFixed(2)
@@ -215,6 +219,30 @@ function PayRentTab() {
           {hasSplit ? 'Your share due' : 'Amount Due'}
         </p>
         <p className="text-4xl font-bold text-brand-500">${amountLabel}</p>
+        {ledger?.lines?.length > 0 && (
+          <ul className="mt-3 text-left text-sm bg-white/80 rounded-lg divide-y divide-brand-100">
+            <li className="flex justify-between px-3 py-1.5">
+              <span>Rent{hasSplit ? ' share' : ''}</span>
+              <span>${ledger.rentDue.toLocaleString()}</span>
+            </li>
+            {ledger.lines.map(line => (
+              <li key={line.id} className="flex justify-between px-3 py-1.5">
+                <span>
+                  {line.label}: {line.description}
+                  {line.household ? ' (your share)' : ''}
+                </span>
+                <span
+                  className={
+                    line.type === 'credit' ? 'text-green-700' : 'text-gray-900'
+                  }
+                >
+                  {line.type === 'credit' ? '−' : '+'}$
+                  {line.amount.toLocaleString()}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
         <p className="text-gray-500 text-sm mt-2">
           {hasSplit && plan.myShare == null
             ? 'You are not in the household split yet — edit it below.'
@@ -309,6 +337,210 @@ function UtilitiesTab() {
 }
 
 /**
+ * Comment thread on one maintenance request (tenant side). Mirrors
+ * features/maintenance/MaintenanceThread.jsx; kept inline here so this file's
+ * imports stay untouched while PayRentTab is being reworked.
+ */
+function TenantTicketThread({ ticketId, onLoaded, onPosted }) {
+  const [comments, setComments] = useState(null)
+  const [loadError, setLoadError] = useState('')
+  const [body, setBody] = useState('')
+  const [photos, setPhotos] = useState([])
+  const [uploading, setUploading] = useState(false)
+  const [posting, setPosting] = useState(false)
+  const [error, setError] = useState('')
+  const fileInputId = `ticket-photos-${ticketId}`
+
+  useEffect(() => {
+    let active = true
+    maintenanceService
+      .get(ticketId)
+      .then(ticket => {
+        if (!active) return
+        setComments(ticket.comments || [])
+        onLoaded?.(ticket)
+      })
+      .catch(err => {
+        if (active) setLoadError(err?.message || 'Could not load messages.')
+      })
+    return () => {
+      active = false
+    }
+    // onLoaded is a host callback; re-fetch only when the ticket changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ticketId])
+
+  const pickPhotos = async e => {
+    const files = Array.from(e.target.files || [])
+    e.target.value = ''
+    if (files.length === 0) return
+    if (photos.length + files.length > 10) {
+      setError('At most 10 photos per message.')
+      return
+    }
+    setUploading(true)
+    setError('')
+    try {
+      const urls = await maintenanceService.uploadPhotos(ticketId, files)
+      setPhotos(prev => [...prev, ...urls])
+    } catch (err) {
+      setError(err?.message || 'Could not upload photos.')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const post = async e => {
+    e.preventDefault()
+    const text = body.trim()
+    if (!text) return
+    setPosting(true)
+    setError('')
+    try {
+      const comment = await maintenanceService.addComment(ticketId, {
+        body: text,
+        photos,
+      })
+      setComments(prev => [...(prev || []), comment])
+      setBody('')
+      setPhotos([])
+      onPosted?.(comment)
+    } catch (err) {
+      setError(err?.message || 'Could not post your message.')
+    } finally {
+      setPosting(false)
+    }
+  }
+
+  const name = a =>
+    [a?.firstName, a?.lastName].filter(Boolean).join(' ') || 'Unknown'
+  const when = v => {
+    const d = new Date(v)
+    return Number.isNaN(d.getTime())
+      ? ''
+      : d.toLocaleString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+        })
+  }
+
+  return (
+    <div className="space-y-3">
+      {loadError ? (
+        <p className="text-xs text-red-600">{loadError}</p>
+      ) : comments === null ? (
+        <p className="text-xs text-gray-500">Loading messages…</p>
+      ) : comments.length === 0 ? (
+        <p className="text-xs text-gray-500">
+          No messages yet. Ask a question or add an update below.
+        </p>
+      ) : (
+        <ul className="space-y-3">
+          {comments.map(c => {
+            const isLandlord = c.author?.userType === 'owner'
+            return (
+              <li key={c.id} className="text-sm">
+                <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-500">
+                  <span className="font-semibold text-gray-900">
+                    {name(c.author)}
+                  </span>
+                  <span
+                    className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
+                      isLandlord
+                        ? 'bg-gray-900 text-white'
+                        : 'bg-brand-100 text-brand-700'
+                    }`}
+                  >
+                    {isLandlord ? 'Landlord' : 'Tenant'}
+                  </span>
+                  <span>{when(c.createdAt)}</span>
+                </p>
+                <p className="text-gray-800 whitespace-pre-wrap break-words mt-0.5">
+                  {c.body}
+                </p>
+                {c.photos?.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {c.photos.map(url => (
+                      <a key={url} href={url} target="_blank" rel="noreferrer">
+                        <img
+                          src={url}
+                          alt="Attached photo"
+                          className="w-14 h-14 object-cover rounded-lg border border-gray-200"
+                        />
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </li>
+            )
+          })}
+        </ul>
+      )}
+
+      <form onSubmit={post} className="space-y-2">
+        <textarea
+          value={body}
+          onChange={e => setBody(e.target.value)}
+          rows={2}
+          maxLength={2000}
+          placeholder="Write a message to your landlord…"
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none"
+        />
+        {photos.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {photos.map(url => (
+              <span key={url} className="relative">
+                <img
+                  src={url}
+                  alt="Pending upload"
+                  className="w-14 h-14 object-cover rounded-lg border border-gray-200"
+                />
+                <button
+                  type="button"
+                  onClick={() => setPhotos(prev => prev.filter(p => p !== url))}
+                  aria-label="Remove photo"
+                  className="absolute -top-1.5 -right-1.5 bg-white border border-gray-300 rounded-full w-4 h-4 text-[10px] leading-none text-gray-600"
+                >
+                  ✕
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            id={fileInputId}
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={pickPhotos}
+            className="hidden"
+          />
+          <label
+            htmlFor={fileInputId}
+            className={`inline-flex items-center gap-1 px-3 py-1.5 border border-gray-300 rounded-lg text-xs font-semibold text-gray-700 cursor-pointer ${
+              uploading || posting ? 'opacity-40 pointer-events-none' : ''
+            }`}
+          >
+            <Upload size={13} /> {uploading ? 'Uploading…' : 'Add photos'}
+          </label>
+          <button
+            type="submit"
+            disabled={!body.trim() || posting || uploading}
+            className="ml-auto px-3 py-1.5 bg-brand-500 text-white rounded-lg text-xs font-semibold disabled:opacity-40"
+          >
+            {posting ? 'Posting…' : 'Post'}
+          </button>
+        </div>
+        {error && <p className="text-xs text-red-600">{error}</p>}
+      </form>
+    </div>
+  )
+}
+
+/**
  * Maintenance Tab - Submit and track maintenance requests
  */
 function MaintenanceTab() {
@@ -321,6 +553,8 @@ function MaintenanceTab() {
     description: '',
   })
   const [maintenanceRequests, setMaintenanceRequests] = useState([])
+  // Which request cards have their Messages thread expanded, by ticket id.
+  const [openThreads, setOpenThreads] = useState({})
 
   const mapTicket = t => ({
     id: t.id,
@@ -330,8 +564,32 @@ function MaintenanceTab() {
     status: t.status,
     date: t.createdAt,
     assignedTo: t.assignedTo,
+    vendorPhone: t.vendorPhone || null,
+    cost: t.cost ?? null,
     completedDate: t.completedAt,
+    commentCount: t._count?.comments ?? 0,
   })
+
+  // Thread loads carry the latest ticket fields; merge them into the card.
+  const mergeTicket = (id, ticket) =>
+    setMaintenanceRequests(prev =>
+      prev.map(r =>
+        r.id === id
+          ? {
+              ...r,
+              ...mapTicket(ticket),
+              commentCount: ticket.comments?.length ?? r.commentCount,
+            }
+          : r
+      )
+    )
+
+  const bumpCommentCount = id =>
+    setMaintenanceRequests(prev =>
+      prev.map(r =>
+        r.id === id ? { ...r, commentCount: (r.commentCount || 0) + 1 } : r
+      )
+    )
 
   useEffect(() => {
     let active = true
@@ -554,10 +812,22 @@ function MaintenanceTab() {
               </span>
             </div>
 
-            {request.assignedTo && (
-              <div className="mt-3 pt-3 border-t border-gray-200 text-sm">
-                <span className="text-gray-600">Assigned to:</span>{' '}
-                <span className="font-medium">{request.assignedTo}</span>
+            {(request.assignedTo || request.vendorPhone) && (
+              <div className="mt-3 pt-3 border-t border-gray-200 text-sm flex flex-wrap items-center gap-x-4 gap-y-1">
+                {request.assignedTo && (
+                  <span>
+                    <span className="text-gray-600">Assigned to:</span>{' '}
+                    <span className="font-medium">{request.assignedTo}</span>
+                  </span>
+                )}
+                {request.vendorPhone && (
+                  <a
+                    href={`tel:${request.vendorPhone}`}
+                    className="text-brand-600 font-medium hover:underline"
+                  >
+                    {request.vendorPhone}
+                  </a>
+                )}
               </div>
             )}
 
@@ -570,6 +840,36 @@ function MaintenanceTab() {
                 </span>
               </div>
             )}
+
+            <div className="mt-3 pt-3 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={() =>
+                  setOpenThreads(prev => ({
+                    ...prev,
+                    [request.id]: !prev[request.id],
+                  }))
+                }
+                aria-expanded={!!openThreads[request.id]}
+                className="text-sm font-medium text-gray-700 hover:text-gray-900"
+              >
+                {openThreads[request.id] ? 'Hide messages' : 'Messages'}
+                {request.commentCount > 0 && (
+                  <span className="ml-1 text-gray-500">
+                    ({request.commentCount})
+                  </span>
+                )}
+              </button>
+              {openThreads[request.id] && (
+                <div className="mt-3">
+                  <TenantTicketThread
+                    ticketId={request.id}
+                    onLoaded={ticket => mergeTicket(request.id, ticket)}
+                    onPosted={() => bumpCommentCount(request.id)}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         ))}
       </div>
@@ -597,7 +897,14 @@ function LeasesTab() {
             property: a.property?.description || a.property?.address || 'Lease',
             landlord: a.landlord?.name || '—',
             landlordEmail: a.landlord?.email || null,
-            status: a.status === 'signed' ? 'active' : 'pending',
+            status:
+              a.status === 'signed'
+                ? a.endedAt
+                  ? 'ending'
+                  : 'active'
+                : a.renewsId
+                  ? 'renewal'
+                  : 'pending',
             startDate: a.terms?.startDate,
             endDate: a.terms?.endDate,
             monthlyRent: a.terms?.monthlyRent,
@@ -651,13 +958,24 @@ function LeasesTab() {
               className={`px-3 py-1 rounded-full text-sm font-medium ${
                 lease.status === 'active'
                   ? 'bg-green-100 text-green-700'
-                  : 'bg-gray-100 text-gray-700'
+                  : lease.status === 'ending'
+                    ? 'bg-amber-100 text-amber-800'
+                    : lease.status === 'renewal'
+                      ? 'bg-brand-100 text-brand-700'
+                      : 'bg-gray-100 text-gray-700'
               }`}
             >
-              {lease.status.charAt(0).toUpperCase() + lease.status.slice(1)}
+              {
+                {
+                  active: 'Active',
+                  ending: `Ends ${lease.endDate ? new Date(lease.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }) : ''}`,
+                  renewal: 'Renewal to sign',
+                  pending: 'Pending',
+                }[lease.status]
+              }
             </span>
           </div>
-          {lease.status === 'pending' && (
+          {(lease.status === 'pending' || lease.status === 'renewal') && (
             <p
               className="text-xs text-yellow-700 bg-yellow-50 border border-yellow-100 rounded-lg px-3 py-2 mb-4"
               data-testid="lease-waiting"
@@ -706,7 +1024,9 @@ function LeasesTab() {
               className="flex-1 flex items-center justify-center py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 font-medium"
             >
               <Eye size={18} className="mr-2" />
-              {lease.status === 'active' ? 'View Lease' : 'View & Sign'}
+              {lease.status === 'active' || lease.status === 'ending'
+                ? 'View Lease'
+                : 'View & Sign'}
             </button>
             <button
               onClick={() =>
@@ -721,7 +1041,7 @@ function LeasesTab() {
             </button>
           </div>
 
-          {lease.status === 'active' && (
+          {(lease.status === 'active' || lease.status === 'ending') && (
             <div className="mt-3 bg-brand-50 border border-brand-200 rounded-lg p-3 text-sm">
               <AlertCircle size={16} className="inline text-brand-500 mr-2" />
               <span className="text-brand-600">

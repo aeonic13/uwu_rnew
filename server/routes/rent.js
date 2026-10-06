@@ -4,6 +4,7 @@ import { authenticate } from '../middleware/authenticate.js'
 import { computeShares } from '../utils/billSplit.js'
 import { computeNextRun, clampDay } from '../utils/autopay.js'
 import { recordAcceptances } from '../utils/policies.js'
+import { monthWindow, tenantLedger } from '../utils/ledger.js'
 
 /**
  * Tenant rent tools: how a household splits rent, and each tenant's
@@ -148,14 +149,43 @@ router.get('/plan', authenticate, async (req, res) => {
         })
       : null
 
+    // This month's charges and payments, netted against the share.
+    const agreementId = household.myAgreementId || household.agreementId
+    const now = new Date()
+    const { from, to } = monthWindow(now)
+    const [charges, payments] = await Promise.all([
+      prisma.rentCharge.findMany({
+        where: { agreementId, dueDate: { gte: from, lt: to } },
+        orderBy: { dueDate: 'asc' },
+      }),
+      prisma.transaction.findMany({
+        where: {
+          userId: req.user.id,
+          application: { agreementId },
+          createdAt: { gte: from, lt: to },
+        },
+        select: { amount: true, status: true, createdAt: true },
+      }),
+    ])
+    const myShare = myShareOf(household, req.user.id)
+    const ledger = tenantLedger({
+      rentShare: myShare ?? household.monthlyRent,
+      charges,
+      payments,
+      tenantId: req.user.id,
+      memberCount: household.members.length,
+      now,
+    })
+
     res.json({
-      agreementId: household.myAgreementId || household.agreementId,
+      agreementId,
       monthlyRent: household.monthlyRent,
       listingTitle: household.listingTitle,
       household: household.members,
       split: shapeSplit(household.split, req.user.id),
-      myShare: myShareOf(household, req.user.id),
+      myShare,
       autopay: shapeAutopay(autopay),
+      ledger,
     })
   } catch (error) {
     console.error('Rent plan error:', error)

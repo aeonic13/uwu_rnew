@@ -14,6 +14,7 @@ import {
   collectedThisMonth,
 } from '../utils/portfolio.js'
 import { validateOnboarding } from '../utils/onboarding.js'
+import { summarizeItems } from '../utils/inspections.js'
 import { newInviteToken, emailInvite, presentInvite } from './tenantInvites.js'
 
 /**
@@ -57,6 +58,7 @@ router.get('/', authenticate, requireUserType('owner'), async (req, res) => {
                 endDate: true,
                 source: true,
                 monthToMonth: true,
+                endedAt: true,
                 tenantSigned: true,
                 landlordSigned: true,
                 signers: {
@@ -120,6 +122,7 @@ router.get('/:id', authenticate, requireUserType('owner'), async (req, res) => {
             },
             agreement: {
               include: {
+                renewal: { select: { id: true } },
                 signers: {
                   include: {
                     user: {
@@ -174,6 +177,7 @@ router.get('/:id', authenticate, requireUserType('owner'), async (req, res) => {
           orderBy: { createdAt: 'desc' },
         },
         documents: { orderBy: { createdAt: 'desc' } },
+        inspections: { orderBy: { createdAt: 'desc' } },
         expenses: {
           where: { date: { gte: yearStart } },
           orderBy: { date: 'desc' },
@@ -189,6 +193,7 @@ router.get('/:id', authenticate, requireUserType('owner'), async (req, res) => {
       applications,
       maintenanceTickets,
       documents,
+      inspections,
       expenses,
       _count,
       ...listingFields
@@ -243,6 +248,14 @@ router.get('/:id', authenticate, requireUserType('owner'), async (req, res) => {
         source: ag.source,
         imported: ag.source === 'imported',
         monthToMonth: ag.monthToMonth,
+        // Lifecycle: notice given, and the renewal chain both ways.
+        endedAt: ag.endedAt || null,
+        endReason: ag.endReason || null,
+        renewalId: ag.renewal?.id || null,
+        renewsId: ag.renewsId || null,
+        lateFee: ag.lateFeeAmount
+          ? { amount: ag.lateFeeAmount, graceDays: ag.lateFeeGraceDays ?? 0 }
+          : null,
         fullySigned: leaseFullySigned(ag),
         current: leaseIsCurrent(ag, now),
         awaitingTenants: leaseAwaitingTenants(ag, now),
@@ -290,6 +303,8 @@ router.get('/:id', authenticate, requireUserType('owner'), async (req, res) => {
       monthlyRent: summary.monthlyRent,
       collectedThisMonth: summary.collectedThisMonth,
       leaseEnd: summary.leaseEnd,
+      endingOn: summary.endingOn,
+      nextLeaseStart: summary.nextLeaseStart,
       expensesYtd: expenses.reduce((sum, e) => sum + e.amount, 0),
       favorites: _count.favorites,
     }
@@ -301,6 +316,16 @@ router.get('/:id', authenticate, requireUserType('owner'), async (req, res) => {
       applications: applicationRows,
       tickets: maintenanceTickets,
       documents,
+      inspections: inspections.map(i => ({
+        id: i.id,
+        type: i.type,
+        status: i.status,
+        conductedAt: i.conductedAt,
+        completedAt: i.completedAt,
+        agreementId: i.agreementId,
+        notes: i.notes,
+        ...summarizeItems(i.items),
+      })),
       expenses,
     })
   } catch (error) {
