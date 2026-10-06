@@ -1,6 +1,10 @@
 import express from 'express'
 import prisma from '../utils/prisma.js'
 import { authenticate } from '../middleware/authenticate.js'
+import {
+  sendMaintenanceTicketEmail,
+  sendMaintenanceStatusEmail,
+} from '../utils/email.js'
 
 const router = express.Router()
 
@@ -24,7 +28,16 @@ router.post('/', authenticate, async (req, res) => {
     const application = await prisma.application.findFirst({
       where: { applicantId: req.user.id, status: 'approved' },
       orderBy: { updatedAt: 'desc' },
-      select: { listingId: true },
+      select: {
+        listingId: true,
+        listing: {
+          select: {
+            id: true,
+            title: true,
+            owner: { select: { firstName: true, email: true } },
+          },
+        },
+      },
     })
 
     if (!application) {
@@ -47,6 +60,16 @@ router.post('/', authenticate, async (req, res) => {
     })
 
     res.status(201).json({ ticket })
+
+    // Tell the landlord. Best-effort, after responding.
+    sendMaintenanceTicketEmail({
+      owner: application.listing.owner,
+      tenant: req.user,
+      listing: application.listing,
+      ticket,
+    }).catch(err =>
+      console.error('Maintenance ticket email failed:', err?.message)
+    )
   } catch (error) {
     console.error('Create maintenance ticket error:', error)
     res.status(500).json({ error: { message: 'Failed to create ticket' } })
@@ -96,7 +119,10 @@ router.put('/:id/status', authenticate, async (req, res) => {
 
     const ticket = await prisma.maintenanceTicket.findUnique({
       where: { id: req.params.id },
-      include: { listing: { select: { ownerId: true } } },
+      include: {
+        listing: { select: { ownerId: true, title: true } },
+        tenant: { select: { firstName: true, email: true } },
+      },
     })
     if (!ticket) {
       return res.status(404).json({ error: { message: 'Ticket not found' } })
@@ -117,6 +143,18 @@ router.put('/:id/status', authenticate, async (req, res) => {
     })
 
     res.json({ ticket: updated })
+
+    // Tell the tenant when the status actually moved. Best-effort.
+    if (status && status !== ticket.status) {
+      sendMaintenanceStatusEmail({
+        tenant: ticket.tenant,
+        listing: ticket.listing,
+        ticket: updated,
+        landlordName: `${req.user.firstName} ${req.user.lastName}`.trim(),
+      }).catch(err =>
+        console.error('Maintenance status email failed:', err?.message)
+      )
+    }
   } catch (error) {
     console.error('Update maintenance ticket error:', error)
     res.status(500).json({ error: { message: 'Failed to update ticket' } })

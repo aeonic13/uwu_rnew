@@ -38,8 +38,11 @@ function normalizeMessage(apiMsg, currentUserId) {
  */
 function normalizeConversationDetail(apiData, currentUserId) {
   const conv = apiData.conversation
-  const otherUserEntry = conv.users?.find(u => u.user?.id !== currentUserId)
-  const otherUser = otherUserEntry?.user
+  // The API returns a flat `participants` list (each flagged isCurrentUser);
+  // older payloads nested them under `users[].user`.
+  const otherUser =
+    conv.participants?.find(p => !p.isCurrentUser && p.id !== currentUserId) ||
+    conv.users?.find(u => u.user?.id !== currentUserId)?.user
 
   // Messages come newest-first from API — reverse for chronological display
   const messages = (apiData.messages || [])

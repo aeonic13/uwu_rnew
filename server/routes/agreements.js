@@ -4,7 +4,10 @@ import { Readable } from 'node:stream'
 import prisma from '../utils/prisma.js'
 import { authenticate } from '../middleware/authenticate.js'
 import { recordAcceptances } from '../utils/policies.js'
-import { sendLeaseSignatureUpdate } from '../utils/email.js'
+import {
+  sendLeaseSignatureUpdate,
+  sendApplicationStatusEmail,
+} from '../utils/email.js'
 import {
   shapeAgreement,
   signatureState,
@@ -476,6 +479,14 @@ router.post('/:id/sign', authenticate, async (req, res) => {
         )
     ).catch(err => console.error('Lease signature email error:', err))
 
+    // The unit is taken once everyone has signed: stop taking applications
+    // and let the other applicants move on.
+    if (state.allSigned) {
+      closeListingForLease(agreement).catch(err =>
+        console.error('Close listing after lease error:', err)
+      )
+    }
+
     const updated = await prisma.agreement.findUnique({
       where: { id: agreement.id },
       include: agreementInclude,
@@ -486,5 +497,62 @@ router.post('/:id/sign', authenticate, async (req, res) => {
     res.status(500).json({ error: { message: 'Failed to sign agreement' } })
   }
 })
+
+/**
+ * A fully executed lease fills the unit. Switch the listing off so it stops
+ * taking applications, and decline every still-pending applicant on it who
+ * is not on this lease, with the usual decision email so nobody is left
+ * waiting on a unit that is gone. The landlord can relist from the
+ * property workspace at any time.
+ */
+async function closeListingForLease(agreement) {
+  const listingId = agreement.application?.listingId
+  if (!listingId) return
+
+  const listing = await prisma.listing.update({
+    where: { id: listingId },
+    data: { active: false },
+    select: {
+      id: true,
+      title: true,
+      owner: {
+        select: { id: true, firstName: true, lastName: true, email: true },
+      },
+    },
+  })
+
+  const others = await prisma.application.findMany({
+    where: {
+      listingId,
+      status: 'pending',
+      source: 'applied',
+      OR: [{ agreementId: null }, { agreementId: { not: agreement.id } }],
+    },
+    select: {
+      id: true,
+      applicant: { select: { firstName: true, email: true } },
+    },
+  })
+  if (!others.length) return
+
+  await prisma.application.updateMany({
+    where: { id: { in: others.map(o => o.id) } },
+    data: { status: 'rejected' },
+  })
+  await Promise.all(
+    others
+      .filter(o => o.applicant?.email)
+      .map(o =>
+        sendApplicationStatusEmail(
+          o.applicant,
+          listing,
+          'rejected',
+          listing.owner
+        ).catch(err =>
+          console.error('Applicant decline email failed:', err?.message)
+        )
+      )
+  )
+}
 
 export default router

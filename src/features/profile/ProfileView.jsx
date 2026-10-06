@@ -243,8 +243,10 @@ function ProfileView() {
         <MenuSection title="Payments">
           <MenuItem
             icon={CreditCard}
-            label={isOwner ? 'Payments' : 'Payments & Payment Methods'}
-            onClick={() => navigate('/payments')}
+            label={isOwner ? 'Rent collection' : 'Payments & Payment Methods'}
+            onClick={() =>
+              navigate(isOwner ? '/dashboard/rent-collection' : '/payments')
+            }
           />
         </MenuSection>
 

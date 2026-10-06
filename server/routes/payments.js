@@ -1,7 +1,10 @@
 import express from 'express'
 import prisma from '../utils/prisma.js'
 import { authenticate, requireUserType } from '../middleware/authenticate.js'
-import { sendRentReminderEmail } from '../utils/email.js'
+import {
+  sendRentReminderEmail,
+  sendRentPaymentRecordedEmail,
+} from '../utils/email.js'
 import {
   createMoovAccount,
   linkBankAccount,
@@ -410,7 +413,13 @@ router.post('/rent', authenticate, async (req, res) => {
       orderBy: { updatedAt: 'desc' },
       include: {
         agreement: { select: { monthlyRent: true } },
-        listing: { select: { price: true } },
+        listing: {
+          select: {
+            price: true,
+            title: true,
+            owner: { select: { firstName: true, email: true } },
+          },
+        },
       },
     })
 
@@ -459,6 +468,15 @@ router.post('/rent', authenticate, async (req, res) => {
     })
 
     res.status(201).json({ transaction })
+
+    // The landlord's rent roll just changed; tell them. Best-effort.
+    sendRentPaymentRecordedEmail({
+      owner: application.listing?.owner,
+      tenant: req.user,
+      listingTitle: application.listing?.title || 'your rental',
+      amount,
+      paymentMethod,
+    }).catch(err => console.error('Rent recorded email failed:', err?.message))
   } catch (error) {
     console.error('Pay rent error:', error)
     res.status(500).json({ error: { message: 'Failed to process payment' } })

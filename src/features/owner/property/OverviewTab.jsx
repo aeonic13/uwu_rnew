@@ -20,6 +20,12 @@ import {
   APPLICATION_STATUS,
 } from './statusMeta'
 
+const GUARANTOR_LABELS = {
+  always: 'Always required',
+  'students-only': 'If income is short',
+  never: 'Not required',
+}
+
 function Stat({ label, value, Icon, onClick }) {
   const Tag = onClick ? 'button' : 'div'
   return (
@@ -344,6 +350,22 @@ export default function OverviewTab({ data, onGoTo }) {
                 {property.incomeMultiplier}× rent
               </dd>
             </div>
+            {property.screeningCriteria?.minCreditScore ? (
+              <div className="flex justify-between">
+                <dt className="text-gray-500">Min credit score</dt>
+                <dd className="text-gray-900 font-medium">
+                  {property.screeningCriteria.minCreditScore}
+                </dd>
+              </div>
+            ) : null}
+            {property.screeningCriteria?.guarantorPolicy ? (
+              <div className="flex justify-between">
+                <dt className="text-gray-500">Co-signer</dt>
+                <dd className="text-gray-900 font-medium">
+                  {GUARANTOR_LABELS[property.screeningCriteria.guarantorPolicy]}
+                </dd>
+              </div>
+            ) : null}
             <div className="flex justify-between">
               <dt className="text-gray-500 flex items-center gap-1">
                 <Heart size={13} /> Saved by

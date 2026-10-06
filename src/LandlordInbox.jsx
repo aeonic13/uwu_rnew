@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import PropTypes from 'prop-types'
 import { dashboardService } from './services/dashboardService'
 import { applicationsService } from './services/applicationsService'
+import { messagingService } from './services/messagingService'
 import {
   MessageCircle,
   User,
@@ -859,15 +860,8 @@ const KIND_FILTERS = [
   { key: 'group', label: 'Groups', Icon: Users },
 ]
 
-const LandlordInbox = ({
-  properties,
-  onSelectApplicant,
-  onSendMessage,
-  onScheduleTour,
-  onSendLease,
-  onNavigateToApprovals,
-  onNavigateToUtilities,
-}) => {
+const LandlordInbox = () => {
+  const navigate = useNavigate()
   const [selectedProperty, setSelectedProperty] = useState('')
   const [selectedApplicant, setSelectedApplicant] = useState(null)
   const [selectedGroup, setSelectedGroup] = useState(null)
@@ -920,12 +914,26 @@ const LandlordInbox = ({
     )
   }
 
+  // Messaging and tour scheduling both happen in the applicant's thread:
+  // the tenant requests a tour there and the landlord confirms a time.
+  const openConversation = async entry => {
+    try {
+      const res = await messagingService.startConversation(
+        entry.applicant.id,
+        entry.propertyId
+      )
+      const convId = res?.conversation?.id || res?.id
+      navigate(convId ? `/messages/${convId}` : '/messages')
+    } catch {
+      navigate('/messages')
+    }
+  }
+
   const handleApproveApplication = async applicationId => {
     // Optimistically reflect, then persist via the real status API.
     applyStatus(applicationId, 'approved')
     try {
       await applicationsService.updateStatus(applicationId, 'approved')
-      onSendLease?.(applicationId)
     } catch (err) {
       console.error('Approve failed:', err)
       applyStatus(applicationId, 'pending')
@@ -971,25 +979,6 @@ const LandlordInbox = ({
           <div className="mb-4">
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-2xl font-bold">Applicant Inbox</h2>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => onNavigateToUtilities?.()}
-                  className="p-2 hover:bg-gray-100 rounded-full"
-                  title="Utility Manager"
-                >
-                  <FileText size={20} className="text-gray-600" />
-                </button>
-                <button
-                  onClick={() => onNavigateToApprovals?.()}
-                  className="p-2 hover:bg-gray-100 rounded-full relative"
-                  title="Student Approvals"
-                >
-                  <Clock size={20} className="text-brand-500" />
-                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
-                    <span className="text-xs text-white font-bold">2</span>
-                  </div>
-                </button>
-              </div>
             </div>
             <p className="text-gray-600">
               Individual applicants and roommate groups, newest first
@@ -1239,7 +1228,7 @@ const LandlordInbox = ({
             </div>
             {selectedApplicant.tourStatus === 'requested' && (
               <button
-                onClick={() => onScheduleTour(selectedApplicant)}
+                onClick={() => openConversation(selectedApplicant)}
                 className="px-3 py-1 bg-white rounded text-xs font-medium hover:bg-gray-50"
               >
                 Schedule Tour
@@ -1347,7 +1336,7 @@ const LandlordInbox = ({
         {selectedApplicant.status === 'pending' && (
           <div className="grid grid-cols-3 gap-3 mb-6">
             <button
-              onClick={() => onSendMessage(selectedApplicant)}
+              onClick={() => openConversation(selectedApplicant)}
               className="flex items-center justify-center py-3 border border-brand-500 text-brand-500 rounded-lg hover:bg-brand-50"
             >
               <MessageCircle size={20} className="mr-2" />
@@ -1372,11 +1361,11 @@ const LandlordInbox = ({
 
         {/* Schedule Tour */}
         <button
-          onClick={() => onScheduleTour(selectedApplicant)}
+          onClick={() => openConversation(selectedApplicant)}
           className="w-full py-3 bg-brand-500 text-white rounded-lg hover:bg-brand-600 font-medium flex items-center justify-center"
         >
           <Calendar size={20} className="mr-2" />
-          Schedule Property Tour
+          Schedule a tour in chat
         </button>
       </div>
     )

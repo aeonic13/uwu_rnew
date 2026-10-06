@@ -71,3 +71,48 @@ export function assessCombinedIncome(
   const combined = (incomes || []).reduce((sum, n) => sum + (Number(n) || 0), 0)
   return assessIncome(combined, monthlyRent, multiplier, voucherAmount)
 }
+
+// Guarantor policies a landlord can state on a listing.
+export const GUARANTOR_POLICIES = ['always', 'students-only', 'never']
+
+/**
+ * Normalize the screening criteria a landlord enters on a listing into the
+ * JSON stored on `Listing.screeningCriteria`. Unknown keys are dropped and
+ * every value is coerced, so the column never holds free-form client input.
+ * Returns null when nothing usable was supplied.
+ *
+ * Deliberately has no "accepts vouchers" switch: in California a housing
+ * subsidy is a protected source of income, so the income test applies to
+ * the tenant's share instead (see assessIncome).
+ */
+export function sanitizeScreeningCriteria(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return null
+  const out = {}
+
+  if (GUARANTOR_POLICIES.includes(input.guarantorPolicy)) {
+    out.guarantorPolicy = input.guarantorPolicy
+  }
+  if (typeof input.backgroundCheck === 'boolean') {
+    out.backgroundCheck = input.backgroundCheck
+  }
+  if (typeof input.idVerification === 'boolean') {
+    out.idVerification = input.idVerification
+  }
+  const credit = Number(input.minCreditScore)
+  if (
+    input.minCreditScore !== null &&
+    input.minCreditScore !== undefined &&
+    input.minCreditScore !== '' &&
+    Number.isFinite(credit) &&
+    credit >= 300 &&
+    credit <= 850
+  ) {
+    out.minCreditScore = Math.round(credit)
+  }
+  const multiple = Number(input.minIncomeMultiple)
+  if (Number.isFinite(multiple) && multiple >= 1 && multiple <= 10) {
+    out.minIncomeMultiple = multiple
+  }
+
+  return Object.keys(out).length ? out : null
+}

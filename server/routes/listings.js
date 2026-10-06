@@ -1,4 +1,5 @@
 import express from 'express'
+import { sanitizeScreeningCriteria } from '../utils/screening.js'
 import prisma from '../utils/prisma.js'
 import { authenticate, optionalAuth } from '../middleware/authenticate.js'
 import { matchesSavedSearch } from '../utils/savedSearchMatcher.js'
@@ -199,6 +200,7 @@ router.post('/', authenticate, async (req, res) => {
       bedrooms,
       bathrooms,
       incomeMultiplier,
+      screeningCriteria,
       amenities,
       images,
     } = req.body
@@ -237,6 +239,8 @@ router.post('/', authenticate, async (req, res) => {
         ...(incomeMultiplier && {
           incomeMultiplier: parseFloat(incomeMultiplier),
         }),
+        // Stated up front so applicants see the bar before they pay to apply.
+        screeningCriteria: sanitizeScreeningCriteria(screeningCriteria),
         amenities: amenities || [],
         images: images || [],
         ownerId: req.user.id,
@@ -333,6 +337,8 @@ router.put('/:id', authenticate, async (req, res) => {
       propertyType,
       bedrooms,
       bathrooms,
+      incomeMultiplier,
+      screeningCriteria,
       amenities,
       images,
       active,
@@ -350,6 +356,16 @@ router.put('/:id', authenticate, async (req, res) => {
     if (propertyType !== undefined) updateData.propertyType = propertyType
     if (bedrooms !== undefined) updateData.bedrooms = parseInt(bedrooms, 10)
     if (bathrooms !== undefined) updateData.bathrooms = parseFloat(bathrooms)
+    if (incomeMultiplier !== undefined) {
+      const multiple = parseFloat(incomeMultiplier)
+      if (Number.isFinite(multiple) && multiple >= 1 && multiple <= 10) {
+        updateData.incomeMultiplier = multiple
+      }
+    }
+    if (screeningCriteria !== undefined) {
+      updateData.screeningCriteria =
+        sanitizeScreeningCriteria(screeningCriteria)
+    }
     if (amenities !== undefined) updateData.amenities = amenities
     if (images !== undefined) updateData.images = images
     if (active !== undefined) updateData.active = active

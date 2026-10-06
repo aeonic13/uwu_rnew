@@ -27,6 +27,60 @@ import { reviewsService } from '../../services/reviewsService'
 import ShareToGroupModal from '../groups/ShareToGroupModal'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 
+const GUARANTOR_LABELS = {
+  always: 'A co-signer is required',
+  'students-only': 'A co-signer is needed if your income falls short',
+  never: 'No co-signer needed',
+}
+
+/**
+ * The landlord's screening bar, stated before anyone pays to apply
+ * (CA AB 2493 first-qualified-applicant path).
+ */
+function ScreeningCriteria({ listing }) {
+  const criteria = listing.screeningCriteria || {}
+  const multiple = Number(listing.incomeMultiplier) || 3
+  const rows = [
+    `Monthly income of at least ${multiple}× rent ($${Math.round(
+      (listing.price || 0) * multiple
+    ).toLocaleString()}/mo, combined for roommates)`,
+    criteria.minCreditScore
+      ? `Credit score of ${criteria.minCreditScore} or higher`
+      : null,
+    GUARANTOR_LABELS[criteria.guarantorPolicy] || null,
+    criteria.backgroundCheck ? 'Background check' : null,
+    criteria.idVerification ? 'Government ID verification' : null,
+  ].filter(Boolean)
+
+  return (
+    <div className="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
+      <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">
+        <Shield size={18} className="text-brand-500" /> What this landlord looks
+        for
+      </h2>
+      <ul className="space-y-1 text-sm text-gray-700">
+        {rows.map(row => (
+          <li key={row} className="flex items-start gap-2">
+            <Check size={14} className="mt-1 text-green-600 flex-shrink-0" />
+            <span>{row}</span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2 text-xs text-gray-500">
+        Housing vouchers count toward rent: income is assessed on your share.
+      </p>
+    </div>
+  )
+}
+
+ScreeningCriteria.propTypes = {
+  listing: PropTypes.shape({
+    price: PropTypes.number,
+    incomeMultiplier: PropTypes.number,
+    screeningCriteria: PropTypes.object,
+  }).isRequired,
+}
+
 /**
  * Image gallery with navigation
  */
@@ -597,6 +651,8 @@ function PropertyDetail() {
                 <div className="text-gray-600">{listing.propertyType}</div>
               )}
             </div>
+
+            <ScreeningCriteria listing={listing} />
 
             {/* Description */}
             <div className="mb-6">

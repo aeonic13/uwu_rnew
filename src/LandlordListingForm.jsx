@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import PropTypes from 'prop-types'
 import {
   Camera,
   Upload,
@@ -19,9 +20,72 @@ import { useListings } from './contexts/ListingsContext'
 import { useAuth } from './contexts/AuthContext'
 import { uploadService } from './services/uploadService'
 
-const LandlordListingForm = ({ onSubmit, onBack }) => {
-  const { createListing } = useListings()
+// API enum ↔ form value for the property type select.
+const PROPERTY_TYPE_TO_API = {
+  apartment: 'Apartment',
+  house: 'House',
+  room: 'SingleRoom',
+  studio: 'Studio',
+  condo: 'Condo',
+}
+const PROPERTY_TYPE_FROM_API = Object.fromEntries(
+  Object.entries(PROPERTY_TYPE_TO_API).map(([form, api]) => [api, form])
+)
+const INCOME_PRESETS = [2.5, 3, 4]
+
+const toDateInput = value => (value ? String(value).slice(0, 10) : '')
+
+/** Form state for a new listing, or prefilled from an existing one. */
+function initialListingData(listing) {
+  const criteria = listing?.screeningCriteria || {}
+  const multiple = Number(listing?.incomeMultiplier) || 3
+  return {
+    title: listing?.title || '',
+    description: listing?.description || '',
+    address: listing?.streetAddress || listing?.location || '',
+    university: listing?.university || '',
+    rent: listing?.price ?? '',
+    // The deposit is not stored on the listing (the lease carries it); the
+    // asking price is the usual amount and keeps the pricing step passable.
+    deposit: listing?.price ?? '',
+    availableFrom: toDateInput(listing?.moveInDate),
+    availableTo: toDateInput(listing?.moveOutDate),
+    propertyType: PROPERTY_TYPE_FROM_API[listing?.propertyType] || 'apartment',
+    bedrooms: listing?.bedrooms ?? 1,
+    bathrooms: listing?.bathrooms ?? 1,
+    amenities: listing?.amenities || [],
+    utilitiesIncluded: [],
+    petPolicy: 'no-pets',
+    smokingPolicy: 'no-smoking',
+    requirements: {
+      guarantorPolicy: criteria.guarantorPolicy || 'students-only', // 'always' | 'students-only' | 'never'
+      incomeMultiple: INCOME_PRESETS.includes(multiple) ? multiple : 'custom',
+      customIncomeMultiple: INCOME_PRESETS.includes(multiple)
+        ? ''
+        : String(multiple),
+      minCreditScore: criteria.minCreditScore ?? '',
+      backgroundCheck: criteria.backgroundCheck ?? true,
+      idVerification: criteria.idVerification ?? true,
+    },
+  }
+}
+
+/** Existing photos come back as plain URLs; keep them in the photo list. */
+function initialPhotos(listing) {
+  return (listing?.images || []).map((url, index) => ({
+    id: `existing-${index}`,
+    file: null,
+    preview: url,
+    url,
+    filename: null,
+    caption: '',
+  }))
+}
+
+const LandlordListingForm = ({ listing = null, onSubmit, onBack }) => {
+  const { createListing, updateListing } = useListings()
   const { user } = useAuth()
+  const isEdit = Boolean(listing?.id)
 
   const [currentStep, setCurrentStep] = useState(1)
   const [isUploading, setIsUploading] = useState(false)
@@ -29,32 +93,13 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
   const [uploadError, setUploadError] = useState(null)
   const [submitError, setSubmitError] = useState(null)
 
-  const [listingData, setListingData] = useState({
-    title: '',
-    description: '',
-    address: '',
-    university: '',
-    rent: '',
-    deposit: '',
-    availableFrom: '',
-    availableTo: '',
-    propertyType: 'apartment',
-    bedrooms: 1,
-    bathrooms: 1,
-    amenities: [],
-    utilitiesIncluded: [],
-    petPolicy: 'no-pets',
-    smokingPolicy: 'no-smoking',
-    requirements: {
-      guarantorPolicy: 'students-only', // 'always' | 'students-only' | 'never'
-      incomeMultiple: 3, // number (e.g. 2.5, 3, 4)
-      customIncomeMultiple: '',
-      backgroundCheck: true,
-      idVerification: true,
-    },
-  })
+  const [listingData, setListingData] = useState(() =>
+    initialListingData(listing)
+  )
 
-  const [propertyPhotos, setPropertyPhotos] = useState([])
+  const [propertyPhotos, setPropertyPhotos] = useState(() =>
+    initialPhotos(listing)
+  )
   const [utilityBills, setUtilityBills] = useState([])
   const [documents, setDocuments] = useState([])
 
@@ -266,14 +311,14 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
     setSubmitError(null)
 
     try {
-      // Map property type to API enum format
-      const propertyTypeMap = {
-        apartment: 'Apartment',
-        house: 'House',
-        room: 'SingleRoom',
-        studio: 'Studio',
-        condo: 'Condo',
-      }
+      const req = listingData.requirements
+      const customMultiple = Number(req.customIncomeMultiple)
+      const incomeMultiplier =
+        req.incomeMultiple === 'custom'
+          ? Number.isFinite(customMultiple) && customMultiple >= 1
+            ? customMultiple
+            : 3
+          : Number(req.incomeMultiple)
 
       // Prepare listing data for API
       const apiListingData = {
@@ -286,17 +331,31 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
         university: listingData.university || null,
         moveInDate: listingData.availableFrom || null,
         moveOutDate: listingData.availableTo || null,
-        propertyType: propertyTypeMap[listingData.propertyType] || 'Apartment',
+        propertyType:
+          PROPERTY_TYPE_TO_API[listingData.propertyType] || 'Apartment',
         bedrooms: listingData.bedrooms,
         bathrooms: listingData.bathrooms,
         amenities: listingData.amenities,
         images: propertyPhotos
           .filter(photo => photo.url) // Only include uploaded photos
           .map(photo => photo.url),
+        // Screening bar, stated up front so applicants see it before paying.
+        incomeMultiplier,
+        screeningCriteria: {
+          guarantorPolicy: req.guarantorPolicy,
+          minIncomeMultiple: incomeMultiplier,
+          minCreditScore:
+            req.minCreditScore === '' || req.minCreditScore === null
+              ? null
+              : Number(req.minCreditScore),
+          backgroundCheck: Boolean(req.backgroundCheck),
+          idVerification: Boolean(req.idVerification),
+        },
       }
 
-      // Call API to create listing
-      const result = await createListing(apiListingData)
+      const result = isEdit
+        ? await updateListing(listing.id, apiListingData)
+        : await createListing(apiListingData)
 
       if (result.success) {
         // Call the onSubmit callback for navigation/UI updates
@@ -311,12 +370,18 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
           },
         })
       } else {
-        throw new Error(result.error || 'Failed to create listing')
+        throw new Error(
+          result.error ||
+            (isEdit ? 'Failed to save listing' : 'Failed to create listing')
+        )
       }
     } catch (error) {
       console.error('Submit error:', error)
       setSubmitError(
-        error.message || 'Failed to publish listing. Please try again.'
+        error.message ||
+          (isEdit
+            ? 'Failed to save changes. Please try again.'
+            : 'Failed to publish listing. Please try again.')
       )
     } finally {
       setIsSubmitting(false)
@@ -327,7 +392,9 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
   if (currentStep === 1) {
     return (
       <div className="p-6 pb-20">
-        <h2 className="text-2xl font-bold mb-6">List Your Property</h2>
+        <h2 className="text-2xl font-bold mb-6">
+          {isEdit ? 'Edit Your Listing' : 'List Your Property'}
+        </h2>
 
         <div className="space-y-4">
           <div>
@@ -415,9 +482,11 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
                 }
                 className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
               >
-                {[1, 2, 3, 4, 5].map(num => (
+                {[0, 1, 2, 3, 4, 5].map(num => (
                   <option key={num} value={num}>
-                    {num} Bedroom{num > 1 ? 's' : ''}
+                    {num === 0
+                      ? 'Studio (no separate bedroom)'
+                      : `${num} Bedroom${num > 1 ? 's' : ''}`}
                   </option>
                 ))}
               </select>
@@ -906,6 +975,27 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
             )}
           </div>
 
+          {/* Minimum credit score */}
+          <div>
+            <label className="block text-sm font-semibold mb-1">
+              Minimum Credit Score{' '}
+              <span className="font-normal text-gray-500">(optional)</span>
+            </label>
+            <p className="text-xs text-gray-500 mb-2">
+              Leave blank if you weigh income and references instead.
+            </p>
+            <input
+              type="number"
+              min="300"
+              max="850"
+              step="10"
+              value={req.minCreditScore}
+              onChange={e => setReq({ minCreditScore: e.target.value })}
+              placeholder="e.g. 650"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+            />
+          </div>
+
           {/* Checks */}
           <div>
             <label className="block text-sm font-semibold mb-3">
@@ -1187,8 +1277,10 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
             {isSubmitting ? (
               <>
                 <Loader2 size={20} className="animate-spin mr-2" />
-                Publishing...
+                {isEdit ? 'Saving...' : 'Publishing...'}
               </>
+            ) : isEdit ? (
+              'Save Changes'
             ) : (
               'Publish Listing'
             )}
@@ -1197,6 +1289,29 @@ const LandlordListingForm = ({ onSubmit, onBack }) => {
       </div>
     )
   }
+}
+
+LandlordListingForm.propTypes = {
+  listing: PropTypes.shape({
+    id: PropTypes.string,
+    title: PropTypes.string,
+    description: PropTypes.string,
+    price: PropTypes.number,
+    location: PropTypes.string,
+    streetAddress: PropTypes.string,
+    university: PropTypes.string,
+    moveInDate: PropTypes.string,
+    moveOutDate: PropTypes.string,
+    propertyType: PropTypes.string,
+    bedrooms: PropTypes.number,
+    bathrooms: PropTypes.number,
+    incomeMultiplier: PropTypes.number,
+    screeningCriteria: PropTypes.object,
+    amenities: PropTypes.arrayOf(PropTypes.string),
+    images: PropTypes.arrayOf(PropTypes.string),
+  }),
+  onSubmit: PropTypes.func.isRequired,
+  onBack: PropTypes.func.isRequired,
 }
 
 export default LandlordListingForm

@@ -914,3 +914,113 @@ export async function sendTenantInviteDeclined({ owner, invite, listing }) {
     text: `Hi ${owner.firstName}, ${name} (${invite.email}) declined your invitation to join ${listing.title} on Rentra. Fix the email and resend, or remove them, from ${url}`,
   })
 }
+
+/**
+ * Landlord: a tenant filed a maintenance request on one of their units.
+ */
+export async function sendMaintenanceTicketEmail({
+  owner,
+  tenant,
+  listing,
+  ticket,
+}) {
+  if (!owner?.email) return null
+  const url = `${process.env.CLIENT_URL}/dashboard/properties/${listing.id}/maintenance`
+  const tenantName = `${tenant.firstName} ${tenant.lastName || ''}`.trim()
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+      <h2 style="color: #fc6a03;">New maintenance request 🔧</h2>
+      <p>Hi ${owner.firstName},</p>
+      <p><strong>${tenantName}</strong> reported a problem at <strong>${listing.title}</strong>.</p>
+      <div style="background: #f9fafb; padding: 15px; border-radius: 6px; margin: 20px 0;">
+        <strong>${ticket.category}</strong> · ${ticket.priority} priority<br>
+        <span style="color: #555;">${ticket.description}</span>
+      </div>
+      <p style="margin-top: 24px;"><a href="${url}" style="background: #fc6a03; color: #fff; padding: 10px 18px; border-radius: 6px; text-decoration: none;">Open the ticket</a></p>
+      <p style="color: #888; font-size: 13px; margin-top: 24px;">— The Rentra Team</p>
+    </div>
+  `
+  return sendEmail({
+    to: owner.email,
+    subject: `Maintenance request at ${listing.title}: ${ticket.category}`,
+    html,
+    text: `${tenantName} reported a ${ticket.priority}-priority ${ticket.category} issue at ${listing.title}: ${ticket.description}. ${url}`,
+  })
+}
+
+/**
+ * Tenant: the landlord moved their maintenance request to a new status.
+ */
+export async function sendMaintenanceStatusEmail({
+  tenant,
+  listing,
+  ticket,
+  landlordName,
+}) {
+  if (!tenant?.email) return null
+  const url = `${process.env.CLIENT_URL}/profile/tenant-dashboard`
+  const labels = {
+    'in-progress': 'is being worked on',
+    completed: 'has been completed',
+  }
+  const label = labels[ticket.status] || `is now ${ticket.status}`
+  const assigned = ticket.assignedTo
+    ? `<p>Assigned to: <strong>${ticket.assignedTo}</strong></p>`
+    : ''
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+      <h2 style="color: #fc6a03;">Maintenance update 🔧</h2>
+      <p>Hi ${tenant.firstName},</p>
+      <p>Your <strong>${ticket.category}</strong> request at <strong>${listing.title}</strong> ${label}.</p>
+      ${assigned}
+      <div style="background: #f9fafb; padding: 15px; border-radius: 6px; margin: 20px 0; color: #555;">
+        ${ticket.description}
+      </div>
+      <p>Updated by ${landlordName}.</p>
+      <p style="margin-top: 24px;"><a href="${url}" style="background: #fc6a03; color: #fff; padding: 10px 18px; border-radius: 6px; text-decoration: none;">View your requests</a></p>
+      <p style="color: #888; font-size: 13px; margin-top: 24px;">— The Rentra Team</p>
+    </div>
+  `
+  return sendEmail({
+    to: tenant.email,
+    subject: `Your ${ticket.category} request ${label}`,
+    html,
+    text: `Hi ${tenant.firstName}, your ${ticket.category} request at ${listing.title} ${label}. ${url}`,
+  })
+}
+
+/**
+ * Landlord: a tenant recorded a rent payment against their lease.
+ */
+export async function sendRentPaymentRecordedEmail({
+  owner,
+  tenant,
+  listingTitle,
+  amount,
+  paymentMethod,
+}) {
+  if (!owner?.email) return null
+  const url = `${process.env.CLIENT_URL}/dashboard/rent-collection`
+  const tenantName = `${tenant.firstName} ${tenant.lastName || ''}`.trim()
+  const method = (paymentMethod || 'ach').toUpperCase()
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+      <h2 style="color: #fc6a03;">Rent payment recorded 💵</h2>
+      <p>Hi ${owner.firstName},</p>
+      <p><strong>${tenantName}</strong> recorded a rent payment for <strong>${listingTitle}</strong>.</p>
+      <div style="background: #f9fafb; padding: 15px; border-radius: 6px; margin: 20px 0;">
+        <strong>Amount:</strong> $${Number(amount).toLocaleString()}<br>
+        <strong>Method:</strong> ${method}
+      </div>
+      <p style="color: #666; font-size: 13px;">This is a record the tenant entered, not money moved through Rentra. Check your account before counting it as collected.</p>
+      <p style="margin-top: 24px;"><a href="${url}" style="background: #fc6a03; color: #fff; padding: 10px 18px; border-radius: 6px; text-decoration: none;">Open rent collection</a></p>
+      <p style="color: #888; font-size: 13px; margin-top: 24px;">— The Rentra Team</p>
+    </div>
+  `
+  return sendEmail({
+    to: owner.email,
+    subject: `${tenantName} recorded $${Number(amount).toLocaleString()} rent for ${listingTitle}`,
+    html,
+    text: `${tenantName} recorded a $${amount} ${method} rent payment for ${listingTitle}. ${url}`,
+  })
+}

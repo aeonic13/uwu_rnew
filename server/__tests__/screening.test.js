@@ -3,6 +3,7 @@ import {
   assessIncome,
   assessCombinedIncome,
   DEFAULT_INCOME_MULTIPLIER,
+  sanitizeScreeningCriteria,
 } from '../utils/screening.js'
 
 describe('assessIncome', () => {
@@ -57,5 +58,45 @@ describe('assessCombinedIncome', () => {
     const r = assessCombinedIncome([], 1000, 3)
     expect(r.monthlyIncome).toBe(0)
     expect(r.meetsRequirement).toBe(false)
+  })
+})
+
+describe('sanitizeScreeningCriteria', () => {
+  it('keeps only known keys with valid values', () => {
+    expect(
+      sanitizeScreeningCriteria({
+        guarantorPolicy: 'always',
+        backgroundCheck: true,
+        idVerification: false,
+        minCreditScore: '680',
+        minIncomeMultiple: 2.5,
+        acceptsVouchers: false,
+        evil: 'drop me',
+      })
+    ).toEqual({
+      guarantorPolicy: 'always',
+      backgroundCheck: true,
+      idVerification: false,
+      minCreditScore: 680,
+      minIncomeMultiple: 2.5,
+    })
+  })
+
+  it('drops out-of-range or malformed values', () => {
+    expect(
+      sanitizeScreeningCriteria({
+        guarantorPolicy: 'whenever',
+        backgroundCheck: 'yes',
+        minCreditScore: 950,
+        minIncomeMultiple: 0,
+      })
+    ).toBeNull()
+    expect(sanitizeScreeningCriteria({ minCreditScore: '' })).toBeNull()
+  })
+
+  it('returns null for non-objects', () => {
+    expect(sanitizeScreeningCriteria(null)).toBeNull()
+    expect(sanitizeScreeningCriteria('680')).toBeNull()
+    expect(sanitizeScreeningCriteria([680])).toBeNull()
   })
 })
