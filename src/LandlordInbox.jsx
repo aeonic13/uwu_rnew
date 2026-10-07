@@ -26,6 +26,29 @@ import {
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
+/**
+ * Approve an application (and, server-side, its whole group). When the
+ * household's combined verified income is below the listing's requirement
+ * the server answers 409 INCOME_SHORT; ask the landlord and retry with an
+ * explicit override. Resolves null when they back out.
+ */
+async function approveWithIncomeCheck(applicationId) {
+  try {
+    return await applicationsService.updateStatus(applicationId, 'approved')
+  } catch (err) {
+    if (err?.code !== 'INCOME_SHORT') throw err
+    const d = err.details || {}
+    const money = n => `$${Number(n || 0).toLocaleString()}/mo`
+    const ok = window.confirm(
+      `${err.message}\n\nVerified household income: ${money(d.effective)}\nYour requirement: ${money(d.required)}\n\nApprove anyway?`
+    )
+    if (!ok) return null
+    return applicationsService.updateStatus(applicationId, 'approved', null, {
+      override: true,
+    })
+  }
+}
+
 // ─── Universal rental application (captured once at pre-qualification) ──────
 // Renders the tenant's standard-application answers when present. Older
 // applications (pre-feature) simply won't have this data.
@@ -208,8 +231,8 @@ function GroupDetail({ app, onBack, onReload }) {
     setApproving(true)
     setApproveError(null)
     try {
-      await applicationsService.updateStatus(lead.applicationId, 'approved')
-      await onReload()
+      const result = await approveWithIncomeCheck(lead.applicationId)
+      if (result !== null) await onReload()
     } catch (err) {
       setApproveError(err.message || 'Could not approve the group.')
     } finally {
@@ -933,7 +956,8 @@ const LandlordInbox = () => {
     // Optimistically reflect, then persist via the real status API.
     applyStatus(applicationId, 'approved')
     try {
-      await applicationsService.updateStatus(applicationId, 'approved')
+      const result = await approveWithIncomeCheck(applicationId)
+      if (result === null) applyStatus(applicationId, 'pending')
     } catch (err) {
       console.error('Approve failed:', err)
       applyStatus(applicationId, 'pending')

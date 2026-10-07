@@ -19,6 +19,13 @@ import { ledgerService } from '../../services/ledgerService'
 
 const money = n => `$${Number(n || 0).toLocaleString()}`
 
+/** Today's date as YYYY-MM-DD in the landlord's own timezone. */
+const localToday = () => {
+  const d = new Date()
+  const pad = n => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
 function StatCard({ label, value, tone = 'gray' }) {
   const tones = {
     gray: 'text-gray-900',
@@ -64,6 +71,7 @@ function RecordPaymentModal({ tenant, onClose, onSaved }) {
   const [amount, setAmount] = useState(tenant.monthlyRent || '')
   const [method, setMethod] = useState('cash')
   const [note, setNote] = useState('')
+  const [paidOn, setPaidOn] = useState(localToday)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
 
@@ -77,6 +85,9 @@ function RecordPaymentModal({ tenant, onClose, onSaved }) {
         amount: Number(amount),
         paymentMethod: method,
         note: note || undefined,
+        // Today by default; an earlier date backfills past history (e.g.
+        // an onboarded tenant's payments before they joined Rentra).
+        paidOn: paidOn || undefined,
       })
       onSaved()
     } catch (err) {
@@ -119,6 +130,20 @@ function RecordPaymentModal({ tenant, onClose, onSaved }) {
             <option value="external-transfer">External transfer</option>
             <option value="other">Other</option>
           </select>
+        </div>
+        <div>
+          <label className="block text-sm text-gray-600 mb-1">Paid on</label>
+          <input
+            type="date"
+            value={paidOn}
+            max={localToday()}
+            min="2000-01-01"
+            onChange={e => setPaidOn(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Pick an earlier date to log a past payment.
+          </p>
         </div>
         <div>
           <label className="block text-sm text-gray-600 mb-1">

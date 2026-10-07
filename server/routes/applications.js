@@ -3,6 +3,7 @@ import { defaultLeaseTerms } from '../utils/agreements.js'
 import prisma from '../utils/prisma.js'
 import { authenticate, requireUserType } from '../middleware/authenticate.js'
 import { generateSecureToken } from '../utils/auth.js'
+import { householdIncomeDecision } from '../utils/screening.js'
 import {
   findReusableReport,
   findReusableReports,
@@ -662,6 +663,56 @@ router.put('/:id/status', authenticate, async (req, res) => {
     const targetIds = targets.map(t => t.id)
     if (!targetIds.includes(id)) targetIds.push(id)
 
+    // Approving a household whose combined verified income (plus accepted
+    // cosigners, minus vouchers) misses the listing's multiple needs an
+    // explicit `override: true`; the first attempt gets a 409 the client
+    // turns into a confirm. The override is noted on the lead application.
+    const override = req.body?.override === true
+    let incomeOverridden = false
+    if (status === 'approved') {
+      const screened = await prisma.listing.findUnique({
+        where: { id: application.listingId },
+        select: { price: true, incomeMultiplier: true },
+      })
+      const household = await prisma.application.findMany({
+        where: { id: { in: targetIds } },
+        select: {
+          verificationData: true,
+          voucherAmount: true,
+          cosigners: {
+            where: { status: 'accepted' },
+            select: { verifiedMonthlyIncome: true },
+          },
+        },
+      })
+      const decision = householdIncomeDecision(
+        household.map(m => ({
+          monthlyIncome: m.verificationData?.monthlyIncome,
+          cosignerIncome: m.cosigners.reduce(
+            (sum, c) => sum + (Number(c.verifiedMonthlyIncome) || 0),
+            0
+          ),
+          voucherAmount: m.voucherAmount,
+        })),
+        screened?.price,
+        screened?.incomeMultiplier
+      )
+      if (decision.short && !override) {
+        return res.status(409).json({
+          error: {
+            message:
+              'Combined income is below your requirement. Confirm to approve anyway.',
+            code: 'INCOME_SHORT',
+            details: {
+              required: decision.required,
+              effective: decision.effective,
+            },
+          },
+        })
+      }
+      incomeOverridden = decision.short && override
+    }
+
     const detailInclude = {
       listing: { select: { id: true, title: true, price: true } },
       applicant: {
@@ -678,6 +729,19 @@ router.put('/:id/status', authenticate, async (req, res) => {
       await prisma.application.update({
         where: { id },
         data: { message: statusMessage },
+      })
+    }
+    if (incomeOverridden) {
+      await prisma.application.update({
+        where: { id },
+        data: {
+          verificationData: {
+            ...(application.verificationData || {}),
+            incomeOverride: true,
+            incomeOverrideAt: new Date().toISOString(),
+            incomeOverrideBy: userId,
+          },
+        },
       })
     }
 

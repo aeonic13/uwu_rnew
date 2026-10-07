@@ -11,11 +11,17 @@ import {
   sendLeaseRenewalOfferEmail,
   sendLeaseAmendmentEmail,
 } from '../utils/email.js'
+import {
+  sendTenantNoticeEmail,
+  sendRentIncreaseNoticeEmail,
+  sendTenantRemovedFromLeaseEmail,
+} from '../utils/emailLease.js'
 import { documentUpload, uploadToCloudinary } from '../utils/cloudinary.js'
 import { STATE_DEPOSIT_RULES, ruleForState } from './deposits.js'
 import {
   validateLeaseTermsInput,
   amendmentPlan,
+  tenantNoticePlan,
   scaleShares,
   END_REASONS,
   shapeAgreement,
@@ -325,6 +331,34 @@ router.get('/:id/pdf', authenticate, async (req, res) => {
       'Lease end',
       shaped.monthToMonth ? 'Month-to-month' : fmt(shaped.terms.endDate)
     )
+
+    if (agreement.amendsId) {
+      sectionTitle('Amendment')
+      doc
+        .font('Helvetica')
+        .fillColor('black')
+        .text(
+          `This agreement amends and replaces lease ${agreement.amendsId} from ${fmt(shaped.terms.startDate)}.`
+        )
+      if (agreement.rentIncreaseNoticeDays) {
+        doc
+          .moveDown(0.3)
+          .text(
+            `Notice of rent increase: the monthly rent changes to $${shaped.terms.monthlyRent.toLocaleString()} effective ${fmt(shaped.terms.startDate)}. This amendment, delivered to each tenant on ${fmt(agreement.createdAt)}, serves as ${agreement.rentIncreaseNoticeDays} days' written notice of the change.`
+          )
+      }
+      if ((agreement.removedTenantIds || []).length) {
+        doc
+          .moveDown(0.3)
+          .text(
+            `${agreement.removedTenantIds.length === 1 ? 'One tenant' : `${agreement.removedTenantIds.length} tenants`} on the amended lease ${agreement.removedTenantIds.length === 1 ? 'is' : 'are'} released from it on the effective date and ${agreement.removedTenantIds.length === 1 ? 'is' : 'are'} not a party to this amendment.`
+          )
+      }
+      if (agreement.amendmentNote) {
+        doc.moveDown(0.3).fillColor(gray).text(agreement.amendmentNote)
+        doc.fillColor('black')
+      }
+    }
 
     sectionTitle('Additional Terms')
     row('Utilities', shaped.terms.utilities)
@@ -850,7 +884,11 @@ router.post('/:id/renew', authenticate, async (req, res) => {
  * autopays move to the amendment (applyAmendment, in the sign route).
  * body: { effectiveDate, monthlyRent?, endDate?, monthToMonth?,
  *         securityDeposit?, terms?, lateFeeAmount?, lateFeeGraceDays?,
- *         addTenantEmails?: [], note? }
+ *         addTenantEmails?: [], removeTenantIds?: [], note? }
+ * Removed tenants are off the amendment (they do not sign it) and leave
+ * on the effective date; at least one tenant stays. A rent increase must
+ * honor the statutory notice period (utils/agreements.js
+ * rentIncreaseNotice) and sends each tenant a notice email.
  */
 router.post('/:id/amend', authenticate, async (req, res) => {
   try {
@@ -892,7 +930,11 @@ router.post('/:id/amend', authenticate, async (req, res) => {
       })
     }
 
-    const plan = amendmentPlan(agreement, req.body, new Date())
+    const currentMembers = agreement.members.filter(m => m.applicantId)
+    const plan = amendmentPlan(agreement, req.body, new Date(), {
+      memberIds: currentMembers.map(m => m.applicantId),
+      state: stateFromLocation(agreement.application?.listing?.location),
+    })
     if (!plan.ok) {
       return res
         .status(400)
@@ -900,7 +942,8 @@ router.post('/:id/amend', authenticate, async (req, res) => {
     }
     const v = plan.value
 
-    const existing = agreement.members.filter(m => m.applicantId)
+    const removedIds = new Set(v.removeTenantIds)
+    const existing = currentMembers.filter(m => !removedIds.has(m.applicantId))
     const existingIds = new Set(existing.map(m => m.applicantId))
     const added = []
     const wanted = Array.isArray(req.body?.addTenantEmails)
@@ -966,6 +1009,8 @@ router.post('/:id/amend', authenticate, async (req, res) => {
           source: 'rentra',
           amendsId: agreement.id,
           amendmentNote: v.note,
+          removedTenantIds: v.removeTenantIds,
+          rentIncreaseNoticeDays: v.rentIncreaseNoticeDays,
           monthlyRent: v.monthlyRent,
           securityDeposit: v.securityDeposit,
           startDate: v.startDate,
@@ -992,9 +1037,11 @@ router.post('/:id/amend', authenticate, async (req, res) => {
         data: { agreementId: amendment.id },
       })
       // Household split: scale the existing shares when the household is
-      // unchanged; with new tenants, start again from an equal split.
-      if (agreement.rentSplit || added.length) {
-        const shares = added.length
+      // unchanged; with tenants added or removed, start again from an
+      // equal split.
+      const householdChanged = added.length > 0 || removedIds.size > 0
+      if (agreement.rentSplit || householdChanged) {
+        const shares = householdChanged
           ? memberRows.map((m, i) => {
               const per = Math.floor(v.monthlyRent / memberRows.length)
               const amount =
@@ -1024,7 +1071,9 @@ router.post('/:id/amend', authenticate, async (req, res) => {
             agreementId: amendment.id,
             createdById: agreement.rentSplit?.createdById || req.user.id,
             total: v.monthlyRent,
-            splitMode: added.length ? 'equal' : agreement.rentSplit.splitMode,
+            splitMode: householdChanged
+              ? 'equal'
+              : agreement.rentSplit.splitMode,
             shares: { create: shares },
           },
         })
@@ -1040,21 +1089,49 @@ router.post('/:id/amend', authenticate, async (req, res) => {
 
     const landlordName = `${req.user.firstName} ${req.user.lastName}`.trim()
     const listingTitle = agreement.application?.listing?.title || 'your rental'
-    Promise.all(
-      full.signers
-        .filter(s => s.role === 'tenant' && s.user?.email)
-        .map(s =>
-          sendLeaseAmendmentEmail({
-            tenant: s.user,
-            landlordName,
-            listingTitle,
-            agreementId: full.id,
-            effectiveDate: full.startDate,
-            monthlyRent: full.monthlyRent,
-            note: full.amendmentNote,
-          })
-        )
-    ).catch(err => console.error('Amendment email error:', err))
+    const staying = full.signers.filter(
+      s => s.role === 'tenant' && s.user?.email
+    )
+    const raised = full.monthlyRent > agreement.monthlyRent
+    const removedUsers = agreement.signers
+      .filter(s => s.role === 'tenant' && removedIds.has(s.userId) && s.user)
+      .map(s => s.user)
+    Promise.all([
+      ...staying.map(s =>
+        sendLeaseAmendmentEmail({
+          tenant: s.user,
+          landlordName,
+          listingTitle,
+          agreementId: full.id,
+          effectiveDate: full.startDate,
+          monthlyRent: full.monthlyRent,
+          note: full.amendmentNote,
+        })
+      ),
+      ...(raised
+        ? staying.map(s =>
+            sendRentIncreaseNoticeEmail({
+              tenant: s.user,
+              landlordName,
+              listingTitle,
+              agreementId: full.id,
+              oldRent: agreement.monthlyRent,
+              newRent: full.monthlyRent,
+              effectiveDate: full.startDate,
+              noticeDays: full.rentIncreaseNoticeDays,
+            })
+          )
+        : []),
+      ...removedUsers.map(u =>
+        sendTenantRemovedFromLeaseEmail({
+          tenant: u,
+          landlordName,
+          listingTitle,
+          effectiveDate: full.startDate,
+          note: full.amendmentNote,
+        })
+      ),
+    ]).catch(err => console.error('Amendment email error:', err))
   } catch (error) {
     console.error('Amend lease error:', error)
     res
@@ -1089,9 +1166,12 @@ async function applyAmendment(amendment) {
     where: { split: { agreementId: amendment.id } },
     select: { userId: true, amount: true },
   })
-  const tenantCount = await prisma.agreementSigner.count({
+  const newTenants = await prisma.agreementSigner.findMany({
     where: { agreementId: amendment.id, role: 'tenant' },
+    select: { userId: true },
   })
+  const tenantCount = newTenants.length
+  const stillOnLease = new Set(newTenants.map(t => t.userId))
   const shareFor = userId => {
     const s = newShares.find(x => x.userId === userId)
     return s
@@ -1111,6 +1191,8 @@ async function applyAmendment(amendment) {
       })
     }
     for (const ap of old.autopays) {
+      // A tenant removed by the amendment keeps no autopay on it.
+      if (!stillOnLease.has(ap.userId)) continue
       await tx.autopaySchedule.upsert({
         where: {
           userId_agreementId: { userId: ap.userId, agreementId: amendment.id },
@@ -1129,6 +1211,88 @@ async function applyAmendment(amendment) {
     }
   })
 }
+
+/**
+ * POST /api/agreements/:id/notice
+ * A tenant on a lease in force gives notice to vacate. body:
+ * { moveOutDate, reason?, message? }. The lease keeps running: the
+ * landlord confirms the move-out with /end (prefilled from this), which
+ * is what starts the deposit clock. Month-to-month needs 30 days
+ * (utils/agreements.js tenantNoticePlan). The landlord is emailed.
+ */
+router.post('/:id/notice', authenticate, async (req, res) => {
+  try {
+    const agreement = await prisma.agreement.findUnique({
+      where: { id: req.params.id },
+      include: agreementInclude,
+    })
+    if (!agreement) {
+      return res.status(404).json({ error: { message: 'Agreement not found' } })
+    }
+    const mine = agreement.signers.find(
+      s => s.userId === req.user.id && s.role === 'tenant'
+    )
+    if (!mine) {
+      return res.status(403).json({
+        error: { message: 'Only a tenant on this lease can give notice' },
+      })
+    }
+    if (!signatureState(agreement.signers).allSigned) {
+      return res.status(400).json({
+        error: { message: 'This lease is not in force yet.' },
+      })
+    }
+    if (agreement.endedAt) {
+      return res.status(400).json({
+        error: { message: 'This lease already has an end date.' },
+      })
+    }
+    if (agreement.tenantNoticeAt) {
+      return res.status(400).json({
+        error: {
+          message:
+            'Notice has already been given on this lease. Message your landlord to change the date.',
+        },
+      })
+    }
+    const plan = tenantNoticePlan(agreement, req.body, new Date())
+    if (!plan.ok) {
+      return res
+        .status(400)
+        .json({ error: { message: plan.errors[0], details: plan.errors } })
+    }
+    const v = plan.value
+    const updated = await prisma.agreement.update({
+      where: { id: agreement.id },
+      data: {
+        tenantNoticeAt: new Date(),
+        tenantNoticeMoveOut: v.moveOutDate,
+        tenantNoticeById: req.user.id,
+        tenantNoticeReason: v.message
+          ? `${v.reason}: ${v.message}`.slice(0, 600)
+          : v.reason,
+      },
+      include: agreementInclude,
+    })
+    res.json({ agreement: shapeAgreement(updated, req.user.id) })
+
+    const landlordSigner = agreement.signers.find(s => s.role === 'landlord')
+    const owner = landlordSigner?.user || agreement.application?.owner
+    sendTenantNoticeEmail({
+      owner,
+      tenant: req.user,
+      listingTitle: agreement.application?.listing?.title || 'your rental',
+      listingId: agreement.application?.listingId,
+      moveOutDate: v.moveOutDate,
+      reason: v.reason,
+      message: v.message,
+      early: v.early,
+    }).catch(err => console.error('Tenant notice email error:', err))
+  } catch (error) {
+    console.error('Tenant notice error:', error)
+    res.status(500).json({ error: { message: 'Failed to give notice' } })
+  }
+})
 
 /**
  * POST /api/agreements/:id/sign

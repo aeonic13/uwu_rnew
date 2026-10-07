@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import PropTypes from 'prop-types'
 import { useNavigate } from 'react-router-dom'
 import { agreementsService } from '../../services/agreementsService'
 import { paymentsService } from '../../services/payments'
@@ -18,6 +19,7 @@ import {
   Upload,
   Download,
   Eye,
+  LogOut,
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { rentService } from '../../services/rentService'
@@ -945,10 +947,163 @@ function MaintenanceTab() {
 /**
  * Leases Tab - View and download lease documents
  */
+const NOTICE_REASONS = [
+  { value: 'moving', label: 'Moving away' },
+  { value: 'end_of_term', label: 'Leaving at the end of the term' },
+  { value: 'buying', label: 'Bought a home' },
+  { value: 'cost', label: 'Cost' },
+  { value: 'other', label: 'Other' },
+]
+
+const dateInput = (date, plusDays = 0) => {
+  const d = new Date(date)
+  d.setUTCDate(d.getUTCDate() + plusDays)
+  return d.toISOString().slice(0, 10)
+}
+
+/**
+ * Tenant gives notice to vacate. Month-to-month needs 30 days; a fixed
+ * term can name any date through its end (earlier is early termination,
+ * which the landlord sees). The lease runs until the landlord confirms.
+ */
+function GiveNoticeModal({ lease, onClose, onDone }) {
+  const earliest = lease.monthToMonth
+    ? dateInput(new Date(), 30)
+    : dateInput(new Date())
+  const [moveOutDate, setMoveOutDate] = useState(() =>
+    lease.monthToMonth ? earliest : dateInput(lease.endDate)
+  )
+  const [reason, setReason] = useState('moving')
+  const [message, setMessage] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  const submit = async e => {
+    e.preventDefault()
+    setBusy(true)
+    setError('')
+    try {
+      const updated = await agreementsService.giveNotice(lease.id, {
+        moveOutDate,
+        reason,
+        message: message.trim() || undefined,
+      })
+      onDone(updated)
+    } catch (err) {
+      setError(err?.message || 'Could not give notice.')
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-50 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Give notice"
+    >
+      <form
+        onSubmit={submit}
+        className="bg-white rounded-xl w-full max-w-md p-5 space-y-4"
+      >
+        <h3 className="font-semibold text-lg">Give notice to move out</h3>
+        <p className="text-sm text-gray-600">
+          Tells your landlord the date you plan to leave {lease.property}.
+          {lease.monthToMonth
+            ? ' A month-to-month tenancy needs 30 days’ notice.'
+            : ' Leaving before your lease ends is early termination; your landlord decides how that is handled.'}{' '}
+          Rent stays due until the move-out date your landlord confirms.
+        </p>
+        <label className="block text-sm">
+          <span className="text-gray-700 font-medium">Move-out date</span>
+          <input
+            type="date"
+            required
+            value={moveOutDate}
+            min={earliest}
+            max={lease.monthToMonth ? undefined : dateInput(lease.endDate)}
+            onChange={e => setMoveOutDate(e.target.value)}
+            className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+          />
+        </label>
+        <label className="block text-sm">
+          <span className="text-gray-700 font-medium">Reason</span>
+          <select
+            value={reason}
+            onChange={e => setReason(e.target.value)}
+            className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
+          >
+            {NOTICE_REASONS.map(r => (
+              <option key={r.value} value={r.value}>
+                {r.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="block text-sm">
+          <span className="text-gray-700 font-medium">
+            Message to your landlord{' '}
+            <span className="font-normal text-gray-500">(optional)</span>
+          </span>
+          <textarea
+            rows={2}
+            maxLength={500}
+            value={message}
+            onChange={e => setMessage(e.target.value)}
+            className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+          />
+        </label>
+        {error && <p className="text-sm text-red-600">{error}</p>}
+        <div className="flex gap-2 pt-1">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg text-sm hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={busy}
+            className="flex-1 bg-brand-500 text-white py-2 rounded-lg text-sm font-semibold hover:bg-brand-600 disabled:opacity-50"
+          >
+            {busy ? 'Sending…' : 'Give notice'}
+          </button>
+        </div>
+      </form>
+    </div>
+  )
+}
+
+GiveNoticeModal.propTypes = {
+  lease: PropTypes.object.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onDone: PropTypes.func.isRequired,
+}
+
+const toLeaseRow = a => ({
+  id: a.id,
+  property: a.property?.description || a.property?.address || 'Lease',
+  landlord: a.landlord?.name || '—',
+  landlordEmail: a.landlord?.email || null,
+  status: leaseState(a),
+  startDate: a.terms?.startDate,
+  endDate: a.terms?.endDate,
+  monthToMonth: !!a.monthToMonth,
+  monthlyRent: a.terms?.monthlyRent,
+  securityDeposit: a.terms?.securityDeposit,
+  signedDate: a.createdAt,
+  viewerHasSigned: !!a.viewerHasSigned,
+  pendingSigners: (a.pendingSigners || []).map(p => p.name),
+  tenantCount: a.tenants?.length || 1,
+  tenantNotice: a.tenantNotice || null,
+})
+
 function LeasesTab() {
   const navigate = useNavigate()
   const [leases, setLeases] = useState([])
   const [loading, setLoading] = useState(true)
+  const [noticeFor, setNoticeFor] = useState(null)
 
   useEffect(() => {
     let active = true
@@ -971,6 +1126,8 @@ function LeasesTab() {
             viewerHasSigned: !!a.viewerHasSigned,
             pendingSigners: (a.pendingSigners || []).map(p => p.name),
             tenantCount: a.tenants?.length || 1,
+            monthToMonth: !!a.monthToMonth,
+            tenantNotice: a.tenantNotice || null,
           }))
         )
       })
@@ -1099,8 +1256,56 @@ function LeasesTab() {
               </span>
             </div>
           )}
+          {lease.tenantNotice && lease.status !== 'past' && (
+            <div
+              className="mt-3 bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-900"
+              data-testid="tenant-notice"
+            >
+              Notice given on{' '}
+              {new Date(lease.tenantNotice.at).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                timeZone: 'UTC',
+              })}{' '}
+              to move out{' '}
+              {new Date(lease.tenantNotice.moveOutDate).toLocaleDateString(
+                'en-US',
+                {
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric',
+                  timeZone: 'UTC',
+                }
+              )}
+              .{' '}
+              {lease.status === 'ending'
+                ? 'Your landlord confirmed the move-out.'
+                : 'Waiting for your landlord to confirm; rent stays due until then.'}
+            </div>
+          )}
+          {lease.status === 'active' && !lease.tenantNotice && (
+            <button
+              type="button"
+              onClick={() => setNoticeFor(lease)}
+              className="mt-3 text-sm text-gray-600 hover:text-red-600 inline-flex items-center gap-1"
+            >
+              <LogOut size={14} /> Give notice to move out
+            </button>
+          )}
         </div>
       ))}
+      {noticeFor && (
+        <GiveNoticeModal
+          lease={noticeFor}
+          onClose={() => setNoticeFor(null)}
+          onDone={updated => {
+            setNoticeFor(null)
+            setLeases(ls =>
+              ls.map(l => (l.id === updated.id ? toLeaseRow(updated) : l))
+            )
+          }}
+        />
+      )}
 
       {/* Lease Renewal Notice */}
       {leases.some(l => l.status === 'active') && (

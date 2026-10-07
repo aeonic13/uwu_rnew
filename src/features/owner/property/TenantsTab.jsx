@@ -148,6 +148,11 @@ function InvitedRow({ member, onRefresh, onError }) {
               )}
             </p>
           )}
+          {invite.status === 'declined' && invite.declineReason && (
+            <p className="text-xs text-amber-700 mt-1">
+              Declined: {invite.declineReason}
+            </p>
+          )}
           {notice && <p className="text-xs text-green-700 mt-1">{notice}</p>}
         </div>
       </div>

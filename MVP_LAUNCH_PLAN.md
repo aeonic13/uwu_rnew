@@ -172,18 +172,51 @@ is what the pilot landlord needs on day one anyway.
 
 ## 7. Launch checklist (condensed)
 
-- [ ] JWT_SECRET hard-fail + prod secrets set (P0-1)
-- [ ] Plaid tokens not exposed to frontend (P0-1)
-- [ ] SendGrid live; cosigner invite email verified on prod (P0-2)
-- [ ] Password-reset + decline emails implemented (P0-2)
-- [ ] Mock screens hidden/badged (P0-3)
-- [ ] ToS + Privacy published; Fair Housing copy sweep (P0-4)
-- [ ] Plaid production application submitted (P0-5) → approved
+Status refreshed 2026-10-06 against the code on `main`. Engineering items are
+done; what remains is external (Plaid, Moov, counsel) or a dashboard task only
+the founder can do.
+
+**Engineering (done)**
+
+- [x] JWT_SECRET hard-fail (`server/utils/auth.js` throws at boot) (P0-1)
+- [x] Plaid access tokens held server-side, never returned to the browser (P0-1)
+- [x] Rate limiting on in prod, env-tunable (`RATE_LIMIT_*`) (P0-1)
+- [x] Email provider wired: Resend primary, SendGrid fallback (`server/utils/email.js`) (P0-2)
+- [x] Password-reset + cosigner-decline emails implemented (P0-2)
+- [x] Mock screens gone: every landlord tool is real; only Disputes is Coming Soon, and
+      `/dashboard/approvals` redirects to the Inbox (P0-3)
+- [x] Terms, Privacy, E-sign, Screening, Fees, Tenant Rights and Fair Housing pages live under
+      `/legal`, consent captured in `PolicyAcceptance`, re-acceptance banner on version bump (P0-4)
+- [x] Golden path scripted: `e2e/golden-path.mjs` (19 API steps) plus Playwright smoke (P0-6)
+- [x] "Pay Rent" is a ledger: tenant button reads "Record rent payment", no service fee, no money
+      moves (scope decision §3)
+- [x] Sentry initialised in `server/instrument.js` (no-op until `SENTRY_DSN` is set) (P0-7)
+- [x] Existing-tenant onboarding, lease lifecycle (end/renew/amend, tenant notice, rent-increase
+      notice), rent ledger + automatic late fees, inspections, maintenance threads, in-app
+      notifications, team access, portfolio reports, multi-unit buildings, CSV import
+
+**Founder / external (open)**
+
+- [ ] Prod secrets set and confirmed in Railway/Vercel: `JWT_SECRET`, `CLIENT_URL`, Resend or
+      SendGrid key, Cloudinary, Plaid, `SENTRY_DSN` (P0-1, P0-7)
+- [ ] Send one real cosigner invite and one tenant invite from prod and open them on a phone;
+      confirm SPF/DKIM on myrentra.com (P0-2)
+- [ ] Counsel review of the seven `/legal` drafts (bracketed decisions inside each page) and the
+      money-movement checklist; final Fair Housing copy sweep of landlord-facing marketing (P0-4)
+- [ ] Plaid production application submitted → approved (P0-5)
 - [ ] Moov production onboarding started (parallel, for v1.1)
-- [ ] Golden-path QA passed on prod, both roles, mobile (P0-6) — API half is scripted: `SMOKE_API_URL=https://rentra-production.up.railway.app/api GP_LANDLORD_EMAIL=… GP_LANDLORD_PASSWORD=… GP_TENANT_EMAIL=… GP_TENANT_PASSWORD=… node e2e/golden-path.mjs` (19 steps, then check both inboxes for the emails)
-- [ ] "Pay Rent" relabeled as ledger/record (scope decision §3)
-- [ ] DB backups + Sentry + uptime monitor (P0-7)
-- [ ] Pilot landlord committed + listings seeded (§6)
+- [ ] Golden-path QA on prod, both roles, mobile: `SMOKE_API_URL=https://rentra-production.up.railway.app/api GP_LANDLORD_EMAIL=… GP_LANDLORD_PASSWORD=… GP_TENANT_EMAIL=… GP_TENANT_PASSWORD=… node e2e/golden-path.mjs`, then check both inboxes for the emails (P0-6)
+- [ ] Railway Postgres backups on + one restore drill; uptime check on `/health` and
+      myrentra.com; `www.myrentra.com` → apex redirect (P0-7)
+- [ ] Delete the junk prod listing "dsfd" (id cmqt29xje0005rv01vj72igtr)
+- [ ] Pilot landlord committed + real listings seeded (§6)
+
+**Product gaps that wait on a vendor (not launch blockers)**
+
+- Credit/background reports (CRA vendor; schema + Inbox slots exist, credit score shows N/A)
+- Real ACH rent collection and deposit refunds (Moov production + webhook signatures, v1.1)
+- Listing syndication (Zillow / Apartments.com)
+- Disputes workspace
 
 **Realistic timeline: ~2 weeks of engineering + Plaid approval lead time → pilot launch
 in 3–4 weeks. Real rent collection (v1.1) ~4–6 weeks behind that.**

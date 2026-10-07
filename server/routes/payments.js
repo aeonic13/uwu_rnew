@@ -559,11 +559,59 @@ router.post(
   requireUserType('owner'),
   async (req, res) => {
     try {
-      const { applicationId, amount, paymentMethod = 'cash', note } = req.body
+      const {
+        applicationId,
+        amount,
+        paymentMethod = 'cash',
+        note,
+        paidOn,
+      } = req.body
       if (!applicationId) {
         return res
           .status(400)
           .json({ error: { message: 'applicationId is required' } })
+      }
+
+      // Optional `paidOn` (YYYY-MM-DD) backfills a past payment, e.g. an
+      // onboarded tenant's history. Transaction.createdAt IS the payment
+      // date everywhere (ledger, rent roll, reports), so setting it is the
+      // whole backfill; no reader needs to change. Must be a real date, not
+      // in the future and not before 2000-01-01.
+      let paidAt = null
+      if (paidOn !== undefined && paidOn !== null && paidOn !== '') {
+        const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(paidOn))
+        const candidate = match
+          ? new Date(
+              Number(match[1]),
+              Number(match[2]) - 1,
+              Number(match[3]),
+              12
+            )
+          : null
+        const real =
+          candidate &&
+          !Number.isNaN(candidate.getTime()) &&
+          candidate.getFullYear() === Number(match[1]) &&
+          candidate.getMonth() === Number(match[2]) - 1 &&
+          candidate.getDate() === Number(match[3])
+        if (!real) {
+          return res.status(400).json({
+            error: { message: 'paidOn must be a real date (YYYY-MM-DD)' },
+          })
+        }
+        const today = new Date()
+        today.setHours(23, 59, 59, 999)
+        if (candidate > today) {
+          return res
+            .status(400)
+            .json({ error: { message: 'paidOn cannot be in the future' } })
+        }
+        if (candidate < new Date(2000, 0, 1)) {
+          return res
+            .status(400)
+            .json({ error: { message: 'paidOn cannot be before 2000' } })
+        }
+        paidAt = candidate
       }
 
       const application = await prisma.application.findFirst({
@@ -604,11 +652,16 @@ router.post(
           paymentMethod: note
             ? `${paymentMethod} — ${String(note).slice(0, 120)}`
             : paymentMethod,
+          ...(paidAt && { createdAt: paidAt }),
         },
       })
       res.status(201).json({ transaction })
 
-      // Receipt to the tenant. Best-effort.
+      // Receipt to the tenant. Best-effort. A payment dated more than a
+      // week back is a backfill of history, not news: no receipt.
+      const backfill =
+        paidAt && Date.now() - paidAt.getTime() > 7 * 24 * 60 * 60 * 1000
+      if (backfill) return
       sendRentReceiptEmail({
         tenant: application.applicant,
         listingTitle: application.listing?.title || 'your rental',

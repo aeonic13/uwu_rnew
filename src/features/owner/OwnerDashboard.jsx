@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import PropTypes from 'prop-types'
 import {
@@ -20,11 +20,14 @@ import {
   AlertCircle,
   UserPlus,
   BarChart3,
+  Upload,
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { propertiesService } from '../../services/propertiesService'
 import { teamService } from '../../services/teamService'
 import { statusMeta, money, shortDate } from './property/statusMeta'
+import { groupByBuilding, unitName, cloneUnitPath } from './buildings'
+import PortfolioSwitcher from './PortfolioSwitcher'
 
 const PLACEHOLDER_IMAGE =
   'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600'
@@ -85,10 +88,15 @@ StatTile.propTypes = {
   tone: PropTypes.oneOf(['gray', 'brand', 'green', 'amber', 'red']),
 }
 
-/** One property on the portfolio grid. Clicking opens its workspace. */
-export function PropertyCard({ property, onOpen }) {
+/**
+ * One property on the portfolio grid. Clicking opens its workspace. Inside
+ * a building the card is named by its unit, since the address is on the
+ * building header.
+ */
+export function PropertyCard({ property, onOpen, inBuilding = false }) {
   const meta = statusMeta(property.status)
   const beds = property.bedrooms === 0 ? 'Studio' : `${property.bedrooms} bd`
+  const heading = inBuilding ? unitName(property) : property.title
   return (
     <button
       type="button"
@@ -123,7 +131,7 @@ export function PropertyCard({ property, onOpen }) {
       <div className="p-4">
         <div className="flex items-start justify-between gap-2">
           <h3 className="font-semibold text-gray-900 leading-snug line-clamp-1">
-            {property.title}
+            {heading}
           </h3>
           <p className="font-bold text-gray-900 whitespace-nowrap">
             {money(property.monthlyRent)}
@@ -196,6 +204,7 @@ PropertyCard.propTypes = {
   property: PropTypes.shape({
     id: PropTypes.string.isRequired,
     title: PropTypes.string.isRequired,
+    unitLabel: PropTypes.string,
     location: PropTypes.string,
     streetAddress: PropTypes.string,
     image: PropTypes.string,
@@ -216,6 +225,50 @@ PropertyCard.propTypes = {
     monthToMonth: PropTypes.bool,
   }).isRequired,
   onOpen: PropTypes.func.isRequired,
+  inBuilding: PropTypes.bool,
+}
+
+/**
+ * Header row above the units of one building: address, unit count,
+ * occupancy and the rent those units bring in, plus a shortcut to add the
+ * next unit prefilled from the first one.
+ */
+export function BuildingHeader({ building }) {
+  const first = building.properties[0]
+  return (
+    <div
+      className="col-span-full flex flex-wrap items-center justify-between gap-3 mt-2 pb-2 border-b border-gray-200"
+      data-testid={`building-${first.id}`}
+    >
+      <div className="min-w-0">
+        <h2 className="font-semibold text-gray-900 flex items-center gap-2 truncate">
+          <Building2 size={16} className="text-brand-500 flex-shrink-0" />
+          {building.streetAddress}
+        </h2>
+        <p className="text-xs text-gray-500 mt-0.5">
+          {building.units} units · {building.leased} leased · {building.listed}{' '}
+          listed · {money(building.monthlyRent)}/mo from leased units
+        </p>
+      </div>
+      <Link
+        to={cloneUnitPath(first.id)}
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 bg-white rounded-lg text-xs font-medium text-gray-700 hover:border-brand-500 hover:text-brand-600"
+      >
+        <Plus size={13} /> Add another unit
+      </Link>
+    </div>
+  )
+}
+
+BuildingHeader.propTypes = {
+  building: PropTypes.shape({
+    streetAddress: PropTypes.string,
+    units: PropTypes.number.isRequired,
+    leased: PropTypes.number.isRequired,
+    listed: PropTypes.number.isRequired,
+    monthlyRent: PropTypes.number.isRequired,
+    properties: PropTypes.arrayOf(PropTypes.object).isRequired,
+  }).isRequired,
 }
 
 /**
@@ -270,6 +323,8 @@ export default function OwnerDashboard() {
     }
     return properties
   }, [properties, filter])
+  // Units that share a street address sit under one building header.
+  const groups = useMemo(() => groupByBuilding(shown), [shown])
 
   const attentionCount = properties.filter(needsAttention).length
   // Landlords who list a unit that is already occupied: point them at the
@@ -300,6 +355,7 @@ export default function OwnerDashboard() {
             <h1 className="text-2xl font-bold text-gray-900">
               Your properties
             </h1>
+            <PortfolioSwitcher className="mt-2" />
           </div>
           <div className="flex items-center gap-2">
             <Link
@@ -312,6 +368,17 @@ export default function OwnerDashboard() {
                   {totals.pendingApplications}
                 </span>
               )}
+            </Link>
+            <Link
+              to="/dashboard/import"
+              className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:border-brand-500 hover:text-brand-600 bg-white"
+              title="Import units & tenants (CSV)"
+            >
+              <Upload size={16} />
+              <span className="hidden sm:inline">
+                Import units &amp; tenants (CSV)
+              </span>
+              <span className="sm:hidden">Import CSV</span>
             </Link>
             <Link
               to="/dashboard/listings/new"
@@ -476,13 +543,29 @@ export default function OwnerDashboard() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {shown.map(p => (
-              <PropertyCard
-                key={p.id}
-                property={p}
-                onOpen={prop => navigate(`/dashboard/properties/${prop.id}`)}
-              />
-            ))}
+            {groups.map(group =>
+              group.isBuilding ? (
+                <Fragment key={group.key}>
+                  <BuildingHeader building={group} />
+                  {group.properties.map(p => (
+                    <PropertyCard
+                      key={p.id}
+                      property={p}
+                      inBuilding
+                      onOpen={prop =>
+                        navigate(`/dashboard/properties/${prop.id}`)
+                      }
+                    />
+                  ))}
+                </Fragment>
+              ) : (
+                <PropertyCard
+                  key={group.properties[0].id}
+                  property={group.properties[0]}
+                  onOpen={prop => navigate(`/dashboard/properties/${prop.id}`)}
+                />
+              )
+            )}
           </div>
         )}
 

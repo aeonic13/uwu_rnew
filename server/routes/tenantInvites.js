@@ -119,6 +119,7 @@ export function presentInvite(invite) {
     status: invite.status,
     expiresAt: invite.expiresAt,
     respondedAt: invite.respondedAt || null,
+    declineReason: invite.declineReason || null,
     createdAt: invite.createdAt,
     applicationId: invite.applicationId,
     agreementId: invite.agreementId,
@@ -876,9 +877,16 @@ router.post('/decline/:token', async (req, res) => {
         },
       })
     }
+    // Optional free-text reason the landlord sees on the Tenants tab and
+    // in the declined email ("wrong email", "I moved out", ...).
+    const reason =
+      typeof req.body?.reason === 'string'
+        ? req.body.reason.trim().slice(0, 500)
+        : ''
+    const declineReason = reason || null
     const declined = await prisma.tenantInvite.updateMany({
       where: { id: invite.id, status: 'pending' },
-      data: { status: 'declined', respondedAt: new Date() },
+      data: { status: 'declined', respondedAt: new Date(), declineReason },
     })
     if (declined.count === 0) {
       return res.status(400).json({
@@ -887,7 +895,7 @@ router.post('/decline/:token', async (req, res) => {
     }
     sendTenantInviteDeclined({
       owner: invite.owner,
-      invite,
+      invite: { ...invite, declineReason },
       listing: invite.listing,
     }).catch(err => console.error('Tenant declined email error:', err))
     res.json({ message: 'Invitation declined' })

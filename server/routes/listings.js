@@ -8,6 +8,15 @@ import { withMapPosition, resolveListingCoordinates } from '../utils/geocode.js'
 
 const router = express.Router()
 
+/** Unit within a building ("Apt 2B"): trimmed, at most 40 chars, null when blank. */
+const cleanUnitLabel = value => {
+  const label = String(value ?? '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .slice(0, 40)
+  return label || null
+}
+
 // GET /api/listings - Public endpoint with optional auth
 router.get('/', optionalAuth, async (req, res) => {
   try {
@@ -191,6 +200,7 @@ router.post('/', authenticate, async (req, res) => {
       price,
       location,
       streetAddress,
+      unitLabel,
       latitude,
       longitude,
       university,
@@ -229,6 +239,7 @@ router.post('/', authenticate, async (req, res) => {
         price: parseInt(price, 10),
         location,
         streetAddress: address || null,
+        unitLabel: cleanUnitLabel(unitLabel),
         ...coords,
         university,
         moveInDate: moveInDate ? new Date(moveInDate) : null,
@@ -329,6 +340,7 @@ router.put('/:id', authenticate, async (req, res) => {
       price,
       location,
       streetAddress,
+      unitLabel,
       latitude,
       longitude,
       university,
@@ -348,6 +360,8 @@ router.put('/:id', authenticate, async (req, res) => {
     if (description !== undefined) updateData.description = description
     if (price !== undefined) updateData.price = parseInt(price, 10)
     if (location !== undefined) updateData.location = location
+    if (unitLabel !== undefined)
+      updateData.unitLabel = cleanUnitLabel(unitLabel)
     if (university !== undefined) updateData.university = university
     if (moveInDate !== undefined)
       updateData.moveInDate = moveInDate ? new Date(moveInDate) : null

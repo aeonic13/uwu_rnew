@@ -33,6 +33,26 @@ export const propertiesService = {
   async onboard(id, body) {
     return apiClient.post(`/properties/${id}/onboard`, body)
   },
+
+  /**
+   * Check a units-and-tenants CSV without writing anything.
+   * @param {string} csv file contents
+   * @returns {Promise<{ok: boolean, errors: {row: number, message: string}[],
+   *   summary: {units: number, occupied: number, vacant: number, tenants: number},
+   *   units: object[], skipped: object[]}>}
+   */
+  async checkImport(csv) {
+    return apiClient.post('/properties/import', { csv, dryRun: true })
+  },
+
+  /**
+   * Create the units in a checked CSV and invite their tenants.
+   * @param {string} csv file contents
+   * @returns {Promise<{created: object[], skipped: object[], errors: object[]}>}
+   */
+  async importCsv(csv) {
+    return apiClient.post('/properties/import', { csv })
+  },
 }
 
 export default propertiesService

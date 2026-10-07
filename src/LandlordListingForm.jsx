@@ -43,6 +43,8 @@ function initialListingData(listing) {
     title: listing?.title || '',
     description: listing?.description || '',
     address: listing?.streetAddress || listing?.location || '',
+    // Unit within a building ("Apt 2B"); listings sharing an address group.
+    unitLabel: listing?.unitLabel || '',
     university: listing?.university || '',
     rent: listing?.price ?? '',
     // The deposit is not stored on the listing (the lease carries it); the
@@ -328,6 +330,7 @@ const LandlordListingForm = ({ listing = null, onSubmit, onBack }) => {
         location: listingData.address,
         // The server geocodes this so the listing gets a precise map pin.
         streetAddress: listingData.address,
+        unitLabel: listingData.unitLabel.trim() || null,
         university: listingData.university || null,
         moveInDate: listingData.availableFrom || null,
         moveOutDate: listingData.availableTo || null,
@@ -412,19 +415,49 @@ const LandlordListingForm = ({ listing = null, onSubmit, onBack }) => {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              Property Address
-            </label>
-            <input
-              type="text"
-              value={listingData.address}
-              onChange={e =>
-                setListingData(prev => ({ ...prev, address: e.target.value }))
-              }
-              placeholder="Full address including city and state"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
-            />
+          <div className="grid grid-cols-3 gap-4">
+            <div className="col-span-2">
+              <label className="block text-sm font-medium mb-2">
+                Property Address
+              </label>
+              <input
+                type="text"
+                value={listingData.address}
+                onChange={e =>
+                  setListingData(prev => ({
+                    ...prev,
+                    address: e.target.value,
+                  }))
+                }
+                placeholder="Full address including city and state"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="listing-unit"
+                className="block text-sm font-medium mb-2"
+              >
+                Unit (optional)
+              </label>
+              <input
+                id="listing-unit"
+                type="text"
+                value={listingData.unitLabel}
+                maxLength={40}
+                onChange={e =>
+                  setListingData(prev => ({
+                    ...prev,
+                    unitLabel: e.target.value,
+                  }))
+                }
+                placeholder="Apt 2B"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Units at the same address group as one building.
+              </p>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -1299,6 +1332,7 @@ LandlordListingForm.propTypes = {
     price: PropTypes.number,
     location: PropTypes.string,
     streetAddress: PropTypes.string,
+    unitLabel: PropTypes.string,
     university: PropTypes.string,
     moveInDate: PropTypes.string,
     moveOutDate: PropTypes.string,

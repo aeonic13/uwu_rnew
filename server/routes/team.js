@@ -6,13 +6,15 @@ import {
   sendTeamInviteEmail,
   sendTeamMemberJoinedEmail,
 } from '../utils/emailTeam.js'
+import { listPortfolios, canSelectPortfolio } from '../utils/portfolioScope.js'
 
 /**
  * Team access: co-owners and property managers on a landlord's portfolio.
  * The auth middleware turns an active membership into req.portfolioId, so
  * every owner route already scopes by the portfolio owner. This router
- * only manages the memberships themselves. Inviting and removing is for
- * the portfolio owner; a member can leave.
+ * manages the memberships themselves and which portfolio a multi-portfolio
+ * account is working (GET /portfolios, PUT /active). Inviting and removing
+ * is for the portfolio owner; a member can leave.
  */
 const router = express.Router()
 
@@ -55,12 +57,17 @@ router.get('/', authenticate, requireUserType('owner'), async (req, res) => {
       include: { user: { select: person } },
       orderBy: { createdAt: 'asc' },
     })
+    const activeMemberships = await prisma.portfolioMember.count({
+      where: { userId: req.user.id, status: 'active' },
+    })
     res.json({
       portfolio: {
         ownerId: req.portfolioId,
         ownerName: owner ? `${owner.firstName} ${owner.lastName}` : null,
         role: req.portfolioRole,
         isOwner,
+        // More than one portfolio to work: own + at least one membership.
+        canSwitch: activeMemberships > 0,
       },
       members: members.map(present),
     })
@@ -69,6 +76,74 @@ router.get('/', authenticate, requireUserType('owner'), async (req, res) => {
     res.status(500).json({ error: { message: 'Failed to load your team' } })
   }
 })
+
+/** The caller's active memberships with each owner's name, oldest first. */
+function activeMembershipsOf(userId) {
+  return prisma.portfolioMember.findMany({
+    where: { userId, status: 'active' },
+    select: { ownerId: true, role: true, owner: { select: person } },
+    orderBy: { acceptedAt: 'asc' },
+  })
+}
+
+/**
+ * GET /api/team/portfolios
+ * Every portfolio the caller can work (their own plus each active
+ * membership); `active` marks the one in effect for this request.
+ */
+router.get(
+  '/portfolios',
+  authenticate,
+  requireUserType('owner'),
+  async (req, res) => {
+    try {
+      const memberships = await activeMembershipsOf(req.user.id)
+      res.json({ portfolios: listPortfolios(req.user, memberships) })
+    } catch (error) {
+      console.error('List portfolios error:', error)
+      res
+        .status(500)
+        .json({ error: { message: 'Failed to load your portfolios' } })
+    }
+  }
+)
+
+/**
+ * PUT /api/team/active  body: { ownerId }
+ * Pick which portfolio the caller works. Persisted on the user, so every
+ * later request (any device) scopes to it until they switch again.
+ */
+router.put(
+  '/active',
+  authenticate,
+  requireUserType('owner'),
+  async (req, res) => {
+    try {
+      const ownerId = String(req.body?.ownerId || '').trim()
+      const memberships = await activeMembershipsOf(req.user.id)
+      if (!canSelectPortfolio(req.user, memberships, ownerId)) {
+        return res.status(400).json({
+          error: { message: 'That portfolio is not one you can work' },
+        })
+      }
+      await prisma.user.update({
+        where: { id: req.user.id },
+        data: { activePortfolioOwnerId: ownerId },
+      })
+      res.json({
+        portfolios: listPortfolios(
+          { ...req.user, activePortfolioOwnerId: ownerId },
+          memberships
+        ),
+      })
+    } catch (error) {
+      console.error('Set active portfolio error:', error)
+      res
+        .status(500)
+        .json({ error: { message: 'Failed to switch portfolios' } })
+    }
+  }
+)
 
 /**
  * POST /api/team/invite  body: { email, role }

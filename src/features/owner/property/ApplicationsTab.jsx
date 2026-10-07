@@ -71,7 +71,27 @@ export default function ApplicationsTab({ data, onRefresh }) {
     setBusyId(app.id)
     setError('')
     try {
-      await applicationsService.updateStatus(app.id, status)
+      try {
+        await applicationsService.updateStatus(app.id, status)
+      } catch (err) {
+        // Combined verified income is short of the listing's requirement:
+        // the landlord may still approve, but only on purpose.
+        if (err?.code !== 'INCOME_SHORT') throw err
+        const d = err.details || {}
+        const money = n => `$${Number(n || 0).toLocaleString()}/mo`
+        const ok = window.confirm(
+          `${err.message}
+
+Verified household income: ${money(d.effective)}
+Your requirement: ${money(d.required)}
+
+Approve anyway?`
+        )
+        if (!ok) return
+        await applicationsService.updateStatus(app.id, status, null, {
+          override: true,
+        })
+      }
       await onRefresh()
     } catch (err) {
       setError(err?.message || 'Could not update the application.')

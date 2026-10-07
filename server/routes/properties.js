@@ -14,7 +14,16 @@ import {
   collectedThisMonth,
 } from '../utils/portfolio.js'
 import { validateOnboarding } from '../utils/onboarding.js'
+import { shapeTenantNotice } from '../utils/agreements.js'
 import { summarizeItems } from '../utils/inspections.js'
+import {
+  parseCsv,
+  validateImportRows,
+  summarizeUnits,
+  listingTextFor,
+  MAX_IMPORT_ROWS,
+} from '../utils/importCsv.js'
+import { geocodeAddress } from '../utils/geocode.js'
 import { newInviteToken, emailInvite, presentInvite } from './tenantInvites.js'
 
 /**
@@ -257,6 +266,8 @@ router.get('/:id', authenticate, requireUserType('owner'), async (req, res) => {
         amendsId: ag.amendsId || null,
         amendmentId: ag.amendment?.id || null,
         amendmentNote: ag.amendmentNote || null,
+        // A tenant's notice to vacate awaiting the landlord's confirmation.
+        tenantNotice: shapeTenantNotice(ag),
         lateFee: ag.lateFeeAmount
           ? { amount: ag.lateFeeAmount, graceDays: ag.lateFeeGraceDays ?? 0 }
           : null,
@@ -337,6 +348,160 @@ router.get('/:id', authenticate, requireUserType('owner'), async (req, res) => {
     res.status(500).json({ error: { message: 'Failed to load property' } })
   }
 })
+
+/**
+ * Record an existing household's lease on a listing inside a transaction:
+ * the imported Agreement (landlord block signed, one unattached tenant block
+ * per person), one onboarded Application per tenant, the rent split for a
+ * household of two or more, and one TenantInvite each. Emails are the
+ * caller's job after the commit. `lease`, `tenants` and `split` are the
+ * normalised values validateOnboarding returns.
+ */
+export async function onboardHousehold({
+  tx,
+  listing,
+  lease,
+  tenants,
+  split,
+  owner,
+  portfolioId,
+  now = new Date(),
+}) {
+  const landlordName = `${owner.firstName} ${owner.lastName}`.trim()
+  const memberData = {
+    listingId: listing.id,
+    ownerId: portfolioId,
+    applicantId: null,
+    status: 'approved',
+    source: 'onboarded',
+    startDate: lease.startDate,
+    endDate: lease.endDate,
+    message: null,
+  }
+  // The lead application carries the Agreement's required applicationId;
+  // the rest are plain members.
+  const lead = await tx.application.create({ data: memberData })
+  const others = []
+  for (let i = 1; i < tenants.length; i += 1) {
+    others.push(await tx.application.create({ data: memberData }))
+  }
+  const memberApps = [lead, ...others]
+
+  const agreement = await tx.agreement.create({
+    data: {
+      applicationId: lead.id,
+      source: 'imported',
+      monthToMonth: lease.monthToMonth,
+      monthlyRent: lease.monthlyRent,
+      securityDeposit: lease.securityDeposit,
+      startDate: lease.startDate,
+      endDate: lease.endDate,
+      documentUrl: lease.documentUrl,
+      terms: {
+        importedLease: true,
+        attestedBy: landlordName,
+        attestedAt: now.toISOString(),
+        utilities: 'As stated in the signed lease.',
+        petPolicy: 'As stated in the signed lease.',
+      },
+      // The landlord attests to the terms now; each tenant block is
+      // confirmed when that tenant accepts their invite.
+      landlordSigned: true,
+      landlordSignedAt: now,
+      signers: {
+        create: [
+          ...memberApps.map(m => ({
+            role: 'tenant',
+            userId: null,
+            applicationId: m.id,
+          })),
+          {
+            role: 'landlord',
+            userId: portfolioId,
+            signed: true,
+            signedAt: now,
+            signatureName: landlordName,
+          },
+        ],
+      },
+    },
+    select: {
+      id: true,
+      monthlyRent: true,
+      securityDeposit: true,
+      startDate: true,
+      endDate: true,
+      monthToMonth: true,
+      signers: { select: { role: true } },
+    },
+  })
+  await tx.application.updateMany({
+    where: { id: { in: memberApps.map(m => m.id) } },
+    data: { agreementId: agreement.id },
+  })
+
+  // Households of two or more start on a split (equal, or the shares the
+  // landlord entered) so each tenant's Pay Rent shows their share, not the
+  // whole rent. Shares are named after the invites and attached to users
+  // as each tenant accepts.
+  if (tenants.length > 1) {
+    await tx.rentSplit.create({
+      data: {
+        agreementId: agreement.id,
+        createdById: owner.id,
+        total: lease.monthlyRent,
+        splitMode: split.mode,
+        shares: {
+          create: tenants.map((t, i) => ({
+            name: `${t.firstName} ${t.lastName}`,
+            amount: split.amounts[i],
+            userId: null,
+          })),
+        },
+      },
+    })
+  }
+
+  const invites = []
+  for (let i = 0; i < tenants.length; i += 1) {
+    invites.push(
+      await tx.tenantInvite.create({
+        data: {
+          ...newInviteToken(now.getTime()),
+          ...tenants[i],
+          listingId: listing.id,
+          ownerId: portfolioId,
+          agreementId: agreement.id,
+          applicationId: memberApps[i].id,
+        },
+      })
+    )
+  }
+  return { agreement, invites }
+}
+
+/**
+ * Send the invitation emails for a freshly committed household. Returns the
+ * public invite rows with each tenant's share and whether the mail went.
+ */
+async function emailHousehold(created, { owner, listing, split }) {
+  const emailed = []
+  for (let i = 0; i < created.invites.length; i += 1) {
+    const invite = created.invites[i]
+    const sent = await emailInvite(invite, {
+      owner,
+      listing,
+      agreement: created.agreement,
+      share: split.amounts[i],
+    })
+    emailed.push({
+      ...presentInvite(invite),
+      share: split.amounts[i],
+      emailSent: sent,
+    })
+  }
+  return emailed
+}
 
 /**
  * POST /api/properties/:id/onboard
@@ -448,136 +613,25 @@ router.post(
         })
       }
 
-      const landlordName = `${req.user.firstName} ${req.user.lastName}`.trim()
-      const created = await prisma.$transaction(async tx => {
-        const memberData = {
-          listingId: listing.id,
-          ownerId: req.portfolioId,
-          applicantId: null,
-          status: 'approved',
-          source: 'onboarded',
-          startDate: lease.startDate,
-          endDate: lease.endDate,
-          message: null,
-        }
-        // The lead application carries the Agreement's required
-        // applicationId; the rest are plain members.
-        const lead = await tx.application.create({ data: memberData })
-        const others = []
-        for (let i = 1; i < tenants.length; i += 1) {
-          others.push(await tx.application.create({ data: memberData }))
-        }
-        const memberApps = [lead, ...others]
-
-        const agreement = await tx.agreement.create({
-          data: {
-            applicationId: lead.id,
-            source: 'imported',
-            monthToMonth: lease.monthToMonth,
-            monthlyRent: lease.monthlyRent,
-            securityDeposit: lease.securityDeposit,
-            startDate: lease.startDate,
-            endDate: lease.endDate,
-            documentUrl: lease.documentUrl,
-            terms: {
-              importedLease: true,
-              attestedBy: landlordName,
-              attestedAt: now.toISOString(),
-              utilities: 'As stated in the signed lease.',
-              petPolicy: 'As stated in the signed lease.',
-            },
-            // The landlord attests to the terms now; each tenant block is
-            // confirmed when that tenant accepts their invite.
-            landlordSigned: true,
-            landlordSignedAt: now,
-            signers: {
-              create: [
-                ...memberApps.map(m => ({
-                  role: 'tenant',
-                  userId: null,
-                  applicationId: m.id,
-                })),
-                {
-                  role: 'landlord',
-                  userId: req.portfolioId,
-                  signed: true,
-                  signedAt: now,
-                  signatureName: landlordName,
-                },
-              ],
-            },
-          },
-          select: {
-            id: true,
-            monthlyRent: true,
-            securityDeposit: true,
-            startDate: true,
-            endDate: true,
-            monthToMonth: true,
-            signers: { select: { role: true } },
-          },
+      const created = await prisma.$transaction(tx =>
+        onboardHousehold({
+          tx,
+          listing,
+          lease,
+          tenants,
+          split,
+          owner: req.user,
+          portfolioId: req.portfolioId,
+          now,
         })
-        await tx.application.updateMany({
-          where: { id: { in: memberApps.map(m => m.id) } },
-          data: { agreementId: agreement.id },
-        })
-
-        // Households of two or more start on a split (equal, or the shares
-        // the landlord entered) so each tenant's Pay Rent shows their share,
-        // not the whole rent. Shares are named after the invites and
-        // attached to users as each tenant accepts.
-        if (tenants.length > 1) {
-          await tx.rentSplit.create({
-            data: {
-              agreementId: agreement.id,
-              createdById: req.user.id,
-              total: lease.monthlyRent,
-              splitMode: split.mode,
-              shares: {
-                create: tenants.map((t, i) => ({
-                  name: `${t.firstName} ${t.lastName}`,
-                  amount: split.amounts[i],
-                  userId: null,
-                })),
-              },
-            },
-          })
-        }
-
-        const invites = []
-        for (let i = 0; i < tenants.length; i += 1) {
-          invites.push(
-            await tx.tenantInvite.create({
-              data: {
-                ...newInviteToken(now.getTime()),
-                ...tenants[i],
-                listingId: listing.id,
-                ownerId: req.portfolioId,
-                agreementId: agreement.id,
-                applicationId: memberApps[i].id,
-              },
-            })
-          )
-        }
-        return { agreement, invites }
-      })
+      )
 
       // Emails after the commit so a mail failure never rolls back the lease.
-      const emailed = []
-      for (let i = 0; i < created.invites.length; i += 1) {
-        const invite = created.invites[i]
-        const sent = await emailInvite(invite, {
-          owner: req.user,
-          listing,
-          agreement: created.agreement,
-          share: split.amounts[i],
-        })
-        emailed.push({
-          ...presentInvite(invite),
-          share: split.amounts[i],
-          emailSent: sent,
-        })
-      }
+      const emailed = await emailHousehold(created, {
+        owner: req.user,
+        listing,
+        split,
+      })
 
       res.status(201).json({
         message: `Invitations sent to ${created.invites.length} tenant${
@@ -589,6 +643,265 @@ router.post(
     } catch (error) {
       console.error('Onboard tenants error:', error)
       res.status(500).json({ error: { message: 'Failed to add tenants' } })
+    }
+  }
+)
+
+const importKey = (address, unit) =>
+  `${String(address || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ')}|${String(unit || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ')}`
+
+/** Public shape of a validated import unit for the preview and results. */
+const presentUnit = u => ({
+  rows: u.rows,
+  address: u.address,
+  unit: u.unit,
+  location: u.location,
+  propertyType: u.propertyType,
+  bedrooms: u.bedrooms,
+  bathrooms: u.bathrooms,
+  rent: u.rent,
+  deposit: u.deposit,
+  occupied: u.occupied,
+  lease: u.lease
+    ? {
+        startDate: u.lease.startDate,
+        endDate: u.lease.endDate,
+        monthToMonth: u.lease.monthToMonth,
+      }
+    : null,
+  tenants: u.tenants.map((t, i) => ({
+    firstName: t.firstName,
+    lastName: t.lastName,
+    email: t.email,
+    share: u.split ? u.split.amounts[i] : null,
+  })),
+})
+
+/**
+ * Best-effort map pins for imported listings, after the response: one
+ * Nominatim lookup per distinct address, never failing the import.
+ */
+async function geocodeImported(listings) {
+  const byAddress = new Map()
+  for (const l of listings) {
+    if (!l.streetAddress) continue
+    if (!byAddress.has(l.streetAddress)) byAddress.set(l.streetAddress, [])
+    byAddress.get(l.streetAddress).push(l.id)
+  }
+  for (const [address, ids] of byAddress) {
+    try {
+      const coords = await geocodeAddress(address)
+      if (!coords) continue
+      await prisma.listing.updateMany({
+        where: { id: { in: ids } },
+        data: coords,
+      })
+    } catch (err) {
+      console.warn('Import geocode failed:', err?.message)
+    }
+  }
+}
+
+/**
+ * POST /api/properties/import
+ * Bulk-create units (and their current households) from a CSV. One row per
+ * tenant; rows sharing an address and unit are one household; a row with
+ * no tenant columns is a vacant, listed unit. Occupied units are created
+ * inactive and their household is onboarded exactly as POST /:id/onboard
+ * does, invites included.
+ *
+ * body: { csv: string, dryRun?: boolean }
+ * dryRun → { ok, errors: [{ row, message }], summary, units, skipped }
+ * import → { created: [{ listingId, address, unit, tenants }], skipped,
+ *            errors }
+ * Each unit is its own transaction so one failure never rolls back the
+ * rest; units that already exist for this owner (same address and unit)
+ * are skipped, not duplicated.
+ */
+router.post(
+  '/import',
+  authenticate,
+  requireUserType('owner'),
+  async (req, res) => {
+    try {
+      const now = new Date()
+      const { csv, dryRun } = req.body || {}
+      if (typeof csv !== 'string' || !csv.trim()) {
+        return res
+          .status(400)
+          .json({ error: { message: 'Paste or upload a CSV file first.' } })
+      }
+      if (csv.length > 2_000_000) {
+        return res.status(400).json({
+          error: {
+            message: 'That file is too large. Split it into smaller imports.',
+          },
+        })
+      }
+
+      const parsed = parseCsv(csv)
+      if (parsed.rows.length > MAX_IMPORT_ROWS) {
+        return res.status(400).json({
+          error: {
+            message: `The file has ${parsed.rows.length} rows; the limit is ${MAX_IMPORT_ROWS} per import.`,
+          },
+        })
+      }
+      const checked = validateImportRows(parsed.rows, {
+        ownerEmail: req.user.email,
+        now,
+      })
+      const errors = [...checked.errors]
+      let units = checked.units
+
+      // Tenants need tenant accounts: an address already used by a landlord
+      // or co-signer cannot accept an invite.
+      const emails = units.flatMap(u => u.tenants.map(t => t.email))
+      if (emails.length) {
+        const existing = await prisma.user.findMany({
+          where: { email: { in: emails }, userType: { not: 'student' } },
+          select: { email: true, userType: true },
+        })
+        for (const u of units) {
+          u.tenants.forEach((t, i) => {
+            const clash = existing.find(e => e.email === t.email)
+            if (!clash) return
+            errors.push({
+              row: u.rows[i] ?? u.rows[0],
+              message: `${t.email} belongs to a ${clash.userType === 'owner' ? 'landlord' : 'co-signer'} account on Rentra. Tenants need a tenant account; use a different email.`,
+            })
+          })
+        }
+        if (errors.length) units = []
+      }
+      errors.sort((a, b) => a.row - b.row)
+
+      // Units already on this portfolio are reported, never duplicated.
+      const owned = await prisma.listing.findMany({
+        where: { ownerId: req.portfolioId },
+        select: { id: true, streetAddress: true, unitLabel: true },
+      })
+      const ownedByKey = new Map(
+        owned.map(l => [importKey(l.streetAddress, l.unitLabel), l.id])
+      )
+      const skipped = []
+      const toCreate = []
+      for (const u of units) {
+        const existingId = ownedByKey.get(importKey(u.address, u.unit))
+        if (existingId) {
+          skipped.push({
+            rows: u.rows,
+            address: u.address,
+            unit: u.unit,
+            listingId: existingId,
+            reason: 'This unit is already on your portfolio.',
+          })
+        } else {
+          toCreate.push(u)
+        }
+      }
+
+      if (dryRun || errors.length) {
+        return res.json({
+          ok: errors.length === 0,
+          dryRun: true,
+          errors,
+          summary: summarizeUnits(toCreate),
+          units: toCreate.map(presentUnit),
+          skipped,
+          ...(dryRun ? {} : { created: [] }),
+        })
+      }
+
+      const created = []
+      const households = []
+      for (const u of toCreate) {
+        try {
+          const result = await prisma.$transaction(async tx => {
+            const listing = await tx.listing.create({
+              data: {
+                ...listingTextFor(u),
+                price: u.rent,
+                location: u.location,
+                streetAddress: u.address,
+                unitLabel: u.unit,
+                propertyType: u.propertyType,
+                bedrooms: u.bedrooms,
+                bathrooms: u.bathrooms,
+                amenities: [],
+                images: [],
+                ownerId: req.portfolioId,
+                // An occupied unit is not taking applications.
+                active: !u.occupied,
+              },
+              select: {
+                id: true,
+                title: true,
+                location: true,
+                streetAddress: true,
+                unitLabel: true,
+                images: true,
+                price: true,
+              },
+            })
+            if (!u.occupied) return { listing, household: null }
+            const household = await onboardHousehold({
+              tx,
+              listing,
+              lease: u.lease,
+              tenants: u.tenants,
+              split: u.split,
+              owner: req.user,
+              portfolioId: req.portfolioId,
+              now,
+            })
+            return { listing, household }
+          })
+          const entry = {
+            listingId: result.listing.id,
+            address: u.address,
+            unit: u.unit,
+            rows: u.rows,
+            occupied: u.occupied,
+            tenants: [],
+          }
+          created.push(entry)
+          if (result.household) households.push({ entry, result, u })
+        } catch (err) {
+          console.error('Import unit error:', err)
+          errors.push({
+            row: u.rows[0],
+            message: `Could not create ${
+              u.unit ? `${u.address}, Unit ${u.unit}` : u.address
+            }. Nothing from this unit was saved.`,
+          })
+        }
+      }
+
+      // Emails after each commit so a mail failure never rolls back a lease.
+      for (const { entry, result, u } of households) {
+        entry.tenants = await emailHousehold(result.household, {
+          owner: req.user,
+          listing: result.listing,
+          split: u.split,
+        })
+      }
+
+      res.status(201).json({ created, skipped, errors })
+
+      // Map pins are best effort and never hold up the import.
+      geocodeImported(
+        created.map(c => ({ id: c.listingId, streetAddress: c.address }))
+      ).catch(err => console.warn('Import geocode failed:', err?.message))
+    } catch (error) {
+      console.error('Import properties error:', error)
+      res.status(500).json({ error: { message: 'Failed to import units' } })
     }
   }
 )

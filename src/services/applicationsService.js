@@ -78,13 +78,30 @@ export const applicationsService = {
    * @param {string} applicationId - The application ID
    * @param {string} status - New status (pending, approved, rejected, cancelled)
    * @param {string} message - Optional status message
+   * @param {{ override?: boolean }} [options] - `override: true` approves a
+   *   household whose combined income is below the listing's requirement.
    * @returns {Promise<{message: string, application: object}>}
+   * @throws {Error & { code?: string, details?: object }} A 409 with
+   *   `code: 'INCOME_SHORT'` and `details: { required, effective }` is
+   *   rethrown with those fields so the caller can confirm and retry.
    */
-  async updateStatus(applicationId, status, message = null) {
-    return apiClient.put(`/applications/${applicationId}/status`, {
-      status,
-      message,
-    })
+  async updateStatus(applicationId, status, message = null, options = {}) {
+    const body = { status, message }
+    if (options.override === true) body.override = true
+    // Let the income-short 409 through the interceptor (which would strip
+    // the code) so we can attach it to the thrown error.
+    const res = await apiClient.put(
+      `/applications/${applicationId}/status`,
+      body,
+      { validateStatus: s => (s >= 200 && s < 300) || s === 409 }
+    )
+    if (res?.error) {
+      const err = new Error(res.error.message || 'Could not update status')
+      err.code = res.error.code
+      err.details = res.error.details
+      throw err
+    }
+    return res
   },
 
   /**

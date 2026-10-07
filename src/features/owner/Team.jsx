@@ -11,6 +11,7 @@ import {
 import { teamService } from '../../services/teamService'
 import { useAuth } from '../../contexts/AuthContext'
 import { shortDate } from './property/statusMeta'
+import PortfolioSwitcher from './PortfolioSwitcher'
 
 const ROLE_LABEL = { manager: 'Property manager', co_owner: 'Co-owner' }
 
@@ -114,15 +115,18 @@ export default function Team() {
         <ArrowLeft size={18} className="mr-1" /> Dashboard
       </button>
 
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold flex items-center gap-2">
-          <Users size={22} className="text-brand-500" /> Team
-        </h2>
-        <p className="text-gray-600">
-          People who can work this portfolio with you. They see every property,
-          applicant, lease, ledger, ticket and document; leases are still signed
-          by the owner.
-        </p>
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-2xl font-bold flex items-center gap-2">
+            <Users size={22} className="text-brand-500" /> Team
+          </h2>
+          <p className="text-gray-600">
+            People who can work this portfolio with you. They see every
+            property, applicant, lease, ledger, ticket and document; leases are
+            still signed by the owner.
+          </p>
+        </div>
+        <PortfolioSwitcher />
       </div>
 
       {error && (

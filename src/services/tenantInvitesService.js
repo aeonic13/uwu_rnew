@@ -26,9 +26,12 @@ export const tenantInvitesService = {
     return apiClient.post(`/tenant-invites/accept/${token}`, payload)
   },
 
-  /** Public: decline the invitation. */
-  async decline(token) {
-    return apiClient.post(`/tenant-invites/decline/${token}`)
+  /** Public: decline the invitation, optionally telling the landlord why. */
+  async decline(token, reason) {
+    return apiClient.post(
+      `/tenant-invites/decline/${token}`,
+      reason ? { reason } : {}
+    )
   },
 
   /** Owner: re-send with a fresh 14-day link. */

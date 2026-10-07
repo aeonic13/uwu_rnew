@@ -296,6 +296,25 @@ function AgreementView() {
                 View the lease it amends
               </button>
             </p>
+            {agreement.rentIncreaseNoticeDays && (
+              <p className="mt-2">
+                <span className="text-gray-500">Rent increase:</span> this
+                amendment raises the rent and serves as{' '}
+                {agreement.rentIncreaseNoticeDays} days&apos; written notice of
+                the change.
+              </p>
+            )}
+            {agreement.removedTenantIds?.length > 0 && (
+              <p className="mt-2">
+                <span className="text-gray-500">Household change:</span>{' '}
+                {agreement.removedTenantIds.length === 1
+                  ? 'one tenant leaves'
+                  : `${agreement.removedTenantIds.length} tenants leave`}{' '}
+                the lease on the effective date and{' '}
+                {agreement.removedTenantIds.length === 1 ? 'does' : 'do'} not
+                sign this amendment.
+              </p>
+            )}
             {agreement.amendmentNote && (
               <p className="mt-2">
                 <span className="text-gray-500">Note from the landlord:</span>{' '}

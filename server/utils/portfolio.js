@@ -137,6 +137,8 @@ export function summarizeProperty(listing, now = new Date()) {
     title: listing.title,
     location: listing.location,
     streetAddress: listing.streetAddress || null,
+    // Unit within a building; cards that share a streetAddress group under it.
+    unitLabel: listing.unitLabel || null,
     price: listing.price,
     bedrooms: listing.bedrooms,
     bathrooms: listing.bathrooms,

@@ -113,47 +113,51 @@ model User {
   updatedAt        DateTime  @updatedAt
 
   // Relations
-  listings              Listing[]
-  sentApplications      Application[]        @relation("ApplicantApplications")
-  receivedApplications  Application[]        @relation("OwnerApplications")
-  sentMessages          Message[]            @relation("SentMessages")
-  conversationUsers     ConversationUser[]
-  transactions          Transaction[]
-  favorites             Favorite[]
-  reviews               Review[]             @relation("ReviewAuthor")
-  receivedReviews       Review[]             @relation("ReviewSubject")
-  cosignedApplications  Cosigner[]           @relation("CosignerUser")
-  cosignersForTenant    Cosigner[]           @relation("TenantUser")
-  housemateProfile      HousemateProfile?
-  maintenanceTickets    MaintenanceTicket[]  @relation("TenantTickets")
-  createdGroups         Group[]              @relation("GroupCreator")
-  groupMemberships      GroupMember[]
-  groupMessages         GroupMessage[]       @relation("GroupMessages")
-  utilityBills          UtilityBill[]        @relation("UtilityBills")
-  utilityShares         UtilityBillShare[]   @relation("UtilityShares")
-  rentSplits            RentSplit[]          @relation("RentSplitCreator")
-  rentSplitShares       RentSplitShare[]     @relation("RentSplitShares")
-  autopaySchedules      AutopaySchedule[]
-  policyAcceptances     PolicyAcceptance[]
-  agreementSignatures   AgreementSigner[]    @relation("AgreementSignatures")
-  screeningReports      ScreeningReport[]
-  securityDeposits      SecurityDeposit[]    @relation("OwnerDeposits")
-  expenses              Expense[]
-  documents             Document[]
-  savedSearches         SavedSearch[]
-  tenantInvitesSent     TenantInvite[]       @relation("TenantInvitesSent")
-  tenantInvitesAccepted TenantInvite[]       @relation("TenantInvitesAccepted")
-  blocksGiven           UserBlock[]          @relation("BlocksGiven")
-  blocksReceived        UserBlock[]          @relation("BlocksReceived")
-  reportsFiled          UserReport[]         @relation("ReportsFiled")
-  reportsReceived       UserReport[]         @relation("ReportsReceived")
-  rentChargesOwed       RentCharge[]         @relation("RentChargesOwed")
-  rentChargesCreated    RentCharge[]         @relation("RentChargesCreated")
-  inspections           Inspection[]         @relation("OwnerInspections")
-  maintenanceComments   MaintenanceComment[] @relation("MaintenanceComments")
-  notifications         Notification[]
-  portfolioMembers      PortfolioMember[]    @relation("PortfolioOwner")
-  portfolioMemberships  PortfolioMember[]    @relation("PortfolioMemberships")
+  listings               Listing[]
+  sentApplications       Application[]        @relation("ApplicantApplications")
+  receivedApplications   Application[]        @relation("OwnerApplications")
+  sentMessages           Message[]            @relation("SentMessages")
+  conversationUsers      ConversationUser[]
+  transactions           Transaction[]
+  favorites              Favorite[]
+  reviews                Review[]             @relation("ReviewAuthor")
+  receivedReviews        Review[]             @relation("ReviewSubject")
+  cosignedApplications   Cosigner[]           @relation("CosignerUser")
+  cosignersForTenant     Cosigner[]           @relation("TenantUser")
+  housemateProfile       HousemateProfile?
+  maintenanceTickets     MaintenanceTicket[]  @relation("TenantTickets")
+  createdGroups          Group[]              @relation("GroupCreator")
+  groupMemberships       GroupMember[]
+  groupMessages          GroupMessage[]       @relation("GroupMessages")
+  utilityBills           UtilityBill[]        @relation("UtilityBills")
+  utilityShares          UtilityBillShare[]   @relation("UtilityShares")
+  rentSplits             RentSplit[]          @relation("RentSplitCreator")
+  rentSplitShares        RentSplitShare[]     @relation("RentSplitShares")
+  autopaySchedules       AutopaySchedule[]
+  policyAcceptances      PolicyAcceptance[]
+  agreementSignatures    AgreementSigner[]    @relation("AgreementSignatures")
+  screeningReports       ScreeningReport[]
+  securityDeposits       SecurityDeposit[]    @relation("OwnerDeposits")
+  expenses               Expense[]
+  documents              Document[]
+  savedSearches          SavedSearch[]
+  tenantInvitesSent      TenantInvite[]       @relation("TenantInvitesSent")
+  tenantInvitesAccepted  TenantInvite[]       @relation("TenantInvitesAccepted")
+  blocksGiven            UserBlock[]          @relation("BlocksGiven")
+  blocksReceived         UserBlock[]          @relation("BlocksReceived")
+  reportsFiled           UserReport[]         @relation("ReportsFiled")
+  reportsReceived        UserReport[]         @relation("ReportsReceived")
+  rentChargesOwed        RentCharge[]         @relation("RentChargesOwed")
+  rentChargesCreated     RentCharge[]         @relation("RentChargesCreated")
+  inspections            Inspection[]         @relation("OwnerInspections")
+  maintenanceComments    MaintenanceComment[] @relation("MaintenanceComments")
+  notifications          Notification[]
+  portfolioMembers       PortfolioMember[]    @relation("PortfolioOwner")
+  portfolioMemberships   PortfolioMember[]    @relation("PortfolioMemberships")
+  // Which portfolio an owner-type account is working right now when they
+  // belong to several (their own, or one they manage). Null = default rule
+  // in middleware/authenticate.js. Validated on every request.
+  activePortfolioOwnerId String?
 
   @@index([email])
   @@index([userType])
@@ -190,6 +194,9 @@ model Listing {
   // Exact street address (optional). Geocoded on save; coordinates feed the
   // Browse map. Listings without one are pinned at their neighborhood center.
   streetAddress     String?
+  // Unit within a multi-unit building ("Apt 2B", "Unit 3"). Listings that
+  // share a streetAddress are grouped as one building on the dashboard.
+  unitLabel         String?
   latitude          Float?
   longitude         Float?
   university        String?
@@ -489,6 +496,21 @@ model Agreement {
   lateFeeAmount    Int?
   lateFeeGraceDays Int?
 
+  // A tenant gave notice to vacate (POST /agreements/:id/notice). The lease
+  // keeps running until the landlord confirms the move-out with /end, which
+  // then stamps endedAt; these fields just record who asked, when and why.
+  tenantNoticeAt         DateTime?
+  tenantNoticeMoveOut    DateTime?
+  tenantNoticeById       String?
+  tenantNoticeReason     String?
+  // Tenants on the amended lease who are NOT on this amendment (they move
+  // out on the effective date). Lets the sign route skip their autopay and
+  // the emails say who left.
+  removedTenantIds       String[]  @default([])
+  // Set on an amendment that raises rent: the statutory notice (days) the
+  // effective date had to honor, so the document can cite it.
+  rentIncreaseNoticeDays Int?
+
   charges     RentCharge[]
   inspections Inspection[]
 }
@@ -612,6 +634,8 @@ model TenantInvite {
   // When the day-7 reminder went out (utils/tenantInviteRunner.js); reset
   // on resend so the fresh link gets its own reminder.
   reminderSentAt DateTime?
+  // Optional free-text reason the tenant gave when declining.
+  declineReason  String?
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
 

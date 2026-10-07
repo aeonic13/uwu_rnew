@@ -103,12 +103,20 @@ export const paymentsService = {
   },
 
   /** Landlord records an offline rent payment (cash/check) on a lease. */
-  recordPayment: async ({ applicationId, amount, paymentMethod, note }) => {
+  recordPayment: async ({
+    applicationId,
+    amount,
+    paymentMethod,
+    note,
+    paidOn,
+  }) => {
     return api.post('/payments/record', {
       applicationId,
       amount,
       paymentMethod,
       note,
+      // Optional YYYY-MM-DD; backfills a past payment at that date.
+      paidOn,
     })
   },
 

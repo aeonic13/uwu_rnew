@@ -1,5 +1,6 @@
 import { verifyToken, extractTokenFromHeader } from '../utils/auth.js'
 import prisma from '../utils/prisma.js'
+import { resolvePortfolio } from '../utils/portfolioScope.js'
 
 /**
  * Middleware to authenticate requests using JWT
@@ -42,6 +43,7 @@ export async function authenticate(req, res, next) {
         university: true,
         verified: true,
         avatarUrl: true,
+        activePortfolioOwnerId: true,
       },
     })
 
@@ -59,19 +61,21 @@ export async function authenticate(req, res, next) {
     // Owner routes act on a portfolio. A landlord works their own; an
     // active team member (routes/team.js) works the owner's portfolio, so
     // every owner-scoped query uses req.portfolioId instead of req.user.id.
+    // With several portfolios, User.activePortfolioOwnerId (set by
+    // PUT /api/team/active) picks one; a stale choice falls back to the
+    // oldest membership, then their own (utils/portfolioScope.js).
     // Personal things (signing, messages, who-did-it fields) keep req.user.id.
     req.portfolioId = user.id
     req.portfolioRole = 'owner'
     if (user.userType === 'owner') {
-      const membership = await prisma.portfolioMember.findFirst({
+      const memberships = await prisma.portfolioMember.findMany({
         where: { userId: user.id, status: 'active' },
         select: { ownerId: true, role: true },
         orderBy: { acceptedAt: 'asc' },
       })
-      if (membership) {
-        req.portfolioId = membership.ownerId
-        req.portfolioRole = membership.role
-      }
+      const scope = resolvePortfolio(user, memberships)
+      req.portfolioId = scope.portfolioId
+      req.portfolioRole = scope.portfolioRole
     }
 
     next()

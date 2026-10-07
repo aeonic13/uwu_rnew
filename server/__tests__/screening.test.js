@@ -4,6 +4,7 @@ import {
   assessCombinedIncome,
   DEFAULT_INCOME_MULTIPLIER,
   sanitizeScreeningCriteria,
+  householdIncomeDecision,
 } from '../utils/screening.js'
 
 describe('assessIncome', () => {
@@ -98,5 +99,50 @@ describe('sanitizeScreeningCriteria', () => {
     expect(sanitizeScreeningCriteria(null)).toBeNull()
     expect(sanitizeScreeningCriteria('680')).toBeNull()
     expect(sanitizeScreeningCriteria([680])).toBeNull()
+  })
+})
+
+describe('householdIncomeDecision', () => {
+  it('passes when the members together clear the multiple', () => {
+    const d = householdIncomeDecision(
+      [{ monthlyIncome: 3000 }, { monthlyIncome: 3000 }],
+      2000,
+      3
+    )
+    expect(d.short).toBe(false)
+    expect(d.required).toBe(6000)
+    expect(d.effective).toBe(6000)
+  })
+
+  it('is short when combined income misses the multiple', () => {
+    const d = householdIncomeDecision(
+      [{ monthlyIncome: 2500 }, { monthlyIncome: 2000 }],
+      2000,
+      3
+    )
+    expect(d.short).toBe(true)
+    expect(d.effective).toBe(4500)
+  })
+
+  it('counts an accepted cosigner and a voucher', () => {
+    const d = householdIncomeDecision(
+      [{ monthlyIncome: 1000, cosignerIncome: 2000, voucherAmount: 1000 }],
+      2000,
+      3
+    )
+    // Tenant share is $1,000 after the voucher, so $3,000 is required.
+    expect(d.required).toBe(3000)
+    expect(d.effective).toBe(3000)
+    expect(d.short).toBe(false)
+  })
+
+  it('treats unverified income as short', () => {
+    const d = householdIncomeDecision([{}], 1500, 3)
+    expect(d.short).toBe(true)
+    expect(d.effective).toBe(0)
+  })
+
+  it('is never short when there is no rent to qualify for', () => {
+    expect(householdIncomeDecision([{}], 0, 3).short).toBe(false)
   })
 })

@@ -938,10 +938,22 @@ export async function sendTenantInviteAccepted({
 export async function sendTenantInviteDeclined({ owner, invite, listing }) {
   const name = `${invite.firstName} ${invite.lastName}`.trim()
   const url = `${process.env.CLIENT_URL}/dashboard/properties/${listing.id}/tenants`
+  // The reason is tenant-typed free text: escape it before it hits HTML.
+  const reason = String(invite.declineReason || '').trim()
+  const safeReason = reason
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
   const html = wrap(`
       <h2 style="color: ${BRAND};">${name} declined the invitation</h2>
       <p>Hi ${owner.firstName},</p>
       <p><strong>${name}</strong> (${invite.email}) declined your invitation to join <strong>${listing.title}</strong> on Rentra.</p>
+      ${
+        reason
+          ? `<div style="background: #f9fafb; padding: 15px; border-radius: 6px; margin: 20px 0;"><strong>Their reason:</strong><br>${safeReason}</div>`
+          : ''
+      }
       <p>If the email was wrong you can correct it and resend from the property's Tenants tab, or remove them from the household.</p>
       ${button(url, 'Open the property')}
     `)
@@ -953,7 +965,7 @@ export async function sendTenantInviteDeclined({ owner, invite, listing }) {
     },
     subject: `${name} declined your tenant invitation for ${listing.title}`,
     html,
-    text: `Hi ${owner.firstName}, ${name} (${invite.email}) declined your invitation to join ${listing.title} on Rentra. Fix the email and resend, or remove them, from ${url}`,
+    text: `Hi ${owner.firstName}, ${name} (${invite.email}) declined your invitation to join ${listing.title} on Rentra.${reason ? ` Their reason: ${reason}.` : ''} Fix the email and resend, or remove them, from ${url}`,
   })
 }
 

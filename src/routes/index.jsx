@@ -101,6 +101,9 @@ const OnboardTenantsFlow = lazy(
 const LandlordListingForm = lazy(
   () => import('../features/owner/LandlordListingForm')
 )
+const ImportProperties = lazy(
+  () => import('../features/owner/ImportProperties')
+)
 const RentCollection = lazy(() => import('../features/owner/RentCollection'))
 const SecurityDeposits = lazy(
   () => import('../features/owner/SecurityDeposits')
@@ -726,6 +729,7 @@ const routeConfig = [
           path: '/dashboard/properties/:id/:tab',
           Component: PropertyWorkspace,
         },
+        { path: '/dashboard/import', Component: ImportProperties },
         { path: '/dashboard/rent-collection', Component: RentCollection },
         { path: '/dashboard/security-deposits', Component: SecurityDeposits },
         { path: '/dashboard/banking', Component: Bookkeeping },
@@ -746,14 +750,13 @@ const routeConfig = [
           </ProtectedRoute>
         ),
       })),
+      // The Inbox is the approvals workspace; old links land there.
+      {
+        path: '/dashboard/approvals',
+        element: <Navigate to="/dashboard/inbox" replace />,
+      },
       // Gated owner screens (P0-3): honest Coming Soon instead of mock data.
       ...[
-        {
-          path: '/dashboard/approvals',
-          title: 'Approvals Center',
-          description:
-            'Approve or reject applicants from your Inbox today — a dedicated approvals workspace is coming.',
-        },
         {
           path: '/dashboard/disputes',
           title: 'Dispute Resolution',

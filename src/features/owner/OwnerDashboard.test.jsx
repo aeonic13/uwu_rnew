@@ -127,6 +127,63 @@ describe('OwnerDashboard (portfolio)', () => {
     ).toBeInTheDocument()
   })
 
+  it('links to the CSV import next to Add property', async () => {
+    propertiesService.getPortfolio.mockResolvedValue(portfolio)
+    renderPage()
+    await screen.findByText('Beachside 2BR')
+    expect(
+      screen.getByRole('link', { name: /import units & tenants \(csv\)/i })
+    ).toHaveAttribute('href', '/dashboard/import')
+  })
+
+  it('groups units at one address under a building header', async () => {
+    const building = [
+      {
+        ...portfolio.properties[0],
+        id: 'u1',
+        title: '1245 Grand Ave · Unit 1A',
+        unitLabel: '1A',
+        status: 'leased',
+        monthlyRent: 1800,
+      },
+      {
+        ...portfolio.properties[0],
+        id: 'u2',
+        title: '1245 Grand Ave · Unit 1B',
+        unitLabel: '1B',
+        status: 'listed',
+        monthlyRent: 1900,
+        tenants: 0,
+        openTickets: 0,
+        leaseEnd: null,
+      },
+    ]
+    propertiesService.getPortfolio.mockResolvedValue({
+      properties: [...building, portfolio.properties[1]],
+      totals: { ...portfolio.totals, properties: 3 },
+    })
+    renderPage()
+
+    const header = await screen.findByTestId('building-u1')
+    expect(header).toHaveTextContent('1245 Grand Ave, San Diego, CA 92109')
+    expect(header).toHaveTextContent('2 units · 1 leased · 1 listed')
+    expect(header).toHaveTextContent('$1,800/mo')
+    expect(
+      screen.getByRole('link', { name: /add another unit/i })
+    ).toHaveAttribute('href', '/dashboard/listings/new?cloneFrom=u1')
+    // Cards inside the building are named by unit; the single one by title.
+    expect(screen.getByText('1A')).toBeInTheDocument()
+    expect(screen.getByText('1B')).toBeInTheDocument()
+    expect(screen.queryByText('1245 Grand Ave · Unit 1A')).toBeNull()
+    expect(screen.getByText('Hillcrest Studio')).toBeInTheDocument()
+    expect(screen.queryByTestId('building-l2')).toBeNull()
+
+    // Filtering to listed units leaves one, so the building header goes.
+    fireEvent.click(screen.getByRole('button', { name: /^listed$/i }))
+    expect(screen.queryByTestId('building-u1')).toBeNull()
+    expect(screen.getByText('1245 Grand Ave · Unit 1B')).toBeInTheDocument()
+  })
+
   it('surfaces a load error', async () => {
     propertiesService.getPortfolio.mockRejectedValue(new Error('Server down'))
     renderPage()

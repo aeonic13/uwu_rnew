@@ -23,6 +23,21 @@ export const teamService = {
     return apiClient.post('/team/leave')
   },
 
+  /**
+   * Every portfolio the caller can work (own + active memberships) as
+   * `[{ ownerId, ownerName, role, isOwn, active }]`.
+   */
+  async portfolios() {
+    const res = await apiClient.get('/team/portfolios')
+    return res.portfolios
+  },
+
+  /** Make `ownerId` the working portfolio; returns the updated list. */
+  async setActive(ownerId) {
+    const res = await apiClient.put('/team/active', { ownerId })
+    return res.portfolios
+  },
+
   /** Public: who is inviting, for the accept page. */
   async getInvitation(token) {
     const res = await apiClient.get(`/team/invitation/${token}`)

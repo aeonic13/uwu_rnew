@@ -16,10 +16,12 @@ import {
   Power,
   UserPlus,
   ClipboardCheck,
+  Plus,
 } from 'lucide-react'
 import { propertiesService } from '../../services/propertiesService'
 import { listingsService } from '../../services/listingsService'
 import { statusMeta, money } from './property/statusMeta'
+import { cloneUnitPath } from './buildings'
 import OverviewTab from './property/OverviewTab'
 import TenantsTab from './property/TenantsTab'
 import ApplicationsTab from './property/ApplicationsTab'
@@ -194,6 +196,11 @@ export default function PropertyWorkspace() {
                     {property.streetAddress
                       ? `${property.streetAddress}`
                       : property.location}
+                    {property.unitLabel && (
+                      <span className="ml-1 inline-flex items-center rounded-full bg-gray-100 text-gray-700 px-2 py-0.5 text-xs font-medium">
+                        Unit {property.unitLabel}
+                      </span>
+                    )}
                   </p>
                   <p className="flex items-center gap-3 text-sm text-gray-600 mt-2">
                     <span className="flex items-center gap-1">
@@ -233,6 +240,15 @@ export default function PropertyWorkspace() {
                 >
                   <Pencil size={13} /> Edit listing
                 </Link>
+                {property.streetAddress && (
+                  <Link
+                    to={cloneUnitPath(property.id)}
+                    title="Create another unit at this address, prefilled from this one"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 rounded-lg text-xs font-medium text-gray-700 hover:border-brand-500 hover:text-brand-600"
+                  >
+                    <Plus size={13} /> Add another unit
+                  </Link>
+                )}
                 <Link
                   to={`/listings/${property.id}`}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 rounded-lg text-xs font-medium text-gray-700 hover:border-brand-500 hover:text-brand-600"

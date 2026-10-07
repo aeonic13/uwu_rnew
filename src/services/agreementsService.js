@@ -100,6 +100,19 @@ export const agreementsService = {
     const res = await apiClient.post(`/agreements/${id}/amend`, body)
     return res.agreement
   },
+
+  /**
+   * Tenant gives notice to vacate. The lease keeps running until the
+   * landlord confirms the move-out; returns the lease with `tenantNotice`.
+   */
+  async giveNotice(id, { moveOutDate, reason, message }) {
+    const res = await apiClient.post(`/agreements/${id}/notice`, {
+      moveOutDate,
+      reason,
+      message,
+    })
+    return res.agreement
+  },
 }
 
 const EXT_BY_TYPE = {

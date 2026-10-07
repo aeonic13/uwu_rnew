@@ -57,6 +57,8 @@ export default function TenantInviteAccept() {
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState(null)
   const [declined, setDeclined] = useState(false)
+  const [declining, setDeclining] = useState(false)
+  const [declineReason, setDeclineReason] = useState('')
 
   useEffect(() => {
     let active = true
@@ -141,18 +143,16 @@ export default function TenantInviteAccept() {
     }
   }
 
+  // Declining is a two-step: the buttons below open a small panel where the
+  // tenant can (optionally) say why, then confirm.
   const handleDecline = async () => {
-    if (
-      !window.confirm(
-        'Decline this invitation? Your landlord will be told and can resend it if this was a mistake.'
-      )
-    ) {
-      return
-    }
     setSubmitting(true)
     setSubmitError(null)
     try {
-      await tenantInvitesService.decline(token)
+      await tenantInvitesService.decline(
+        token,
+        declineReason.trim() || undefined
+      )
       setDeclined(true)
     } catch (err) {
       setSubmitError(err.message || 'Could not decline the invitation')
@@ -285,7 +285,7 @@ export default function TenantInviteAccept() {
             </p>
             <button
               type="button"
-              onClick={handleDecline}
+              onClick={() => setDeclining(true)}
               disabled={submitting}
               className="mt-4 text-sm text-gray-500 underline"
             >
@@ -445,13 +445,63 @@ export default function TenantInviteAccept() {
             </button>
             <button
               type="button"
-              onClick={handleDecline}
+              onClick={() => setDeclining(true)}
               disabled={submitting}
               className="w-full py-2.5 text-gray-500 rounded-lg font-medium disabled:opacity-60"
             >
               This isn&apos;t right — decline
             </button>
           </form>
+        )}
+
+        {declining && (
+          <div className="bg-white rounded-2xl border p-6 space-y-3">
+            <h2 className="font-semibold text-gray-900">
+              Decline this invitation?
+            </h2>
+            <p className="text-sm text-gray-600">
+              {landlord.name} will be told and can resend it if this was a
+              mistake.
+            </p>
+            <div>
+              <label
+                htmlFor="decline-reason"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Tell your landlord why (optional)
+              </label>
+              <textarea
+                id="decline-reason"
+                rows={3}
+                maxLength={500}
+                value={declineReason}
+                onChange={e => setDeclineReason(e.target.value)}
+                placeholder="e.g. Wrong email, or I'm no longer on this lease"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+              />
+            </div>
+            {submitError && (
+              <p className="text-sm text-red-600">{submitError}</p>
+            )}
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setDeclining(false)}
+                disabled={submitting}
+                className="flex-1 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium disabled:opacity-60"
+              >
+                Go back
+              </button>
+              <button
+                type="button"
+                onClick={handleDecline}
+                disabled={submitting}
+                className="flex-1 py-2.5 bg-gray-900 text-white rounded-lg font-medium disabled:opacity-60"
+              >
+                {submitting ? 'Declining…' : 'Decline invitation'}
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>

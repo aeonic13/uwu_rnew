@@ -116,3 +116,44 @@ export function sanitizeScreeningCriteria(input) {
 
   return Object.keys(out).length ? out : null
 }
+
+/**
+ * Should approving this household need an explicit landlord override?
+ *
+ * Each member's effective income is their verified monthly income plus an
+ * accepted cosigner's verified income (the same math the Inbox shows);
+ * vouchers reduce the rent the household must qualify for. "Short" means
+ * there is a requirement (rent > 0) and the household is below it —
+ * unverified income counts as $0, so it is short too.
+ *
+ * @param {Array<{ monthlyIncome?: number, cosignerIncome?: number, voucherAmount?: number }>} members
+ * @param {number} monthlyRent
+ * @param {number} [multiplier]
+ * @returns {{ short: boolean, required: number, effective: number, assessment: object }}
+ */
+export function householdIncomeDecision(
+  members,
+  monthlyRent,
+  multiplier = DEFAULT_INCOME_MULTIPLIER
+) {
+  const list = Array.isArray(members) ? members : []
+  const incomes = list.map(
+    m => (Number(m?.monthlyIncome) || 0) + (Number(m?.cosignerIncome) || 0)
+  )
+  const voucher = list.reduce(
+    (sum, m) => sum + (Number(m?.voucherAmount) || 0),
+    0
+  )
+  const assessment = assessCombinedIncome(
+    incomes,
+    monthlyRent,
+    multiplier,
+    voucher
+  )
+  return {
+    short: assessment.requiredIncome > 0 && !assessment.meetsRequirement,
+    required: assessment.requiredIncome,
+    effective: assessment.monthlyIncome,
+    assessment,
+  }
+}

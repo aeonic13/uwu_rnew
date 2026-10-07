@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import PropTypes from 'prop-types'
-import { CalendarX, RefreshCw, FileEdit, X } from 'lucide-react'
+import { CalendarX, RefreshCw, FileEdit, X, LogOut } from 'lucide-react'
 import { agreementsService } from '../../../services/agreementsService'
 import { money, shortDate } from './statusMeta'
 
@@ -24,6 +24,25 @@ const addMonths = (value, months) => {
   d.setUTCMonth(d.getUTCMonth() + months)
   d.setUTCDate(d.getUTCDate() - 1)
   return d.toISOString().slice(0, 10)
+}
+
+const NOTICE_REASON_LABEL = {
+  moving: 'moving away',
+  end_of_term: 'leaving at the end of the term',
+  buying: 'bought a home',
+  cost: 'cost',
+}
+
+/**
+ * Mirrors utils/agreements.js rentIncreaseNotice for the form hint: null
+ * when rent does not rise, else { percent, days }.
+ */
+export function rentIncreaseHint(currentRent, newRent) {
+  const from = Number(currentRent) || 0
+  const to = Number(newRent) || 0
+  if (!(to > from) || from <= 0) return null
+  const percent = Math.round(((to - from) / from) * 1000) / 10
+  return { percent, days: percent > 10 ? 90 : 30 }
 }
 
 function Modal({ title, onClose, children }) {
@@ -63,11 +82,16 @@ const field =
 
 /** Give notice: the lease ends on the move-out date. */
 export function EndLeaseModal({ lease, onClose, onDone }) {
+  const notice = lease.tenantNotice || null
   const [moveOutDate, setMoveOutDate] = useState(() =>
-    lease.monthToMonth ? addDays(new Date(), 30) : toInput(lease.endDate)
+    notice?.moveOutDate
+      ? toInput(notice.moveOutDate)
+      : lease.monthToMonth
+        ? addDays(new Date(), 30)
+        : toInput(lease.endDate)
   )
   const [reason, setReason] = useState(
-    lease.monthToMonth ? 'move_out' : 'nonrenewal'
+    notice ? 'move_out' : lease.monthToMonth ? 'move_out' : 'nonrenewal'
   )
   const [relist, setRelist] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -91,8 +115,21 @@ export function EndLeaseModal({ lease, onClose, onDone }) {
   }
 
   return (
-    <Modal title="End this lease" onClose={onClose}>
+    <Modal
+      title={notice ? 'Confirm the move-out' : 'End this lease'}
+      onClose={onClose}
+    >
       <form onSubmit={submit} className="space-y-4">
+        {notice && (
+          <p className="text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+            {notice.byName || 'A tenant'} gave notice on {shortDate(notice.at)}{' '}
+            to move out {shortDate(notice.moveOutDate)}
+            {notice.reason && notice.reason !== 'other'
+              ? ` (${NOTICE_REASON_LABEL[notice.reason] || notice.reason})`
+              : ''}
+            {notice.message ? `: “${notice.message}”` : '.'}
+          </p>
+        )}
         <p className="text-sm text-gray-600">
           Sets the date this lease ends. Every tenant is emailed, and the
           security deposit&apos;s refund countdown starts from the move-out
@@ -149,7 +186,7 @@ export function EndLeaseModal({ lease, onClose, onDone }) {
             disabled={busy}
             className="flex-1 bg-red-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-red-700 disabled:opacity-50"
           >
-            {busy ? 'Ending…' : 'End lease'}
+            {busy ? 'Ending…' : notice ? 'Confirm move-out' : 'End lease'}
           </button>
         </div>
       </form>
@@ -296,9 +333,30 @@ export function AmendLeaseModal({ lease, onClose, onDone }) {
   const [monthlyRent, setMonthlyRent] = useState(lease.monthlyRent)
   const [endDate, setEndDate] = useState(toInput(lease.endDate))
   const [addEmail, setAddEmail] = useState('')
+  const [removeIds, setRemoveIds] = useState([])
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+
+  // Tenants with an account can be taken off the lease; at least one
+  // must stay (or a new roommate must be added).
+  const household = (lease.members || []).filter(m => m.user?.id)
+  const staying = household.filter(m => !removeIds.includes(m.user.id))
+  const canRemoveMore = staying.length > 1 || addEmail.trim().length > 0
+  const toggleRemove = id =>
+    setRemoveIds(ids =>
+      ids.includes(id) ? ids.filter(x => x !== id) : [...ids, id]
+    )
+
+  // Statutory notice for a rent increase (CA Civil Code §827: 30 days up
+  // to 10%, 90 days above). The server enforces it; this sets the date
+  // picker's floor and explains it.
+  const increase = rentIncreaseHint(lease.monthlyRent, monthlyRent)
+  const earliest = increase ? addDays(new Date(), increase.days) : null
+  const minDate =
+    earliest && earliest > addDays(lease.startDate, 1)
+      ? earliest
+      : addDays(lease.startDate, 1)
 
   const submit = async e => {
     e.preventDefault()
@@ -310,6 +368,7 @@ export function AmendLeaseModal({ lease, onClose, onDone }) {
         monthlyRent: Number(monthlyRent),
         endDate: lease.monthToMonth ? undefined : endDate,
         addTenantEmails: addEmail.trim() ? [addEmail.trim()] : [],
+        removeTenantIds: removeIds,
         note: note.trim() || undefined,
       })
       await onDone()
@@ -334,11 +393,20 @@ export function AmendLeaseModal({ lease, onClose, onDone }) {
               type="date"
               required
               value={effectiveDate}
-              min={addDays(lease.startDate, 1)}
+              min={minDate}
               onChange={e => setEffectiveDate(e.target.value)}
               className={`${field} mt-1`}
             />
           </label>
+          {increase && (
+            <p className="col-span-2 -mt-1 text-xs text-amber-900 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              A {increase.percent}% rent increase needs {increase.days}{' '}
+              days&apos; written notice
+              {increase.days === 90 ? ' in California (over 10%)' : ''}.
+              Earliest effective date: {shortDate(earliest)}. Each tenant gets a
+              notice-of-increase email with the amendment.
+            </p>
+          )}
           <label className="block text-sm">
             <span className="text-gray-700 font-medium">Monthly rent ($)</span>
             <input
@@ -360,6 +428,48 @@ export function AmendLeaseModal({ lease, onClose, onDone }) {
                 className={`${field} mt-1`}
               />
             </label>
+          )}
+          {household.length > 0 && (
+            <fieldset className="col-span-2 text-sm">
+              <legend className="text-gray-700 font-medium">
+                Remove a tenant{' '}
+                <span className="font-normal text-gray-500">
+                  (they leave on the effective date and do not sign)
+                </span>
+              </legend>
+              <ul className="mt-1 space-y-1">
+                {household.map(m => {
+                  const checked = removeIds.includes(m.user.id)
+                  return (
+                    <li key={m.user.id}>
+                      <label className="flex items-center gap-2 text-gray-800">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          disabled={!checked && !canRemoveMore}
+                          onChange={() => toggleRemove(m.user.id)}
+                          className="accent-brand-500"
+                        />
+                        <span>
+                          {m.user.firstName} {m.user.lastName}
+                        </span>
+                        {checked && (
+                          <span className="text-xs text-red-600">
+                            leaves {shortDate(effectiveDate)}
+                          </span>
+                        )}
+                      </label>
+                    </li>
+                  )
+                })}
+              </ul>
+              {!canRemoveMore && removeIds.length === 0 && (
+                <p className="mt-1 text-xs text-gray-500">
+                  The only tenant cannot be removed; end the lease instead, or
+                  add a roommate first.
+                </p>
+              )}
+            </fieldset>
           )}
           <label className="block text-sm col-span-2">
             <span className="text-gray-700 font-medium">
@@ -427,8 +537,22 @@ export function LeaseActionButtons({
   className,
 }) {
   if (!lease.fullySigned || !lease.current || lease.endedAt) return null
+  const notice = lease.tenantNotice || null
   return (
     <>
+      {notice && (
+        <span
+          className="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-900 border border-amber-200 px-2.5 py-1 text-xs font-medium"
+          title={
+            notice.message
+              ? `${notice.byName || 'Tenant'}: ${notice.message}`
+              : undefined
+          }
+        >
+          <LogOut size={12} /> {notice.byName || 'Tenant'} gave notice for{' '}
+          {shortDate(notice.moveOutDate)}
+        </span>
+      )}
       {!lease.amendmentId && onAmend && (
         <button
           type="button"
@@ -453,9 +577,13 @@ export function LeaseActionButtons({
         type="button"
         onClick={onEnd}
         className={`${className} hover:border-red-400 hover:text-red-600`}
-        title="Set the date this lease ends"
+        title={
+          notice
+            ? 'Confirm the move-out date the tenant gave'
+            : 'Set the date this lease ends'
+        }
       >
-        <CalendarX size={13} /> End lease
+        <CalendarX size={13} /> {notice ? 'Confirm move-out' : 'End lease'}
       </button>
     </>
   )
